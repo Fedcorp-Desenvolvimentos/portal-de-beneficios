@@ -200,5 +200,16 @@ repetirUltimoFaturamento: async () => {
     })
   },
 
+getBeneficios: async () => {
+  try {
+    return await apiFetch('/beneficios/produtos/', {
+      method: 'GET',
+    })
+  } catch (error) {
+    console.error('Erro ao buscar produtos/benefícios:', error)
+    throw error
+  }
+},
 
 }
+

@@ -739,3 +739,129 @@
 .cfg-filter-clear:hover {
   background: #e5e7eb;
 }
+/* 
+.cfg-action-icon {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  justify-content: center;
+}
+
+.cfg-row-actions {
+  display: inline-flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+.cfg-table-action {
+  width: 34px;
+  height: 34px;
+} */
+
+.cfg-table-action.blue {
+  color: #2563eb;
+}
+
+.cfg-table-action.red {
+  color: #dc2626;
+}
+
+.cfg-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.cfg-pagination-info {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.cfg-pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cfg-page-btn {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e5e7eb;
+  background: #2563eb;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.cfg-page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cfg-page-current {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.cfg-card-recebimento {
+  border: 1px dashed var(--border);
+  background: rgba(2, 6, 23, 0.02);
+}
+
+.cfg-radio-group {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.cfg-radio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cfg-radio input {
+  width: 16px;
+  height: 16px;
+}
+
+.cfg-info-box {
+  font-size: 13px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.cfg-table-action.green {
+  color: #16a34a;
+}
+
+.cfg-colaborador-modal {
+  width: min(720px, 92vw);
+}
+
+.cfg-colaborador-grid {
+  margin-top: 14px;
+}
+
+.cfg-field-help {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.cfg-field-help {
+  font-size: 12px;
+  color: var(--muted);
+}

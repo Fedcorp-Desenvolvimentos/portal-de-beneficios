@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Building2,
   Plus,
-  Upload,
   Download,
   Save,
   X,
@@ -10,13 +9,18 @@ import {
   AlertCircle,
   FileSpreadsheet,
   Users,
+  UserPlus,
   MapPin,
   Trash2,
   Search,
+  Pencil,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 
 import { entebenService } from '../../services/entebenService'
-import '../../styles/Configuracao.css'
+import '../../styles/GerenciamentoCondominios.css'
 
 async function ensureXLSX() {
   if (window.XLSX) return window.XLSX
@@ -47,6 +51,57 @@ const normalizarTexto = (value) =>
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim()
+
+const getBeneficioLabel = (beneficio) =>
+  beneficio?.nome ||
+  beneficio?.descricao ||
+  beneficio?.tipo ||
+  beneficio?.beneficio ||
+  beneficio?.produto ||
+  String(beneficio || '')
+
+const getBeneficioValue = (beneficio) =>
+  beneficio?.id ||
+  beneficio?.codigo ||
+  beneficio?.nome ||
+  beneficio?.descricao ||
+  String(beneficio || '')
+
+const getBeneficiosCondominio = (condominio, beneficios = []) => {
+  const beneficiosDoCadastro =
+    condominio?.beneficios ||
+    condominio?.beneficios_cadastrados ||
+    condominio?.beneficiosContratados ||
+    condominio?.beneficios_contratados ||
+    condominio?.planos ||
+    condominio?.produtos ||
+    []
+
+  if (Array.isArray(beneficiosDoCadastro) && beneficiosDoCadastro.length > 0) {
+    return beneficiosDoCadastro
+  }
+
+  const condId = String(condominio?.id || '')
+  const condCnpj = somenteDigitos(condominio?.cnpj)
+
+  return beneficios.filter((beneficio) => {
+    const beneficioCondId =
+      beneficio?.condominio_id ||
+      beneficio?.condominio?.id ||
+      beneficio?.condominio
+
+    const beneficioCondCnpj =
+      somenteDigitos(beneficio?.condominio_cnpj) ||
+      somenteDigitos(beneficio?.cnpj_condominio) ||
+      somenteDigitos(beneficio?.condominio?.cnpj) ||
+      somenteDigitos(beneficio?.condominio?.documento)
+
+    return (
+      String(beneficioCondId || '') === condId ||
+      Boolean(condCnpj && beneficioCondCnpj === condCnpj)
+    )
+  })
+}
 
 const normalizarCondominio = (cond) => ({
   id: cond?.id,
@@ -86,6 +141,15 @@ const normalizarCondominio = (cond) => ({
     cond?.administradora_nome ||
     '',
 
+  beneficios:
+    cond?.beneficios ||
+    cond?.beneficios_cadastrados ||
+    cond?.beneficiosContratados ||
+    cond?.beneficios_contratados ||
+    cond?.planos ||
+    cond?.produtos ||
+    [],
+
   qtdFuncionarios:
     cond?.qtdFuncionarios ??
     cond?.quantidade_funcionarios ??
@@ -103,6 +167,18 @@ const normalizarCondominio = (cond) => ({
     cond?.beneficiarios?.length ??
     0,
 
+  tipoRecebimento:
+    cond?.tipoRecebimento ||
+    cond?.tipo_recebimento ||
+    cond?.recebimento_cartao ||
+    'condominio',
+
+  enderecoRecebimento:
+    cond?.enderecoRecebimento ||
+    cond?.endereco_recebimento ||
+    cond?.endereco_administradora ||
+    '',
+
   ativo: cond?.ativo ?? cond?.is_active ?? cond?.status !== 'Inativo',
 })
 
@@ -119,7 +195,13 @@ function FiltroCondominios({ value, onChange, onClear }) {
         />
 
         {value && (
-          <button type="button" className="cfg-filter-clear" onClick={onClear}>
+          <button
+            type="button"
+            className="cfg-filter-clear"
+            onClick={onClear}
+            title="Limpar busca"
+            aria-label="Limpar busca"
+          >
             <X className="ico" />
           </button>
         )}
@@ -131,6 +213,7 @@ function FiltroCondominios({ value, onChange, onClear }) {
 export default function ConfiguracaoCondominios() {
   const [modoAtivo, setModoAtivo] = useState('lista')
   const [condominios, setCondominios] = useState([])
+  const [beneficios, setBeneficios] = useState([])
   const [loadingCondominios, setLoadingCondominios] = useState(true)
   const [erroCondominios, setErroCondominios] = useState('')
 
@@ -146,6 +229,8 @@ export default function ConfiguracaoCondominios() {
     email: '',
     responsavel: '',
     qtdFuncionarios: '',
+    tipoRecebimento: 'condominio',
+    enderecoRecebimento: '',
     ativo: true,
   })
 
@@ -157,31 +242,56 @@ export default function ConfiguracaoCondominios() {
   const [toast, setToast] = useState({ open: false, message: '', type: 'success' })
   const [busca, setBusca] = useState('')
 
+  const [paginaAtual, setPaginaAtual] = useState(1)
+  const itensPorPagina = 10
+
+  const [colaboradorModal, setColaboradorModal] = useState({
+    open: false,
+    condominio: null,
+  })
+
+  const [colaboradorForm, setColaboradorForm] = useState({
+    nome: '',
+    cpf: '',
+    email: '',
+    telefone: '',
+    cargo: '',
+    beneficio: '',
+  })
+
   const toastTimer = useRef(null)
 
   useEffect(() => {
     carregarCondominios()
   }, [])
 
+  useEffect(() => {
+    setPaginaAtual(1)
+  }, [busca])
+
   async function carregarCondominios() {
     try {
       setLoadingCondominios(true)
       setErroCondominios('')
 
-      const [condominiosData, funcionariosData] = await Promise.all([
+      const [condominiosData, funcionariosData, beneficiosData] = await Promise.all([
         entebenService.getcondominios(),
         entebenService.getFuncionarios(),
+        entebenService.getBeneficios(),
       ])
 
       const condominiosRaw = toArray(condominiosData)
       const funcionariosRaw = toArray(funcionariosData)
+      const beneficiosRaw = toArray(beneficiosData)
 
-        const funcionariosPorCondominio = funcionariosRaw.reduce((acc, funcionario) => {
+      setBeneficios(beneficiosRaw)
+
+      const funcionariosPorCondominio = funcionariosRaw.reduce((acc, funcionario) => {
         const condId =
           funcionario?.condominio_id ||
           funcionario?.condominio?.id ||
           (typeof funcionario?.condominio === 'number' ||
-            typeof funcionario?.condominio === 'string'
+          typeof funcionario?.condominio === 'string'
             ? funcionario.condominio
             : null)
 
@@ -262,6 +372,34 @@ export default function ConfiguracaoCondominios() {
     })
   }, [busca, condominios])
 
+  const totalPaginas = Math.max(
+    1,
+    Math.ceil(condominiosFiltrados.length / itensPorPagina)
+  )
+
+  const condominiosPaginados = useMemo(() => {
+    const inicio = (paginaAtual - 1) * itensPorPagina
+    return condominiosFiltrados.slice(inicio, inicio + itensPorPagina)
+  }, [condominiosFiltrados, paginaAtual])
+
+  const inicioExibicao =
+    condominiosFiltrados.length === 0
+      ? 0
+      : (paginaAtual - 1) * itensPorPagina + 1
+
+  const fimExibicao = Math.min(
+    paginaAtual * itensPorPagina,
+    condominiosFiltrados.length
+  )
+
+  const irParaPaginaAnterior = () => {
+    setPaginaAtual((prev) => Math.max(1, prev - 1))
+  }
+
+  const irParaProximaPagina = () => {
+    setPaginaAtual((prev) => Math.min(totalPaginas, prev + 1))
+  }
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
 
@@ -284,6 +422,8 @@ export default function ConfiguracaoCondominios() {
       email: '',
       responsavel: '',
       qtdFuncionarios: '',
+      tipoRecebimento: 'condominio',
+      enderecoRecebimento: '',
       ativo: true,
     })
 
@@ -291,15 +431,23 @@ export default function ConfiguracaoCondominios() {
   }
 
   const handleSubmit = () => {
+    const payload = {
+      ...formData,
+      enderecoRecebimento:
+        formData.tipoRecebimento === 'condominio'
+          ? formData.endereco
+          : formData.enderecoRecebimento,
+      qtdFuncionarios: parseInt(formData.qtdFuncionarios, 10) || 0,
+    }
+
     if (editandoId) {
       setCondominios((prev) =>
         prev.map((c) =>
           c.id === editandoId
             ? {
-              ...formData,
-              id: editandoId,
-              qtdFuncionarios: parseInt(formData.qtdFuncionarios, 10) || 0,
-            }
+                ...payload,
+                id: editandoId,
+              }
             : c
         )
       )
@@ -307,9 +455,8 @@ export default function ConfiguracaoCondominios() {
       showToast('Cadastro atualizado com sucesso')
     } else {
       const novoCondominio = {
-        ...formData,
+        ...payload,
         id: Date.now(),
-        qtdFuncionarios: parseInt(formData.qtdFuncionarios, 10) || 0,
       }
 
       setCondominios((prev) => [...prev, novoCondominio])
@@ -321,9 +468,100 @@ export default function ConfiguracaoCondominios() {
   }
 
   const handleEditar = (condominio) => {
-    setFormData(condominio)
+    setFormData({
+      ...condominio,
+      tipoRecebimento: condominio.tipoRecebimento || 'condominio',
+      enderecoRecebimento: condominio.enderecoRecebimento || '',
+    })
+
     setEditandoId(condominio.id)
     setModoAtivo('form')
+  }
+
+  const handleAdicionarColaborador = (condominio) => {
+    setColaboradorModal({
+      open: true,
+      condominio,
+    })
+
+    setColaboradorForm({
+      nome: '',
+      cpf: '',
+      email: '',
+      telefone: '',
+      cargo: '',
+      beneficio: '',
+    })
+  }
+
+  const fecharModalColaborador = () => {
+    setColaboradorModal({
+      open: false,
+      condominio: null,
+    })
+
+    setColaboradorForm({
+      nome: '',
+      cpf: '',
+      email: '',
+      telefone: '',
+      cargo: '',
+      beneficio: '',
+    })
+  }
+
+  const handleColaboradorChange = (e) => {
+    const { name, value } = e.target
+
+    setColaboradorForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  const salvarColaborador = () => {
+    if (!colaboradorForm.nome.trim()) {
+      showToast('Informe o nome do colaborador', 'danger')
+      return
+    }
+
+    if (!colaboradorForm.beneficio) {
+      showToast('Selecione o benefício do colaborador', 'danger')
+      return
+    }
+
+    const beneficioSelecionado = getBeneficiosCondominio(
+      colaboradorModal.condominio,
+      beneficios
+    ).find(
+      (beneficio) =>
+        String(getBeneficioValue(beneficio)) === String(colaboradorForm.beneficio)
+    )
+
+    const novoColaborador = {
+      ...colaboradorForm,
+      beneficioNome: getBeneficioLabel(beneficioSelecionado),
+      id: Date.now(),
+      condominioId: colaboradorModal.condominio?.id,
+      condominioNome: colaboradorModal.condominio?.nome,
+    }
+
+    console.log('COLABORADOR PARA CADASTRAR:', novoColaborador)
+
+    setCondominios((prev) =>
+      prev.map((cond) =>
+        cond.id === colaboradorModal.condominio?.id
+          ? {
+              ...cond,
+              qtdFuncionarios: Number(cond.qtdFuncionarios || 0) + 1,
+              funcionarios: [...toArray(cond.funcionarios), novoColaborador],
+            }
+          : cond
+      )
+    )
+
+    showToast('Colaborador adicionado com sucesso')
+    fecharModalColaborador()
   }
 
   const solicitarExcluir = (cond) =>
@@ -379,23 +617,10 @@ export default function ConfiguracaoCondominios() {
         'Email',
         'Responsavel',
         'QtdFuncionarios',
+        'RecebimentoCartao',
+        'EnderecoRecebimento',
         'Ativo',
         'Funcionarios',
-      ],
-      [
-        'Condomínio Exemplo',
-        '12.345.678/0001-90',
-        'Rua Exemplo 123',
-        'Centro',
-        'Rio de Janeiro',
-        'RJ',
-        '20000-000',
-        '(21) 3333-4444',
-        'contato@exemplo.com.br',
-        'João Silva',
-        45,
-        true,
-        'Joe Doe',
       ],
     ]
 
@@ -404,6 +629,120 @@ export default function ConfiguracaoCondominios() {
 
     XLSX.utils.book_append_sheet(wb, ws, 'Modelo')
     XLSX.writeFile(wb, 'modelo_condominios.xlsx')
+  }
+
+  const ModalColaborador = ({ open, condominio, form, onChange, onSave, onCancel }) => {
+    if (!open) return null
+
+    const beneficiosDoCondominio = getBeneficiosCondominio(condominio, beneficios)
+
+    return (
+      <div className="modal-backdrop">
+        <div className="modal cfg-colaborador-modal">
+          <div className="modal-head">
+            <div className="modal-title">
+              <UserPlus className="ico brand" />
+              <h3>Adicionar colaborador</h3>
+            </div>
+
+            <button
+              className="icon-btn"
+              onClick={onCancel}
+              title="Fechar"
+              aria-label="Fechar"
+            >
+              <X className="ico" />
+            </button>
+          </div>
+
+          <div className="modal-body">
+            <div className="cfg-info-box">
+              Condomínio: <strong>{condominio?.nome}</strong>
+            </div>
+
+            <div className="grid cfg-colaborador-grid">
+              <div className="field grid-full">
+                <label>Nome do colaborador *</label>
+                <input
+                  name="nome"
+                  value={form.nome}
+                  onChange={onChange}
+                  placeholder="Digite o nome completo"
+                />
+              </div>
+
+              <div className="field">
+                <label>CPF</label>
+                <input
+                  name="cpf"
+                  value={form.cpf}
+                  onChange={onChange}
+                  placeholder="000.000.000-00"
+                />
+              </div>
+
+              <div className="field">
+                <label>Cargo</label>
+                <input
+                  name="cargo"
+                  value={form.cargo}
+                  onChange={onChange}
+                  placeholder="Ex: Porteiro"
+                />
+              </div>
+
+              <div className="field">
+                <label>Benefício *</label>
+                <select name="beneficio" value={form.beneficio} onChange={onChange}>
+                  <option value="">Selecione um benefício...</option>
+
+                  {beneficiosDoCondominio.map((beneficio) => (
+                    <option
+                      key={getBeneficioValue(beneficio)}
+                      value={getBeneficioValue(beneficio)}
+                    >
+                      {getBeneficioLabel(beneficio)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field">
+                <label>Telefone</label>
+                <input
+                  name="telefone"
+                  value={form.telefone}
+                  onChange={onChange}
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+
+              <div className="field">
+                <label>E-mail</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={onChange}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="modal-actions">
+            <button className="btn btn-light" onClick={onCancel}>
+              Cancelar
+            </button>
+
+            <button className="btn btn-primary" onClick={onSave}>
+              <Save className="ico" />
+              Salvar colaborador
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const ModalConfirm = ({ open, nome, onConfirm, onCancel }) => {
@@ -418,7 +757,12 @@ export default function ConfiguracaoCondominios() {
               <h3>Excluir condomínio</h3>
             </div>
 
-            <button className="icon-btn" onClick={onCancel}>
+            <button
+              className="icon-btn"
+              onClick={onCancel}
+              title="Fechar"
+              aria-label="Fechar"
+            >
               <X className="ico" />
             </button>
           </div>
@@ -444,27 +788,67 @@ export default function ConfiguracaoCondominios() {
 
   const ListaAcoes = () => (
     <div className="cfg-actions">
-      <button onClick={() => setModoAtivo('form')} className="btn btn-primary">
+      <button
+        onClick={() => setModoAtivo('form')}
+        className="btn btn-primary cfg-action-icon"
+        title="Novo Condomínio"
+        aria-label="Novo Condomínio"
+      >
         <Plus className="ico" />
         <span>Novo Condomínio</span>
       </button>
 
-      <button onClick={() => setModoAtivo('upload')} className="btn btn-success">
-        <Upload className="ico" />
-        <span>Importar Planilha</span>
-      </button>
-
-      <button onClick={downloadModelo} className="btn btn-dark">
-        <Download className="ico" />
-        <span>Baixar Modelo</span>
-      </button>
-
-      <button onClick={carregarCondominios} className="btn btn-light">
-        <Building2 className="ico" />
+      <button
+        onClick={carregarCondominios}
+        className="btn btn-light cfg-action-icon"
+        title="Atualizar"
+        aria-label="Atualizar"
+      >
+        <RefreshCw className="ico" />
         <span>Atualizar</span>
       </button>
     </div>
   )
+
+  const Paginacao = () => {
+    if (condominiosFiltrados.length <= itensPorPagina) return null
+
+    return (
+      <div className="cfg-pagination">
+        <div className="cfg-pagination-info">
+          Exibindo {inicioExibicao}–{fimExibicao} de {condominiosFiltrados.length}
+        </div>
+
+        <div className="cfg-pagination-actions">
+          <button
+            type="button"
+            className="cfg-page-btn"
+            onClick={irParaPaginaAnterior}
+            disabled={paginaAtual === 1}
+            title="Página anterior"
+            aria-label="Página anterior"
+          >
+            <ChevronLeft className="ico" />
+          </button>
+
+          <span className="cfg-page-current">
+            Página {paginaAtual} de {totalPaginas}
+          </span>
+
+          <button
+            type="button"
+            className="cfg-page-btn"
+            onClick={irParaProximaPagina}
+            disabled={paginaAtual === totalPaginas}
+            title="Próxima página"
+            aria-label="Próxima página"
+          >
+            <ChevronRight className="ico" />
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   const Tabela = () => (
     <div className="card">
@@ -493,7 +877,7 @@ export default function ConfiguracaoCondominios() {
               </thead>
 
               <tbody>
-                {condominiosFiltrados.map((cond) => (
+                {condominiosPaginados.map((cond) => (
                   <tr key={cond.id}>
                     <td>
                       <div className="cell-flex">
@@ -516,13 +900,37 @@ export default function ConfiguracaoCondominios() {
                     </td>
 
                     <td className="text-right">
-                      <button className="link link-blue" onClick={() => handleEditar(cond)}>
-                        Editar
-                      </button>
+                      <div className="cfg-row-actions">
+                        <button
+                          type="button"
+                          className="icon-btn cfg-table-action green"
+                          onClick={() => handleAdicionarColaborador(cond)}
+                          title="Adicionar colaborador"
+                          aria-label={`Adicionar colaborador em ${cond.nome}`}
+                        >
+                          <UserPlus className="ico" />
+                        </button>
 
-                      <button className="link link-red" onClick={() => solicitarExcluir(cond)}>
-                        Excluir
-                      </button>
+                        <button
+                          type="button"
+                          className="icon-btn cfg-table-action blue"
+                          onClick={() => handleEditar(cond)}
+                          title="Editar"
+                          aria-label={`Editar ${cond.nome}`}
+                        >
+                          <Pencil className="ico" />
+                        </button>
+
+                        <button
+                          type="button"
+                          className="icon-btn cfg-table-action red"
+                          onClick={() => solicitarExcluir(cond)}
+                          title="Excluir"
+                          aria-label={`Excluir ${cond.nome}`}
+                        >
+                          <Trash2 className="ico" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -543,6 +951,8 @@ export default function ConfiguracaoCondominios() {
               <p>Nenhum condomínio encontrado para a busca</p>
             </div>
           )}
+
+          <Paginacao />
         </>
       )}
     </div>
@@ -561,6 +971,8 @@ export default function ConfiguracaoCondominios() {
             resetForm()
             setModoAtivo('lista')
           }}
+          title="Fechar"
+          aria-label="Fechar"
         >
           <X className="ico" />
         </button>
@@ -634,6 +1046,55 @@ export default function ConfiguracaoCondominios() {
         </div>
 
         <div className="grid-full section-title mt">
+          <MapPin className="ico" />
+          <span>Recebimento do Cartão</span>
+        </div>
+
+        <div className="grid-full card pad cfg-card-recebimento">
+          <div className="cfg-radio-group">
+            <label className="cfg-radio">
+              <input
+                type="radio"
+                name="tipoRecebimento"
+                value="condominio"
+                checked={formData.tipoRecebimento === 'condominio'}
+                onChange={handleInputChange}
+              />
+              <span>Endereço do condomínio</span>
+            </label>
+
+            <label className="cfg-radio">
+              <input
+                type="radio"
+                name="tipoRecebimento"
+                value="administradora"
+                checked={formData.tipoRecebimento === 'administradora'}
+                onChange={handleInputChange}
+              />
+              <span>Endereço da administradora</span>
+            </label>
+          </div>
+
+          {formData.tipoRecebimento === 'administradora' && (
+            <div className="field grid-full">
+              <label>Endereço da administradora *</label>
+              <input
+                name="enderecoRecebimento"
+                value={formData.enderecoRecebimento}
+                onChange={handleInputChange}
+                placeholder="Digite o endereço da administradora"
+              />
+            </div>
+          )}
+
+          {formData.tipoRecebimento === 'condominio' && (
+            <div className="cfg-info-box">
+              Será utilizado automaticamente o endereço do condomínio informado acima.
+            </div>
+          )}
+        </div>
+
+        <div className="grid-full section-title mt">
           <Users className="ico" />
           <span>Informações Adicionais</span>
         </div>
@@ -702,6 +1163,8 @@ export default function ConfiguracaoCondominios() {
             setUploadStatus(null)
             setUploadedFile(null)
           }}
+          title="Fechar"
+          aria-label="Fechar"
         >
           <X className="ico" />
         </button>
@@ -776,7 +1239,7 @@ export default function ConfiguracaoCondominios() {
       {modoAtivo === 'lista' && (
         <>
           <div className="cfg-header">
-            <h1>Configurações de Condomínios</h1>
+            <h1>Gerenciamento de Condomínios</h1>
             <p>Gerencie os condomínios cadastrados na plataforma</p>
           </div>
 
@@ -801,14 +1264,24 @@ export default function ConfiguracaoCondominios() {
         onCancel={cancelarExclusao}
       />
 
+      <ModalColaborador
+        open={colaboradorModal.open}
+        condominio={colaboradorModal.condominio}
+        form={colaboradorForm}
+        onChange={handleColaboradorChange}
+        onSave={salvarColaborador}
+        onCancel={fecharModalColaborador}
+      />
+
       <div
         className={`cfg-toast-wrap ${toast.open ? 'show' : ''}`}
         role="status"
         aria-live="polite"
       >
         <div
-          className={`cfg-toast ${toast.type === 'danger' ? 'cfg-toast-danger' : 'cfg-toast-success'
-            }`}
+          className={`cfg-toast ${
+            toast.type === 'danger' ? 'cfg-toast-danger' : 'cfg-toast-success'
+          }`}
         >
           {toast.type === 'danger' ? (
             <Trash2 className="cfg-toast-ico" />

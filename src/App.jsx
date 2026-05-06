@@ -13,7 +13,7 @@ import FaturamentoFormulario from './pages/Client/FaturamentoFormulario.jsx'
 import Pendentes from './pages/Comuns/Pendentes.jsx'
 import Historico from './pages/Comuns/Historico.jsx'
 import Login from './pages/Comuns/Login/Login.jsx'
-import ConfiguracaoCondominios from './pages/Client/Configuracoes.jsx'
+import GerenciamentoCondominios from './pages/Client/GerenciamentoCondominios.jsx'
 import RelatoriosBeneficios from './pages/Client/RelatoriosBeneficios.jsx'
 
 import ColaboradorDashboard from './pages/Interno/ColaboradorDashboard.jsx'
@@ -33,7 +33,7 @@ function Layout() {
     '/faturamento/novo': 'Novo faturamento',
     '/pendentes': 'Pendências',
     '/historico': 'Histórico',
-    '/configuracoes': 'Configurações',
+    '/gerenciamento': 'Gerenciamento de Condomínios',
     '/relatorios': 'Relatórios de Benefícios',
     '/colaborador/dashboard': 'Dashboard Fedcorp',
     '/colaborador/importacaoDocs': 'Importação Fedcorp',
@@ -57,7 +57,7 @@ function Layout() {
             <Route path="/faturamento/novo" element={<FaturamentoFormulario modo="novo" />} />
             <Route path="/pendentes" element={<Pendentes />} />
             <Route path="/historico" element={<Historico />} />
-            <Route path="/configuracoes" element={<ConfiguracaoCondominios />} />
+            <Route path="/gerenciamento" element={<GerenciamentoCondominios />} />
             <Route path="/relatorios" element={<RelatoriosBeneficios />} />
 
             <Route
