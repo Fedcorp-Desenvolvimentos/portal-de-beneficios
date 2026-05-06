@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
 import StatusBadge from './StatusBadge'
 import { Upload } from './icons/Upload.jsx'
+import { baixarModeloImportacao } from '../utils/modelo_planilha.js'
 
 export default function FileUpload({ onUpload }) {
   const inputRef = useRef()
@@ -11,156 +12,156 @@ export default function FileUpload({ onUpload }) {
 
   const handlePick = () => inputRef.current?.click()
 
-  const baixarModeloImportacao = () => {
-    const headers = [
-      'cnpj_condominio',
-      'nome_condominio',
-      'tipo_local_condominio',
-      'endereco_condominio',
-      'numero_condominio',
-      'complemento_condominio',
-      'bairro_condominio',
-      'cidade_condominio',
-      'estado_condominio',
-      'cep_condominio',
-      'cpf_funcionario',
-      'matricula_funcionario',
-      'nome_funcionario',
-      'funcao_funcionario',
-      'data_nascimento_funcionario',
-      'sexo_funcionario',
-      'codigo_produto',
-      'nome_produto',
-      'data_competencia',
-      'valor_beneficio(total)',
-      'quantidade_dias',
-    ]
+  // const baixarModeloImportacao = () => {
+  //   const headers = [
+  //     'cnpj_condominio',
+  //     'nome_condominio',
+  //     'tipo_local_condominio',
+  //     'endereco_condominio',
+  //     'numero_condominio',
+  //     'complemento_condominio',
+  //     'bairro_condominio',
+  //     'cidade_condominio',
+  //     'estado_condominio',
+  //     'cep_condominio',
+  //     'cpf_funcionario',
+  //     'matricula_funcionario',
+  //     'nome_funcionario',
+  //     'funcao_funcionario',
+  //     'data_nascimento_funcionario',
+  //     'sexo_funcionario',
+  //     'codigo_produto',
+  //     'nome_produto',
+  //     'data_competencia',
+  //     'valor_beneficio(total)',
+  //     'quantidade_dias',
+  //   ]
 
-    const linhas = [
-      [
-        '03468044000139',
-        'CONDOMINIO EDIFICIO LUFFICIO',
-        'CONDOMINIO',
-        'RUA EXEMPLO',
-        '123',
-        'BLOCO A',
-        'CENTRO',
-        'SAO PAULO',
-        'SP',
-        '01001000',
-        '71823131468',
-        '1001',
-        'AGUINALDO PEREIRA DE LIMA',
-        'ZELADOR',
-        '1980-05-10',
-        'M',
-        '60113',
-        'VALE REFEICAO - TICKET',
-        '2026-04-01',
-        '465.40',
-        '26',
-      ],
-      [
-        '03468044000139',
-        'CONDOMINIO EDIFICIO LUFFICIO',
-        'CONDOMINIO',
-        'RUA EXEMPLO',
-        '123',
-        'BLOCO A',
-        'CENTRO',
-        'SAO PAULO',
-        'SP',
-        '01001000',
-        '71823131468',
-        '1001',
-        'AGUINALDO PEREIRA DE LIMA',
-        'ZELADOR',
-        '1980-05-10',
-        'M',
-        '05000',
-        'VALE ALIMENTACAO - TICKET',
-        '2026-04-01',
-        '552.08',
-        '1',
-      ],
-      [
-        '03468044000139',
-        'CONDOMINIO EDIFICIO LUFFICIO',
-        'CONDOMINIO',
-        'RUA EXEMPLO',
-        '123',
-        'BLOCO A',
-        'CENTRO',
-        'SAO PAULO',
-        'SP',
-        '01001000',
-        '79241972572',
-        '1002',
-        'ODAILSON DAMASCENO RIBEIRO',
-        'PORTEIRO NOTURNO',
-        '1987-11-21',
-        'M',
-        '01274',
-        'CARTAO - TOP',
-        '2026-04-01',
-        '397.80',
-        '52',
-      ],
-      [
-        '03468044000139',
-        'CONDOMINIO EDIFICIO LUFFICIO',
-        'CONDOMINIO',
-        'RUA EXEMPLO',
-        '123',
-        'BLOCO A',
-        'CENTRO',
-        'SAO PAULO',
-        'SP',
-        '01001000',
-        '79241972572',
-        '1002',
-        'ODAILSON DAMASCENO RIBEIRO',
-        'PORTEIRO NOTURNO',
-        '1987-11-21',
-        'M',
-        '02002',
-        'SP-TRANS-ONIBUS MUNIC. - BILHETE UNICO',
-        '2026-04-01',
-        '302.64',
-        '52',
-      ],
-    ]
+  //   const linhas = [
+  //     [
+  //       '03468044000139',
+  //       'CONDOMINIO EDIFICIO LUFFICIO',
+  //       'CONDOMINIO',
+  //       'RUA EXEMPLO',
+  //       '123',
+  //       'BLOCO A',
+  //       'CENTRO',
+  //       'SAO PAULO',
+  //       'SP',
+  //       '01001000',
+  //       '71823131468',
+  //       '1001',
+  //       'AGUINALDO PEREIRA DE LIMA',
+  //       'ZELADOR',
+  //       '1980-05-10',
+  //       'M',
+  //       '60113',
+  //       'VALE REFEICAO - TICKET',
+  //       '2026-04-01',
+  //       '465.40',
+  //       '26',
+  //     ],
+  //     [
+  //       '03468044000139',
+  //       'CONDOMINIO EDIFICIO LUFFICIO',
+  //       'CONDOMINIO',
+  //       'RUA EXEMPLO',
+  //       '123',
+  //       'BLOCO A',
+  //       'CENTRO',
+  //       'SAO PAULO',
+  //       'SP',
+  //       '01001000',
+  //       '71823131468',
+  //       '1001',
+  //       'AGUINALDO PEREIRA DE LIMA',
+  //       'ZELADOR',
+  //       '1980-05-10',
+  //       'M',
+  //       '05000',
+  //       'VALE ALIMENTACAO - TICKET',
+  //       '2026-04-01',
+  //       '552.08',
+  //       '1',
+  //     ],
+  //     [
+  //       '03468044000139',
+  //       'CONDOMINIO EDIFICIO LUFFICIO',
+  //       'CONDOMINIO',
+  //       'RUA EXEMPLO',
+  //       '123',
+  //       'BLOCO A',
+  //       'CENTRO',
+  //       'SAO PAULO',
+  //       'SP',
+  //       '01001000',
+  //       '79241972572',
+  //       '1002',
+  //       'ODAILSON DAMASCENO RIBEIRO',
+  //       'PORTEIRO NOTURNO',
+  //       '1987-11-21',
+  //       'M',
+  //       '01274',
+  //       'CARTAO - TOP',
+  //       '2026-04-01',
+  //       '397.80',
+  //       '52',
+  //     ],
+  //     [
+  //       '03468044000139',
+  //       'CONDOMINIO EDIFICIO LUFFICIO',
+  //       'CONDOMINIO',
+  //       'RUA EXEMPLO',
+  //       '123',
+  //       'BLOCO A',
+  //       'CENTRO',
+  //       'SAO PAULO',
+  //       'SP',
+  //       '01001000',
+  //       '79241972572',
+  //       '1002',
+  //       'ODAILSON DAMASCENO RIBEIRO',
+  //       'PORTEIRO NOTURNO',
+  //       '1987-11-21',
+  //       'M',
+  //       '02002',
+  //       'SP-TRANS-ONIBUS MUNIC. - BILHETE UNICO',
+  //       '2026-04-01',
+  //       '302.64',
+  //       '52',
+  //     ],
+  //   ]
 
-    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...linhas])
+  //   const worksheet = XLSX.utils.aoa_to_sheet([headers, ...linhas])
 
-    worksheet['!cols'] = [
-      { wch: 18 }, // cnpj_condominio
-      { wch: 38 }, // nome_condominio
-      { wch: 22 }, // tipo_local_condominio
-      { wch: 28 }, // endereco_condominio
-      { wch: 18 }, // numero_condominio
-      { wch: 22 }, // complemento_condominio
-      { wch: 22 }, // bairro_condominio
-      { wch: 20 }, // cidade_condominio
-      { wch: 18 }, // estado_condominio
-      { wch: 16 }, // cep_condominio
-      { wch: 18 }, // cpf_funcionario
-      { wch: 20 }, // matricula_funcionario
-      { wch: 34 }, // nome_funcionario
-      { wch: 24 }, // funcao_funcionario
-      { wch: 24 }, // data_nascimento_funcionario
-      { wch: 16 }, // sexo_funcionario
-      { wch: 18 }, // codigo_produto
-      { wch: 40 }, // nome_produto
-      { wch: 20 }, // data_competencia
-      { wch: 22 }, // valor_beneficio(total)
-      { wch: 18 }, // quantidade_dias
-    ]
+  //   worksheet['!cols'] = [
+  //     { wch: 18 }, // cnpj_condominio
+  //     { wch: 38 }, // nome_condominio
+  //     { wch: 22 }, // tipo_local_condominio
+  //     { wch: 28 }, // endereco_condominio
+  //     { wch: 18 }, // numero_condominio
+  //     { wch: 22 }, // complemento_condominio
+  //     { wch: 22 }, // bairro_condominio
+  //     { wch: 20 }, // cidade_condominio
+  //     { wch: 18 }, // estado_condominio
+  //     { wch: 16 }, // cep_condominio
+  //     { wch: 18 }, // cpf_funcionario
+  //     { wch: 20 }, // matricula_funcionario
+  //     { wch: 34 }, // nome_funcionario
+  //     { wch: 24 }, // funcao_funcionario
+  //     { wch: 24 }, // data_nascimento_funcionario
+  //     { wch: 16 }, // sexo_funcionario
+  //     { wch: 18 }, // codigo_produto
+  //     { wch: 40 }, // nome_produto
+  //     { wch: 20 }, // data_competencia
+  //     { wch: 22 }, // valor_beneficio(total)
+  //     { wch: 18 }, // quantidade_dias
+  //   ]
 
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Modelo Importacao')
-    XLSX.writeFile(workbook, 'modelo_importacao_beneficios.xlsx')
-  }
+  //   const workbook = XLSX.utils.book_new()
+  //   XLSX.utils.book_append_sheet(workbook, worksheet, 'Modelo Importacao')
+  //   XLSX.writeFile(workbook, 'modelo_importacao_beneficios.xlsx')
+  // }
 
   const processUpload = async (file) => {
     setStatus('processando')
