@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
+import Carousel from "../../../components/Carousel";
 import { useNavigate } from 'react-router-dom'
 import { Mail, ArrowLeft } from 'lucide-react'
-import Carousel from '../../components/Carousel.jsx'
-import '../../styles/Login.css'
+import logo from "../../../public/imagens/LOGO.png";
+import '../../../styles/Login.css'
 
 export default function EsqueciSenha() {
   const [email, setEmail] = useState('')
@@ -27,11 +28,7 @@ export default function EsqueciSenha() {
       <div className="login-card">
         <div className="login-left">
           <div className="login-brand">
-            <img
-              src="https://i.postimg.cc/Gh597vbr/LOGO.png"
-              alt="Fedcorp Logo"
-              className="logoImg"
-            />
+            <img src={logo} alt="Logo" className="logoImg" />
           </div>
 
           <form onSubmit={handleSubmit} className="login-form">
@@ -45,7 +42,7 @@ export default function EsqueciSenha() {
             <div className="field">
               <label>E-mail</label>
               <div className="input-group">
-                <Mail size={16} className="input-icon" />
+                {/* <Mail size={16} className="input-icon" /> */}
                 <input
                   type="email"
                   className="input"

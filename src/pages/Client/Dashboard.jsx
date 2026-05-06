@@ -252,7 +252,7 @@ export default function Dashboard() {
         <section className="dbi-hero">
           <div>
             <p className="dbi-eyebrow">Portal de Benefícios</p>
-            <h1 className="dbi-title">Visão geral operacional</h1>
+            <h1 className="dbi-title">Visão Geral</h1>
             <p className="dbi-subtitle">
               Acompanhe importações, faturamento, pendências e documentos em um só lugar.
             </p>

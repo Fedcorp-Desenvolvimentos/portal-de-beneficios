@@ -85,7 +85,6 @@ export const AuthProvider = ({ children }) => {
 
   }, [])
   const handleLogin = async (username, password, redirectTo) => {
-    setIsLoading(true)
     try {
       await userService.login(username, password)
 
@@ -106,9 +105,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Falha no Login:', error)
       throw error
-    } finally {
-      setIsLoading(false)
-    }
+    } 
   }
 
   const handleLogout = (redirectTo = '/login') => {
