@@ -276,3 +276,114 @@
     font-size: 18px;
   }
 }
+
+.fatv2-total-card {
+  margin: 1rem 0;
+  padding: 1.25rem 1.5rem;
+  border-radius: 16px;
+  background: #0F3D5D;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 10px 24px rgba(15, 61, 93, 0.18);
+}
+
+.fatv2-total-card span {
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.fatv2-total-card strong {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.fatv2-tag.success {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.fatv2-tag.warning {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.fatv2-tag.danger {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.fatv2-tag.info {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.fatv2-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+  filter: grayscale(0.25);
+}
+
+.fatv2-pagination {
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.fatv2-pagination span {
+  font-weight: 600;
+  color: #0F3D5D;
+}
+
+.fatv2-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.fatv2-filters input {
+  height: 44px;
+  border: 1px solid #d7dce5;
+  border-radius: 12px;
+  padding: 0 0.9rem;
+  font-size: 0.95rem;
+  background: #fff;
+  color: #0f172a;
+  transition: all 0.2s ease;
+}
+
+.import, .comp, .vig, .venc, .status {
+  margin-left: 0.3rem;
+}
+
+.fatv2-filters input:focus {
+  outline: none;
+  border-color: #0F3D5D;
+  box-shadow: 0 0 0 3px rgba(15, 61, 93, 0.12);
+}
+
+.fatv2-filters select {
+  height: 44px;
+  border: 1px solid #d7dce5;
+  border-radius: 12px;
+  padding: 0 0.9rem;
+  font-size: 0.95rem;
+  background: #fff;
+  color: #0f172a;
+  transition: all 0.2s ease;
+}
+
+.fatv2-filters select:focus {
+  outline: none;
+  border-color: #0F3D5D;
+  box-shadow: 0 0 0 3px rgba(15, 61, 93, 0.12);
+}
