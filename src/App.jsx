@@ -12,7 +12,10 @@ import Faturamento from './pages/Client/Faturamento.jsx'
 import FaturamentoFormulario from './pages/Client/FaturamentoFormulario.jsx'
 import Pendentes from './pages/Comuns/Pendentes.jsx'
 import Historico from './pages/Comuns/Historico.jsx'
+
 import Login from './pages/Comuns/Login/Login.jsx'
+import EsqueciSenha from './pages/Comuns/Login/EsqueciSenha.jsx'
+
 import GerenciamentoCondominios from './pages/Client/GerenciamentoCondominios.jsx'
 import RelatoriosBeneficios from './pages/Client/RelatoriosBeneficios.jsx'
 
@@ -84,6 +87,7 @@ export default function App() {
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/esqueci-senha" element={<EsqueciSenha/>}/>
 
         <Route
           path="/*"

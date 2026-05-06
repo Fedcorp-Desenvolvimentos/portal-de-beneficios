@@ -1,6 +1,6 @@
 import { apiFetch } from './api'
 
-const API_BASE_URL = 'https://vr-beneficios-backend-fedcorp-y5bg8.ondigitalocean.app/api'
+const API_BASE_URL = 'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app/api'
 
 function getAuthToken() {
   try {

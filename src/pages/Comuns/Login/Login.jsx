@@ -1,9 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-
-import {useAuth} from "../../../context/AuthContext"; 
-import Carousel from "../../../components/Carousel"; 
+import { Link } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 import logo from "../../../public/imagens/LOGO.png";
 
 import "../../../styles/Login.css"
@@ -15,30 +13,45 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const { login } = useAuth();
-  const navigate = useNavigate();
 
- const handleSubmit = async (event) => {
-  event.preventDefault();
-  setLoading(true);
-  setError("");
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
 
-  try {
-    await login(String(email ?? "").trim(), String(password ?? ""), "/Home");
-   
-  } catch (err) {
-    console.error("Erro de login no componente:", err);
+    try {
+      await login(String(email ?? "").trim(), String(password ?? ""), "/Home");
 
-    const msg = String(err?.message || err);
-    const message =
-      msg.includes("401") || msg.toLowerCase().includes("credenciais")
-        ? "Credenciais inválidas. Verifique o usuário e a senha."
-        : "Ocorreu um erro inesperado durante o login.";
+    } catch (err) {
+      console.error("Erro de login no componente:", err);
 
-    setError(message);
-  } finally {
-    setLoading(false);
-  }
-};
+      const status = err?.response?.status;
+      const msg = String(err?.response?.data?.message || err?.message || "").toLowerCase();
+
+      if (
+        status === 401 ||
+        msg.includes("usuário") ||
+        msg.includes("usuario") ||
+        msg.includes("não encontrado") ||
+        msg.includes("não encontrado")
+      ) {
+        setError("Senha incorreta. Tente novamente ou recupere sua senha.")
+      } else if (
+        status === 404 ||
+        msg.includes("Usuário") ||
+        msg.includes("Usuario") ||
+        msg.includes("não encontrado") ||
+        msg.includes("nao encontrado")
+      ) {
+        setError("Usuário não cadastrado.")
+      } else {
+        setError("Ocorreu um erro inesperado durante o login")
+      }
+
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -97,9 +110,9 @@ const Login = () => {
                 {loading ? "Entrando..." : "Entrar"}
               </button>
 
-              <a href="/esqueci-senha" className="forgot-password">
+              <Link to="/esqueci-senha" className="forgot-password">
                 Esqueceu sua senha?
-              </a>
+              </Link>
             </form>
           </div>
         </div>
