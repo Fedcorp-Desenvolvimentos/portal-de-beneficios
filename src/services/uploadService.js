@@ -13,7 +13,7 @@ export const uploadService = {
         headers: {},
       })
 
-      console.log('Upload e Parsing concluídos:', data)
+      // console.log('Upload e Parsing concluídos:', data)
       return data
     } catch (error) {
       console.error('Erro no upload do arquivo:', error)
@@ -28,7 +28,7 @@ export const uploadService = {
         body: payload,
       })
 
-      console.log('Confirmação e Gravação final concluídas:', data)
+      // console.log('Confirmação e Gravação final concluídas:', data)
       return data
     } catch (error) {
       console.error('Erro na confirmação do upload:', error)

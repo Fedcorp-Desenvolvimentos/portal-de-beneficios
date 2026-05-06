@@ -41,7 +41,7 @@ export default function RelatoriosBeneficios() {
     }
 
     const handleExport = (tipoRelatorio, formato) => {
-        console.log('Gerar relatório:', { tipoRelatorio, formato, filtros })
+        // console.log('Gerar relatório:', { tipoRelatorio, formato, filtros })
 
         showToast(
             `Relatório "${tipoRelatorio}" em ${formato.toUpperCase()} solicitado com sucesso.`,

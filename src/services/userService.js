@@ -39,7 +39,7 @@ export const userService = {
                 localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
                 localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
                 
-                console.log('Login bem-sucedido. Tokens armazenados.');
+                // console.log('Login bem-sucedido. Tokens armazenados.');
                 return data; 
             } else {
                 throw new Error('Tokens de autenticação não recebidos.');
@@ -76,7 +76,7 @@ export const userService = {
             if (newAccessToken) {
                 // Salva o novo access token
                 localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, newAccessToken);
-                console.log('Access token atualizado com sucesso.');
+                // console.log('Access token atualizado com sucesso.');
                 return newAccessToken;
             } else {
                 throw new Error('Novo access token não recebido.');
@@ -115,7 +115,7 @@ export const userService = {
         localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
         localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
         // apiFetch('/auth/logout/', { method: 'POST' }); // Chamar endpoint de backend, se existir
-        console.log('Logout realizado. Tokens removidos.');
+        // console.log('Logout realizado. Tokens removidos.');
     },
 
     /**

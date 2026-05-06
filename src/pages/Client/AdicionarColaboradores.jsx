@@ -82,7 +82,7 @@ export default function AdicionarColaboradores() {
           onClose={() => setOpenModal(false)}
           beneficios={beneficios}
           onSave={(data) => {
-            console.log("Colaborador cadastrado:", data)
+            // console.log("Colaborador cadastrado:", data)
             
           }}
         />

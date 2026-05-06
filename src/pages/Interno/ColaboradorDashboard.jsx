@@ -739,8 +739,8 @@ export default function ColaboradorDashboard() {
         entebenService.getUltimaImportacao(),
       ])
 
-      console.log('RAW FATURAMENTO:', response)
-      console.log('RAW ÚLTIMA IMPORTAÇÃO:', ultimaImportacao)
+      // console.log('RAW FATURAMENTO:', response)
+      // console.log('RAW ÚLTIMA IMPORTAÇÃO:', ultimaImportacao)
 
       const lista = Array.isArray(response)
         ? response

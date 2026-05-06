@@ -322,7 +322,7 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
         return
       }
 
-      console.log('PREVIEW FATURAMENTO ANTERIOR:', dadosCompletos)
+      // console.log('PREVIEW FATURAMENTO ANTERIOR:', dadosCompletos)
       setPreview(dadosCompletos)
     } catch (error) {
       console.error('Erro ao carregar última movimentação:', error)
@@ -413,7 +413,7 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
         condominios: getCondominios(preview),
       }
 
-      console.log('PAYLOAD FINAL PARA BACKEND:', payload)
+      // console.log('PAYLOAD FINAL PARA BACKEND:', payload)
 
       alert('Payload pronto para envio ao backend. Confira o console.')
     } catch (error) {
