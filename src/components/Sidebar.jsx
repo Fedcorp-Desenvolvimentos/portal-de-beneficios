@@ -11,7 +11,7 @@ const navConfig = {
     // { to: '/pendentes', label: 'Pendentes' },
     // { to: '/historico', label: 'Histórico' },
     // { to: '/relatorios', label: 'Relatórios' },
-    { to: '/configuracoes', label: 'Configurações' },
+    { to: '/gerenciamento', label: 'Gerenciamento' },
     // Temporariamente para acesso rápido
     { to: '/colaborador/dashboard', label: 'Dashboard Fedcorp' },
     // { to: '/colaborador/importacaoDocs', label: 'Importação Fedcorp' },
