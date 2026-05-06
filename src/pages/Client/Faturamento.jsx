@@ -4,7 +4,7 @@ import {
   Download,
   FileText,
   CalendarDays,
-  Receipt,
+ Receipt,
   Files,
 } from 'lucide-react'
 
@@ -27,6 +27,11 @@ const formatDateBR = (value) => {
   return `${day}/${month}/${year}`
 }
 
+const getDateOnly = (value) => {
+  if (!value) return ''
+  return String(value).split('T')[0]
+}
+
 const toArray = (value) => {
   if (Array.isArray(value)) return value
   if (Array.isArray(value?.results)) return value.results
@@ -35,75 +40,154 @@ const toArray = (value) => {
 }
 
 const getStatusLabel = (status) => {
+  const normalized = String(status || '').toLowerCase()
+
   const map = {
-    PENDING: 'Pendente',
-    PROCESSING: 'Processando',
-    COMPLETED: 'Concluído',
-    FAILED: 'Falhou',
+    pending: 'Pendente',
+    processing: 'Processando',
+    completed: 'Concluído',
+    failed: 'Falhou',
     sucesso: 'Concluído',
     processado: 'Concluído',
+    concluido: 'Concluído',
+    concluído: 'Concluído',
+    aguardando_faturamento: 'Aguardando faturamento',
   }
 
-  return map[status] || status || '—'
+  return map[normalized] || status || '—'
 }
 
 const getStatusClass = (status) => {
-  if (status === 'COMPLETED' || status === 'sucesso' || status === 'processado') {
+  const normalized = String(status || '').toLowerCase()
+
+  if (
+    normalized === 'completed' ||
+    normalized === 'sucesso' ||
+    normalized === 'processado' ||
+    normalized === 'concluido' ||
+    normalized === 'concluído'
+  ) {
     return 'success'
   }
 
-  if (status === 'FAILED') return 'danger'
-  if (status === 'PROCESSING') return 'warning'
+  if (normalized === 'failed') return 'danger'
+
+  if (
+    normalized === 'processing' ||
+    normalized === 'aguardando_faturamento'
+  ) {
+    return 'warning'
+  }
 
   return 'info'
+}
+
+const isStatusConcluido = (status) => {
+  const normalized = String(status || '').toLowerCase()
+
+  return [
+    'completed',
+    'sucesso',
+    'processado',
+    'concluido',
+    'concluído',
+  ].includes(normalized)
 }
 
 const getCompetencia = (item) => {
   if (item?.competencia) return formatDateBR(item.competencia)
 
+  if (item?.faturamento_competencia) {
+    return String(item.faturamento_competencia)
+  }
+
   if (item?.vigencia_inicio) {
     const [year, month] = String(item.vigencia_inicio).split('-')
-    if (year && month) return `${month}/${year}`
+
+    if (year && month) {
+      return `${month}/${year}`
+    }
   }
 
   return '—'
 }
 
 const getCondominiosImportacao = (item) => {
-  if (Array.isArray(item?.condominios)) return item.condominios
+  if (Array.isArray(item?.condominios)) {
+    return item.condominios
+  }
+
   if (Array.isArray(item?.dados_requisicao?.condominios)) {
     return item.dados_requisicao.condominios
   }
+
   return []
 }
 
 const getFuncionariosImportacao = (item) =>
   getCondominiosImportacao(item).flatMap((condo) =>
-    Array.isArray(condo?.funcionarios) ? condo.funcionarios : []
+    Array.isArray(condo?.funcionarios)
+      ? condo.funcionarios
+      : []
   )
 
 const getMovimentacoesImportacao = (item) =>
   getFuncionariosImportacao(item).flatMap((func) =>
-    Array.isArray(func?.movimentacoes) ? func.movimentacoes : []
+    Array.isArray(func?.movimentacoes)
+      ? func.movimentacoes
+      : []
   )
 
 const getValorTotal = (item) => {
-  const totalMovimentacoes = getMovimentacoesImportacao(item).reduce(
-    (sum, mov) => sum + Number(mov?.valor || 0),
-    0
-  )
+  const movimentacoesDiretas =
+    item?.movimentacoes_detalhada ||
+    item?.dados_requisicao?.movimentacoes_detalhada ||
+    item?.data_to_backend?.movimentacoes_detalhada ||
+    []
+
+  const totalMovimentacoesDiretas = Array.isArray(movimentacoesDiretas)
+    ? movimentacoesDiretas.reduce((sum, mov) => {
+        return (
+          sum +
+          Number(
+            mov?.valor_recarga_bene ||
+              mov?.valor_total ||
+              mov?.valor ||
+              0
+          )
+        )
+      }, 0)
+    : 0
+
+  const totalMovimentacoesAninhadas =
+    getMovimentacoesImportacao(item).reduce(
+      (sum, mov) =>
+        sum +
+        Number(
+          mov?.valor ||
+            mov?.valor_total ||
+            mov?.valor_recarga_bene ||
+            0
+        ),
+      0
+    )
 
   return Number(
-    totalMovimentacoes ||
+    totalMovimentacoesDiretas ||
+      totalMovimentacoesAninhadas ||
       item?.valor_total ||
       item?.total ||
       item?.valor_total_beneficios ||
       item?.summary?.valor_total_beneficios ||
+      item?.summary?.valor_total ||
       item?.dados_requisicao?.summary?.valor_total_beneficios ||
+      item?.dados_requisicao?.summary?.valor_total ||
       item?.dados_requisicao?.valor_total_beneficios ||
+      item?.dados_requisicao?.valor_total ||
       item?.dados_requisicao?.total ||
       item?.dados_requisicao?.total_geral ||
       item?.dados_requisicao?.resumo?.valor_total_beneficios ||
+      item?.dados_requisicao?.resumo?.valor_total ||
       item?.dados_requisicao?.resumo?.total ||
       0
   )
@@ -120,171 +204,302 @@ const getQuantidade = (item) =>
 
 export default function Faturamento() {
   const [search, setSearch] = useState('')
+
+  const [filtroStatus, setFiltroStatus] = useState('')
+  const [filtroCompetencia, setFiltroCompetencia] =
+    useState('')
+  const [filtroVigencia, setFiltroVigencia] =
+    useState('')
+  const [filtroVencimento, setFiltroVencimento] =
+    useState('')
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [importacoes, setImportacoes] = useState([])
+
+  const [paginaAtual, setPaginaAtual] = useState(1)
+
+  const itensPorPagina = 5
 
   useEffect(() => {
     carregarFaturamentos()
   }, [])
 
-async function carregarFaturamentos() {
-  try {
-    setLoading(true)
-    setError('')
+  useEffect(() => {
+    setPaginaAtual(1)
+  }, [
+    search,
+    filtroStatus,
+    filtroCompetencia,
+    filtroVigencia,
+    filtroVencimento,
+  ])
 
-    const [ultimaImportacao, historicoData] = await Promise.all([
-      entebenService.getUltimaImportacao(),
-      entebenService.getImportacoes(),
-    ])
-
-    const historico = toArray(historicoData)
-
-    const historicoComUltimaCompleta = historico.map((item, index) => {
-      const isPrimeira = index === 0
-
-      if (isPrimeira && ultimaImportacao) {
-        return {
-          ...item,
-          ...ultimaImportacao,
-          id: item.id || ultimaImportacao.id,
-          faturamento_id: item.faturamento_id || ultimaImportacao.faturamento_id,
-        }
-      }
-
-      return item
-    })
-
-    const comStatus = await Promise.all(
-      historicoComUltimaCompleta.map(async (item) => {
-        try {
-          const statusData = await entebenService.getFaturamentoStatus(item.id)
-
-          return {
-            ...item,
-            faturamento_status: statusData?.status || item.status,
-            faturamento_progresso: statusData?.progresso,
-            faturamento_competencia: statusData?.competencia,
-            criado_em: statusData?.criado_em,
-          }
-        } catch {
-          return {
-            ...item,
-            faturamento_status: item.status,
-          }
-        }
-      })
-    )
-
-    setImportacoes(comStatus)
-  } catch (err) {
-    console.error('Erro ao carregar faturamentos:', err)
-    setError('Não foi possível carregar os faturamentos.')
-  } finally {
-    setLoading(false)
-  }
-}
-
-  async function baixarDocumento(faturamentoId, tipo = '') {
+  async function carregarFaturamentos() {
     try {
-      const token = localStorage.getItem('accessToken')
+      setLoading(true)
+      setError('')
 
-      const baseUrl = 'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app/api'
+      const [ultimaImportacao, historicoData] =
+        await Promise.all([
+          entebenService.getUltimaImportacao(),
+          entebenService.getImportacoes(),
+        ])
+
+      const historico = toArray(historicoData)
+
+      const historicoComUltimaCompleta =
+        historico.map((item, index) => {
+          const isPrimeira = index === 0
+
+          if (isPrimeira && ultimaImportacao) {
+            return {
+              ...item,
+              ...ultimaImportacao,
+              id: item.id || ultimaImportacao.id,
+              faturamento_id:
+                item.faturamento_id ||
+                ultimaImportacao.faturamento_id,
+            }
+          }
+
+          return item
+        })
+
+      const comStatus = await Promise.all(
+        historicoComUltimaCompleta.map(async (item) => {
+          try {
+            const statusData =
+              await entebenService.getFaturamentoStatus(
+                item.id
+              )
+
+            return {
+              ...item,
+              faturamento_status:
+                statusData?.status || item.status,
+              faturamento_progresso:
+                statusData?.progresso,
+              faturamento_competencia:
+                statusData?.competencia,
+              criado_em: statusData?.criado_em,
+            }
+          } catch {
+            return {
+              ...item,
+              faturamento_status: item.status,
+            }
+          }
+        })
+      )
+
+      setImportacoes(comStatus)
+    } catch (err) {
+      console.error(
+        'Erro ao carregar faturamentos:',
+        err
+      )
+
+      setError(
+        'Não foi possível carregar os faturamentos.'
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function baixarDocumento(
+    faturamentoId,
+    tipo = ''
+  ) {
+    try {
+      const token =
+        localStorage.getItem('accessToken')
+
+      const baseUrl =
+        'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app/api'
+
       const url = `${baseUrl}/upload/faturamento/${faturamentoId}/download/${tipo}`
 
       const response = await fetch(url, {
         method: 'GET',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: token
+          ? { Authorization: `Bearer ${token}` }
+          : {},
       })
 
       if (!response.ok) {
-        console.error('Erro HTTP:', response.status, url)
-        throw new Error('Erro ao baixar documento')
+        throw new Error(
+          'Erro ao baixar documento'
+        )
       }
 
       const blob = await response.blob()
-      const fileURL = window.URL.createObjectURL(blob)
+
+      const fileURL =
+        window.URL.createObjectURL(blob)
 
       const nomeArquivo = tipo
-        ? `${tipo.replaceAll('/', '').replaceAll('-', '_')}-${faturamentoId}.pdf`
+        ? `${tipo
+            .replaceAll('/', '')
+            .replaceAll(
+              '-',
+              '_'
+            )}-${faturamentoId}.pdf`
         : `faturamento-${faturamentoId}.pdf`
 
       const a = document.createElement('a')
+
       a.href = fileURL
       a.download = nomeArquivo
+
       document.body.appendChild(a)
+
       a.click()
       a.remove()
 
       window.URL.revokeObjectURL(fileURL)
     } catch (err) {
-      console.error('Erro ao baixar documento:', err)
+      console.error(
+        'Erro ao baixar documento:',
+        err
+      )
+
       alert('Erro ao baixar documento.')
     }
   }
 
-  async function baixarExportacao() {
-    const token = localStorage.getItem('accessToken')
+  const opcoesStatus = useMemo(() => {
+    return [
+      ...new Set(
+        importacoes
+          .map(
+            (item) =>
+              item.faturamento_status ||
+              item.status
+          )
+          .filter(Boolean)
+      ),
+    ]
+  }, [importacoes])
 
-    const response = await fetch(
-      'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app/api/upload/faturamento/2/download/',
-      {
-        method: 'GET',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      }
+  const opcoesCompetencia = useMemo(() => {
+    return [
+      ...new Set(
+        importacoes
+          .map((item) =>
+            getCompetencia(item)
+          )
+          .filter(
+            (value) =>
+              value && value !== '—'
+          )
+      ),
+    ].sort((a, b) =>
+      String(b).localeCompare(String(a))
     )
+  }, [importacoes])
 
-    if (!response.ok) {
-      alert('Não foi possível baixar a exportação.')
-      return
-    }
+  const opcoesVigencia = useMemo(() => {
+    return [
+      ...new Set(
+        importacoes
+          .map((item) =>
+            getDateOnly(
+              item.vigencia_inicio
+            )
+          )
+          .filter(Boolean)
+      ),
+    ].sort((a, b) =>
+      String(b).localeCompare(String(a))
+    )
+  }, [importacoes])
 
-    const blob = await response.blob()
-    const url = window.URL.createObjectURL(blob)
-
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'faturamento.xlsx'
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-
-    window.URL.revokeObjectURL(url)
-  }
+  const opcoesVencimento = useMemo(() => {
+    return [
+      ...new Set(
+        importacoes
+          .map((item) =>
+            getDateOnly(
+              item.data_vencimento
+            )
+          )
+          .filter(Boolean)
+      ),
+    ].sort((a, b) =>
+      String(b).localeCompare(String(a))
+    )
+  }, [importacoes])
 
   const gruposFiltrados = useMemo(() => {
-    const query = search.trim().toLowerCase()
+    const query = search
+      .trim()
+      .toLowerCase()
 
     return importacoes
       .map((item) => {
-        const key = item.faturamento_id || item.faturamento?.id || item.id
+        const key =
+          item.faturamento_id ||
+          item.faturamento?.id ||
+          item.id
+
         const label = `Importação ${item.id}`
-        const status = item.faturamento_status || item.status
+
+        const status =
+          item.faturamento_status ||
+          item.status
+
         const total = getValorTotal(item)
-        const quantidadeBeneficios = getQuantidade(item)
+
+        const quantidadeBeneficios =
+          getQuantidade(item)
+
+        const dataImportacao = getDateOnly(
+          item.data_importacao
+        )
+
+        const dataVigenciaInicio =
+          getDateOnly(item.vigencia_inicio)
+
+        const dataVencimento = getDateOnly(
+          item.data_vencimento
+        )
+
+        const competencia =
+          getCompetencia(item)
 
         return {
           ...item,
           key,
           importacaoLabel: label,
-          importacaoDate: formatDateBR(item.data_importacao),
-          competencia: getCompetencia(item),
+          importacaoDate: formatDateBR(
+            item.data_importacao
+          ),
+          dataImportacao,
+          dataVigenciaInicio,
+          dataVencimento,
+          competencia,
           status,
           total,
           quantidadeBeneficios,
           beneficios: [
-            `Registros processados: ${item.registros_processados || 0}`,
-            `Vigência: ${formatDateBR(item.vigencia_inicio)} até ${formatDateBR(
+            `Registros processados: ${
+              item.registros_processados || 0
+            }`,
+            `Vigência: ${formatDateBR(
+              item.vigencia_inicio
+            )} até ${formatDateBR(
               item.vigencia_fim
             )}`,
-            `Vencimento: ${formatDateBR(item.data_vencimento)}`,
+            `Vencimento: ${formatDateBR(
+              item.data_vencimento
+            )}`,
           ],
         }
       })
       .filter((group) => {
-        if (!query) return true
-
-        return [
+        const textoBusca = [
           group.importacaoLabel,
           group.key,
           group.competencia,
@@ -294,154 +509,596 @@ async function carregarFaturamentos() {
         ]
           .join(' ')
           .toLowerCase()
-          .includes(query)
+
+        const matchSearch =
+          !query ||
+          textoBusca.includes(query)
+
+        const matchStatus =
+          !filtroStatus ||
+          String(
+            group.status || ''
+          ).toLowerCase() ===
+            String(
+              filtroStatus
+            ).toLowerCase()
+
+        const matchCompetencia =
+          !filtroCompetencia ||
+          group.competencia ===
+            filtroCompetencia
+
+        const matchVigencia =
+          !filtroVigencia ||
+          group.dataVigenciaInicio ===
+            filtroVigencia
+
+        const matchVencimento =
+          !filtroVencimento ||
+          group.dataVencimento ===
+            filtroVencimento
+
+        return (
+          matchSearch &&
+          matchStatus &&
+          matchCompetencia &&
+          matchVigencia &&
+          matchVencimento
+        )
       })
       .sort((a, b) =>
-        String(b.data_importacao || '').localeCompare(String(a.data_importacao || ''))
+        String(
+          b.data_importacao || ''
+        ).localeCompare(
+          String(
+            a.data_importacao || ''
+          )
+        )
       )
-  }, [importacoes, search])
+  }, [
+    importacoes,
+    search,
+    filtroStatus,
+    filtroCompetencia,
+    filtroVigencia,
+    filtroVencimento,
+  ])
+
+  const totalPaginas = Math.ceil(
+    gruposFiltrados.length /
+      itensPorPagina
+  )
+
+  const gruposPaginados = useMemo(() => {
+    const inicio =
+      (paginaAtual - 1) *
+      itensPorPagina
+
+    const fim =
+      inicio + itensPorPagina
+
+    return gruposFiltrados.slice(
+      inicio,
+      fim
+    )
+  }, [
+    gruposFiltrados,
+    paginaAtual,
+  ])
+
+  const limparFiltros = () => {
+    setSearch('')
+    setFiltroStatus('')
+    setFiltroCompetencia('')
+    setFiltroVigencia('')
+    setFiltroVencimento('')
+  }
 
   return (
     <div className="fatv2-page">
       <section className="fatv2-hero">
         <div>
-          <p className="fatv2-eyebrow">Faturamento</p>
-          <h1 className="fatv2-title">Documentos por importação</h1>
+          <p className="fatv2-eyebrow">
+            Faturamento
+          </p>
+
+          <h1 className="fatv2-title">
+            Documentos por importação
+          </h1>
+
           <p className="fatv2-subtitle">
-            Cada importação reúne os benefícios faturados e seus documentos vinculados.
+            Cada importação reúne os
+            benefícios faturados e
+            seus documentos vinculados.
           </p>
         </div>
-
-        {/* <button className="fatv2-btn fatv2-btn-primary" onClick={baixarExportacao}>
-          <Download size={14} />
-          Exportar faturamento
-        </button> */}
       </section>
 
       <section className="fatv2-toolbar">
         <div className="fatv2-search">
           <Search size={16} />
+
           <input
             type="text"
             placeholder="Buscar por importação, competência ou status..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
           />
         </div>
 
-        {/* <button className="fatv2-btn" onClick={carregarFaturamentos}>
-          Atualizar
-        </button> */}
+        <div className="fatv2-filters">
+          <label>
+            <span>Status</span>
+
+            <select
+              value={filtroStatus}
+              className='status'
+              onChange={(e) =>
+                setFiltroStatus(
+                  e.target.value
+                )
+              }
+            >
+              <option value="">
+                Todos
+              </option>
+
+              {opcoesStatus.map(
+                (status) => (
+                  <option
+                    key={status}
+                    value={status}
+                  >
+                    {getStatusLabel(
+                      status
+                    )}
+                  </option>
+                )
+              )}
+            </select>
+          </label>
+{/* 
+          <label>
+            <span>
+              Competência
+            </span>
+
+            <select
+              value={
+                filtroCompetencia
+              }
+              onChange={(e) =>
+                setFiltroCompetencia(
+                  e.target.value
+                )
+              }
+              className="comp"
+            >
+              <option value="">
+                Todas
+              </option>
+
+              {opcoesCompetencia.map(
+                (
+                  competencia
+                ) => (
+                  <option
+                    key={
+                      competencia
+                    }
+                    value={
+                      competencia
+                    }
+                  >
+                    {competencia}
+                  </option>
+                )
+              )}
+            </select>
+          </label> */}
+
+          <label>
+            <span>Vigência</span>
+
+            <select
+              value={filtroVigencia}
+              onChange={(e) =>
+                setFiltroVigencia(
+                  e.target.value
+                )
+              }
+              className="vig"
+            >
+              <option value="">
+                Todas
+              </option>
+
+              {opcoesVigencia.map(
+                (data) => (
+                  <option
+                    key={data}
+                    value={data}
+                  >
+                    {formatDateBR(
+                      data
+                    )}
+                  </option>
+                )
+              )}
+            </select>
+          </label>
+
+          <label>
+            <span>
+              Vencimento
+            </span>
+
+            <select
+              value={
+                filtroVencimento
+              }
+              onChange={(e) =>
+                setFiltroVencimento(
+                  e.target.value
+                )
+              }
+              className="venc"
+            >
+              <option value="">
+                Todos
+              </option>
+
+              {opcoesVencimento.map(
+                (data) => (
+                  <option
+                    key={data}
+                    value={data}
+                  >
+                    {formatDateBR(
+                      data
+                    )}
+                  </option>
+                )
+              )}
+            </select>
+          </label>
+
+          <button
+            type="button"
+            className="fatv2-btn fatv2-clear-btn"
+            onClick={limparFiltros}
+          >
+            Limpar filtros
+          </button>
+        </div>
       </section>
 
-      {error && <div className="fatv2-empty">{error}</div>}
+      {error && (
+        <div className="fatv2-empty">
+          {error}
+        </div>
+      )}
 
       {loading ? (
-        <div className="fatv2-empty">Carregando faturamentos...</div>
+        <div className="fatv2-empty">
+          Carregando faturamentos...
+        </div>
       ) : (
-        <section className="fatv2-list">
-          {gruposFiltrados.map((group) => (
-            <article key={group.key} className="fatv2-card">
-              <div className="fatv2-card-top">
-                <div className="fatv2-card-main">
-                  <div className="fatv2-icon">
-                    <FileText size={18} />
-                  </div>
-
-                  <div className="fatv2-main-text">
-                    <h2>{group.importacaoLabel}</h2>
-                    <p>ID/Faturamento: {group.key}</p>
-                  </div>
-                </div>
-
-                <div className="fatv2-summary">
-                  <div className="fatv2-summary-item">
-                    <span>
-                      <CalendarDays size={14} /> Importação
-                    </span>
-                    <strong>{group.importacaoDate}</strong>
-                  </div>
-
-                  <div className="fatv2-summary-item">
-                    <span>
-                      <Download size={14} /> Competência
-                    </span>
-                    <strong>{group.competencia}</strong>
-                  </div>
-
-                  <div className="fatv2-summary-item">
-                    <span>
-                      <Files size={14} /> Registros
-                    </span>
-                    <strong>{group.quantidadeBeneficios}</strong>
-                  </div>
-
-                  <div className="fatv2-summary-item">
-                    <span>
-                      <Receipt size={14} /> Total
-                    </span>
-                    <strong>R$ {formatMoney(group.total)}</strong>
-                  </div>
-                </div>
+        <>
+          <section className="fatv2-list">
+            {gruposPaginados.length ===
+            0 ? (
+              <div className="fatv2-empty">
+                Nenhum faturamento
+                encontrado para os
+                filtros selecionados.
               </div>
+            ) : (
+              gruposPaginados.map(
+                (group) => {
+                  const podeBaixar =
+                    isStatusConcluido(
+                      group.status
+                    )
 
-              <div className="fatv2-card-body">
-                <div className="fatv2-benefits">
-                  <span className="fatv2-label">Resumo</span>
+                  return (
+                    <article
+                      key={group.key}
+                      className="fatv2-card"
+                    >
+                      <div className="fatv2-card-top">
+                        <div className="fatv2-card-main">
+                          <div className="fatv2-icon">
+                            <FileText
+                              size={
+                                18
+                              }
+                            />
+                          </div>
 
-                  <div className="fatv2-benefit-tags">
-                    <span className={`fatv2-tag ${getStatusClass(group.status)}`}>
-                      {getStatusLabel(group.status)}
-                      {group.faturamento_progresso != null
-                        ? ` - ${group.faturamento_progresso}%`
-                        : ''}
-                    </span>
+                          <div className="fatv2-main-text">
+                            <h2>
+                              {
+                                group.importacaoLabel
+                              }
+                            </h2>
 
-                    {group.beneficios.map((beneficio, index) => (
-                      <span key={`${beneficio}-${index}`} className="fatv2-tag">
-                        {beneficio}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                            <p>
+                              ID/Faturamento:{' '}
+                              {
+                                group.key
+                              }
+                            </p>
+                          </div>
+                        </div>
 
-                <div className="fatv2-docs">
-                  <button
-                    className="fatv2-btn"
-                    onClick={() => baixarDocumento(group.key, 'boletos/')}
-                  >
-                    <Download size={14} />
-                    Boleto
-                  </button>
+                        <div className="fatv2-summary">
+                          <div className="fatv2-summary-item">
+                            <span>
+                              <CalendarDays
+                                size={
+                                  14
+                                }
+                              />{' '}
+                              Importação
+                            </span>
 
-                  <button
-                    className="fatv2-btn"
-                    onClick={() => baixarDocumento(group.key, 'notas-fiscais/')}
-                  >
-                    <Download size={14} />
-                    NF
-                  </button>
+                            <strong>
+                              {
+                                group.importacaoDate
+                              }
+                            </strong>
+                          </div>
 
-                  <button
-                    className="fatv2-btn"
-                    onClick={() => baixarDocumento(group.key, 'notas-debito/')}
-                  >
-                    <Download size={14} />
-                    Nota Débito
-                  </button>
+                          <div className="fatv2-summary-item">
+                            <span>
+                              <Download
+                                size={
+                                  14
+                                }
+                              />{' '}
+                              Competência
+                            </span>
 
-                  <button
-                    className="fatv2-btn fatv2-btn-primary"
-                    onClick={() => baixarDocumento(group.key)}
-                  >
-                    <Download size={14} />
-                    Baixar todos
-                  </button>
-                </div>
-              </div>
-            </article>
-          ))}
-        </section>
+                            <strong>
+                              {
+                                group.competencia
+                              }
+                            </strong>
+                          </div>
+
+                          <div className="fatv2-summary-item">
+                            <span>
+                              <Files
+                                size={
+                                  14
+                                }
+                              />{' '}
+                              Registros
+                            </span>
+
+                            <strong>
+                              {
+                                group.quantidadeBeneficios
+                              }
+                            </strong>
+                          </div>
+
+                          <div className="fatv2-summary-item">
+                            <span>
+                              <Receipt
+                                size={
+                                  14
+                                }
+                              />{' '}
+                              Total
+                            </span>
+
+                            <strong>
+                              R${' '}
+                              {formatMoney(
+                                group.total
+                              )}
+                            </strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="fatv2-card-body">
+                        <div className="fatv2-benefits">
+                          <span className="fatv2-label">
+                            Resumo
+                          </span>
+
+                          <div className="fatv2-benefit-tags">
+                            <span
+                              className={`fatv2-tag ${getStatusClass(
+                                group.status
+                              )}`}
+                            >
+                              {getStatusLabel(
+                                group.status
+                              )}
+
+                              {group.faturamento_progresso !=
+                              null
+                                ? ` - ${group.faturamento_progresso}%`
+                                : ''}
+                            </span>
+
+                            {group.beneficios.map(
+                              (
+                                beneficio,
+                                index
+                              ) => (
+                                <span
+                                  key={`${beneficio}-${index}`}
+                                  className="fatv2-tag"
+                                >
+                                  {
+                                    beneficio
+                                  }
+                                </span>
+                              )
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="fatv2-docs">
+                          <button
+                            className="fatv2-btn"
+                            disabled={
+                              !podeBaixar
+                            }
+                            title={
+                              !podeBaixar
+                                ? 'Documento disponível apenas quando o faturamento estiver concluído'
+                                : ''
+                            }
+                            onClick={() =>
+                              baixarDocumento(
+                                group.key,
+                                'boletos/'
+                              )
+                            }
+                          >
+                            <Download
+                              size={
+                                14
+                              }
+                            />
+                            Boleto
+                          </button>
+
+                          <button
+                            className="fatv2-btn"
+                            disabled={
+                              !podeBaixar
+                            }
+                            title={
+                              !podeBaixar
+                                ? 'Documento disponível apenas quando o faturamento estiver concluído'
+                                : ''
+                            }
+                            onClick={() =>
+                              baixarDocumento(
+                                group.key,
+                                'notas-fiscais/'
+                              )
+                            }
+                          >
+                            <Download
+                              size={
+                                14
+                              }
+                            />
+                            NF
+                          </button>
+
+                          <button
+                            className="fatv2-btn"
+                            disabled={
+                              !podeBaixar
+                            }
+                            title={
+                              !podeBaixar
+                                ? 'Documento disponível apenas quando o faturamento estiver concluído'
+                                : ''
+                            }
+                            onClick={() =>
+                              baixarDocumento(
+                                group.key,
+                                'notas-debito/'
+                              )
+                            }
+                          >
+                            <Download
+                              size={
+                                14
+                              }
+                            />
+                            Nota
+                            Débito
+                          </button>
+
+                          <button
+                            className="fatv2-btn fatv2-btn-primary"
+                            disabled={
+                              !podeBaixar
+                            }
+                            title={
+                              !podeBaixar
+                                ? 'Documento disponível apenas quando o faturamento estiver concluído'
+                                : ''
+                            }
+                            onClick={() =>
+                              baixarDocumento(
+                                group.key
+                              )
+                            }
+                          >
+                            <Download
+                              size={
+                                14
+                              }
+                            />
+                            Baixar
+                            todos
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  )
+                }
+              )
+            )}
+          </section>
+
+          {totalPaginas > 1 && (
+            <div className="fatv2-pagination">
+              <button
+                type="button"
+                className="fatv2-btn"
+                disabled={
+                  paginaAtual === 1
+                }
+                onClick={() =>
+                  setPaginaAtual(
+                    (prev) =>
+                      prev - 1
+                  )
+                }
+              >
+                Anterior
+              </button>
+
+              <span>
+                Página{' '}
+                {paginaAtual} de{' '}
+                {totalPaginas}
+              </span>
+
+              <button
+                type="button"
+                className="fatv2-btn"
+                disabled={
+                  paginaAtual ===
+                  totalPaginas
+                }
+                onClick={() =>
+                  setPaginaAtual(
+                    (prev) =>
+                      prev + 1
+                  )
+                }
+              >
+                Próxima
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

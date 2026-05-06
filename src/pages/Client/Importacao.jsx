@@ -214,17 +214,20 @@ function buildBenefitsIndexes(movimentacoes = []) {
       if (!byCondominioNomeCpf.has(keyCondominioNomeCpf)) {
         byCondominioNomeCpf.set(keyCondominioNomeCpf, [])
       }
+
       byCondominioNomeCpf.get(keyCondominioNomeCpf).push(beneficio)
 
       if (!byNomeCpf.has(keyNomeCpf)) {
         byNomeCpf.set(keyNomeCpf, [])
       }
+
       byNomeCpf.get(keyNomeCpf).push(beneficio)
     }
 
     if (!byCondominioNome.has(keyCondominioNome)) {
       byCondominioNome.set(keyCondominioNome, [])
     }
+
     byCondominioNome.get(keyCondominioNome).push(beneficio)
   })
 
@@ -306,9 +309,7 @@ function buildPreviewRowsFromMovimentacoes(movimentacoes = []) {
     const nome = getNomeColaborador(item)
     const condominio = getCondominio(item)
     const cpf = getCpf(item)
-    const key = cpf
-      ? `${condominio}::${nome}::${cpf}`
-      : `${condominio}::${nome}`
+    const key = cpf ? `${condominio}::${nome}::${cpf}` : `${condominio}::${nome}`
 
     const valor = getValorRow(item)
     const quantidadeDias = getQuantidadeDias(item)
@@ -410,14 +411,15 @@ export default function Importacao() {
     excluidosPorColab: new Set(),
   })
 
-  const [editingIndex, setEditingIndex] = useState(null)
-  const [editValue, setEditValue] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [mostrarSomenteAcima2500, setMostrarSomenteAcima2500] = useState(false)
 
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [detailsTitle, setDetailsTitle] = useState('')
   const [detailsBenefits, setDetailsBenefits] = useState([])
+  const [detailsRowKey, setDetailsRowKey] = useState(null)
+  const [editingBenefitIndex, setEditingBenefitIndex] = useState(null)
+  const [editBenefitValue, setEditBenefitValue] = useState('')
 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [colaboradorParaExcluir, setColaboradorParaExcluir] = useState(null)
@@ -445,14 +447,11 @@ export default function Importacao() {
   async function handleResult({ file }) {
     try {
       const response = await uploadService.uploadFile(file)
-      console.log('UPLOAD RESPONSE:', response)
 
       const id = 'IMP-' + (response?.file_upload_id || Date.now())
       const tipo = file.name.toLowerCase().includes('fat') ? 'faturamento' : 'compra'
 
       const movimentacoes = getMovimentacoesBackend(response)
-
-      console.log('movimentacoes_detalhada:', movimentacoes)
 
       const previewRowsBackend =
         response?.summary?.total_por_beneficiario ||
@@ -462,19 +461,14 @@ export default function Importacao() {
         response?.preview ||
         []
 
-      console.log('previewRowsBackend:', previewRowsBackend)
-
       const previewRows =
         Array.isArray(previewRowsBackend) && previewRowsBackend.length > 0
           ? previewRowsBackend
           : Array.isArray(movimentacoes) && movimentacoes.length > 0
-          ? buildPreviewRowsFromMovimentacoes(movimentacoes)
-          : []
-
-      console.log('previewRows final:', previewRows)
+            ? buildPreviewRowsFromMovimentacoes(movimentacoes)
+            : []
 
       const parsed = enrichRowsWithBenefits(previewRows, movimentacoes)
-      console.log('parsed rows:', parsed)
 
       const errosImportacao =
         response?.errors ||
@@ -488,9 +482,8 @@ export default function Importacao() {
       const semPreview = !Array.isArray(parsed) || parsed.length === 0
 
       if (semPreview) {
-        console.warn('Importação sem preview. Possíveis erros:', errosImportacao)
-
         setData(response)
+
         setLote({
           id: null,
           arquivo: null,
@@ -499,15 +492,17 @@ export default function Importacao() {
           excluidosPorColab: new Set(),
         })
 
-        setEditingIndex(null)
-        setEditValue('')
         setDetailsOpen(false)
         setDetailsTitle('')
         setDetailsBenefits([])
+        setDetailsRowKey(null)
+        setEditingBenefitIndex(null)
+        setEditBenefitValue('')
         setConfirmDeleteOpen(false)
         setColaboradorParaExcluir(null)
         setReviewOpen(false)
         setMostrarSomenteAcima2500(false)
+
         setReviewData({
           totalFuncionarios: 0,
           totalMovimentacoes: 0,
@@ -553,15 +548,17 @@ export default function Importacao() {
         excluidosPorColab: new Set(),
       })
 
-      setEditingIndex(null)
-      setEditValue('')
       setDetailsOpen(false)
       setDetailsTitle('')
       setDetailsBenefits([])
+      setDetailsRowKey(null)
+      setEditingBenefitIndex(null)
+      setEditBenefitValue('')
       setConfirmDeleteOpen(false)
       setColaboradorParaExcluir(null)
       setReviewOpen(false)
       setMostrarSomenteAcima2500(false)
+
       setReviewData({
         totalFuncionarios: 0,
         totalMovimentacoes: 0,
@@ -584,7 +581,6 @@ export default function Importacao() {
         : 'Erro desconhecido na comunicação com o servidor.'
 
       console.error('Erro no processamento da importação:', error)
-
       toast.error(errorMessage)
 
       return {
@@ -649,12 +645,6 @@ export default function Importacao() {
     novo.add(colaboradorKey)
 
     setLote((prev) => ({ ...prev, excluidosPorColab: novo }))
-
-    if (editingIndex !== null) {
-      setEditingIndex(null)
-      setEditValue('')
-    }
-
     setConfirmDeleteOpen(false)
     setColaboradorParaExcluir(null)
   }
@@ -662,47 +652,6 @@ export default function Importacao() {
   const cancelarExclusaoColaborador = () => {
     setConfirmDeleteOpen(false)
     setColaboradorParaExcluir(null)
-  }
-
-  const iniciarEdicao = (row, valorAtual) => {
-    setEditingIndex(getRowKey(row))
-    setEditValue(String(valorAtual).replace(',', '.'))
-  }
-
-  const salvarEdicao = (row) => {
-    const v = Number(editValue)
-
-    if (Number.isNaN(v) || v <= 0) return
-
-    const linhaKey = getRowKey(row)
-    const originalIndex = lote.rows.findIndex((r) => getRowKey(r) === linhaKey)
-
-    if (originalIndex >= 0) {
-      const clone = [...lote.rows]
-
-      const valorKey = Object.prototype.hasOwnProperty.call(clone[originalIndex], 'valor_total')
-        ? 'valor_total'
-        : Object.prototype.hasOwnProperty.call(clone[originalIndex], 'valor_recarga_bene')
-        ? 'valor_recarga_bene'
-        : 'valor'
-
-      clone[originalIndex] = {
-        ...clone[originalIndex],
-        [valorKey]: v,
-      }
-
-      setLote((prev) => ({ ...prev, rows: clone }))
-    } else {
-      console.error('Linha original não encontrada para edição.')
-    }
-
-    setEditingIndex(null)
-    setEditValue('')
-  }
-
-  const cancelarEdicao = () => {
-    setEditingIndex(null)
-    setEditValue('')
   }
 
   const limparLote = () => {
@@ -723,16 +672,18 @@ export default function Importacao() {
     })
 
     setModalOpen(false)
-    setEditingIndex(null)
-    setEditValue('')
     setData(null)
     setDetailsOpen(false)
     setDetailsTitle('')
     setDetailsBenefits([])
+    setDetailsRowKey(null)
+    setEditingBenefitIndex(null)
+    setEditBenefitValue('')
     setConfirmDeleteOpen(false)
     setColaboradorParaExcluir(null)
     setReviewOpen(false)
     setMostrarSomenteAcima2500(false)
+
     setReviewData({
       totalFuncionarios: 0,
       totalMovimentacoes: 0,
@@ -750,7 +701,72 @@ export default function Importacao() {
   const abrirDetalhes = (row) => {
     setDetailsTitle(getNomeColaborador(row))
     setDetailsBenefits(row?.beneficios || [])
+    setDetailsRowKey(getRowKey(row))
+    setEditingBenefitIndex(null)
+    setEditBenefitValue('')
     setDetailsOpen(true)
+  }
+
+  const iniciarEdicaoBeneficio = (index, valorAtual) => {
+    setEditingBenefitIndex(index)
+    setEditBenefitValue(String(valorAtual || '').replace(',', '.'))
+  }
+
+  const cancelarEdicaoBeneficio = () => {
+    setEditingBenefitIndex(null)
+    setEditBenefitValue('')
+  }
+
+  const salvarEdicaoBeneficio = (beneficioIndex) => {
+    const novoValor = Number(editBenefitValue)
+
+    if (Number.isNaN(novoValor) || novoValor <= 0) {
+      toast.warning('Informe um valor válido para o benefício.')
+      return
+    }
+
+    const originalIndex = lote.rows.findIndex((row) => getRowKey(row) === detailsRowKey)
+
+    if (originalIndex < 0) {
+      toast.error('Não foi possível localizar o colaborador para edição.')
+      return
+    }
+
+    const clone = [...lote.rows]
+    const rowAtual = clone[originalIndex]
+    const beneficiosAtualizados = [...(rowAtual.beneficios || [])]
+
+    beneficiosAtualizados[beneficioIndex] = {
+      ...beneficiosAtualizados[beneficioIndex],
+      valor: novoValor,
+    }
+
+    const novoTotal = beneficiosAtualizados.reduce((total, item) => {
+      return total + Number(item?.valor || 0)
+    }, 0)
+
+    const valorKey = Object.prototype.hasOwnProperty.call(rowAtual, 'valor_total')
+      ? 'valor_total'
+      : Object.prototype.hasOwnProperty.call(rowAtual, 'valor_recarga_bene')
+        ? 'valor_recarga_bene'
+        : 'valor'
+
+    clone[originalIndex] = {
+      ...rowAtual,
+      beneficios: beneficiosAtualizados,
+      [valorKey]: novoTotal,
+    }
+
+    setLote((prev) => ({
+      ...prev,
+      rows: clone,
+    }))
+
+    setDetailsBenefits(beneficiosAtualizados)
+    setEditingBenefitIndex(null)
+    setEditBenefitValue('')
+
+    toast.success('Benefício atualizado com sucesso.')
   }
 
   const abrirModalRevisao = (e) => {
@@ -770,9 +786,7 @@ export default function Importacao() {
         const nome = getNomeColaborador(item)
         const condominio = getCondominio(item)
         const cpf = getCpf(item)
-        const chave = cpf
-          ? `${nome}::${condominio}::${cpf}`
-          : `${nome}::${condominio}`
+        const chave = cpf ? `${nome}::${condominio}::${cpf}` : `${nome}::${condominio}`
 
         return [
           chave,
@@ -796,10 +810,7 @@ export default function Importacao() {
         const condominio = item.condominio || item.nome_condominio || ''
         const cpf = String(item.cpf || item.cpf_func || item.cpf_funcionario || '').trim()
 
-        const chaveComCpf = cpf
-          ? `${nome}::${condominio}::${cpf}`
-          : `${nome}::${condominio}`
-
+        const chaveComCpf = cpf ? `${nome}::${condominio}::${cpf}` : `${nome}::${condominio}`
         const chaveSemCpf = `${nome}::${condominio}`
 
         const previewItem = previewMap.get(chaveComCpf) || previewMap.get(chaveSemCpf)
@@ -897,9 +908,7 @@ export default function Importacao() {
         const nome = getNomeColaborador(item)
         const condominio = getCondominio(item)
         const cpf = getCpf(item)
-        const chave = cpf
-          ? `${nome}::${condominio}::${cpf}`
-          : `${nome}::${condominio}`
+        const chave = cpf ? `${nome}::${condominio}::${cpf}` : `${nome}::${condominio}`
 
         return [
           chave,
@@ -916,10 +925,6 @@ export default function Importacao() {
 
     const vencimentoFormatado = formatDateToBackend(formEnvio.vencimento)
 
-    console.log('formEnvio.vencimento:', formEnvio.vencimento)
-    console.log('vencimentoFormatado:', vencimentoFormatado)
-    console.log('PRIMEIRA MOVIMENTACAO ORIGINAL:', listaOriginal?.[0])
-
     if (!vencimentoFormatado) {
       toast.warning('Preencha um vencimento válido antes de continuar.')
       return
@@ -935,10 +940,7 @@ export default function Importacao() {
         const condominio = item.condominio || item.nome_condominio || ''
         const cpf = String(item.cpf || item.cpf_func || item.cpf_funcionario || '').trim()
 
-        const chaveComCpf = cpf
-          ? `${nome}::${condominio}::${cpf}`
-          : `${nome}::${condominio}`
-
+        const chaveComCpf = cpf ? `${nome}::${condominio}::${cpf}` : `${nome}::${condominio}`
         const chaveSemCpf = `${nome}::${condominio}`
 
         const previewItem = previewMap.get(chaveComCpf) || previewMap.get(chaveSemCpf)
@@ -1009,15 +1011,8 @@ export default function Importacao() {
     dataParaEnvio.data_to_backend.tipo_processamento = lote.tipo
     dataParaEnvio.data_to_backend.origem = 'importacao_faturamento'
 
-    console.log('PAYLOAD FINAL ENVIO:', dataParaEnvio.data_to_backend)
-    console.log(
-      'PRIMEIRA MOVIMENTACAO FINAL:',
-      dataParaEnvio.data_to_backend.movimentacoes_detalhada?.[0]
-    )
-
     try {
       const responseEnvio = await uploadService.confirmUpload(dataParaEnvio.data_to_backend)
-      console.log('Envio concluído:', responseEnvio)
       toast.success(responseEnvio?.detail || responseEnvio?.message || 'Lote enviado com sucesso!')
       setReviewOpen(false)
       setModalOpen(false)
@@ -1031,8 +1026,18 @@ export default function Importacao() {
     }
   }
 
-  const totalCompras = rowsAtivas.length
-  const totalFaturamento = rowsAtivas.length
+  const totalCompras = useMemo(() => {
+    return rowsAtivas.reduce((total, row) => {
+      const quantidadeBeneficios = row?.beneficios?.length || 0
+      return total + quantidadeBeneficios
+    }, 0)
+  }, [rowsAtivas])
+
+  const totalFaturamento = useMemo(() => {
+    return rowsAtivas.reduce((total, row) => {
+      return total + getValorRow(row)
+    }, 0)
+  }, [rowsAtivas])
 
   return (
     <div className="importacao-container">
@@ -1046,7 +1051,7 @@ export default function Importacao() {
 
         <div className="importacao-card faturamento">
           <h3>Faturamento dos Benefícios</h3>
-          <p className="valor">{totalFaturamento}</p>
+          <p className="valor">{formatCurrency(totalFaturamento)}</p>
         </div>
       </div>
 
@@ -1091,13 +1096,6 @@ export default function Importacao() {
                 }
               }}
               disabled={totalBloqueios === 0}
-              title={
-                totalBloqueios > 0
-                  ? mostrarSomenteAcima2500
-                    ? 'Mostrar todos os registros'
-                    : 'Filtrar registros bloqueados'
-                  : 'Nenhum registro bloqueado'
-              }
             >
               <span className="kpi-label">
                 {mostrarSomenteAcima2500
@@ -1129,7 +1127,6 @@ export default function Importacao() {
                   </tr>
                 ) : (
                   linhasExibidas.map((r, idx) => {
-                    const isEditing = editingIndex === getRowKey(r)
                     const valorExibicao = getValorRow(r)
                     const nomeColaborador = getNomeColaborador(r)
 
@@ -1142,27 +1139,10 @@ export default function Importacao() {
                         <td>{nomeColaborador}</td>
 
                         <td className="col-valor">
-                          {!isEditing ? (
-                            <>
-                              R${' '}
-                              {Number(valorExibicao).toLocaleString('pt-BR', {
-                                minimumFractionDigits: 2,
-                              })}
-                            </>
-                          ) : (
-                            <div className="edit-inline">
-                              <span>R$</span>
-                              <input
-                                className="input-valor"
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                autoFocus
-                              />
-                            </div>
-                          )}
+                          R${' '}
+                          {Number(valorExibicao).toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                          })}
                         </td>
 
                         <td className="col-status">
@@ -1186,63 +1166,27 @@ export default function Importacao() {
                         </td>
 
                         <td className="col-acoes">
-                          {!isEditing ? (
-                            <div className="acoes-inline">
-                              <button
-                                className="btn-sm btn-outline btn-icon"
-                                title={`Detalhes de ${nomeColaborador}`}
-                                onClick={() => abrirDetalhes(r)}
-                                type="button"
-                              >
-                                <Eye size={16} />
-                                <span className="btn-text">Detalhes</span>
-                              </button>
+                          <div className="acoes-inline">
+                            <button
+                              className="btn-sm btn-outline btn-icon"
+                              title={`Detalhes de ${nomeColaborador}`}
+                              onClick={() => abrirDetalhes(r)}
+                              type="button"
+                            >
+                              <Eye size={16} />
+                              <span className="btn-text">Detalhes</span>
+                            </button>
 
-                              {r.bloqueado && (
-                                <button
-                                  className="btn-sm btn-outline btn-icon"
-                                  title="Editar valor"
-                                  onClick={() => iniciarEdicao(r, valorExibicao)}
-                                  type="button"
-                                >
-                                  <PencilLine size={16} />
-                                  <span className="btn-text">Editar</span>
-                                </button>
-                              )}
-
-                              <button
-                                className="btn-sm btn-outline btn-icon danger"
-                                title={`Excluir colaborador ${nomeColaborador}`}
-                                onClick={() => abrirConfirmacaoExclusao(r)}
-                                type="button"
-                              >
-                                <Trash2 size={16} />
-                                <span className="btn-text">Excluir</span>
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="edit-actions">
-                              <button
-                                className="btn-sm btn-primary btn-icon"
-                                title="Salvar"
-                                onClick={() => salvarEdicao(r)}
-                                type="button"
-                              >
-                                <Check size={16} />
-                                <span className="btn-text">Salvar</span>
-                              </button>
-
-                              <button
-                                className="btn-sm btn-ghost btn-icon"
-                                title="Cancelar"
-                                onClick={cancelarEdicao}
-                                type="button"
-                              >
-                                <XIcon size={16} />
-                                <span className="btn-text">Cancelar</span>
-                              </button>
-                            </div>
-                          )}
+                            <button
+                              className="btn-sm btn-outline btn-icon danger"
+                              title={`Excluir colaborador ${nomeColaborador}`}
+                              onClick={() => abrirConfirmacaoExclusao(r)}
+                              type="button"
+                            >
+                              <Trash2 size={16} />
+                              <span className="btn-text">Excluir</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )
@@ -1311,6 +1255,7 @@ export default function Importacao() {
                 <option value="" disabled>
                   Selecione o mês
                 </option>
+
                 {MESES.map((m) => (
                   <option key={m.value} value={m.value}>
                     {m.label}
@@ -1410,11 +1355,15 @@ export default function Importacao() {
 
           <div className="review-details">
             <div>
-              <strong>Período:</strong> {formatDateBR(reviewData.periodoInicio)} até {formatDateBR(reviewData.periodoFim)}
+              <strong>Período:</strong> {formatDateBR(reviewData.periodoInicio)} até{' '}
+              {formatDateBR(reviewData.periodoFim)}
             </div>
+
             <div>
-              <strong>Competência:</strong> {formatCompetenciaBR(reviewData.competenciaMes, reviewData.competenciaAno)}
+              <strong>Competência:</strong>{' '}
+              {formatCompetenciaBR(reviewData.competenciaMes, reviewData.competenciaAno)}
             </div>
+
             <div>
               <strong>Vencimento:</strong> {formatDateBR(reviewData.vencimento)}
             </div>
@@ -1442,7 +1391,11 @@ export default function Importacao() {
       <Modal
         open={detailsOpen}
         title={`Benefícios - ${detailsTitle}`}
-        onClose={() => setDetailsOpen(false)}
+        onClose={() => {
+          setDetailsOpen(false)
+          setEditingBenefitIndex(null)
+          setEditBenefitValue('')
+        }}
       >
         <div className="details-benefits-list">
           {detailsBenefits.length === 0 ? (
@@ -1450,23 +1403,76 @@ export default function Importacao() {
               Nenhum benefício encontrado para este colaborador.
             </div>
           ) : (
-            detailsBenefits.map((beneficio, index) => (
-              <div
-                key={`${beneficio.codigo}-${beneficio.nome}-${index}`}
-                className="details-benefit-card"
-              >
-                <div className="details-benefit-info">
-                  <strong className="details-benefit-name">{beneficio.nome}</strong>
-                  {beneficio.codigo && (
-                    <span className="details-benefit-code">Código: {beneficio.codigo}</span>
-                  )}
-                </div>
+            detailsBenefits.map((beneficio, index) => {
+              const isEditingBenefit = editingBenefitIndex === index
 
-                <div className="details-benefit-value">
-                  {formatCurrency(beneficio.valor)}
+              return (
+                <div
+                  key={`${beneficio.codigo}-${beneficio.nome}-${index}`}
+                  className="details-benefit-card"
+                >
+                  <div className="details-benefit-info">
+                    <strong className="details-benefit-name">{beneficio.nome}</strong>
+
+                    {beneficio.codigo && (
+                      <span className="details-benefit-code">
+                        Código: {beneficio.codigo}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="details-benefit-value">
+                    {!isEditingBenefit ? (
+                      <>
+                        <span>{formatCurrency(beneficio.valor)}</span>
+
+                        <button
+                          type="button"
+                          className="btn-sm btn-outline btn-icon"
+                          onClick={() => iniciarEdicaoBeneficio(index, beneficio.valor)}
+                          title="Editar benefício"
+                        >
+                          <PencilLine size={15} />
+                          <span className="btn-text">Editar</span>
+                        </button>
+                      </>
+                    ) : (
+                      <div className="edit-inline">
+                        <span>R$</span>
+
+                        <input
+                          className="input-valor"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={editBenefitValue}
+                          onChange={(e) => setEditBenefitValue(e.target.value)}
+                          autoFocus
+                        />
+
+                        <button
+                          type="button"
+                          className="btn-sm btn-primary btn-icon"
+                          onClick={() => salvarEdicaoBeneficio(index)}
+                          title="Salvar"
+                        >
+                          <Check size={15} />
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn-sm btn-ghost btn-icon"
+                          onClick={cancelarEdicaoBeneficio}
+                          title="Cancelar"
+                        >
+                          <XIcon size={15} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
       </Modal>
