@@ -229,6 +229,7 @@ const statusLabel = {
   cancelado: 'Cancelado',
 }
 
+// Alterando status - switch (para classes CSS e labels)
 const getStatusClass = (status) => {
   if (status === 'faturado') return 'faturado'
   if (status === 'cancelado') return 'cancelado'
@@ -881,31 +882,40 @@ export default function ColaboradorDashboard() {
     }
   }
 
-  function handleChangeStatus(pedido, newStatus) {
+  async function handleChangeStatus(pedido, newStatus) {
     if (newStatus === 'cancelado') {
       openCancelModal(pedido)
       return
     }
 
-    setPedidos((prev) =>
-      prev.map((item) =>
-        item.id === pedido.id
-          ? {
-              ...item,
-              status: newStatus,
-              ...(newStatus !== 'cancelado'
-                ? { motivoCancelamento: '', canceladoEm: null }
-                : {}),
-            }
-          : item
+    try {
+      const response = await faturamentoService.alterarStatusPedido(pedido.id, newStatus)
+      
+      // Atualiza o estado local
+      setPedidos((prev) =>
+        prev.map((item) =>
+          item.id === pedido.id
+            ? {
+                ...item,
+                status: newStatus,
+              }
+            : item
+        )
       )
-    )
 
-    pushToast({
-      type: 'info',
-      title: 'Status atualizado',
-      message: `Pedido ${pedido.id} alterado para "${statusLabel[newStatus]}".`,
-    })
+      pushToast({
+        type: 'success',
+        title: 'Status atualizado',
+        message: `Pedido ${pedido.id} alterado para "${statusLabel[newStatus]}".`,
+      })
+    } catch (error) {
+      console.error('Erro ao alterar status:', error)
+      pushToast({
+        type: 'error',
+        title: 'Falha ao alterar status',
+        message: error?.message || 'Não foi possível alterar o status do pedido.',
+      })
+    }
   }
 
   function openImport(pedido) {
@@ -1106,7 +1116,7 @@ export default function ColaboradorDashboard() {
     setCancelPedido(null)
   }
 
-  function handleCancelBilling() {
+  async function handleCancelBilling() {
     const motivo = cancelReason.trim()
 
     if (!motivo) {
@@ -1114,29 +1124,44 @@ export default function ColaboradorDashboard() {
       return
     }
 
-    setPedidos((prev) =>
-      prev.map((item) =>
-        item.id === cancelPedido?.id
-          ? {
-              ...item,
-              status: 'cancelado',
-              motivoCancelamento: motivo,
-              canceladoEm: new Date().toLocaleDateString('pt-BR'),
-            }
-          : item
+    try {
+      const response = await faturamentoService.alterarStatusPedido(
+        cancelPedido?.id,
+        'cancelado',
+        motivo
       )
-    )
 
-    pushToast({
-      type: 'warning',
-      title: 'Faturamento cancelado',
-      message: `O pedido ${cancelPedido?.id} foi marcado como cancelado.`,
-      duration: 5000,
-    })
+      setPedidos((prev) =>
+        prev.map((item) =>
+          item.id === cancelPedido?.id
+            ? {
+                ...item,
+                status: 'cancelado',
+                motivoCancelamento: motivo,
+                canceladoEm: new Date().toLocaleDateString('pt-BR'),
+              }
+            : item
+        )
+      )
 
-    closeCancelModal()
+      pushToast({
+        type: 'warning',
+        title: 'Faturamento cancelado',
+        message: `O pedido ${cancelPedido?.id} foi marcado como cancelado.`,
+        duration: 5000,
+      })
+
+      closeCancelModal()
+    } catch (error) {
+      console.error('Erro ao cancelar:', error)
+      pushToast({
+        type: 'error',
+        title: 'Erro ao cancelar',
+        message: error?.message || 'Não foi possível cancelar o pedido.',
+      })
+    }
   }
-
+  
   useEffect(() => {
     const fn = (e) => {
       if (e.key !== 'Escape') return

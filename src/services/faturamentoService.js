@@ -218,4 +218,16 @@ export const faturamentoService = {
       size: blob.size,
     }
   },
+
+  async alterarStatusPedido(pedidoId, novoStatus, motivo = '') {
+    const payload = {
+      status: novoStatus,
+      ...(motivo && { motivo: motivo })
+    }
+
+    return apiFetch(`/beneficios/importacoes/${pedidoId}/status/`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+  },
 }
