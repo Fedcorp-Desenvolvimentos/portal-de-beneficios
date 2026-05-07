@@ -177,7 +177,7 @@ export function aplicarAjusteLimiteBeneficios(loteAtual, limiteMaximo = 2500) {
   });
   
   if (ajustesRealizados.length > 0) {
-    console.log('✅ Ajustes aplicados:', ajustesRealizados);
+    // console.log('✅ Ajustes aplicados:', ajustesRealizados);
   }
   
   return loteAjustado;

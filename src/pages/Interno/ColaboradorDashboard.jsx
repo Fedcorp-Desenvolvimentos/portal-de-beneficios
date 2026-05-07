@@ -80,7 +80,7 @@ const fmtMonthYear = (value) => {
 }
 
 const fmtMoney = (value) =>
-  Number(value || 0).toLocaleString('pt-BR', {
+  Number((value || 0) / 100).toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
   })
@@ -739,8 +739,8 @@ export default function ColaboradorDashboard() {
         entebenService.getUltimaImportacao(),
       ])
 
-      // console.log('RAW FATURAMENTO:', response)
-      // console.log('RAW ÚLTIMA IMPORTAÇÃO:', ultimaImportacao)
+      console.log('RAW FATURAMENTO:', response)
+      console.log('RAW ÚLTIMA IMPORTAÇÃO:', ultimaImportacao)
 
       const lista = Array.isArray(response)
         ? response
