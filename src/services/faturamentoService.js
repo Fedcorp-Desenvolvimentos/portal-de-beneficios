@@ -1,7 +1,5 @@
 import { apiFetch } from './api'
 
-const API_BASE_URL = 'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app/api'
-
 function getAuthToken() {
   try {
     const rawAuth = localStorage.getItem('auth') || sessionStorage.getItem('auth')
@@ -165,9 +163,9 @@ export const faturamentoService = {
 
     const queryString = query.toString()
 
-    return `${API_BASE_URL}/upload/export/faturamento/${
+    return apiFetch(`/upload/export/faturamento/${
       queryString ? `?${queryString}` : ''
-    }`
+    }`)
   },
 
   async baixarExportFaturamento(params = {}, nomeBase = 'faturamento') {
