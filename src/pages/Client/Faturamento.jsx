@@ -217,6 +217,8 @@ export default function Faturamento() {
   const [error, setError] = useState('')
   const [importacoes, setImportacoes] = useState([])
 
+  console.log("importacoes", importacoes)
+
   const [paginaAtual, setPaginaAtual] = useState(1)
 
   const itensPorPagina = 5
@@ -546,15 +548,15 @@ export default function Faturamento() {
           matchVencimento
         )
       })
-      .sort((a, b) =>
-        String(
-          b.data_importacao || ''
-        ).localeCompare(
-          String(
-            a.data_importacao || ''
-          )
-        )
-      )
+      // .sort((a, b) =>
+      //   String(
+      //     b.data_importacao || ''
+      //   ).localeCompare(
+      //     String(
+      //       a.data_importacao || ''
+      //     )
+      //   )
+      // )
   }, [
     importacoes,
     search,
@@ -593,6 +595,8 @@ export default function Faturamento() {
     setFiltroVigencia('')
     setFiltroVencimento('')
   }
+
+  console.log("gruposPaginados", gruposPaginados)
 
   return (
     <div className="fatv2-page">
