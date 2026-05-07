@@ -4,12 +4,6 @@ import { PencilLine, Trash2, Check, X as XIcon, Eye } from 'lucide-react'
 import '../../styles/Importacao.css'
 import { uploadService } from '../../services/uploadService'
 import { toast } from 'react-toastify'
-import { 
-  atualizarDataToBackend, 
-  aplicarAjusteLimiteBeneficios, 
-  prepararDadosParaEnvio, 
-  verificarSincronizacao, 
-} from '../../utils/ajuste_calculo_importacao'
 
 function Modal({ open, title, onClose, children }) {
   if (!open) return null
@@ -49,31 +43,7 @@ function getNomeColaborador(row) {
 }
 
 function getValorRow(row) {
-  // Prioriza o valor que está no lote (já editado)
-  if (row?.valor_total && typeof row.valor_total !== 'undefined') {
-    const valor = typeof row.valor_total === 'string' ? parseFloat(row.valor_total) : row.valor_total
-    if (!isNaN(valor)) return valor
-  }
-  
-  if (row?.valor && typeof row.valor !== 'undefined') {
-    const valor = typeof row.valor === 'string' ? parseFloat(row.valor) : row.valor
-    if (!isNaN(valor)) return valor
-  }
-  
-  if (row?.valor_recarga_bene) {
-    const valor = typeof row.valor_recarga_bene === 'string' ? parseFloat(row.valor_recarga_bene) : row.valor_recarga_bene
-    if (!isNaN(valor)) return valor
-  }
-  
-  // Fallback: tentar qualquer campo numérico
-  for (const key of ['valorTotal', 'ValorTotal', 'total', 'amount', 'preco']) {
-    if (row[key]) {
-      const valor = typeof row[key] === 'string' ? parseFloat(row[key]) : row[key]
-      if (!isNaN(valor)) return valor
-    }
-  }
-  
-  return 0
+  return Number(row?.valor_total || row?.valor || row?.valor_recarga_bene || row?.valor_beneficio || row?.valorTotal || row?.ValorTotal || 0)
 }
 
 function getCondominio(row) {
@@ -432,7 +402,6 @@ function getQuantidadeBackend(item) {
 
 export default function Importacao() {
   const [data, setData] = useState(null)
-  const [dataSincronizada, setDataSincronizada] = useState(null)
 
   console.log("data", data)
 
@@ -476,7 +445,6 @@ export default function Importacao() {
     competenciaAno: String(new Date().getFullYear()),
     vencimento: '',
   })
-
 
   async function handleResult({ file }) {
     try {
@@ -807,164 +775,261 @@ export default function Importacao() {
     e.preventDefault()
 
     if (!data || !data.data_to_backend) {
-      console.error('Dados de envio não disponíveis')
-      toast.error('Erro: dados do arquivo não disponíveis')
+      console.error('Dados de envio (data.data_to_backend) não estão disponíveis.')
       return
     }
 
-    // 🔥 CRÍTICO: Sincronizar dados antes de mostrar o modal
-    const dataSincronizada = prepararDadosParaEnvio(lote, data.data_to_backend, 2500)
-    
-    // Calcular totais corretos a partir do lote atual
+    const summary = getSummaryBackend(data)
+    const excluidosManualmenteSet = lote.excluidosPorColab || new Set()
+    const listaOriginal = getMovimentacoesBackend(data)
+
+    const previewMap = new Map(
+      linhasValidadas.map((item) => {
+        const nome = getNomeColaborador(item)
+        const condominio = getCondominio(item)
+        const cpf = getCpf(item)
+        const chave = cpf ? `${nome}::${condominio}::${cpf}` : `${nome}::${condominio}`
+
+        return [
+          chave,
+          {
+            nome,
+            condominio,
+            cpf,
+            valor: getValorRow(item),
+          },
+        ]
+      })
+    )
+
+    const listaFiltrada = listaOriginal
+      .filter((item) => {
+        const nome = item.nome_func || item.colaborador || item.nome_funcionario || item.nome
+        return nome && !excluidosManualmenteSet.has(nome)
+      })
+      .map((item) => {
+        const nome = item.nome_func || item.colaborador || item.nome_funcionario || item.nome
+        const condominio = item.condominio || item.nome_condominio || ''
+        const cpf = String(item.cpf || item.cpf_func || item.cpf_funcionario || '').trim()
+
+        const chaveComCpf = cpf ? `${nome}::${condominio}::${cpf}` : `${nome}::${condominio}`
+        const chaveSemCpf = `${nome}::${condominio}`
+
+        const previewItem = previewMap.get(chaveComCpf) || previewMap.get(chaveSemCpf)
+
+        if (!previewItem) return item
+
+        const valorEditado = previewItem.valor
+
+        if ('valor_recarga_bene' in item) {
+          return { ...item, valor_recarga_bene: valorEditado }
+        }
+
+        if ('valor_total' in item) {
+          return { ...item, valor_total: valorEditado }
+        }
+
+        return { ...item, valor: valorEditado }
+      })
+
     let totalMovimentacoes = 0
     let valorTotalBeneficios = 0
-    
-    linhasValidadas.forEach(row => {
-      const valor = getValorRow(row)
+    const funcionariosUnicos = new Set()
+
+    listaFiltrada.forEach((item) => {
+      totalMovimentacoes += 1
+      const valor = Number(item.valor_recarga_bene || item.valor_total || item.valor || 0)
       valorTotalBeneficios += valor
-      
-      if (row.beneficios && Array.isArray(row.beneficios)) {
-        totalMovimentacoes += row.beneficios.length
-      }
+      funcionariosUnicos.add(item.nome_func || item.colaborador || item.nome_funcionario || item.nome)
     })
-    
-    // Data de competência
-    const hoje = new Date()
-    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0')
-    const anoAtual = hoje.getFullYear()
-    
+
     setReviewData({
-      totalFuncionarios: linhasValidadas.length,
-      totalMovimentacoes: totalMovimentacoes,
-      valorTotalBeneficios: valorTotalBeneficios,
-      periodoInicio: formEnvio.periodoInicio || `2026-04-01`,
-      periodoFim: formEnvio.periodoFim || `2026-04-30`,
-      competenciaMes: formEnvio.competenciaMes || mesAtual,
-      competenciaAno: formEnvio.competenciaAno || String(anoAtual),
-      vencimento: formEnvio.vencimento || `2026-04-30`,
+      totalFuncionarios:
+        summary.total_funcionarios ||
+        summary.total_colaboradores ||
+        summary.total_beneficiarios ||
+        funcionariosUnicos.size,
+
+      totalMovimentacoes:
+        summary.total_movimentacoes ||
+        summary.total_registros ||
+        listaFiltrada.length ||
+        totalMovimentacoes,
+
+      valorTotalBeneficios: Number(
+        summary.valor_total_beneficios ||
+          summary.valor_total ||
+          summary.valorTotal ||
+          valorTotalBeneficios ||
+          0
+      ),
+
+      periodoInicio:
+        summary.periodo_inicio ||
+        summary.vigencia_inicio ||
+        formEnvio.periodoInicio,
+
+      periodoFim:
+        summary.periodo_fim ||
+        summary.vigencia_fim ||
+        formEnvio.periodoFim,
+
+      competenciaMes:
+        summary.competencia_mes ||
+        formEnvio.competenciaMes,
+
+      competenciaAno:
+        summary.competencia_ano ||
+        formEnvio.competenciaAno,
+
+      vencimento:
+        summary.vencimento ||
+        summary.data_vencimento ||
+        formEnvio.vencimento,
     })
-    
-    // Guardar dados sincronizados para o envio
-    setDataSincronizada(dataSincronizada)
-    
+
     setModalOpen(false)
     setReviewOpen(true)
   }
 
-
   const confirmarEnvio = async () => {
-    if (!lote || !lote.rows || lote.rows.length === 0) {
-      toast.error('Não há dados para enviar')
-      return
-    }
-    
     if (!data || !data.data_to_backend) {
-      toast.error('Dados do arquivo não disponíveis')
+      console.error('Dados de envio (data.data_to_backend) não estão disponíveis.')
       return
     }
-    
-    try {
-      // Aplicar ajustes de limite (se necessário)
-      const loteComAjustes = aplicarAjusteLimiteBeneficios(lote, 2500)
-      
-      // Sincronizar com o backend
-      const dataToBackendSincronizado = prepararDadosParaEnvio(loteComAjustes, data.data_to_backend, 2500)
-      
-      // Adicionar metadados do formulário
-      const vencimentoFormatado = formEnvio.vencimento || reviewData.vencimento || ''
-      
-      dataToBackendSincronizado.periodo_inicio = formEnvio.periodoInicio || reviewData.periodoInicio
-      dataToBackendSincronizado.periodo_fim = formEnvio.periodoFim || reviewData.periodoFim
-      dataToBackendSincronizado.competencia_mes = formEnvio.competenciaMes || reviewData.competenciaMes
-      dataToBackendSincronizado.competencia_ano = formEnvio.competenciaAno || reviewData.competenciaAno
-      dataToBackendSincronizado.vencimento = vencimentoFormatado
-      dataToBackendSincronizado.tipo_processamento = lote.tipo || 'compra'
-      dataToBackendSincronizado.origem = 'importacao_faturamento'
-      dataToBackendSincronizado.file_upload_id = data.file_upload_id || lote.id?.replace('IMP-', '') || 228
-      
-      // Calcular resumo final
-      let totalFuncionarios = 0
-      let totalMovimentacoes = 0
-      let valorTotalBeneficios = 0
-      const funcionariosMap = new Map()
-      
-      loteComAjustes.rows.forEach(func => {
-        if (!funcionariosMap.has(func.cpf)) {
-          funcionariosMap.set(func.cpf, func)
-          totalFuncionarios++
-        }
-        
-        const valor = typeof func.valor_total === 'string' ? parseFloat(func.valor_total) : func.valor_total
-        valorTotalBeneficios += valor
-        
-        if (func.beneficios) {
-          totalMovimentacoes += func.beneficios.length
-        }
-      })
-      
-      if (!dataToBackendSincronizado.summary) {
-        dataToBackendSincronizado.summary = {}
-      }
-      
-      dataToBackendSincronizado.summary.total_funcionarios = totalFuncionarios
-      dataToBackendSincronizado.summary.total_movimentacoes = totalMovimentacoes
-      dataToBackendSincronizado.summary.valor_total_beneficios = valorTotalBeneficios.toFixed(2)
-      
-      // Preparar erros (apenas os que ainda persistem)
-      const errosAtuais = []
-      loteComAjustes.rows.forEach(func => {
-        const valor = typeof func.valor_total === 'string' ? parseFloat(func.valor_total) : func.valor_total
-        if (valor > 2500) {
-          errosAtuais.push(`Valor total do funcionário ${func.nome_funcionario} R$ ${valor.toFixed(2)} excede limite de R$ 2.500,00`)
-        }
-      })
-      
-      dataToBackendSincronizado.errors = errosAtuais
-      dataToBackendSincronizado.linhas_com_erro = errosAtuais.map(erro => ({ mensagem: erro }))
-      
-      // Montar objeto final para envio
-      const dadosParaEnvio = {
-        file_upload_id: data.file_upload_id || Number(lote.id?.replace('IMP-', '')) || 228,
-        condominios: dataToBackendSincronizado.condominios || [],
-        errors: errosAtuais,
-        linhas_com_erro: dataToBackendSincronizado.linhas_com_erro || [],
-        summary: dataToBackendSincronizado.summary,
-        movimentacoes_detalhada: dataToBackendSincronizado.movimentacoes_detalhada || [],
-        periodo_inicio: dataToBackendSincronizado.periodo_inicio,
-        periodo_fim: dataToBackendSincronizado.periodo_fim,
-        competencia_mes: dataToBackendSincronizado.competencia_mes,
-        competencia_ano: dataToBackendSincronizado.competencia_ano,
-        vencimento: dataToBackendSincronizado.vencimento,
-        tipo_processamento: dataToBackendSincronizado.tipo_processamento,
-        origem: dataToBackendSincronizado.origem,
-        status: 'PARSED',
-        detail: 'Arquivo processado. Confirme os dados para gravação.'
-      }
-      
-      // console.log('📤 DADOS PARA ENVIO:', dadosParaEnvio)
-      // console.log(`💰 Total do lote: R$ ${valorTotalBeneficios.toFixed(2)}`)
-      // console.log(`👥 Funcionários: ${totalFuncionarios}`)
-      // console.log(`📦 Movimentações: ${totalMovimentacoes}`)
-      
-      
-      const responseEnvio = await uploadService.confirmUpload(dadosParaEnvio)
-      console.log('Resposta do envio:', responseEnvio)
 
-      toast.success(responseEnvio?.detail || responseEnvio?.message || 'Lote enviado com sucesso!')
+    const dataParaEnvio = JSON.parse(JSON.stringify(data))
+    const excluidosManualmenteSet = lote.excluidosPorColab || new Set()
+
+    const listaOriginal = dataParaEnvio.data_to_backend.movimentacoes_detalhada || []
+    const listaNovosFuncionariosOriginal =
+      dataParaEnvio.data_to_backend.novos_registros?.funcionarios || []
+
+    const previewMap = new Map(
+      linhasValidadas.map((item) => {
+        const nome = getNomeColaborador(item)
+        const condominio = getCondominio(item)
+        const cpf = getCpf(item)
+        const chave = cpf ? `${nome}::${condominio}::${cpf}` : `${nome}::${condominio}`
+
+        return [
+          chave,
+          {
+            nome,
+            condominio,
+            cpf,
+            valor: getValorRow(item),
+            quantidade: getQuantidadeDias(item),
+          },
+        ]
+      })
+    )
+
+    const vencimentoFormatado = formatDateToBackend(formEnvio.vencimento)
+
+    if (!vencimentoFormatado) {
+      toast.warning('Preencha um vencimento válido antes de continuar.')
+      return
+    }
+
+    const listaFiltrada = listaOriginal
+      .filter((item) => {
+        const nome = item.nome_func || item.colaborador || item.nome_funcionario || item.nome
+        return nome && !excluidosManualmenteSet.has(nome)
+      })
+      .map((item) => {
+        const nome = item.nome_func || item.colaborador || item.nome_funcionario || item.nome
+        const condominio = item.condominio || item.nome_condominio || ''
+        const cpf = String(item.cpf || item.cpf_func || item.cpf_funcionario || '').trim()
+
+        const chaveComCpf = cpf ? `${nome}::${condominio}::${cpf}` : `${nome}::${condominio}`
+        const chaveSemCpf = `${nome}::${condominio}`
+
+        const previewItem = previewMap.get(chaveComCpf) || previewMap.get(chaveSemCpf)
+        const valorEditado = previewItem?.valor
+        const quantidadeEditada = previewItem?.quantidade
+
+        const itemNormalizado = { ...item }
+
+        const produtoCodigo = getProdutoCodigoBackend(item)
+        const produtoNome = getProdutoBackend(item)
+        const vencimentoItem = formatDateToBackend(item?.vencimento)
+
+        itemNormalizado.produto_codigo = produtoCodigo || 'SEM_CODIGO'
+        itemNormalizado.produto = produtoNome || 'BENEFICIO'
+        itemNormalizado.departamento = getDepartamentoBackend(item)
+        itemNormalizado.quantidade = getQuantidadeBackend(item) || quantidadeEditada || 0
+        itemNormalizado.vencimento = vencimentoItem || vencimentoFormatado
+
+        if ('valor_recarga_bene' in itemNormalizado) {
+          itemNormalizado.valor_recarga_bene =
+            valorEditado ?? itemNormalizado.valor_recarga_bene
+        } else if ('valor_total' in itemNormalizado) {
+          itemNormalizado.valor_total = valorEditado ?? itemNormalizado.valor_total
+        } else {
+          itemNormalizado.valor = valorEditado ?? itemNormalizado.valor
+        }
+
+        return itemNormalizado
+      })
+
+    dataParaEnvio.data_to_backend.movimentacoes_detalhada = listaFiltrada
+
+    if (dataParaEnvio.data_to_backend.novos_registros?.funcionarios) {
+      dataParaEnvio.data_to_backend.novos_registros.funcionarios =
+        listaNovosFuncionariosOriginal.filter((f) => {
+          const nome = f.nome_func || f.nome || f.nome_funcionario || f.colaborador
+          return nome && !excluidosManualmenteSet.has(nome)
+        })
+
+      dataParaEnvio.data_to_backend.novos_registros['Total de funcionários novos'] =
+        dataParaEnvio.data_to_backend.novos_registros.funcionarios.length
+    }
+
+    let totalMovimentacoes = 0
+    let valorTotalBeneficios = 0
+    const funcionariosUnicos = new Set()
+
+    listaFiltrada.forEach((item) => {
+      totalMovimentacoes += 1
+      const valor = Number(item.valor_recarga_bene || item.valor_total || item.valor || 0)
+      valorTotalBeneficios += valor
+      funcionariosUnicos.add(item.nome_func || item.colaborador || item.nome_funcionario || item.nome)
+    })
+
+    if (dataParaEnvio.data_to_backend.summary) {
+      dataParaEnvio.data_to_backend.summary.total_funcionarios = funcionariosUnicos.size
+      dataParaEnvio.data_to_backend.summary.total_movimentacoes = totalMovimentacoes
+      dataParaEnvio.data_to_backend.summary.valor_total_beneficios = Number(
+        valorTotalBeneficios.toFixed(2)
+      )
+    }
+
+    dataParaEnvio.data_to_backend.periodo_inicio = formEnvio.periodoInicio
+    dataParaEnvio.data_to_backend.periodo_fim = formEnvio.periodoFim
+    dataParaEnvio.data_to_backend.competencia_mes = formEnvio.competenciaMes
+    dataParaEnvio.data_to_backend.competencia_ano = formEnvio.competenciaAno
+    dataParaEnvio.data_to_backend.vencimento = vencimentoFormatado
+    dataParaEnvio.data_to_backend.tipo_processamento = lote.tipo
+    dataParaEnvio.data_to_backend.origem = 'importacao_faturamento'
+
+    try {
       
+      console.log('Dados enviados para o backend:', dataParaEnvio.data_to_backend)
+
+      const responseEnvio = await uploadService.confirmUpload(dataParaEnvio.data_to_backend)
+      toast.success(responseEnvio?.detail || responseEnvio?.message || 'Lote enviado com sucesso!')
       setReviewOpen(false)
       setModalOpen(false)
-            
+
       setTimeout(() => {
         window.location.href = '/'
       }, 1500)
-      
     } catch (error) {
-      console.error('Erro no envio:', error)
-      toast.error(`Erro: ${error.message}`)
+      console.error('Erro no envio do lote:', error)
+      toast.error(`Erro no envio do lote: ${error.message}`)
     }
   }
-
 
   const totalCompras = useMemo(() => {
     return rowsAtivas.reduce((total, row) => {
@@ -974,13 +1039,11 @@ export default function Importacao() {
   }, [rowsAtivas])
 
   const totalFaturamento = useMemo(() => {
-    // Usar linhasValidadas que já tem os valores atualizados
-    let total = 0
-    linhasValidadas.forEach(row => {
-      total += getValorRow(row)
-    })
-    return total
-  }, [linhasValidadas, lote.rows])
+    return rowsAtivas.reduce((total, row) => {
+      return total + getValorRow(row)
+    }, 0)
+  }, [rowsAtivas])
+
 
   console.log('Lote atual:', lote)
 
