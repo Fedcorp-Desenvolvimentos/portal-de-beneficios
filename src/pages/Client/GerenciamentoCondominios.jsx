@@ -519,6 +519,7 @@ export default function ConfiguracaoCondominios() {
     }))
   }
 
+  // Marcando salvamento de colaborador
   const salvarColaborador = () => {
     if (!colaboradorForm.nome.trim()) {
       showToast('Informe o nome do colaborador', 'danger')
@@ -546,7 +547,7 @@ export default function ConfiguracaoCondominios() {
       condominioNome: colaboradorModal.condominio?.nome,
     }
 
-    // console.log('COLABORADOR PARA CADASTRAR:', novoColaborador)
+    console.log('COLABORADOR PARA CADASTRAR:', novoColaborador)
 
     setCondominios((prev) =>
       prev.map((cond) =>
