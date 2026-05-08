@@ -496,8 +496,6 @@ export default function ConfiguracaoCondominios() {
       const condominiosList = toArray(condominiosRes)
       const funcionariosList = toArray(funcionariosRes)
 
-      console.log("funcionariosList", funcionariosList)
-
       setTodosFuncionarios(funcionariosList)
 
       // Mapear funcionários por condomínio (usando a FK condominio_id)

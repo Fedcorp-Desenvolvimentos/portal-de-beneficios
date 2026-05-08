@@ -1,6 +1,83 @@
 import { apiFetch } from './api'
 
 export const entebenService = {
+  getCondominios: async () => {
+    try {
+      return await apiFetch('/entidades/condominios/', { method: 'GET' })
+    } catch (error) {
+      console.error('Erro ao buscar condomínios:', error)
+      throw error
+    }
+  },
+
+  createCondominio: async (data) => {
+    try {
+      return await apiFetch('/entidades/condominios/', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    } catch (error) {
+      console.error('Erro ao criar condomínio:', error)
+      throw error
+    }
+  },
+
+  updateCondominio: async (cnpj, data) => {
+    try {
+      return await apiFetch(`/entidades/condominios/${cnpj}/`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      })
+    } catch (error) {
+      console.error('Erro ao atualizar condomínio:', error)
+      throw error
+    }
+  },
+
+  deleteCondominio: async (cnpj) => {
+    try {
+      return await apiFetch(`/entidades/condominios/${cnpj}/`, {
+        method: 'DELETE',
+      })
+    } catch (error) {
+      console.error('Erro ao excluir condomínio:', error)
+      throw error
+    }
+  },
+
+  getFuncionarios: async () => {
+    try {
+      return await apiFetch('/entidades/funcionarios/', { method: 'GET' })
+    } catch (error) {
+      console.error('Erro ao buscar funcionários:', error)
+      throw error
+    }
+  },
+
+  createFuncionario: async (data) => {
+    try {
+      return await apiFetch('/entidades/funcionarios/', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    } catch (error) {
+      console.error('Erro ao criar funcionário:', error)
+      throw error
+    }
+  },
+
+  updateFuncionario: async (cpf, data) => {
+    try {
+      return await apiFetch(`/entidades/funcionarios/${cpf}/`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      })
+    } catch (error) {
+      console.error('Erro ao atualizar funcionário:', error)
+      throw error
+    }
+  },
+  
   getMovimentacoes: async () => {
     try {
       return await apiFetch('/beneficios/movimentacoes/', {

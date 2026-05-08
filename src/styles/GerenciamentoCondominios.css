@@ -865,3 +865,431 @@
   font-size: 12px;
   color: var(--muted);
 }
+
+/* ##################  */
+
+
+/* Adicione ao final do arquivo GerenciamentoCondominios.css */
+
+/* Botão de contagem de funcionários */
+.cfg-func-count-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #0369a1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cfg-func-count-btn:hover {
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+  transform: scale(1.02);
+}
+
+.cfg-func-count {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.cfg-func-count-btn .ico {
+  width: 14px;
+  height: 14px;
+}
+
+/* Th com ícone */
+.th-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ico.sm {
+  width: 14px;
+  height: 14px;
+}
+
+/* Modal de funcionários */
+.cfg-funcionarios-modal {
+  width: min(680px, 92vw);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.cfg-funcionarios-modal .modal-body {
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(85vh - 120px);
+}
+
+.cfg-funcionarios-stats {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.cfg-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #f1f5f9;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.cfg-funcionarios-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  margin-bottom: 16px;
+}
+
+.cfg-funcionarios-search .ico {
+  width: 16px;
+  height: 16px;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.cfg-funcionarios-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+}
+
+.cfg-clear-search {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+}
+
+.cfg-clear-search:hover {
+  background: #e5e7eb;
+}
+
+/* Lista de funcionários */
+.cfg-funcionarios-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cfg-funcionario-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  transition: all 0.2s ease;
+}
+
+.cfg-funcionario-card:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.cfg-funcionario-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.cfg-funcionario-avatar {
+  width: 40px;
+  height: 40px;
+  background: #e0f2fe;
+  border-radius: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0284c7;
+}
+
+.cfg-funcionario-avatar .ico {
+  width: 20px;
+  height: 20px;
+}
+
+.cfg-funcionario-info {
+  flex: 1;
+}
+
+.cfg-funcionario-nome {
+  font-weight: 700;
+  font-size: 15px;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.cfg-funcionario-detalhes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cfg-badge-funcao {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: #dbeafe;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1e40af;
+  text-transform: uppercase;
+}
+
+.cfg-badge-matricula {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: #f3e8ff;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b21a5;
+}
+
+.cfg-funcionario-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.cfg-field-row {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.cfg-field-label {
+  color: #64748b;
+  min-width: 70px;
+}
+
+.cfg-field-value {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+/* Estado vazio da lista de funcionários */
+.empty-funcionarios {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.empty-funcionarios .ico {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+}
+
+/* Ajustes responsivos */
+@media (max-width: 640px) {
+  .cfg-funcionario-body {
+    grid-template-columns: 1fr;
+  }
+  
+  .cfg-funcionarios-modal {
+    width: 95vw;
+  }
+}
+
+/* Corrigir tamanho dos botões de ação */
+.cfg-table-action {
+  width: 32px;
+  height: 32px;
+}
+
+.cfg-table-action .ico {
+  width: 16px;
+  height: 16px;
+}
+
+.cfg-table-action.green {
+  color: #16a34a;
+  border-color: #bbf7d0;
+}
+
+.cfg-table-action.green:hover {
+  background: #f0fdf4;
+}
+
+.cfg-table-action.blue {
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+
+.cfg-table-action.blue:hover {
+  background: #eff6ff;
+}
+
+.cfg-table-action.red {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.cfg-table-action.red:hover {
+  background: #fef2f2;
+}
+
+/* Row actions container */
+.cfg-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* Ajuste do empty state da tabela */
+.empty {
+  padding: 48px 20px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.empty .ico.xl {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 12px;
+}
+
+/* Botões da paginação */
+.cfg-page-btn {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e5e7eb;
+  background: #2563eb;
+  border-radius: 10px;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.cfg-page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #94a3b8;
+}
+
+.cfg-page-btn:not(:disabled):hover {
+  background: #1d4ed8;
+}
+
+/* Filtro condominios */
+.cfg-filter-bar {
+  margin-bottom: 20px;
+}
+
+.cfg-filter-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.cfg-filter-search .ico {
+  width: 16px;
+  height: 16px;
+  color: #9ca3af;
+}
+
+.cfg-filter-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+}
+
+.cfg-filter-clear {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+}
+
+.cfg-filter-clear:hover {
+  background: #f3f4f6;
+}
+
+/* Ações */
+.cfg-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .cfg-page {
+    padding: 16px;
+  }
+  
+  .cfg-header h1 {
+    font-size: 20px;
+  }
+  
+  .table th,
+  .table td {
+    padding: 8px 12px;
+  }
+  
+  .cfg-row-actions {
+    gap: 4px;
+  }
+  
+  .icon-btn {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+/* Toast */
+.cfg-toast-danger {
+  background: #fef2f2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+
+.cfg-toast-success {
+  background: #f0fdf4;
+  color: #166534;
+  border-color: #bbf7d0;
+}
