@@ -299,7 +299,13 @@ export default function ColaboradorDashboard() {
     try {
       setDownloadingId(pedido.id)
       setPedidos((prev) => prev.map((item) => item.id === pedido.id ? { ...item, status: 'em_faturamento' } : item))
-      await faturamentoService.baixarExportFaturamento({ id: pedido.id, file_upload_id: pedido.fileId }, `pedido-${pedido.id}.xlsx`)
+      
+      // ⭐ CORREÇÃO: Usar importacao_id, não id
+      await faturamentoService.baixarExportFaturamento(
+        { importacao_id: pedido.id },  // ✅ Corrigido!
+        `pedido-${pedido.id}`
+      )
+      
       pushToast({ type: 'success', title: 'Faturamento iniciado', message: `O pedido ${pedido.id} foi movido para "Em faturamento".` })
     } catch (error) {
       console.error('Erro no download:', error)

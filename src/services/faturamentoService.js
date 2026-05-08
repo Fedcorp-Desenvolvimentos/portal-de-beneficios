@@ -89,13 +89,6 @@ export const faturamentoService = {
     return response
   },
 
-  // async listarPedidosFuncionario() {
-  //   return apiFetch('/beneficios/importacoes/', {
-  //     method: 'GET',
-  //   })
-  // },
-  
-
   async listarPedidos() {
     return this.listarPedidosFuncionario()
   },
@@ -178,14 +171,19 @@ export const faturamentoService = {
 
     const queryString = query.toString()
 
-    return apiFetch(`/upload/export/faturamento/${
+    const API_BASE =
+      import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+    return `${API_BASE}/api/upload/export/faturamento/${
       queryString ? `?${queryString}` : ''
-    }`)
+    }`
   },
 
   async baixarExportFaturamento(params = {}, nomeBase = 'faturamento') {
     const url = this.getExportFaturamentoUrl(params)
     const token = getAuthToken()
+
+    console.log('📥 Baixando de:', url)
 
     const response = await fetch(url, {
       method: 'GET',
@@ -196,42 +194,54 @@ export const faturamentoService = {
 
     if (!response.ok) {
       let errorMessage = 'Não foi possível baixar o arquivo de faturamento.'
-
       try {
         const errorData = await response.json()
         if (errorData?.detail) errorMessage = errorData.detail
       } catch {
         // ignora
       }
-
       throw new Error(errorMessage)
     }
 
-    const contentType = response.headers.get('content-type') || ''
     const contentDisposition = response.headers.get('content-disposition') || ''
+    const contentType = response.headers.get('content-type') || ''
     const blob = await response.blob()
+    
+    console.log('📄 Content-Type:', contentType)
+    console.log('📎 Content-Disposition:', contentDisposition)
+    console.log('📦 Tamanho do blob:', blob.size, 'bytes')
+    
+    // Extrair filename do header
+    let filename = null
+    const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+    if (filenameMatch && filenameMatch[1]) {
+      filename = filenameMatch[1].replace(/['"]/g, '')
+    }
+    
+    if (!filename) {
+      filename = `${nomeBase}_${Date.now()}.xlsx`
+    }
 
-    const filenameFromHeader = extractFilenameFromDisposition(contentDisposition)
-    const extension = inferExtension(contentType)
+    // Garantir extensão .xlsx
+    if (!filename.endsWith('.xlsx') && !filename.endsWith('.xls')) {
+      filename = filename.replace(/\.(bin|txt|dat|unknown)$/i, '') + '.xlsx'
+    }
 
-    const finalName = filenameFromHeader || `${nomeBase}.${extension}`
+    console.log('💾 Salvando como:', filename)
 
     const blobUrl = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
-
     link.href = blobUrl
-    link.download = finalName
+    link.download = filename
     document.body.appendChild(link)
     link.click()
-    link.remove()
+    
+    setTimeout(() => {
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(blobUrl)
+    }, 100)
 
-    window.URL.revokeObjectURL(blobUrl)
-
-    return {
-      filename: finalName,
-      contentType,
-      size: blob.size,
-    }
+    return { filename, contentType, size: blob.size }
   },
 
   async alterarStatusPedido(pedidoId, novoStatus, motivo = '') {
