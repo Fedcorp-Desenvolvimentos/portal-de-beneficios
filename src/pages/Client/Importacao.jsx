@@ -941,11 +941,10 @@ export default function Importacao() {
         detail: 'Arquivo processado. Confirme os dados para gravação.'
       }
       
-      // console.log('📤 DADOS PARA ENVIO:', dadosParaEnvio)
+      // console.log('📤 DADOS PARA ENVIO PARA O BACKEND:', dadosParaEnvio)
       // console.log(`💰 Total do lote: R$ ${valorTotalBeneficios.toFixed(2)}`)
       // console.log(`👥 Funcionários: ${totalFuncionarios}`)
       // console.log(`📦 Movimentações: ${totalMovimentacoes}`)
-      
       
       const responseEnvio = await uploadService.confirmUpload(dadosParaEnvio)
       // console.log('Resposta do envio:', responseEnvio)

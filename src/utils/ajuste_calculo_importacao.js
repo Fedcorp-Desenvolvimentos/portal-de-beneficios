@@ -6,6 +6,9 @@
  * @param {Object} dataToBackendOriginal - Objeto original do backend
  * @returns {Object} - Novo objeto data_to_backend sincronizado
  */
+/**
+ * ATUALIZA O DATA_TO_BACKEND COM OS VALORES ATUAIS DO LOTE
+ */
 export function atualizarDataToBackend(loteAtual, dataToBackendOriginal) {
   // Criar uma cópia profunda
   const dataToBackendAtualizado = JSON.parse(JSON.stringify(dataToBackendOriginal));
@@ -18,43 +21,55 @@ export function atualizarDataToBackend(loteAtual, dataToBackendOriginal) {
     }
   });
   
-  // Mapa de condomínios por nome
-  const condominiosMap = {};
-  if (dataToBackendAtualizado.condominios) {
-    dataToBackendAtualizado.condominios.forEach(cond => {
-      condominiosMap[cond.nome || cond.condominio] = cond;
-    });
-  }
-  
-  // Atualizar funcionários em todos os condomínios
+  // ATUALIZAR CONDOMÍNIOS - Substituir completamente os funcionários
   if (dataToBackendAtualizado.condominios && Array.isArray(dataToBackendAtualizado.condominios)) {
     dataToBackendAtualizado.condominios.forEach(condominio => {
       if (condominio.funcionarios && Array.isArray(condominio.funcionarios)) {
-        condominio.funcionarios.forEach(funcionario => {
+        // Para cada funcionário no condomínio, atualizar com dados do lote
+        condominio.funcionarios = condominio.funcionarios.map(funcionario => {
           const funcionarioAtualizado = funcionariosAtualizados[funcionario.cpf];
           
           if (funcionarioAtualizado) {
-            // Atualizar valor total
+            // Calcular valor total
             const valorTotal = typeof funcionarioAtualizado.valor_total === 'string' 
               ? parseFloat(funcionarioAtualizado.valor_total) 
               : funcionarioAtualizado.valor_total;
-            funcionario.valor_total = valorTotal;
             
-            // Atualizar benefícios
+            // ⭐⭐⭐ CRÍTICO: Converter beneficios para movimentacoes ⭐⭐⭐
+            const movimentacoesAtualizadas = [];
+            
             if (funcionarioAtualizado.beneficios && Array.isArray(funcionarioAtualizado.beneficios)) {
-              funcionario.beneficios = funcionarioAtualizado.beneficios.map(b => ({
-                codigo: b.codigo,
-                nome: b.nome || b.nome_beneficio || b.produto_nome || b.produto,
-                valor: typeof b.valor === 'number' ? b.valor : parseFloat(b.valor) || 0
-              }));
+              funcionarioAtualizado.beneficios.forEach(beneficio => {
+                movimentacoesAtualizadas.push({
+                  produto: beneficio.nome || beneficio.produto || '',
+                  codigo_produto: beneficio.codigo || '',
+                  valor: typeof beneficio.valor === 'number' ? beneficio.valor : parseFloat(beneficio.valor) || 0
+                });
+              });
             }
+            
+            // Retornar funcionário com a estrutura correta que o backend espera
+            return {
+              ...funcionario,
+              nome: funcionarioAtualizado.nome_funcionario || funcionario.nome,
+              cpf: funcionarioAtualizado.cpf,
+              matricula: funcionarioAtualizado.matricula || funcionario.matricula || '',
+              departamento: funcionarioAtualizado.departamento || funcionario.departamento || 'CONDOMINIO',
+              funcao: funcionarioAtualizado.funcao || funcionario.funcao || '',
+              data_nascimento: funcionarioAtualizado.data_nascimento || funcionario.data_nascimento || '',
+              valor_bene: valorTotal,
+              // ⭐⭐⭐ USAR movimentacoes (não beneficios) com os valores atualizados ⭐⭐⭐
+              movimentacoes: movimentacoesAtualizadas
+            };
           }
+          
+          return funcionario;
         });
       }
     });
   }
   
-  // RECALCULAR SUMMARY COMPLETO
+  // RECALCULAR SUMMARY
   if (dataToBackendAtualizado.summary) {
     let novoTotalBeneficios = 0;
     let totalMovimentacoes = 0;
@@ -87,23 +102,26 @@ export function atualizarDataToBackend(loteAtual, dataToBackendOriginal) {
     dataToBackendAtualizado.summary.total_movimentacoes = totalMovimentacoes;
   }
   
-  // Atualizar movimentacoes_detalhada se existir
-  if (dataToBackendAtualizado.movimentacoes_detalhada && Array.isArray(dataToBackendAtualizado.movimentacoes_detalhada)) {
+  // ATUALIZAR movimentacoes_detalhada para consistência
+  if (dataToBackendAtualizado.movimentacoes_detalhada) {
     const novasMovimentacoes = [];
     
     loteAtual.rows.forEach(funcionario => {
       if (funcionario.beneficios && Array.isArray(funcionario.beneficios)) {
         funcionario.beneficios.forEach(beneficio => {
-          novasMovimentacoes.push({
-            nome_funcionario: funcionario.nome_funcionario,
-            cpf: funcionario.cpf,
-            condominio: funcionario.condominio,
-            cep: funcionario.cep || '',
-            produto_codigo: beneficio.codigo,
-            produto: beneficio.nome,
-            valor_recarga_bene: beneficio.valor,
-            quantidade: 1
-          });
+          const valor = typeof beneficio.valor === 'number' ? beneficio.valor : parseFloat(beneficio.valor) || 0;
+          if (valor > 0) {  // Só incluir se valor > 0
+            novasMovimentacoes.push({
+              nome_funcionario: funcionario.nome_funcionario,
+              cpf: funcionario.cpf,
+              condominio: funcionario.condominio,
+              cep: funcionario.cep || '',
+              produto_codigo: beneficio.codigo,
+              produto: beneficio.nome || beneficio.produto_nome || '',
+              valor_recarga_bene: valor,
+              quantidade: 1
+            });
+          }
         });
       }
     });
