@@ -547,7 +547,7 @@ export default function ConfiguracaoCondominios() {
       condominioNome: colaboradorModal.condominio?.nome,
     }
 
-    console.log('COLABORADOR PARA CADASTRAR:', novoColaborador)
+    // console.log('COLABORADOR PARA CADASTRAR:', novoColaborador)
 
     setCondominios((prev) =>
       prev.map((cond) =>

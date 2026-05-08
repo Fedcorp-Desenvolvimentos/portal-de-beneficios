@@ -217,7 +217,7 @@ export default function Faturamento() {
   const [error, setError] = useState('')
   const [importacoes, setImportacoes] = useState([])
 
-  console.log("importacoes", importacoes)
+  // console.log("importacoes", importacoes)
 
   const [paginaAtual, setPaginaAtual] = useState(1)
 
@@ -596,7 +596,7 @@ export default function Faturamento() {
     setFiltroVencimento('')
   }
 
-  console.log("gruposPaginados", gruposPaginados)
+  // console.log("gruposPaginados", gruposPaginados)
 
   return (
     <div className="fatv2-page">

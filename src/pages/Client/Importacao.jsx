@@ -434,7 +434,7 @@ export default function Importacao() {
   const [data, setData] = useState(null)
   const [dataSincronizada, setDataSincronizada] = useState(null)
 
-  console.log("data", data)
+  // console.log("data", data)
 
   const [lote, setLote] = useState({
     id: null,
@@ -948,7 +948,7 @@ export default function Importacao() {
       
       
       const responseEnvio = await uploadService.confirmUpload(dadosParaEnvio)
-      console.log('Resposta do envio:', responseEnvio)
+      // console.log('Resposta do envio:', responseEnvio)
 
       toast.success(responseEnvio?.detail || responseEnvio?.message || 'Lote enviado com sucesso!')
       
@@ -982,7 +982,7 @@ export default function Importacao() {
     return total
   }, [linhasValidadas, lote.rows])
 
-  console.log('Lote atual:', lote)
+  // console.log('Lote atual:', lote)
 
   return (
     <div className="importacao-container">

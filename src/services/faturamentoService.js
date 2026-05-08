@@ -1,3 +1,5 @@
+// src/services/faturamentoService.js
+
 import { apiFetch } from './api'
 
 function getAuthToken() {
@@ -75,11 +77,26 @@ export const faturamentoService = {
     return this.importarDocumentos(pedidoId, arquivos)
   },
 
+  async listarPedidosTeste() {
+
+    let token = getAuthToken()
+    const response = await apiFetch('/beneficios/importacoes/', {
+      method: 'GET',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+
+    console.log('Resposta da API:', response)
+    return response
+  },
+
   async listarPedidosFuncionario() {
     return apiFetch('/beneficios/importacoes/', {
       method: 'GET',
     })
   },
+  
 
   async listarPedidos() {
     return this.listarPedidosFuncionario()
