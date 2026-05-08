@@ -252,7 +252,7 @@ export default function ColaboradorDashboard() {
   async function carregarPedidos() {
     try {
       setLoading(true)
-      const response = await faturamentoService.listarPedidosTeste()
+      const response = await faturamentoService.listarPedidosFuncionario()
       
       console.log('Resposta da API:', response)
       

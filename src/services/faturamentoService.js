@@ -77,7 +77,7 @@ export const faturamentoService = {
     return this.importarDocumentos(pedidoId, arquivos)
   },
 
-  async listarPedidosTeste() {
+  async listarPedidosFuncionario() {
 
     let token = getAuthToken()
     const response = await apiFetch('/beneficios/importacoes/', {
@@ -91,11 +91,11 @@ export const faturamentoService = {
     return response
   },
 
-  async listarPedidosFuncionario() {
-    return apiFetch('/beneficios/importacoes/', {
-      method: 'GET',
-    })
-  },
+  // async listarPedidosFuncionario() {
+  //   return apiFetch('/beneficios/importacoes/', {
+  //     method: 'GET',
+  //   })
+  // },
   
 
   async listarPedidos() {
