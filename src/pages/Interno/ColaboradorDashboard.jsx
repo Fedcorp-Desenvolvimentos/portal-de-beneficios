@@ -64,15 +64,12 @@ const fmtMonthYear = (value) => {
   return fmtDate(raw)
 }
 
-const fmtMoney = (value) => {
-  // Se for centavos (número pequeno) ou já em reais
-  const num = typeof value === 'string' ? parseFloat(value) : value
-  if (isNaN(num)) return 'R$ 0,00'
-  // Se o valor for muito pequeno (ex: 7273.76), está em reais
-  if (num < 10000 && num > 0) return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-  // Se for centavos (ex: 727376), divide por 100
-  return (num / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
+const fmtMoney = (value) =>
+  Number((value || 0)).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  })
+
 
 const norm = (s) =>
   (s || '')
@@ -253,9 +250,7 @@ export default function ColaboradorDashboard() {
     try {
       setLoading(true)
       const response = await faturamentoService.listarPedidosFuncionario()
-      
-      console.log('Resposta da API:', response)
-      
+            
       let lista = []
       if (Array.isArray(response)) lista = response
       else if (response?.results && Array.isArray(response.results)) lista = response.results
@@ -484,7 +479,17 @@ export default function ColaboradorDashboard() {
       <div className="cf-table-wrap">
         <table className="cf-table">
           <thead>
-            <tr><th>Pedido</th><th>Vencimento</th><th>Competência</th><th>Qtd. funcionários</th><th>Valor Total</th><th>Status</th><th>Timeline</th><th>Excel</th><th>Documentos</th></tr>
+            <tr>
+              <th>Pedido</th>
+              <th>Vencimento</th>
+              <th>Competência</th>
+              <th>Qtd. funcionários</th>
+              <th>Valor Total</th>
+              <th>Status</th>
+              <th>Timeline</th>
+              <th>Excel</th>
+              <th>Documentos</th>
+            </tr>
           </thead>
           <tbody>
             {loading ? (

@@ -86,8 +86,6 @@ export const faturamentoService = {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     })
-
-    console.log('Resposta da API:', response)
     return response
   },
 
