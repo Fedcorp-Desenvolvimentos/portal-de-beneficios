@@ -12,6 +12,7 @@ export const entebenService = {
 
   createCondominio: async (data) => {
     try {
+      console.log("Criando condomínio com dados:", data)
       return await apiFetch('/entidades/condominios/', {
         method: 'POST',
         body: JSON.stringify(data),
@@ -68,6 +69,7 @@ export const entebenService = {
 
   updateFuncionario: async (cpf, data) => {
     try {
+      console.log("Atualizando funcionário com CPF:", cpf, "e dados:", data)
       return await apiFetch(`/entidades/funcionarios/${cpf}/`, {
         method: 'PUT',
         body: JSON.stringify(data),

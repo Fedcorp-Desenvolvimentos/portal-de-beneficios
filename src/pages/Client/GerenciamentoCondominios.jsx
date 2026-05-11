@@ -534,7 +534,19 @@ export default function ConfiguracaoCondominios() {
     setLoadingAction(true)
     try {
       for (const func of funcionariosParaVincular) {
-        await entebenService.updateFuncionario(func.cpf, { ...func, condominio: condominio.cnpj })
+        const payload = {
+          cpf: func.cpf,
+          nome: func.nome,
+          matricula: func.matricula,
+          funcao: func.funcao,
+          data_nascimento: func.data_nascimento,
+          telefone: func.telefone,
+          email: func.email,
+          departamento: func.departamento,
+          condominio: condominio.cnpj,
+        }
+
+        await entebenService.updateFuncionario(func.cpf, payload)
       }
       await carregarDados()
       showToast(`${funcionariosParaVincular.length} funcionário(s) vinculado(s) com sucesso!`)
@@ -550,7 +562,19 @@ export default function ConfiguracaoCondominios() {
   const desvincularFuncionario = async (condominio, funcionario) => {
     setLoadingAction(true)
     try {
-      await entebenService.updateFuncionario(funcionario.cpf, { ...funcionario, condominio: null })
+      const payload = {
+        cpf: funcionario.cpf,
+        nome: funcionario.nome,
+        matricula: funcionario.matricula,
+        funcao: funcionario.funcao,
+        data_nascimento: funcionario.data_nascimento,
+        telefone: funcionario.telefone,
+        email: funcionario.email,
+        departamento: funcionario.departamento,
+        condominio: null,
+      }
+
+      await entebenService.updateFuncionario(funcionario.cpf, payload)
       await carregarDados()
       showToast(`Funcionário ${funcionario.nome} desvinculado com sucesso!`)
       setFuncionariosModal(prev => ({ ...prev, open: false }))
