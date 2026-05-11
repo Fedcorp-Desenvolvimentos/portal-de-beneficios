@@ -22,6 +22,12 @@ import RelatoriosBeneficios from './pages/Client/RelatoriosBeneficios.jsx'
 import ColaboradorDashboard from './pages/Interno/ColaboradorDashboard.jsx'
 import ImportacaoDocs from './pages/Interno/ImportacaoDocs.jsx'
 
+import Administradoras from './pages/Interno/Administradoras/Administradoras.jsx'
+import CadastroAdministradora from './pages/Interno/Administradoras/CadastroAdministradora.jsx'
+import EditarAdministradora from './pages/Interno/Administradoras/EditarAdministradora.jsx'
+import UsuarioAdministradora from './pages/Interno/Administradoras/UsuariosAdministradora.jsx'
+import DetalhesAdministradoras from './pages/Interno/Administradoras/DetalhesAdministradoras.jsx'
+
 import { AuthProvider } from './context/AuthContext.jsx'
 import ProtectedRoute from './routes/ProtectedRoute.jsx'
 
@@ -40,9 +46,25 @@ function Layout() {
     '/relatorios': 'Relatórios de Benefícios',
     '/colaborador/dashboard': 'Dashboard Fedcorp',
     '/colaborador/importacaoDocs': 'Importação Fedcorp',
+    '/interno/administradoras': 'Gestão de Administradoras',
+    '/interno/administradoras/nova': 'Nova Administradora',
+    '/interno/administradoras/usuarios': 'Usuários da Administradora',
+    '/interno/administradoras/detalhes': 'Detalhes da Administradora',
   }
 
-  const title = titles[location.pathname] ?? 'Portal de Benefícios'
+  const getTitle = () => {
+    if (location.pathname.startsWith('/interno/administradoras/') && location.pathname.endsWith('/editar')) {
+      return 'Editar Administradora'
+    }
+
+    if (location.pathname.startsWith('/interno/administradoras/') && location.pathname.endsWith('/usuarios')) {
+      return 'Usuários da Administradora'
+    }
+
+    return titles[location.pathname] ?? 'Portal de Benefícios'
+  }
+
+  const title = getTitle()
 
   return (
     <div className="app">
@@ -72,7 +94,59 @@ function Layout() {
               }
             />
 
-            <Route path="/colaborador/importacaoDocs" element={<ImportacaoDocs />} />
+            <Route
+              path="/colaborador/importacaoDocs"
+              element={
+                <ProtectedRoute allowedRoles={['dev', 'colaborador_fedcorp']}>
+                  <ImportacaoDocs />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/interno/administradoras"
+              element={
+                <ProtectedRoute allowedRoles={['dev', 'colaborador_fedcorp']}>
+                  <Administradoras />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/interno/administradoras/nova"
+              element={
+                <ProtectedRoute allowedRoles={['dev', 'colaborador_fedcorp']}>
+                  <CadastroAdministradora />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/interno/administradoras/:id/editar"
+              element={
+                <ProtectedRoute allowedRoles={['dev', 'colaborador_fedcorp']}>
+                  <EditarAdministradora />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/interno/administradoras/:id/usuarios"
+              element={
+                <ProtectedRoute allowedRoles={['dev', 'colaborador_fedcorp']}>
+                  <UsuarioAdministradora />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/interno/administradoras/:id"
+              element={
+                <ProtectedRoute allowedRoles={['dev', 'colaborador_fedcorp']}>
+                  <DetalhesAdministradoras />
+                </ProtectedRoute>
+              }
+            />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
@@ -87,7 +161,7 @@ export default function App() {
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/esqueci-senha" element={<EsqueciSenha/>}/>
+        <Route path="/esqueci-senha" element={<EsqueciSenha />} />
 
         <Route
           path="/*"

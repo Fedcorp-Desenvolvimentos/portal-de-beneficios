@@ -14,14 +14,16 @@ const navConfig = {
     { to: '/gerenciamento', label: 'Gerenciamento' },
     // Temporariamente para acesso rápido
     { to: '/colaborador/dashboard', label: 'Dashboard Fedcorp' },
+    { to: '/interno/administradoras', label: 'Administradoras' },
     // { to: '/colaborador/importacaoDocs', label: 'Importação Fedcorp' },
   ],
   colaborador_fedcorp: [
     { to: '/colaborador/dashboard', label: 'Dashboard' },
+     { to: '/colaborador/dashboard', label: 'Dashboard' },
     { to: '/pendentes', label: 'Pendentes' },
     { to: '/colaborador/importar-faturamento', label: 'Importar Faturamento' },
     { to: '/colaborador/historico', label: 'Histórico' },
-    { to: '/colaborador/importacaoDocs', label: 'Importação Fedcorp' },
+    { to: '/interno/administradoras', label: 'Administradoras' },
   ],
 }
 
