@@ -4,11 +4,9 @@ import { PencilLine, Trash2, Check, X as XIcon, Eye } from 'lucide-react'
 import '../../styles/Importacao.css'
 import { uploadService } from '../../services/uploadService'
 import { toast } from 'react-toastify'
-import { 
-  atualizarDataToBackend, 
-  aplicarAjusteLimiteBeneficios, 
-  prepararDadosParaEnvio, 
-  verificarSincronizacao, 
+import {
+  aplicarAjusteLimiteBeneficios,
+  prepararDadosParaEnvio,
 } from '../../utils/ajuste_calculo_importacao'
 
 import { useAuth } from '../../context/AuthContext'
@@ -21,7 +19,12 @@ function Modal({ open, title, onClose, children }) {
       <div className="modal-card">
         <div className="modal-header">
           <h3>{title}</h3>
-          <button className="btn-ghost" onClick={onClose} type="button">
+          <button
+            className="btn-ghost"
+            onClick={onClose}
+            type="button"
+            disabled={locked}
+          >
             ✕
           </button>
         </div>
@@ -51,30 +54,28 @@ function getNomeColaborador(row) {
 }
 
 function getValorRow(row) {
-  // Prioriza o valor que está no lote (já editado)
   if (row?.valor_total && typeof row.valor_total !== 'undefined') {
     const valor = typeof row.valor_total === 'string' ? parseFloat(row.valor_total) : row.valor_total
     if (!isNaN(valor)) return valor
   }
-  
+
   if (row?.valor && typeof row.valor !== 'undefined') {
     const valor = typeof row.valor === 'string' ? parseFloat(row.valor) : row.valor
     if (!isNaN(valor)) return valor
   }
-  
+
   if (row?.valor_recarga_bene) {
     const valor = typeof row.valor_recarga_bene === 'string' ? parseFloat(row.valor_recarga_bene) : row.valor_recarga_bene
     if (!isNaN(valor)) return valor
   }
-  
-  // Fallback: tentar qualquer campo numérico
+
   for (const key of ['valorTotal', 'ValorTotal', 'total', 'amount', 'preco']) {
     if (row[key]) {
       const valor = typeof row[key] === 'string' ? parseFloat(row[key]) : row[key]
       if (!isNaN(valor)) return valor
     }
   }
-  
+
   return 0
 }
 
@@ -120,10 +121,6 @@ function formatCompetenciaBR(mes, ano) {
 
   const mesFormatado = String(mes || '').padStart(2, '0')
   return `${mesFormatado}/${ano || ''}`
-}
-
-function getSummaryBackend(data) {
-  return data?.data_to_backend?.summary || data?.summary || {}
 }
 
 function getMovimentacoesBackend(data) {
@@ -368,70 +365,6 @@ function buildPreviewRowsFromMovimentacoes(movimentacoes = []) {
   return Array.from(mapa.values())
 }
 
-function formatDateToBackend(dateValue) {
-  if (!dateValue) return ''
-
-  const value = String(dateValue).trim()
-
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
-    return value
-  }
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    const [y, m, d] = value.split('-')
-    return `${d}/${m}/${y}`
-  }
-
-  if (value.includes('T')) {
-    const onlyDate = value.split('T')[0]
-    if (/^\d{4}-\d{2}-\d{2}$/.test(onlyDate)) {
-      const [y, m, d] = onlyDate.split('-')
-      return `${d}/${m}/${y}`
-    }
-  }
-
-  return ''
-}
-
-function getProdutoCodigoBackend(item) {
-  return String(
-    item?.produto_codigo ||
-      item?.codigo_produto ||
-      item?.cod_produto ||
-      item?.codigo ||
-      ''
-  ).trim()
-}
-
-function getProdutoBackend(item) {
-  return (
-    item?.produto ||
-    item?.nome_produto ||
-    item?.produto_nome ||
-    item?.beneficio ||
-    item?.beneficio_nome ||
-    item?.nome_beneficio ||
-    item?.descricao_produto ||
-    item?.descricao ||
-    ''
-  )
-}
-
-function getDepartamentoBackend(item) {
-  return (
-    item?.departamento ||
-    item?.setor ||
-    item?.area ||
-    item?.condominio ||
-    item?.nome_condominio ||
-    'GERAL'
-  )
-}
-
-function getQuantidadeBackend(item) {
-  return Number(item?.quantidade || item?.quantidade_dias || item?.dias || 0)
-}
-
 export default function Importacao() {
   const [data, setData] = useState(null)
   const [dataSincronizada, setDataSincronizada] = useState(null)
@@ -462,6 +395,8 @@ export default function Importacao() {
   const [colaboradorParaExcluir, setColaboradorParaExcluir] = useState(null)
 
   const [reviewOpen, setReviewOpen] = useState(false)
+  const [enviandoLote, setEnviandoLote] = useState(false)
+
   const [reviewData, setReviewData] = useState({
     totalFuncionarios: 0,
     totalMovimentacoes: 0,
@@ -480,7 +415,6 @@ export default function Importacao() {
     competenciaAno: String(new Date().getFullYear()),
     vencimento: '',
   })
-
 
   async function handleResult({ file }) {
     try {
@@ -663,12 +597,13 @@ export default function Importacao() {
   const podeEnviar = linhasValidadas.length > 0 && totalBloqueios === 0
 
   const abrirConfirmacaoExclusao = (row) => {
+    if (enviandoLote) return
     setColaboradorParaExcluir(row)
     setConfirmDeleteOpen(true)
   }
 
   const confirmarExclusaoColaborador = () => {
-    if (!colaboradorParaExcluir) return
+    if (!colaboradorParaExcluir || enviandoLote) return
 
     const colaboradorKey = getNomeColaborador(colaboradorParaExcluir)
 
@@ -688,11 +623,14 @@ export default function Importacao() {
   }
 
   const cancelarExclusaoColaborador = () => {
+    if (enviandoLote) return
     setConfirmDeleteOpen(false)
     setColaboradorParaExcluir(null)
   }
 
   const limparLote = () => {
+    if (enviandoLote) return
+
     setLote({
       id: null,
       arquivo: null,
@@ -734,9 +672,14 @@ export default function Importacao() {
     })
   }
 
-  const abrirModalEnvio = () => setModalOpen(true)
+  const abrirModalEnvio = () => {
+    if (enviandoLote) return
+    setModalOpen(true)
+  }
 
   const abrirDetalhes = (row) => {
+    if (enviandoLote) return
+
     setDetailsTitle(getNomeColaborador(row))
     setDetailsBenefits(row?.beneficios || [])
     setDetailsRowKey(getRowKey(row))
@@ -746,6 +689,8 @@ export default function Importacao() {
   }
 
   const iniciarEdicaoBeneficio = (index, valorAtual) => {
+    if (enviandoLote) return
+
     setEditingBenefitIndex(index)
     setEditBenefitValue(String(valorAtual || '').replace(',', '.'))
   }
@@ -756,6 +701,8 @@ export default function Importacao() {
   }
 
   const salvarEdicaoBeneficio = (beneficioIndex) => {
+    if (enviandoLote) return
+
     const novoValor = Number(editBenefitValue)
 
     if (Number.isNaN(novoValor) || novoValor <= 0) {
@@ -810,73 +757,70 @@ export default function Importacao() {
   const abrirModalRevisao = (e) => {
     e.preventDefault()
 
+    if (enviandoLote) return
+
     if (!data || !data.data_to_backend) {
       console.error('Dados de envio não disponíveis')
       toast.error('Erro: dados do arquivo não disponíveis')
       return
     }
 
-    // 🔥 CRÍTICO: Sincronizar dados antes de mostrar o modal
     const dataSincronizada = prepararDadosParaEnvio(lote, data.data_to_backend, 2500)
-    
-    // Calcular totais corretos a partir do lote atual
+
     let totalMovimentacoes = 0
     let valorTotalBeneficios = 0
-    
-    linhasValidadas.forEach(row => {
+
+    linhasValidadas.forEach((row) => {
       const valor = getValorRow(row)
       valorTotalBeneficios += valor
-      
+
       if (row.beneficios && Array.isArray(row.beneficios)) {
         totalMovimentacoes += row.beneficios.length
       }
     })
-    
-    // Data de competência
+
     const hoje = new Date()
     const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0')
     const anoAtual = hoje.getFullYear()
-    
+
     setReviewData({
       totalFuncionarios: linhasValidadas.length,
-      totalMovimentacoes: totalMovimentacoes,
-      valorTotalBeneficios: valorTotalBeneficios,
+      totalMovimentacoes,
+      valorTotalBeneficios,
       periodoInicio: formEnvio.periodoInicio || `2026-04-01`,
       periodoFim: formEnvio.periodoFim || `2026-04-30`,
       competenciaMes: formEnvio.competenciaMes || mesAtual,
       competenciaAno: formEnvio.competenciaAno || String(anoAtual),
       vencimento: formEnvio.vencimento || `2026-04-30`,
     })
-    
-    // Guardar dados sincronizados para o envio
+
     setDataSincronizada(dataSincronizada)
-    
+
     setModalOpen(false)
     setReviewOpen(true)
   }
 
-
   const confirmarEnvio = async () => {
+    if (enviandoLote) return
+
     if (!lote || !lote.rows || lote.rows.length === 0) {
       toast.error('Não há dados para enviar')
       return
     }
-    
+
     if (!data || !data.data_to_backend) {
       toast.error('Dados do arquivo não disponíveis')
       return
     }
-    
+
     try {
-      // Aplicar ajustes de limite (se necessário)
+      setEnviandoLote(true)
+
       const loteComAjustes = aplicarAjusteLimiteBeneficios(lote, 2500)
-      
-      // Sincronizar com o backend
       const dataToBackendSincronizado = prepararDadosParaEnvio(loteComAjustes, data.data_to_backend, 2500)
-      
-      // Adicionar metadados do formulário
+
       const vencimentoFormatado = formEnvio.vencimento || reviewData.vencimento || ''
-      
+
       dataToBackendSincronizado.periodo_inicio = formEnvio.periodoInicio || reviewData.periodoInicio
       dataToBackendSincronizado.periodo_fim = formEnvio.periodoFim || reviewData.periodoFim
       dataToBackendSincronizado.competencia_mes = formEnvio.competenciaMes || reviewData.competenciaMes
@@ -885,44 +829,46 @@ export default function Importacao() {
       dataToBackendSincronizado.tipo_processamento = lote.tipo || 'compra'
       dataToBackendSincronizado.origem = 'importacao_faturamento'
       dataToBackendSincronizado.file_upload_id = data.file_upload_id || lote.id?.replace('IMP-', '') || 228
-      
-      // Calcular resumo final
+
       let totalFuncionarios = 0
       let totalMovimentacoes = 0
       let valorTotalBeneficios = 0
       const funcionariosMap = new Map()
-      
-      loteComAjustes.rows.forEach(func => {
+
+      loteComAjustes.rows.forEach((func) => {
         if (!funcionariosMap.has(func.cpf)) {
           funcionariosMap.set(func.cpf, func)
           totalFuncionarios++
         }
-        
+
         const valor = typeof func.valor_total === 'string' ? parseFloat(func.valor_total) : func.valor_total
         valorTotalBeneficios += valor
-        
+
         if (func.beneficios) {
           totalMovimentacoes += func.beneficios.length
         }
       })
-      
+
       if (!dataToBackendSincronizado.summary) {
         dataToBackendSincronizado.summary = {}
       }
-      
+
       dataToBackendSincronizado.summary.total_funcionarios = totalFuncionarios
       dataToBackendSincronizado.summary.total_movimentacoes = totalMovimentacoes
       dataToBackendSincronizado.summary.valor_total_beneficios = valorTotalBeneficios.toFixed(2)
-      
-      // Preparar erros (apenas os que ainda persistem)
+
       const errosAtuais = []
-      loteComAjustes.rows.forEach(func => {
+
+      loteComAjustes.rows.forEach((func) => {
         const valor = typeof func.valor_total === 'string' ? parseFloat(func.valor_total) : func.valor_total
+
         if (valor > 2500) {
-          errosAtuais.push(`Valor total do funcionário ${func.nome_funcionario} R$ ${valor.toFixed(2)} excede limite de R$ 2.500,00`)
+          errosAtuais.push(
+            `Valor total do funcionário ${func.nome_funcionario} R$ ${valor.toFixed(2)} excede limite de R$ 2.500,00`
+          )
         }
       })
-      
+
       dataToBackendSincronizado.errors = errosAtuais
       dataToBackendSincronizado.linhas_com_erro = errosAtuais.map(erro => ({ mensagem: erro }))
 
@@ -945,32 +891,26 @@ export default function Importacao() {
         tipo_processamento: dataToBackendSincronizado.tipo_processamento,
         origem: dataToBackendSincronizado.origem,
         status: 'PARSED',
-        detail: 'Arquivo processado. Confirme os dados para gravação.'
+        detail: 'Arquivo processado. Confirme os dados para gravação.',
       }
-      
-      // console.log('📤 DADOS PARA ENVIO PARA O BACKEND:', dadosParaEnvio)
-      // console.log(`💰 Total do lote: R$ ${valorTotalBeneficios.toFixed(2)}`)
-      // console.log(`👥 Funcionários: ${totalFuncionarios}`)
-      // console.log(`📦 Movimentações: ${totalMovimentacoes}`)
-      
+
       const responseEnvio = await uploadService.confirmUpload(dadosParaEnvio)
-      // console.log('Resposta do envio:', responseEnvio)
 
       toast.success(responseEnvio?.detail || responseEnvio?.message || 'Lote enviado com sucesso!')
-      
+
       setReviewOpen(false)
       setModalOpen(false)
-            
+
       setTimeout(() => {
         window.location.href = '/'
       }, 1500)
-      
     } catch (error) {
       console.error('Erro no envio:', error)
       toast.error(`Erro: ${error.message}`)
+    } finally {
+      setEnviandoLote(false)
     }
   }
-
 
   const totalCompras = useMemo(() => {
     return rowsAtivas.reduce((total, row) => {
@@ -980,15 +920,14 @@ export default function Importacao() {
   }, [rowsAtivas])
 
   const totalFaturamento = useMemo(() => {
-    // Usar linhasValidadas que já tem os valores atualizados
     let total = 0
-    linhasValidadas.forEach(row => {
+
+    linhasValidadas.forEach((row) => {
       total += getValorRow(row)
     })
+
     return total
   }, [linhasValidadas, lote.rows])
-
-  // console.log('Lote atual:', lote)
 
   return (
     <div className="importacao-container">
@@ -1016,7 +955,12 @@ export default function Importacao() {
               </small>
             </div>
 
-            <button className="btn-ghost" onClick={limparLote} type="button">
+            <button
+              className="btn-ghost"
+              onClick={limparLote}
+              type="button"
+              disabled={enviandoLote}
+            >
               Descartar lote
             </button>
           </div>
@@ -1042,11 +986,11 @@ export default function Importacao() {
                 mostrarSomenteAcima2500 ? 'kpi-active' : ''
               }`}
               onClick={() => {
-                if (totalBloqueios > 0) {
+                if (totalBloqueios > 0 && !enviandoLote) {
                   setMostrarSomenteAcima2500((prev) => !prev)
                 }
               }}
-              disabled={totalBloqueios === 0}
+              disabled={totalBloqueios === 0 || enviandoLote}
             >
               <span className="kpi-label">
                 {mostrarSomenteAcima2500
@@ -1123,6 +1067,7 @@ export default function Importacao() {
                               title={`Detalhes de ${nomeColaborador}`}
                               onClick={() => abrirDetalhes(r)}
                               type="button"
+                              disabled={enviandoLote}
                             >
                               <Eye size={16} />
                               <span className="btn-text">Detalhes</span>
@@ -1133,6 +1078,7 @@ export default function Importacao() {
                               title={`Excluir colaborador ${nomeColaborador}`}
                               onClick={() => abrirConfirmacaoExclusao(r)}
                               type="button"
+                              disabled={enviandoLote}
                             >
                               <Trash2 size={16} />
                               <span className="btn-text">Excluir</span>
@@ -1150,7 +1096,7 @@ export default function Importacao() {
           <div className="lote-actions">
             <button
               className="btn-primary"
-              disabled={!podeEnviar}
+              disabled={!podeEnviar || enviandoLote}
               onClick={abrirModalEnvio}
               type="button"
             >
@@ -1164,7 +1110,12 @@ export default function Importacao() {
         </div>
       )}
 
-      <Modal open={modalOpen} title="Informações obrigatórias" onClose={() => setModalOpen(false)}>
+      <Modal
+        open={modalOpen}
+        title="Informações obrigatórias"
+        onClose={() => !enviandoLote && setModalOpen(false)}
+        locked={enviandoLote}
+      >
         <form onSubmit={abrirModalRevisao} className="form-grid">
           <div className="form-row two-cols">
             <label>
@@ -1176,6 +1127,7 @@ export default function Importacao() {
                   setFormEnvio((prev) => ({ ...prev, periodoInicio: e.target.value }))
                 }
                 required
+                disabled={enviandoLote}
               />
             </label>
 
@@ -1189,6 +1141,7 @@ export default function Importacao() {
                   setFormEnvio((prev) => ({ ...prev, periodoFim: e.target.value }))
                 }
                 required
+                disabled={enviandoLote}
               />
             </label>
           </div>
@@ -1202,6 +1155,7 @@ export default function Importacao() {
                   setFormEnvio((prev) => ({ ...prev, competenciaMes: e.target.value }))
                 }
                 required
+                disabled={enviandoLote}
               >
                 <option value="" disabled>
                   Selecione o mês
@@ -1225,15 +1179,21 @@ export default function Importacao() {
                 setFormEnvio((prev) => ({ ...prev, vencimento: e.target.value }))
               }
               required
+              disabled={enviandoLote}
             />
           </label>
 
           <div className="modal-actions">
-            <button type="button" className="btn-ghost" onClick={() => setModalOpen(false)}>
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={() => setModalOpen(false)}
+              disabled={enviandoLote}
+            >
               Cancelar
             </button>
 
-            <button type="submit" className="btn-primary">
+            <button type="submit" className="btn-primary" disabled={enviandoLote}>
               Continuar
             </button>
           </div>
@@ -1244,6 +1204,7 @@ export default function Importacao() {
         open={confirmDeleteOpen}
         title="Confirmar exclusão"
         onClose={cancelarExclusaoColaborador}
+        locked={enviandoLote}
       >
         <div className="confirm-delete-content">
           <p className="confirm-delete-text">
@@ -1264,6 +1225,7 @@ export default function Importacao() {
               type="button"
               className="btn-ghost"
               onClick={cancelarExclusaoColaborador}
+              disabled={enviandoLote}
             >
               Cancelar
             </button>
@@ -1272,6 +1234,7 @@ export default function Importacao() {
               type="button"
               className="btn-outline btn-danger"
               onClick={confirmarExclusaoColaborador}
+              disabled={enviandoLote}
             >
               Confirmar exclusão
             </button>
@@ -1282,7 +1245,8 @@ export default function Importacao() {
       <Modal
         open={reviewOpen}
         title="Confirmar envio do lote"
-        onClose={() => setReviewOpen(false)}
+        onClose={() => !enviandoLote && setReviewOpen(false)}
+        locked={enviandoLote}
       >
         <div className="review-summary">
           <div className="review-grid">
@@ -1320,20 +1284,39 @@ export default function Importacao() {
             </div>
           </div>
 
+          {enviandoLote && (
+            <div className="import-processing-box">
+              <div className="import-processing-spinner" />
+
+              <div>
+                <strong>Processando importação...</strong>
+                <p>Estamos gravando o lote e validando os dados. Não feche esta tela.</p>
+              </div>
+            </div>
+          )}
+
           <div className="modal-actions">
             <button
               type="button"
               className="btn-ghost"
               onClick={() => {
+                if (enviandoLote) return
+
                 setReviewOpen(false)
                 setModalOpen(true)
               }}
+              disabled={enviandoLote}
             >
               Voltar
             </button>
 
-            <button type="button" className="btn-primary" onClick={confirmarEnvio}>
-              Confirmar envio
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={confirmarEnvio}
+              disabled={enviandoLote}
+            >
+              {enviandoLote ? 'Processando importação...' : 'Confirmar envio'}
             </button>
           </div>
         </div>
@@ -1343,10 +1326,13 @@ export default function Importacao() {
         open={detailsOpen}
         title={`Benefícios - ${detailsTitle}`}
         onClose={() => {
+          if (enviandoLote) return
+
           setDetailsOpen(false)
           setEditingBenefitIndex(null)
           setEditBenefitValue('')
         }}
+        locked={enviandoLote}
       >
         <div className="details-benefits-list">
           {detailsBenefits.length === 0 ? (
@@ -1382,6 +1368,7 @@ export default function Importacao() {
                           className="btn-sm btn-outline btn-icon"
                           onClick={() => iniciarEdicaoBeneficio(index, beneficio.valor)}
                           title="Editar benefício"
+                          disabled={enviandoLote}
                         >
                           <PencilLine size={15} />
                           <span className="btn-text">Editar</span>
@@ -1399,6 +1386,7 @@ export default function Importacao() {
                           value={editBenefitValue}
                           onChange={(e) => setEditBenefitValue(e.target.value)}
                           autoFocus
+                          disabled={enviandoLote}
                         />
 
                         <button
@@ -1406,6 +1394,7 @@ export default function Importacao() {
                           className="btn-sm btn-primary btn-icon"
                           onClick={() => salvarEdicaoBeneficio(index)}
                           title="Salvar"
+                          disabled={enviandoLote}
                         >
                           <Check size={15} />
                         </button>
@@ -1415,6 +1404,7 @@ export default function Importacao() {
                           className="btn-sm btn-ghost btn-icon"
                           onClick={cancelarEdicaoBeneficio}
                           title="Cancelar"
+                          disabled={enviandoLote}
                         >
                           <XIcon size={15} />
                         </button>

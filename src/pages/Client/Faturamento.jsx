@@ -4,7 +4,7 @@ import {
   Download,
   FileText,
   CalendarDays,
- Receipt,
+  Receipt,
   Files,
 } from 'lucide-react'
 
@@ -217,8 +217,6 @@ export default function Faturamento() {
   const [error, setError] = useState('')
   const [importacoes, setImportacoes] = useState([])
 
-  // console.log("importacoes", importacoes)
-
   const [paginaAtual, setPaginaAtual] = useState(1)
 
   const itensPorPagina = 5
@@ -315,28 +313,11 @@ export default function Faturamento() {
     tipo = ''
   ) {
     try {
-      const token =
-        localStorage.getItem('accessToken')
-
-      const baseUrl =
-        'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app/api'
-
-      const url = `${baseUrl}/upload/faturamento/${faturamentoId}/download/${tipo}`
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: token
-          ? { Authorization: `Bearer ${token}` }
-          : {},
-      })
-
-      if (!response.ok) {
-        throw new Error(
-          'Erro ao baixar documento'
+      const blob =
+        await entebenService.downloadDocumentoFaturamento(
+          faturamentoId,
+          tipo
         )
-      }
-
-      const blob = await response.blob()
 
       const fileURL =
         window.URL.createObjectURL(blob)
@@ -344,10 +325,7 @@ export default function Faturamento() {
       const nomeArquivo = tipo
         ? `${tipo
             .replaceAll('/', '')
-            .replaceAll(
-              '-',
-              '_'
-            )}-${faturamentoId}.pdf`
+            .replaceAll('-', '_')}-${faturamentoId}.pdf`
         : `faturamento-${faturamentoId}.pdf`
 
       const a = document.createElement('a')
@@ -358,6 +336,7 @@ export default function Faturamento() {
       document.body.appendChild(a)
 
       a.click()
+
       a.remove()
 
       window.URL.revokeObjectURL(fileURL)
@@ -367,7 +346,9 @@ export default function Faturamento() {
         err
       )
 
-      alert('Erro ao baixar documento.')
+      alert(
+        'Não foi possível baixar o documento.'
+      )
     }
   }
 
@@ -442,8 +423,13 @@ export default function Faturamento() {
     return importacoes
       .map((item) => {
         const key =
+          item.id ||
           item.faturamento_id ||
-          item.faturamento?.id ||
+          item.faturamento?.id
+
+        const downloadId =
+          item.file_upload_id ||
+          item.importacao_id ||
           item.id
 
         const label = `Importação ${item.id}`
@@ -474,6 +460,7 @@ export default function Faturamento() {
         return {
           ...item,
           key,
+          downloadId,
           importacaoLabel: label,
           importacaoDate: formatDateBR(
             item.data_importacao
@@ -504,6 +491,7 @@ export default function Faturamento() {
         const textoBusca = [
           group.importacaoLabel,
           group.key,
+          group.downloadId,
           group.competencia,
           group.status,
           group.nome_usuario,
@@ -548,15 +536,6 @@ export default function Faturamento() {
           matchVencimento
         )
       })
-      // .sort((a, b) =>
-      //   String(
-      //     b.data_importacao || ''
-      //   ).localeCompare(
-      //     String(
-      //       a.data_importacao || ''
-      //     )
-      //   )
-      // )
   }, [
     importacoes,
     search,
@@ -595,8 +574,6 @@ export default function Faturamento() {
     setFiltroVigencia('')
     setFiltroVencimento('')
   }
-
-  // console.log("gruposPaginados", gruposPaginados)
 
   return (
     <div className="fatv2-page">
@@ -638,7 +615,7 @@ export default function Faturamento() {
 
             <select
               value={filtroStatus}
-              className='status'
+              className="status"
               onChange={(e) =>
                 setFiltroStatus(
                   e.target.value
@@ -663,45 +640,6 @@ export default function Faturamento() {
               )}
             </select>
           </label>
-{/* 
-          <label>
-            <span>
-              Competência
-            </span>
-
-            <select
-              value={
-                filtroCompetencia
-              }
-              onChange={(e) =>
-                setFiltroCompetencia(
-                  e.target.value
-                )
-              }
-              className="comp"
-            >
-              <option value="">
-                Todas
-              </option>
-
-              {opcoesCompetencia.map(
-                (
-                  competencia
-                ) => (
-                  <option
-                    key={
-                      competencia
-                    }
-                    value={
-                      competencia
-                    }
-                  >
-                    {competencia}
-                  </option>
-                )
-              )}
-            </select>
-          </label> */}
 
           <label>
             <span>Vigência</span>
@@ -793,7 +731,7 @@ export default function Faturamento() {
         <>
           <section className="fatv2-list">
             {gruposPaginados.length ===
-            0 ? (
+              0 ? (
               <div className="fatv2-empty">
                 Nenhum faturamento
                 encontrado para os
@@ -927,7 +865,7 @@ export default function Faturamento() {
                               )}
 
                               {group.faturamento_progresso !=
-                              null
+                                null
                                 ? ` - ${group.faturamento_progresso}%`
                                 : ''}
                             </span>
@@ -963,8 +901,8 @@ export default function Faturamento() {
                             }
                             onClick={() =>
                               baixarDocumento(
-                                group.key,
-                                'boletos/'
+                                group.downloadId,
+                                'boleto-original/'
                               )
                             }
                           >
@@ -988,8 +926,8 @@ export default function Faturamento() {
                             }
                             onClick={() =>
                               baixarDocumento(
-                                group.key,
-                                'notas-fiscais/'
+                                group.downloadId,
+                                'nota-fiscal/'
                               )
                             }
                           >
@@ -1013,8 +951,8 @@ export default function Faturamento() {
                             }
                             onClick={() =>
                               baixarDocumento(
-                                group.key,
-                                'notas-debito/'
+                                group.downloadId,
+                                'nota-debito/'
                               )
                             }
                           >
@@ -1037,11 +975,26 @@ export default function Faturamento() {
                                 ? 'Documento disponível apenas quando o faturamento estiver concluído'
                                 : ''
                             }
-                            onClick={() =>
-                              baixarDocumento(
-                                group.key
-                              )
-                            }
+                            onClick={async () => {
+                              try {
+                                await baixarDocumento(
+                                  group.downloadId,
+                                  'boleto-original/'
+                                )
+
+                                await baixarDocumento(
+                                  group.downloadId,
+                                  'nota-fiscal/'
+                                )
+
+                                await baixarDocumento(
+                                  group.downloadId,
+                                  'nota-debito/'
+                                )
+                              } catch (e) {
+                                console.error(e)
+                              }
+                            }}
                           >
                             <Download
                               size={
