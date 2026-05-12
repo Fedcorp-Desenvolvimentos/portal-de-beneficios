@@ -34,7 +34,7 @@ const Ico = ({ d }) => (
   <svg
     viewBox="0 0 24 24"
     fill="none"
-      stroke="currentColor"
+    stroke="currentColor"
     strokeWidth={1.8}
     strokeLinecap="round"
     strokeLinejoin="round"
@@ -281,16 +281,18 @@ export default function Dashboard() {
             <div className="dbi-kpi-foot">Base da última importação</div>
           </button>
 
-          <button className="dbi-kpi-card" onClick={() => navigate('/pendentes')}>
+          <button className="dbi-kpi-card" onClick={() => navigate('/interno/administradoras')}>
             <div className="dbi-kpi-top">
               <IconWrap><IcoCalendar /></IconWrap>
-              <span className="dbi-kpi-label">Extrato de Pagamentos</span>
+              <span className="dbi-kpi-label">Gerenciamento de Administradoras</span>
             </div>
+
             <div className="dbi-kpi-value">{totalAberto}</div>
+
             <div className="dbi-kpi-foot">
               {pendencias.length > 0
-                ? `${pendencias.length} vencido${pendencias.length > 1 ? 's' : ''}`
-                : 'Nenhuma pendência hoje'}
+                ? `${pendencias.length} administradora${pendencias.length > 1 ? 's' : ''}`
+                : 'Nenhuma administradora pendente'}
             </div>
           </button>
 
@@ -345,10 +347,10 @@ export default function Dashboard() {
 
                       <span
                         className={`dbi-badge ${getImportStatus(ultImp) === 'sucesso'
-                            ? 'success'
-                            : getImportStatus(ultImp) === 'erro'
-                              ? 'danger'
-                              : 'info'
+                          ? 'success'
+                          : getImportStatus(ultImp) === 'erro'
+                            ? 'danger'
+                            : 'info'
                           }`}
                       >
                         {getImportStatus(ultImp)}
