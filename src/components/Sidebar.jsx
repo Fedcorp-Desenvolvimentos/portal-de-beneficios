@@ -5,7 +5,7 @@ import '../styles/Sidebar.css'
 
 const navConfig = {
   cliente: [
-    { to: '/', label: 'Início' },
+     { to: '/', label: 'Início' },
     { to: '/importacao', label: 'Importação' },
     { to: '/faturamento', label: 'Faturamento' },
     // { to: '/pendentes', label: 'Pendentes' },
