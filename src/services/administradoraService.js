@@ -1,4 +1,15 @@
+import { apiFetch } from "./api"
+
 const STORAGE_KEY = 'administradoras'
+
+export const administradoraService = {
+  listarAdministradoras,
+  buscarAdministradoraPorId,
+  criarAdministradora,
+  editarAdministradora,
+  alterarStatusAdministradora,
+  excluirAdministradora,
+}
 
 function getAdministradorasStorage() {
   return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []
@@ -17,20 +28,39 @@ export function buscarAdministradoraPorId(id) {
   return administradoras.find((adm) => adm.id === id) || null
 }
 
+// export function criarAdministradora(dados) {
+//   const administradoras = getAdministradorasStorage()
+
+//   const novaAdministradora = {
+//     id: crypto.randomUUID(),
+//     ...dados,
+//     createdAt: new Date().toISOString(),
+//     updatedAt: null,
+//   }
+
+//   setAdministradorasStorage([...administradoras, novaAdministradora])
+
+//   return novaAdministradora
+// }
+
 export function criarAdministradora(dados) {
-  const administradoras = getAdministradorasStorage()
+  try {
+    const token = localStorage.getItem('accessToken')
 
-  const novaAdministradora = {
-    id: crypto.randomUUID(),
-    ...dados,
-    createdAt: new Date().toISOString(),
-    updatedAt: null,
+    const result = apiFetch('api/entidades/administradoras/', {
+      method: 'POST',
+      body: JSON.stringify(dados),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    console.log('Resultado da API:', result)
+  } catch (error) {
+    console.error('Erro ao criar administradora:', error)
   }
-
-  setAdministradorasStorage([...administradoras, novaAdministradora])
-
-  return novaAdministradora
 }
+
 
 export function editarAdministradora(id, dados) {
   const administradoras = getAdministradorasStorage()

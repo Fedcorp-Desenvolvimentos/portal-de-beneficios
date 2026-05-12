@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { criarAdministradora } from '../../../services/administradoraService.js'
 import './Administradoras.css'
 
+
+import { administradoraService } from '../../../services/administradoraService.js'
+
 const initialForm = {
   nomeFantasia: '',
   razaoSocial: '',
@@ -26,11 +29,16 @@ export default function CadastroAdministradora() {
   }
 
   function handleSubmit(event) {
-    event.preventDefault()
+    try {
+      event.preventDefault()
 
-    criarAdministradora(form)
+      console.log(form)
+      // administradoraService.criarAdministradora(form)
 
-    navigate('/interno/administradoras')
+      navigate('/interno/administradoras')
+    } catch (error) {
+      console.error('Erro ao criar administradora:', error)
+    }
   }
 
   return (

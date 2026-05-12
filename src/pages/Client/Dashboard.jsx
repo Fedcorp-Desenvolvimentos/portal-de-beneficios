@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import PendenciasDoDiaModal from '../../components/PendenciasDoDiaModal'
 import { entebenService } from '../../services/entebenService'
 
-import '../../styles/dashboard.css'
+import '../../styles/Dashboard.css'
 
 const API_BASE_URL = 'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app/api'
 

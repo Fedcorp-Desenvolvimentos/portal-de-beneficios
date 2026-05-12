@@ -11,6 +11,8 @@ import {
   verificarSincronizacao, 
 } from '../../utils/ajuste_calculo_importacao'
 
+import { useAuth } from '../../context/AuthContext'
+
 function Modal({ open, title, onClose, children }) {
   if (!open) return null
 
@@ -434,6 +436,8 @@ export default function Importacao() {
   const [data, setData] = useState(null)
   const [dataSincronizada, setDataSincronizada] = useState(null)
 
+  const { user } = useAuth()
+
   // console.log("data", data)
 
   const [lote, setLote] = useState({
@@ -480,7 +484,7 @@ export default function Importacao() {
 
   async function handleResult({ file }) {
     try {
-      const response = await uploadService.uploadFile(file)
+      const response = await uploadService.uploadFile(file, user?.administradora_id)
 
       const id = 'IMP-' + (response?.file_upload_id || Date.now())
       const tipo = file.name.toLowerCase().includes('fat') ? 'faturamento' : 'compra'
@@ -921,10 +925,13 @@ export default function Importacao() {
       
       dataToBackendSincronizado.errors = errosAtuais
       dataToBackendSincronizado.linhas_com_erro = errosAtuais.map(erro => ({ mensagem: erro }))
+
+      let administradoraId = user?.administradora_id || dataToBackendSincronizado.administradora_id || null
       
       // Montar objeto final para envio
       const dadosParaEnvio = {
         file_upload_id: data.file_upload_id || Number(lote.id?.replace('IMP-', '')) || 228,
+        administradora_id: administradoraId,
         condominios: dataToBackendSincronizado.condominios || [],
         errors: errosAtuais,
         linhas_com_erro: dataToBackendSincronizado.linhas_com_erro || [],

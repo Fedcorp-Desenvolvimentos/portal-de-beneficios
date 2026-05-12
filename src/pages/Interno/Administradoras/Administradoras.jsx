@@ -8,6 +8,8 @@ import {
 } from '../../../services/administradoraService.js'
 import './Administradoras.css'
 
+import { administradoraService } from '../../../services/administradoraService.js'
+
 export default function Administradoras() {
   const navigate = useNavigate()
 
