@@ -1,114 +1,336 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { criarAdministradora } from '../../../services/administradoraService.js'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { 
+  criarAdministradora, 
+  consultarPessoaPorCNPJ, 
+  atualizarAdministradora,
+  buscarAdministradoraPorId 
+} from '../../../services/administradoraService.js'
 import './Administradoras.css'
 
-
-import { administradoraService } from '../../../services/administradoraService.js'
-
 const initialForm = {
-  nomeFantasia: '',
-  razaoSocial: '',
+  razao_social: '',
+  nome_fantasia: '',
   cnpj: '',
   email: '',
-  telefone: '',
-  status: 'ativa',
+  ativo: true,
+  cartao_admin: '',
 }
 
 export default function CadastroAdministradora() {
   const navigate = useNavigate()
+  const { id } = useParams()
+  const isEditing = !!id
+  
   const [form, setForm] = useState(initialForm)
+  const [loading, setLoading] = useState(false)
+  const [cnpjError, setCnpjError] = useState('')
+  const [submitError, setSubmitError] = useState('')
+  const [initialLoading, setInitialLoading] = useState(isEditing)
+
+  // Carregar dados se for edição
+  useEffect(() => {
+    if (isEditing) {
+      carregarAdministradora()
+    }
+  }, [id])
+
+  const carregarAdministradora = async () => {
+    try {
+      const data = await buscarAdministradoraPorId(id)
+      setForm({
+        razao_social: data.razao_social || '',
+        nome_fantasia: data.nome_fantasia || '',
+        cnpj: data.cnpj || '',
+        email: data.email || '',
+        ativo: data.ativo,
+        cartao_admin: data.cartao_admin ? 'administradora' : 'condominio',
+      })
+    } catch (error) {
+      console.error('❌ Erro ao carregar administradora:', error)
+      setSubmitError('Erro ao carregar dados da administradora')
+    } finally {
+      setInitialLoading(false)
+    }
+  }
+
+  async function buscarDadosPorCNPJ(cnpj) {
+    const cnpjLimpo = cnpj.replace(/\D/g, '')
+    
+    if (cnpjLimpo.length !== 14) {
+      return
+    }
+
+    setLoading(true)
+    setCnpjError('')
+
+    try {
+      const response = await consultarPessoaPorCNPJ(cnpjLimpo)
+      
+      if (response.sucesso && response.data) {
+        const data = response.data
+
+        console.log("📦 Dados retornados da API:", data)
+        
+        setForm(prev => ({
+          ...prev,
+          razao_social: data.NOME || '',
+          nome_fantasia: data.NOME || '',
+          cnpj: data.CPF_CNPJ || cnpj,
+        }))
+      } else {
+        setCnpjError('CNPJ não encontrado na base de dados')
+      }
+    } catch (error) {
+      console.error('❌ Erro ao buscar CNPJ:', error)
+      setCnpjError('Erro ao consultar CNPJ. Tente novamente.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   function handleChange(event) {
-    const { name, value } = event.target
+    const { name, value, type, checked } = event.target
+    
+    let newValue
+    if (type === 'checkbox') {
+      newValue = checked
+    } else if (type === 'radio') {
+      newValue = value
+    } else {
+      newValue = value
+    }
+
+    console.log(`🔄 Alterando campo [${name}]:`, {
+      tipo: type,
+      valorAntigo: form[name],
+      valorNovo: newValue
+    })
 
     setForm((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: newValue,
     }))
+
+    if (name === 'cnpj' && !isEditing) {
+      if (cnpjError) setCnpjError('')
+      
+      const timeoutId = setTimeout(() => {
+        buscarDadosPorCNPJ(value)
+      }, 500)
+      
+      return () => clearTimeout(timeoutId)
+    }
   }
 
-  function handleSubmit(event) {
+  function handleBlurCNPJ(event) {
+    if (isEditing) return // Não busca dados se for edição
+    
+    const cnpjValue = event.target.value
+    if (cnpjValue && cnpjValue.replace(/\D/g, '').length === 14) {
+      buscarDadosPorCNPJ(cnpjValue)
+    }
+  }
+
+  function formatCNPJ(value) {
+    const cnpjLimpo = value.replace(/\D/g, '')
+    
+    if (cnpjLimpo.length <= 2) return cnpjLimpo
+    if (cnpjLimpo.length <= 5) return `${cnpjLimpo.slice(0, 2)}.${cnpjLimpo.slice(2)}`
+    if (cnpjLimpo.length <= 8) return `${cnpjLimpo.slice(0, 2)}.${cnpjLimpo.slice(2, 5)}.${cnpjLimpo.slice(5)}`
+    if (cnpjLimpo.length <= 12) return `${cnpjLimpo.slice(0, 2)}.${cnpjLimpo.slice(2, 5)}.${cnpjLimpo.slice(5, 8)}/${cnpjLimpo.slice(8)}`
+    
+    return `${cnpjLimpo.slice(0, 2)}.${cnpjLimpo.slice(2, 5)}.${cnpjLimpo.slice(5, 8)}/${cnpjLimpo.slice(8, 12)}-${cnpjLimpo.slice(12, 14)}`
+  }
+
+  function handleCNPJChange(event) {
+    const rawValue = event.target.value
+    const formattedValue = formatCNPJ(rawValue)
+    
+    setForm((prev) => ({
+      ...prev,
+      cnpj: formattedValue,
+    }))
+    
+    if (cnpjError) setCnpjError('')
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    setSubmitError('')
+    
+    // Validação antes de enviar
+    if (!form.cartao_admin) {
+      setSubmitError('⚠️ Selecione o local de recebimento do cartão')
+      return
+    }
+
+    if (!form.razao_social) {
+      setSubmitError('⚠️ Razão Social é obrigatória')
+      return
+    }
+
+    const cnpjLimpo = form.cnpj.replace(/\D/g, '')
+    if (cnpjLimpo.length !== 14) {
+      setSubmitError('⚠️ CNPJ inválido')
+      return
+    }
+
     try {
-      event.preventDefault()
-
-      console.log(form)
-      // administradoraService.criarAdministradora(form)
-
+      // CONVERTE string para boolean
+      const cartaoAdminBoolean = form.cartao_admin === 'administradora'
+      
+      const formData = {
+        cnpj: cnpjLimpo,
+        razao_social: form.razao_social,
+        nome_fantasia: form.nome_fantasia || null,
+        email: form.email || null,
+        ativo: form.ativo,
+        cartao_admin: cartaoAdminBoolean
+      }
+      
+      console.log('📤 Enviando dados para o backend:', JSON.stringify(formData, null, 2))
+      console.log(`📤 cartao_admin convertido: "${form.cartao_admin}" -> ${cartaoAdminBoolean}`)
+      
+      if (isEditing) {
+        await atualizarAdministradora(id, formData)
+        console.log('✅ Administradora atualizada com sucesso')
+      } else {
+        await criarAdministradora(formData)
+        console.log('✅ Administradora criada com sucesso')
+      }
+      
       navigate('/interno/administradoras')
     } catch (error) {
-      console.error('Erro ao criar administradora:', error)
+      console.error('❌ Erro ao salvar administradora:', error)
+      console.error('Detalhes do erro:', error.response?.data)
+      
+      setSubmitError(
+        error.response?.data?.message || 
+        error.response?.data?.error || 
+        'Erro ao salvar administradora. Verifique os dados e tente novamente.'
+      )
     }
+  }
+
+  if (initialLoading) {
+    return <div className="administradoras-page">Carregando...</div>
   }
 
   return (
     <div className="administradoras-page">
       <div className="administradoras-header">
         <div>
-          <h1>Nova Administradora</h1>
-          <p>Preencha os dados para cadastrar uma nova administradora.</p>
+          <h1>{isEditing ? 'Editar Administradora' : 'Nova Administradora'}</h1>
+          <p>{isEditing ? 'Edite os dados da administradora.' : 'Preencha os dados para cadastrar uma nova administradora.'}</p>
         </div>
       </div>
 
       <form className="administradora-form" onSubmit={handleSubmit}>
+        {submitError && (
+          <div className="error-banner" style={{background: '#ffebee', color: '#c62828', padding: '10px', borderRadius: '4px', marginBottom: '20px'}}>
+            {submitError}
+          </div>
+        )}
+
         <div className="form-grid">
           <label>
-            Nome Fantasia
-            <input
-              name="nomeFantasia"
-              value={form.nomeFantasia}
-              onChange={handleChange}
-              required
-            />
-          </label>
-
-          <label>
-            Razão Social
-            <input
-              name="razaoSocial"
-              value={form.razaoSocial}
-              onChange={handleChange}
-              required
-            />
-          </label>
-
-          <label>
-            CNPJ
+            CNPJ *
             <input
               name="cnpj"
               value={form.cnpj}
+              onChange={handleCNPJChange}
+              onBlur={handleBlurCNPJ}
+              placeholder="00.000.000/0000-00"
+              required
+              disabled={loading || isEditing}
+            />
+            {loading && <small>Buscando dados do CNPJ...</small>}
+            {cnpjError && <small className="error-message">{cnpjError}</small>}
+            {!isEditing && (
+              <small className="helper-text">
+                Digite o CNPJ para buscar automaticamente os dados
+              </small>
+            )}
+          </label>
+
+          <label>
+            Razão Social *
+            <input
+              name="razao_social"
+              value={form.razao_social}
               onChange={handleChange}
               required
+              disabled={loading}
+            />
+          </label>
+
+          <label>
+            Nome Fantasia
+            <input
+              name="nome_fantasia"
+              value={form.nome_fantasia}
+              onChange={handleChange}
+              disabled={loading}
+              placeholder="Opcional"
             />
           </label>
 
           <label>
             Email
             <input
-              type="email"
               name="email"
               value={form.email}
               onChange={handleChange}
-              required
+              disabled={loading}
+              placeholder="Opcional"
+              type="email"
             />
           </label>
 
-          <label>
-            Telefone
+          <label className="checkbox-label">
             <input
-              name="telefone"
-              value={form.telefone}
+              type="checkbox"
+              name="ativo"
+              checked={form.ativo}
               onChange={handleChange}
             />
+            Administradora Ativa
           </label>
+        </div>
 
-          <label>
-            Status
-            <select name="status" value={form.status} onChange={handleChange}>
-              <option value="ativa">Ativa</option>
-              <option value="inativa">Inativa</option>
-            </select>
-          </label>
+        <div className="form-group card-receipt-group">
+          <label className="section-label">Local de Recebimento do Cartão *</label>
+          
+          <div className="radio-group">
+            <label className="radio-label">
+              <input
+                type="radio"
+                name="cartao_admin"
+                value="administradora"
+                checked={form.cartao_admin === 'administradora'}
+                onChange={handleChange}
+                disabled={loading}
+              />
+              <span>Na Administradora (true)</span>
+            </label>
+
+            <label className="radio-label">
+              <input
+                type="radio"
+                name="cartao_admin"
+                value="condominio"
+                checked={form.cartao_admin === 'condominio'}
+                onChange={handleChange}
+                disabled={loading}
+              />
+              <span>No Condomínio (false)</span>
+            </label>
+          </div>
+
+          <small className="info-text">
+            <strong>Informação:</strong> Os cartões serão enviados para o local selecionado acima
+          </small>
         </div>
 
         <div className="form-actions">
@@ -120,8 +342,12 @@ export default function CadastroAdministradora() {
             Cancelar
           </button>
 
-          <button type="submit" className="btn-primary">
-            Salvar Administradora
+          <button 
+            type="submit" 
+            className="btn-primary"
+            disabled={loading}
+          >
+            {loading ? 'Processando...' : (isEditing ? 'Atualizar' : 'Salvar')}
           </button>
         </div>
       </form>

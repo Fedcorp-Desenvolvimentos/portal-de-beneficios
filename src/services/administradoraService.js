@@ -28,26 +28,29 @@ export function buscarAdministradoraPorId(id) {
   return administradoras.find((adm) => adm.id === id) || null
 }
 
-// export function criarAdministradora(dados) {
-//   const administradoras = getAdministradorasStorage()
+export function listarTodasAdministradoras(dados) {
+  try {
+    const token = localStorage.getItem('accessToken')
 
-//   const novaAdministradora = {
-//     id: crypto.randomUUID(),
-//     ...dados,
-//     createdAt: new Date().toISOString(),
-//     updatedAt: null,
-//   }
-
-//   setAdministradorasStorage([...administradoras, novaAdministradora])
-
-//   return novaAdministradora
-// }
+    const result = apiFetch('/entidades/administradoras/', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    console.log('Resultado da API:', result)
+    return result
+  } catch (error) {
+    console.error('Erro ao listar administradoras:', error)
+  }
+}
 
 export function criarAdministradora(dados) {
   try {
     const token = localStorage.getItem('accessToken')
 
-    const result = apiFetch('api/entidades/administradoras/', {
+    const result = apiFetch('/entidades/administradoras/', {
       method: 'POST',
       body: JSON.stringify(dados),
       headers: {
@@ -61,6 +64,23 @@ export function criarAdministradora(dados) {
   }
 }
 
+export async function consultarPessoaPorCNPJ(cnpj) {
+  try {
+    const token = localStorage.getItem('accessToken')
+
+    const result = await apiFetch(`/consultas/pessoas/por-cnpj/${cnpj}/`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    
+    return result
+  } catch (error) {
+    console.error('Erro ao criar administradora:', error)
+  }
+}
 
 export function editarAdministradora(id, dados) {
   const administradoras = getAdministradorasStorage()
