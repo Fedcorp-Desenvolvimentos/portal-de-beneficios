@@ -9,38 +9,29 @@ const STORAGE_KEYS = {
 };
 
 /**
- * Serviço para gerenciamento de autenticação do usuário.
+ * Serviço para gerenciamento de autenticação e usuários.
  */
 export const userService = {
     /**
      * Realiza a autenticação do usuário e salva ambos os tokens.
-     * @param {string} email - Nome de usuário (ou email).
-     * @param {string} password - Senha.
-     * @returns {Promise<object>} - Dados do usuário após o login.
      */
     login: async (email, password) => {
         const payload = { email, password };
 
         try {
-            // O endpoint de login deve ser adaptado ao seu backend Django (ex: /api/auth/token/)
-            const data = await apiFetch('/auth/token/', { // Endpoint comum para JWT
+            const data = await apiFetch('/auth/token/', {
                 method: 'POST',
                 body: payload,
-                // Garantimos que não enviamos Authorization header para o endpoint de login
                 headers: { 'Authorization': '' } 
             });
 
-            // ALTERAÇÃO: Assumimos que o backend retorna { access: "...", refresh: "..." }
             const accessToken = data.access;
             const refreshToken = data.refresh;
             
             if (accessToken && refreshToken) {
-                // Armazenamento de ambos os tokens
                 localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
                 localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-                
-                // console.log('Login bem-sucedido. Tokens armazenados.');
-                return data; 
+                return data;
             } else {
                 throw new Error('Tokens de autenticação não recebidos.');
             }
@@ -52,8 +43,6 @@ export const userService = {
 
     /**
      * Usa o refresh token para obter um novo access token.
-     * Útil para manter a sessão ativa sem exigir novo login.
-     * @returns {Promise<string>} - O novo access token.
      */
     refreshToken: async () => {
         const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
@@ -63,20 +52,16 @@ export const userService = {
         }
 
         try {
-            // Endpoint para atualizar o token (comum em bibliotecas JWT do Django)
             const data = await apiFetch('/auth/token/refresh/', {
                 method: 'POST',
                 body: { refresh: refreshToken },
-                // Garantimos que não enviamos um access token expirado no header para este endpoint
                 headers: { 'Authorization': '' } 
             });
 
             const newAccessToken = data.access;
 
             if (newAccessToken) {
-                // Salva o novo access token
                 localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, newAccessToken);
-                // console.log('Access token atualizado com sucesso.');
                 return newAccessToken;
             } else {
                 throw new Error('Novo access token não recebido.');
@@ -84,21 +69,16 @@ export const userService = {
 
         } catch (error) {
             console.error('Erro ao tentar atualizar o token:', error);
-            // Em caso de falha no refresh, forçamos o logout
             userService.logout(); 
             throw new Error('Sessão expirada ou refresh token inválido. Usuário deslogado.');
         }
     },
     
     /**
-     * Busca os dados do usuário logado usando o access token.
-     * * NOTA DE CORREÇÃO: apiFetch agora lida com o token lido do localStorage, 
-     * o que resolve o "ReferenceError: accessToken is not defined".
-     * * @returns {Promise<object>} - Dados do usuário (ex: {id: 1, email: "..."}).
+     * Busca os dados do usuário logado.
      */
     getUserData: async () => {
         try {
-            // O apiFetch adicionará o Authorization header automaticamente
             const userData = await apiFetch('/users/me/', { method: 'GET' }); 
             return userData;
         } catch (error) {
@@ -108,22 +88,94 @@ export const userService = {
     },
 
     /**
-     * Remove ambos os tokens de autenticação (logout).
+     * Lista todos os usuários (apenas admin).
      */
-    logout: () => {
-        // ALTERAÇÃO: Removendo ambos os tokens
-        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-        // apiFetch('/auth/logout/', { method: 'POST' }); // Chamar endpoint de backend, se existir
-        // console.log('Logout realizado. Tokens removidos.');
+    listarUsuarios: async () => {
+        try {
+            const usuarios = await apiFetch('/users/list/', { method: 'GET' });
+            return usuarios;
+        } catch (error) {
+            console.error('Erro ao listar usuários:', error);
+            throw error;
+        }
     },
 
     /**
-     * Verifica se o usuário está autenticado (tem um access token válido).
-     * @returns {boolean}
+     * Busca um usuário por ID.
+     */
+    buscarUsuarioPorId: async (id) => {
+        try {
+            const usuario = await apiFetch(`/users/${id}/`, { method: 'GET' });
+            return usuario;
+        } catch (error) {
+            console.error('Erro ao buscar usuário:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Cria um novo usuário vinculado a uma administradora.
+     */
+    criarUsuario: async (dados) => {
+        try {
+            const usuario = await apiFetch('/users/register/', {
+                method: 'POST',
+                body: JSON.stringify(dados),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            return usuario;
+        } catch (error) {
+            console.error('Erro ao criar usuário:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Atualiza um usuário existente.
+     */
+    atualizarUsuario: async (id, dados) => {
+        try {
+            const usuario = await apiFetch(`/users/${id}/`, {
+                method: 'PUT',
+                body: JSON.stringify(dados),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            return usuario;
+        } catch (error) {
+            console.error('Erro ao atualizar usuário:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Remove um usuário.
+     */
+    excluirUsuario: async (id) => {
+        try {
+            await apiFetch(`/users/${id}/`, { method: 'DELETE' });
+            return true;
+        } catch (error) {
+            console.error('Erro ao excluir usuário:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Remove ambos os tokens de autenticação (logout).
+     */
+    logout: () => {
+        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    },
+
+    /**
+     * Verifica se o usuário está autenticado.
      */
     isAuthenticated: () => {
-        // ALTERAÇÃO: Verifica a existência do access token
         return !!localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
     }
 };

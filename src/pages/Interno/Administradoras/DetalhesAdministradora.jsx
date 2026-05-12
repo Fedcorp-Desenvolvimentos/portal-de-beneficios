@@ -1,16 +1,25 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { buscarAdministradoraPorId } from '../../../services/administradoraService.js'
+import { userService } from '../../../services/userService.js'
+
 import './Administradoras.css'
+import UsuarioModal from '../../../components/UsuarioTable.jsx'
+import UsuarioTable from '../../../components/UsuarioTable.jsx'
 
 export default function DetalhesAdministradora() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [administradora, setAdministradora] = useState(null)
+  const [usuarios, setUsuarios] = useState([])
   const [loading, setLoading] = useState(true)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [usuarioSelecionado, setUsuarioSelecionado] = useState(null)
+  const [loadingUsuarios, setLoadingUsuarios] = useState(false)
 
   useEffect(() => {
     carregarAdministradora()
+    carregarUsuarios()
   }, [id])
 
   const carregarAdministradora = async () => {
@@ -23,6 +32,55 @@ export default function DetalhesAdministradora() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const carregarUsuarios = async () => {
+    try {
+      setLoadingUsuarios(true)
+      const todosUsuarios = await userService.listarUsuarios()
+      // Filtra apenas usuários desta administradora
+      const usuariosFiltrados = todosUsuarios.filter(
+        user => user.administradora_id === parseInt(id)
+      )
+      setUsuarios(usuariosFiltrados)
+    } catch (error) {
+      console.error('❌ Erro ao carregar usuários:', error)
+    } finally {
+      setLoadingUsuarios(false)
+    }
+  }
+
+  const handleNovoUsuario = () => {
+    setUsuarioSelecionado(null)
+    setModalOpen(true)
+  }
+
+  const handleEditarUsuario = (usuario) => {
+    setUsuarioSelecionado(usuario)
+    setModalOpen(true)
+  }
+
+  const handleExcluirUsuario = async (usuario) => {
+    if (window.confirm(`Tem certeza que deseja excluir o usuário "${usuario.username}"?`)) {
+      try {
+        await userService.excluirUsuario(usuario.id)
+        await carregarUsuarios()
+      } catch (error) {
+        console.error('❌ Erro ao excluir usuário:', error)
+        alert('Erro ao excluir usuário')
+      }
+    }
+  }
+
+  const handleSalvarUsuario = async (dados) => {
+    if (usuarioSelecionado) {
+      // Edição
+      await userService.atualizarUsuario(usuarioSelecionado.id, dados)
+    } else {
+      // Criação
+      await userService.criarUsuario(dados)
+    }
+    await carregarUsuarios()
   }
 
   const formatarCartaoAdmin = (cartao_admin) => {
@@ -48,7 +106,7 @@ export default function DetalhesAdministradora() {
             Voltar
           </button>
           <button className="btn-primary" onClick={() => navigate(`/interno/administradoras/editar/${id}`)}>
-            Editar
+            Editar Administradora
           </button>
         </div>
       </div>
@@ -92,6 +150,41 @@ export default function DetalhesAdministradora() {
           </div>
         </div>
       </div>
+
+      {/* Seção de Usuários */}
+      <div className="administradoras-card">
+        <div className="administradoras-header">
+          <div>
+            <h2>Usuários Vinculados</h2>
+            <p>Gerencie os usuários que têm acesso a esta administradora.</p>
+          </div>
+          <button className="btn-primary" onClick={handleNovoUsuario}>
+            + Novo Usuário
+          </button>
+        </div>
+
+        {loadingUsuarios ? (
+          <div className="loading-message">Carregando usuários...</div>
+        ) : (
+          <UsuarioTable 
+            usuarios={usuarios}
+            onEditar={handleEditarUsuario}
+            onExcluir={handleExcluirUsuario}
+          />
+        )}
+      </div>
+
+      {/* Modal de Usuário */}
+      <UsuarioModal
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false)
+          setUsuarioSelecionado(null)
+        }}
+        onSave={handleSalvarUsuario}
+        usuario={usuarioSelecionado}
+        administradoraId={parseInt(id)}
+      />
     </div>
   )
 }

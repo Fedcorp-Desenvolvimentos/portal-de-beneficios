@@ -61,13 +61,16 @@ export default function EditarAdministradora() {
       const cartaoAdminBoolean = form.cartao_admin === 'administradora'
       
       const formData = {
+        cnpj: form.cnpj,
         razao_social: form.razao_social,
         nome_fantasia: form.nome_fantasia || null,
         email: form.email || null,
         ativo: form.ativo,
         cartao_admin: cartaoAdminBoolean
       }
+
       
+      console.log('📤 Enviando dados para atualização:', JSON.stringify(formData, null, 2))
       await editarAdministradora(id, formData)
       navigate('/interno/administradoras')
     } catch (error) {

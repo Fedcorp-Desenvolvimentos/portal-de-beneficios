@@ -11,7 +11,7 @@ import {
 
 import { useAuth } from '../../context/AuthContext'
 
-function Modal({ open, title, onClose, children }) {
+function Modal({ open, title, onClose, children, locked = false }) {
   if (!open) return null
 
   return (
@@ -19,6 +19,7 @@ function Modal({ open, title, onClose, children }) {
       <div className="modal-card">
         <div className="modal-header">
           <h3>{title}</h3>
+
           <button
             className="btn-ghost"
             onClick={onClose}
@@ -28,6 +29,7 @@ function Modal({ open, title, onClose, children }) {
             ✕
           </button>
         </div>
+
         <div className="modal-body">{children}</div>
       </div>
     </div>
