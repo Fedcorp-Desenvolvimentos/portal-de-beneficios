@@ -281,18 +281,18 @@ export default function Dashboard() {
             <div className="dbi-kpi-foot">Base da última importação</div>
           </button>
 
-          <button className="dbi-kpi-card" onClick={() => navigate('/interno/administradoras')}>
+          <button className="dbi-kpi-card" onClick={() => navigate('/gerenciamento')}>
             <div className="dbi-kpi-top">
               <IconWrap><IcoCalendar /></IconWrap>
-              <span className="dbi-kpi-label">Gerenciamento de Administradoras</span>
+              <span className="dbi-kpi-label">Gerenciamento de Condomínios</span>
             </div>
 
             <div className="dbi-kpi-value">{totalAberto}</div>
 
             <div className="dbi-kpi-foot">
               {pendencias.length > 0
-                ? `${pendencias.length} administradora${pendencias.length > 1 ? 's' : ''}`
-                : 'Nenhuma administradora pendente'}
+                ? `${pendencias.length} condominios${pendencias.length > 1 ? 's' : ''}`
+                : 'Nenhuma pendência'}
             </div>
           </button>
 
