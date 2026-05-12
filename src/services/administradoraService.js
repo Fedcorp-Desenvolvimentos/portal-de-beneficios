@@ -1,76 +1,105 @@
-const STORAGE_KEY = 'administradoras'
+import { apiFetch } from "./api"
 
-function getAdministradorasStorage() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []
-}
-
-function setAdministradorasStorage(administradoras) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(administradoras))
-}
-
-export function listarAdministradoras() {
-  return getAdministradorasStorage()
-}
-
-export function buscarAdministradoraPorId(id) {
-  const administradoras = getAdministradorasStorage()
-  return administradoras.find((adm) => adm.id === id) || null
-}
-
-export function criarAdministradora(dados) {
-  const administradoras = getAdministradorasStorage()
-
-  const novaAdministradora = {
-    id: crypto.randomUUID(),
-    ...dados,
-    createdAt: new Date().toISOString(),
-    updatedAt: null,
+export async function listarTodasAdministradoras() {
+  try {
+    const token = localStorage.getItem('accessToken')
+    const result = await apiFetch('/entidades/administradoras/', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    return result
+  } catch (error) {
+    console.error('Erro ao listar administradoras:', error)
+    throw error
   }
-
-  setAdministradorasStorage([...administradoras, novaAdministradora])
-
-  return novaAdministradora
 }
 
-export function editarAdministradora(id, dados) {
-  const administradoras = getAdministradorasStorage()
-
-  const atualizadas = administradoras.map((adm) =>
-    adm.id === id
-      ? {
-          ...adm,
-          ...dados,
-          updatedAt: new Date().toISOString(),
-        }
-      : adm
-  )
-
-  setAdministradorasStorage(atualizadas)
-
-  return buscarAdministradoraPorId(id)
+export async function buscarAdministradoraPorId(id) {
+  try {
+    const token = localStorage.getItem('accessToken')
+    const result = await apiFetch(`/entidades/administradoras/${id}/`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    return result
+  } catch (error) {
+    console.error('Erro ao buscar administradora:', error)
+    throw error
+  }
 }
 
-export function alterarStatusAdministradora(id) {
-  const administradoras = getAdministradorasStorage()
-
-  const atualizadas = administradoras.map((adm) =>
-    adm.id === id
-      ? {
-          ...adm,
-          status: adm.status === 'ativa' ? 'inativa' : 'ativa',
-          updatedAt: new Date().toISOString(),
-        }
-      : adm
-  )
-
-  setAdministradorasStorage(atualizadas)
-
-  return buscarAdministradoraPorId(id)
+export async function criarAdministradora(dados) {
+  try {
+    const token = localStorage.getItem('accessToken')
+    const result = await apiFetch('/entidades/administradoras/', {
+      method: 'POST',
+      body: JSON.stringify(dados),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    return result
+  } catch (error) {
+    console.error('Erro ao criar administradora:', error)
+    throw error
+  }
 }
 
-export function excluirAdministradora(id) {
-  const administradoras = getAdministradorasStorage()
-  const filtradas = administradoras.filter((adm) => adm.id !== id)
+export async function editarAdministradora(id, dados) {
+  try {
+    const token = localStorage.getItem('accessToken')
+    const result = await apiFetch(`/entidades/administradoras/${id}/`, {
+      method: 'PUT',
+      body: JSON.stringify(dados),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    return result
+  } catch (error) {
+    console.error('Erro ao editar administradora:', error)
+    throw error
+  }
+}
 
-  setAdministradorasStorage(filtradas)
+export async function excluirAdministradora(id) {
+  try {
+    const token = localStorage.getItem('accessToken')
+    const result = await apiFetch(`/entidades/administradoras/${id}/`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    return result
+  } catch (error) {
+    console.error('Erro ao excluir administradora:', error)
+    throw error
+  }
+}
+
+export async function consultarPessoaPorCNPJ(cnpj) {
+  try {
+    const token = localStorage.getItem('accessToken')
+    const result = await apiFetch(`/consultas/pessoas/por-cnpj/${cnpj}/`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    return result
+  } catch (error) {
+    console.error('Erro ao consultar CNPJ:', error)
+    throw error
+  }
 }

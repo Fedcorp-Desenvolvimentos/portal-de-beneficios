@@ -1,11 +1,12 @@
 import { apiFetch } from './api'
 
 export const uploadService = {
-  async uploadFile(file) {
+  async uploadFile(file, administradoraId) {
     try {
       const formData = new FormData()
       formData.append('file', file)
       formData.append('file_type', 'RB')
+      formData.append('administradora_id', administradoraId)
 
       const data = await apiFetch('/upload/', {
         method: 'POST',
