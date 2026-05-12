@@ -911,3 +911,79 @@
   font-size: 12px;
   color: #64748b;
 }
+
+.cf-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  flex-wrap: wrap;
+}
+
+.cf-pagination-info {
+  font-size: 12px;
+  color: var(--sub);
+}
+
+.cf-pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cf-pagination-page {
+  font-size: 12px;
+  color: var(--sub);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .cf-pagination {
+    align-items: stretch;
+  }
+
+  .cf-pagination-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+.cf-upload-progress {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.cf-upload-progress-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--sub);
+}
+
+.cf-upload-progress-top strong {
+  color: var(--accent);
+}
+
+.cf-upload-progress-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.cf-upload-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}

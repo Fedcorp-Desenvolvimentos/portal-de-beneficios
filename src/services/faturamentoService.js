@@ -1,4 +1,3 @@
-// src/services/faturamentoService.js
 
 import { apiFetch } from './api'
 
@@ -59,24 +58,39 @@ function inferExtension(contentType) {
 }
 
 export const faturamentoService = {
-  async importarDocumentos(pedidoId, arquivos = []) {
-    const formData = new FormData()
-    formData.append('pedido_id', pedidoId)
+  async importarDocumentos({
+  importacaoId,
+  competencia,
+  arquivoBoleto,
+  arquivoNotaDebito,
+  arquivoNotaFiscal = null,
+}) {
+  const formData = new FormData()
 
-    arquivos.forEach((arquivo) => {
-      formData.append('arquivos', arquivo)
-    })
+  formData.append('importacao_id', importacaoId)
+  formData.append('competencia', competencia)
 
-    return apiFetch('/upload/faturamento-documentos/', {
-      method: 'POST',
-      body: formData,
-    })
-  },
+  if (arquivoBoleto) {
+    formData.append('arquivo_boleto', arquivoBoleto)
+  }
 
-  async uploadDocumentos(pedidoId, arquivos = []) {
-    return this.importarDocumentos(pedidoId, arquivos)
-  },
+  if (arquivoNotaDebito) {
+    formData.append('arquivo_nota_debito', arquivoNotaDebito)
+  }
 
+  if (arquivoNotaFiscal) {
+    formData.append('arquivo_nota_fiscal', arquivoNotaFiscal)
+  }
+
+  return apiFetch('/upload/faturamento/upload/', {
+    method: 'POST',
+    body: formData,
+  })
+},
+
+  async uploadDocumentos(payload) {
+  return this.importarDocumentos(payload)
+},
   async listarPedidosFuncionario() {
 
     let token = getAuthToken()
@@ -244,15 +258,15 @@ export const faturamentoService = {
     return { filename, contentType, size: blob.size }
   },
 
-  async alterarStatusPedido(pedidoId, novoStatus, motivo = '') {
-    const payload = {
-      status: novoStatus,
-      ...(motivo && { motivo: motivo })
-    }
+async alterarStatusPedido(pedidoId, novoStatus, motivo = '') {
+  const payload = {
+    status: novoStatus,
+    ...(motivo && { motivo }),
+  }
 
-    return apiFetch(`/beneficios/importacoes/${pedidoId}/status/`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    })
-  },
+  return apiFetch(`/beneficios/importacoes/${pedidoId}/status/`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+},
 }
