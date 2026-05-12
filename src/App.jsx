@@ -26,7 +26,7 @@ import Administradoras from './pages/Interno/Administradoras/Administradoras.jsx
 import CadastroAdministradora from './pages/Interno/Administradoras/CadastroAdministradora.jsx'
 import EditarAdministradora from './pages/Interno/Administradoras/EditarAdministradora.jsx'
 import UsuarioAdministradora from './pages/Interno/Administradoras/UsuariosAdministradora.jsx'
-import DetalhesAdministradoras from './pages/Interno/Administradoras/DetalhesAdministradoras.jsx'
+import DetalhesAdministradora from './pages/Interno/Administradoras/DetalhesAdministradora.jsx'
 
 import { AuthProvider } from './context/AuthContext.jsx'
 import ProtectedRoute from './routes/ProtectedRoute.jsx'
@@ -103,50 +103,10 @@ function Layout() {
               }
             />
 
-            <Route
-              path="/interno/administradoras"
-              element={
-                <ProtectedRoute allowedRoles={['dev', 'colaborador_fedcorp']}>
-                  <Administradoras />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/interno/administradoras/nova"
-              element={
-                <ProtectedRoute allowedRoles={['dev', 'colaborador_fedcorp']}>
-                  <CadastroAdministradora />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/interno/administradoras/:id/editar"
-              element={
-                <ProtectedRoute allowedRoles={['dev', 'colaborador_fedcorp']}>
-                  <EditarAdministradora />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/interno/administradoras/:id/usuarios"
-              element={
-                <ProtectedRoute allowedRoles={['dev', 'colaborador_fedcorp']}>
-                  <UsuarioAdministradora />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/interno/administradoras/:id"
-              element={
-                <ProtectedRoute allowedRoles={['dev', 'colaborador_fedcorp']}>
-                  <DetalhesAdministradoras />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/interno/administradoras" element={<Administradoras />} />
+            <Route path="/interno/administradoras/cadastro" element={<CadastroAdministradora />} />
+            <Route path="/interno/administradoras/:id" element={<DetalhesAdministradora />} />
+            <Route path="/interno/administradoras/editar/:id" element={<EditarAdministradora />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

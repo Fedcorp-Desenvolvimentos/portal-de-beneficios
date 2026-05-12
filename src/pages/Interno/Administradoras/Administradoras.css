@@ -204,6 +204,7 @@
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.02em;
+  width: fit-content;
 }
 
 .status-badge::before {
@@ -259,19 +260,16 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  background: #020617;
   border: 1px solid #1f2937;
   border-radius: 12px;
   padding: 14px;
 }
 
 .details-item span {
-  color: #94a3b8;
   font-size: 13px;
 }
 
 .details-item strong {
-  color: #f8fafc;
   font-size: 15px;
 }
 

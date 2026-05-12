@@ -1,56 +1,43 @@
 import { apiFetch } from "./api"
 
-const STORAGE_KEY = 'administradoras'
-
-export const administradoraService = {
-  listarAdministradoras,
-  buscarAdministradoraPorId,
-  criarAdministradora,
-  editarAdministradora,
-  alterarStatusAdministradora,
-  excluirAdministradora,
-}
-
-function getAdministradorasStorage() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []
-}
-
-function setAdministradorasStorage(administradoras) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(administradoras))
-}
-
-export function listarAdministradoras() {
-  return getAdministradorasStorage()
-}
-
-export function buscarAdministradoraPorId(id) {
-  const administradoras = getAdministradorasStorage()
-  return administradoras.find((adm) => adm.id === id) || null
-}
-
-export function listarTodasAdministradoras(dados) {
+export async function listarTodasAdministradoras() {
   try {
     const token = localStorage.getItem('accessToken')
-
-    const result = apiFetch('/entidades/administradoras/', {
+    const result = await apiFetch('/entidades/administradoras/', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     })
-    console.log('Resultado da API:', result)
     return result
   } catch (error) {
     console.error('Erro ao listar administradoras:', error)
+    throw error
   }
 }
 
-export function criarAdministradora(dados) {
+export async function buscarAdministradoraPorId(id) {
   try {
     const token = localStorage.getItem('accessToken')
+    const result = await apiFetch(`/entidades/administradoras/${id}/`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    return result
+  } catch (error) {
+    console.error('Erro ao buscar administradora:', error)
+    throw error
+  }
+}
 
-    const result = apiFetch('/entidades/administradoras/', {
+export async function criarAdministradora(dados) {
+  try {
+    const token = localStorage.getItem('accessToken')
+    const result = await apiFetch('/entidades/administradoras/', {
       method: 'POST',
       body: JSON.stringify(dados),
       headers: {
@@ -58,16 +45,51 @@ export function criarAdministradora(dados) {
         'Content-Type': 'application/json',
       },
     })
-    console.log('Resultado da API:', result)
+    return result
   } catch (error) {
     console.error('Erro ao criar administradora:', error)
+    throw error
+  }
+}
+
+export async function editarAdministradora(id, dados) {
+  try {
+    const token = localStorage.getItem('accessToken')
+    const result = await apiFetch(`/entidades/administradoras/${id}/`, {
+      method: 'PUT',
+      body: JSON.stringify(dados),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    return result
+  } catch (error) {
+    console.error('Erro ao editar administradora:', error)
+    throw error
+  }
+}
+
+export async function excluirAdministradora(id) {
+  try {
+    const token = localStorage.getItem('accessToken')
+    const result = await apiFetch(`/entidades/administradoras/${id}/`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    return result
+  } catch (error) {
+    console.error('Erro ao excluir administradora:', error)
+    throw error
   }
 }
 
 export async function consultarPessoaPorCNPJ(cnpj) {
   try {
     const token = localStorage.getItem('accessToken')
-
     const result = await apiFetch(`/consultas/pessoas/por-cnpj/${cnpj}/`, {
       method: 'GET',
       headers: {
@@ -75,52 +97,9 @@ export async function consultarPessoaPorCNPJ(cnpj) {
         'Content-Type': 'application/json',
       },
     })
-    
     return result
   } catch (error) {
-    console.error('Erro ao criar administradora:', error)
+    console.error('Erro ao consultar CNPJ:', error)
+    throw error
   }
-}
-
-export function editarAdministradora(id, dados) {
-  const administradoras = getAdministradorasStorage()
-
-  const atualizadas = administradoras.map((adm) =>
-    adm.id === id
-      ? {
-          ...adm,
-          ...dados,
-          updatedAt: new Date().toISOString(),
-        }
-      : adm
-  )
-
-  setAdministradorasStorage(atualizadas)
-
-  return buscarAdministradoraPorId(id)
-}
-
-export function alterarStatusAdministradora(id) {
-  const administradoras = getAdministradorasStorage()
-
-  const atualizadas = administradoras.map((adm) =>
-    adm.id === id
-      ? {
-          ...adm,
-          status: adm.status === 'ativa' ? 'inativa' : 'ativa',
-          updatedAt: new Date().toISOString(),
-        }
-      : adm
-  )
-
-  setAdministradorasStorage(atualizadas)
-
-  return buscarAdministradoraPorId(id)
-}
-
-export function excluirAdministradora(id) {
-  const administradoras = getAdministradorasStorage()
-  const filtradas = administradoras.filter((adm) => adm.id !== id)
-
-  setAdministradorasStorage(filtradas)
 }

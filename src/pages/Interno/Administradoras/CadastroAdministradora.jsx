@@ -1,11 +1,6 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { 
-  criarAdministradora, 
-  consultarPessoaPorCNPJ, 
-  atualizarAdministradora,
-  buscarAdministradoraPorId 
-} from '../../../services/administradoraService.js'
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { criarAdministradora, consultarPessoaPorCNPJ } from '../../../services/administradoraService.js'
 import './Administradoras.css'
 
 const initialForm = {
@@ -19,40 +14,10 @@ const initialForm = {
 
 export default function CadastroAdministradora() {
   const navigate = useNavigate()
-  const { id } = useParams()
-  const isEditing = !!id
-  
   const [form, setForm] = useState(initialForm)
   const [loading, setLoading] = useState(false)
   const [cnpjError, setCnpjError] = useState('')
   const [submitError, setSubmitError] = useState('')
-  const [initialLoading, setInitialLoading] = useState(isEditing)
-
-  // Carregar dados se for edição
-  useEffect(() => {
-    if (isEditing) {
-      carregarAdministradora()
-    }
-  }, [id])
-
-  const carregarAdministradora = async () => {
-    try {
-      const data = await buscarAdministradoraPorId(id)
-      setForm({
-        razao_social: data.razao_social || '',
-        nome_fantasia: data.nome_fantasia || '',
-        cnpj: data.cnpj || '',
-        email: data.email || '',
-        ativo: data.ativo,
-        cartao_admin: data.cartao_admin ? 'administradora' : 'condominio',
-      })
-    } catch (error) {
-      console.error('❌ Erro ao carregar administradora:', error)
-      setSubmitError('Erro ao carregar dados da administradora')
-    } finally {
-      setInitialLoading(false)
-    }
-  }
 
   async function buscarDadosPorCNPJ(cnpj) {
     const cnpjLimpo = cnpj.replace(/\D/g, '')
@@ -69,7 +34,6 @@ export default function CadastroAdministradora() {
       
       if (response.sucesso && response.data) {
         const data = response.data
-
         console.log("📦 Dados retornados da API:", data)
         
         setForm(prev => ({
@@ -101,31 +65,21 @@ export default function CadastroAdministradora() {
       newValue = value
     }
 
-    console.log(`🔄 Alterando campo [${name}]:`, {
-      tipo: type,
-      valorAntigo: form[name],
-      valorNovo: newValue
-    })
-
     setForm((prev) => ({
       ...prev,
       [name]: newValue,
     }))
 
-    if (name === 'cnpj' && !isEditing) {
+    if (name === 'cnpj') {
       if (cnpjError) setCnpjError('')
-      
       const timeoutId = setTimeout(() => {
         buscarDadosPorCNPJ(value)
       }, 500)
-      
       return () => clearTimeout(timeoutId)
     }
   }
 
   function handleBlurCNPJ(event) {
-    if (isEditing) return // Não busca dados se for edição
-    
     const cnpjValue = event.target.value
     if (cnpjValue && cnpjValue.replace(/\D/g, '').length === 14) {
       buscarDadosPorCNPJ(cnpjValue)
@@ -134,24 +88,17 @@ export default function CadastroAdministradora() {
 
   function formatCNPJ(value) {
     const cnpjLimpo = value.replace(/\D/g, '')
-    
     if (cnpjLimpo.length <= 2) return cnpjLimpo
     if (cnpjLimpo.length <= 5) return `${cnpjLimpo.slice(0, 2)}.${cnpjLimpo.slice(2)}`
     if (cnpjLimpo.length <= 8) return `${cnpjLimpo.slice(0, 2)}.${cnpjLimpo.slice(2, 5)}.${cnpjLimpo.slice(5)}`
     if (cnpjLimpo.length <= 12) return `${cnpjLimpo.slice(0, 2)}.${cnpjLimpo.slice(2, 5)}.${cnpjLimpo.slice(5, 8)}/${cnpjLimpo.slice(8)}`
-    
     return `${cnpjLimpo.slice(0, 2)}.${cnpjLimpo.slice(2, 5)}.${cnpjLimpo.slice(5, 8)}/${cnpjLimpo.slice(8, 12)}-${cnpjLimpo.slice(12, 14)}`
   }
 
   function handleCNPJChange(event) {
     const rawValue = event.target.value
     const formattedValue = formatCNPJ(rawValue)
-    
-    setForm((prev) => ({
-      ...prev,
-      cnpj: formattedValue,
-    }))
-    
+    setForm((prev) => ({ ...prev, cnpj: formattedValue }))
     if (cnpjError) setCnpjError('')
   }
 
@@ -159,7 +106,6 @@ export default function CadastroAdministradora() {
     event.preventDefault()
     setSubmitError('')
     
-    // Validação antes de enviar
     if (!form.cartao_admin) {
       setSubmitError('⚠️ Selecione o local de recebimento do cartão')
       return
@@ -177,7 +123,6 @@ export default function CadastroAdministradora() {
     }
 
     try {
-      // CONVERTE string para boolean
       const cartaoAdminBoolean = form.cartao_admin === 'administradora'
       
       const formData = {
@@ -189,40 +134,22 @@ export default function CadastroAdministradora() {
         cartao_admin: cartaoAdminBoolean
       }
       
-      console.log('📤 Enviando dados para o backend:', JSON.stringify(formData, null, 2))
-      console.log(`📤 cartao_admin convertido: "${form.cartao_admin}" -> ${cartaoAdminBoolean}`)
+      console.log('📤 Enviando dados:', JSON.stringify(formData, null, 2))
       
-      if (isEditing) {
-        await atualizarAdministradora(id, formData)
-        console.log('✅ Administradora atualizada com sucesso')
-      } else {
-        await criarAdministradora(formData)
-        console.log('✅ Administradora criada com sucesso')
-      }
-      
+      await criarAdministradora(formData)
       navigate('/interno/administradoras')
     } catch (error) {
-      console.error('❌ Erro ao salvar administradora:', error)
-      console.error('Detalhes do erro:', error.response?.data)
-      
-      setSubmitError(
-        error.response?.data?.message || 
-        error.response?.data?.error || 
-        'Erro ao salvar administradora. Verifique os dados e tente novamente.'
-      )
+      console.error('❌ Erro:', error)
+      setSubmitError('Erro ao salvar administradora. Tente novamente.')
     }
-  }
-
-  if (initialLoading) {
-    return <div className="administradoras-page">Carregando...</div>
   }
 
   return (
     <div className="administradoras-page">
       <div className="administradoras-header">
         <div>
-          <h1>{isEditing ? 'Editar Administradora' : 'Nova Administradora'}</h1>
-          <p>{isEditing ? 'Edite os dados da administradora.' : 'Preencha os dados para cadastrar uma nova administradora.'}</p>
+          <h1>Nova Administradora</h1>
+          <p>Preencha os dados para cadastrar uma nova administradora.</p>
         </div>
       </div>
 
@@ -243,15 +170,11 @@ export default function CadastroAdministradora() {
               onBlur={handleBlurCNPJ}
               placeholder="00.000.000/0000-00"
               required
-              disabled={loading || isEditing}
+              disabled={loading}
             />
             {loading && <small>Buscando dados do CNPJ...</small>}
             {cnpjError && <small className="error-message">{cnpjError}</small>}
-            {!isEditing && (
-              <small className="helper-text">
-                Digite o CNPJ para buscar automaticamente os dados
-              </small>
-            )}
+            <small className="helper-text">Digite o CNPJ para buscar automaticamente os dados</small>
           </label>
 
           <label>
@@ -327,27 +250,14 @@ export default function CadastroAdministradora() {
               <span>No Condomínio (false)</span>
             </label>
           </div>
-
-          <small className="info-text">
-            <strong>Informação:</strong> Os cartões serão enviados para o local selecionado acima
-          </small>
         </div>
 
         <div className="form-actions">
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => navigate('/interno/administradoras')}
-          >
+          <button type="button" className="btn-secondary" onClick={() => navigate('/interno/administradoras')}>
             Cancelar
           </button>
-
-          <button 
-            type="submit" 
-            className="btn-primary"
-            disabled={loading}
-          >
-            {loading ? 'Processando...' : (isEditing ? 'Atualizar' : 'Salvar')}
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? 'Processando...' : 'Salvar Administradora'}
           </button>
         </div>
       </form>
