@@ -321,9 +321,9 @@ export default function Faturamento() {
 
       const fileURL = window.URL.createObjectURL(blob)
 
-      const nomeArquivo = tipo
+      const nomeArquivo = tipo !== 'originais/'
         ? `${tipo.replaceAll('/', '').replaceAll('-', '_')}-${faturamentoId}.pdf`
-        : `faturamento-${faturamentoId}.pdf`
+        : `faturamento-${faturamentoId}.zip`
 
       const a = document.createElement('a')
 
@@ -887,7 +887,7 @@ export default function Faturamento() {
                                 ? 'Documento disponível apenas quando o faturamento estiver concluído'
                                 : ''
                             }
-                            onClick={() => 
+                            onClick={() =>
                               baixarDocumento(
                                 group.downloadId,
                                 'boleto-original/'
@@ -967,17 +967,7 @@ export default function Faturamento() {
                               try {
                                 await baixarDocumento(
                                   group.downloadId,
-                                  'boleto-original/'
-                                )
-
-                                await baixarDocumento(
-                                  group.downloadId,
-                                  'nota-fiscal-original/'
-                                )
-
-                                await baixarDocumento(
-                                  group.downloadId,
-                                  'nota-debito-original/'
+                                  'originais/'
                                 )
                               } catch (e) {
                                 console.error(e)
