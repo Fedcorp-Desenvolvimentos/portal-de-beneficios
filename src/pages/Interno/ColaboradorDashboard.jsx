@@ -558,7 +558,7 @@ export default function ColaboradorDashboard() {
       pushToast({
         type: 'warning',
         title: 'Faturamento não iniciado',
-        message: 'Baixe o faturamento antes de importar documentos.',
+        message: 'Baixe o faturamento antes de importar documentos.', 
       })
       return
     }

@@ -55,35 +55,27 @@ const IcoCheck = () => <Ico d="M20 6 9 17l-5-5" />
 export default function Dashboard() {
   const navigate = useNavigate()
 
-  const [movimentacoes, setMovimentacoes] = useState([])
-  const [condoModalOpen, setCondoModalOpen] = useState(false)
+  const [ultimaMovimentacao, setUltimaMovimentacao] = useState(null)
+  const [historicoImportacoes, setHistoricoImportacoes] = useState([])
   const [acordos, setAcordos] = useState([])
   const [loading, setLoading] = useState(true)
 
   const [condoQuery, setCondoQuery] = useState('')
   const [selectedCondo, setSelectedCondo] = useState(null)
+  const [condoModalOpen, setCondoModalOpen] = useState(false)
 
   useEffect(() => {
-    ; (async () => {
+    (async () => {
       try {
-        const [ultimaImportacao, historicoImportacoes, acordosData] = await Promise.all([
-          entebenService.getUltimaImportacao(),
+        // Busca em paralelo: última movimentação, histórico e condomínios
+        const [ultima, historico, acordosData] = await Promise.all([
+          entebenService.getUltimaMovimentacao(),
           entebenService.getImportacoes(),
           entebenService.getcondominios(),
         ])
 
-        const historico = toArray(historicoImportacoes)
-        const metaUltima = historico[0] || null
-
-        const ultimaCompleta = ultimaImportacao || metaUltima
-          ? {
-            ...(ultimaImportacao || {}),
-            ...(metaUltima || {}),
-            condominios: ultimaImportacao?.condominios || [],
-          }
-          : null
-
-        setMovimentacoes(ultimaCompleta ? [ultimaCompleta, ...historico.slice(1)] : historico)
+        setUltimaMovimentacao(ultima)
+        setHistoricoImportacoes(toArray(historico))
         setAcordos(toArray(acordosData))
       } catch (e) {
         console.error('Erro ao carregar dashboard:', e)
@@ -113,8 +105,7 @@ export default function Dashboard() {
 
     return acordos
       .filter((c) => {
-        const nome =
-          c.nome || c.condominio || c.razao_social || c.fantasia || c.nome_condominio || ''
+        const nome = c.nome || c.condominio || c.razao_social || c.fantasia || c.nome_condominio || ''
         const cnpj = c.cnpj || c.cnpj_condominio || c.documento || c.cgc || ''
 
         return normTxt(nome).includes(qTxt) || (qDigits && onlyDigits(cnpj).includes(qDigits))
@@ -122,110 +113,46 @@ export default function Dashboard() {
       .slice(0, 8)
   }, [acordos, condoQuery])
 
-  const ultImp = movimentacoes?.[0]
-  const totalImportacoes = movimentacoes.length
+  // Usa dados da última movimentação
+  const totalImportacoes = historicoImportacoes.length
+  const faturamentoTotal = ultimaMovimentacao?.valor_total || 
+    acordos.reduce((s, a) => s + Number(a.valor || 0), 0)
+  const totalAberto = acordos.filter((a) => a.status !== 'Fechado').length
+  const totalCondominios = ultimaMovimentacao?.total_condominios || acordos.length
 
-  const getCondominiosImportacao = (i) =>
-    Array.isArray(i?.condominios) ? i.condominios : []
+  const getImportName = () => ultimaMovimentacao?.importacao_nome || `IMP-${ultimaMovimentacao?.id || 'última'}`
 
-  const getFuncionariosImportacao = (i) =>
-    getCondominiosImportacao(i).flatMap((condo) =>
-      Array.isArray(condo?.funcionarios) ? condo.funcionarios : []
-    )
-
-  const getMovimentacoesImportacao = (i) =>
-    getFuncionariosImportacao(i).flatMap((func) =>
-      Array.isArray(func?.movimentacoes) ? func.movimentacoes : []
-    )
-
-  const getImportTotalValue = (i) =>
-    getMovimentacoesImportacao(i).reduce(
-      (sum, mov) => sum + Number(mov?.valor || 0),
-      0
-    )
-
-  const getImportFuncionarios = (i) =>
-    getFuncionariosImportacao(i).length || i?.registros_processados || 0
-
-  const getImportMovimentacoes = (i) =>
-    getMovimentacoesImportacao(i).length || i?.registros_processados || 0
-
-  const getImportCondominios = (i) =>
-    getCondominiosImportacao(i).length
-
-  const getImportDate = (i) =>
-    i?.data_importacao ||
-    i?.processed_at ||
-    i?.created_at ||
-    i?.data ||
-    i?.updated_at
-
-  const getImportName = (i) =>
-    `IMP-${i?.id || i?.file_upload_id || 'última'}`
-
-  const getImportStatus = (i) => {
-    const status = i?.status || 'processado'
-
+  const getImportStatus = () => {
+    const status = ultimaMovimentacao?.status || 'processado'
     if (status === 'COMPLETED') return 'sucesso'
     if (status === 'PENDING') return 'processando'
     if (status === 'FAILED') return 'erro'
-
     return status
   }
 
-  const importacaoId = ultImp?.id || ultImp?.file_upload_id || null
+  const importacaoId = ultimaMovimentacao?.id || null
   const excelUrl = `${API_BASE_URL}/upload/export/faturamento/`
 
-  const faturamentoTotal =
-    getImportTotalValue(ultImp) ||
-    acordos.reduce((s, a) => s + Number(a.valor || 0), 0)
-
-  const totalAberto = acordos.filter((a) => a.status !== 'Fechado').length
-  const totalCondominios =
-    getImportCondominios(ultImp) || acordos.length
-
   const getCondoNome = (c) =>
-    c?.nome ||
-    c?.condominio ||
-    c?.razao_social ||
-    c?.fantasia ||
-    c?.nome_condominio ||
-    `Condomínio #${c?.id}`
+    c?.nome || c?.condominio || c?.razao_social || c?.fantasia || c?.nome_condominio || `Condomínio #${c?.id}`
 
-  const getCondoCnpj = (c) =>
-    c?.cnpj || c?.cnpj_condominio || c?.documento || c?.cgc || '—'
-
+  const getCondoCnpj = (c) => c?.cnpj || c?.cnpj_condominio || c?.documento || c?.cgc || '—'
+  
   const getCondoEndereco = (c) =>
-    c?.endereco ||
-    c?.logradouro ||
-    c?.endereco_completo ||
-    [c?.rua, c?.numero, c?.bairro].filter(Boolean).join(', ') ||
-    '—'
+    c?.endereco || c?.logradouro || c?.endereco_completo || 
+    [c?.rua, c?.numero, c?.bairro].filter(Boolean).join(', ') || '—'
 
-  const getCondoContato = (c) =>
-    c?.telefone || c?.contato || c?.email || '—'
-
+  const getCondoContato = (c) => c?.telefone || c?.contato || c?.email || '—'
+  
   const getQtdFuncionarios = (c) =>
-    c?.quantidade_funcionarios ||
-    c?.total_funcionarios ||
-    c?.qtd_funcionarios ||
-    c?.funcionarios_count ||
-    c?.funcionarios?.length ||
-    '—'
+    c?.quantidade_funcionarios || c?.total_funcionarios || c?.qtd_funcionarios || 
+    c?.funcionarios_count || c?.funcionarios?.length || '—'
 
   const getUltimoFaturamento = (c) =>
-    c?.ultimo_faturamento ||
-    c?.valor_ultimo_faturamento ||
-    c?.ultimo_valor_faturado ||
-    c?.faturamento ||
-    c?.valor ||
-    null
+    c?.ultimo_faturamento || c?.valor_ultimo_faturamento || 
+    c?.ultimo_valor_faturado || c?.faturamento || c?.valor || null
 
-  const getVencimento = (c) =>
-    c?.vencimento ||
-    c?.data_vencimento ||
-    c?.proximo_vencimento ||
-    '—'
+  const getVencimento = (c) => c?.vencimento || c?.data_vencimento || c?.proximo_vencimento || '—'
 
   const closeCondoModal = () => {
     setCondoModalOpen(false)
@@ -286,12 +213,10 @@ export default function Dashboard() {
               <IconWrap><IcoCalendar /></IconWrap>
               <span className="dbi-kpi-label">Gerenciamento de Condomínios</span>
             </div>
-
             <div className="dbi-kpi-value">{totalAberto}</div>
-
             <div className="dbi-kpi-foot">
               {pendencias.length > 0
-                ? `${pendencias.length} condominios${pendencias.length > 1 ? 's' : ''}`
+                ? `${pendencias.length} condominio${pendencias.length > 1 ? 's' : ''} com pendência`
                 : 'Nenhuma pendência'}
             </div>
           </button>
@@ -303,7 +228,7 @@ export default function Dashboard() {
             </div>
             <div className="dbi-kpi-value">{totalImportacoes}</div>
             <div className="dbi-kpi-foot">
-              {ultImp ? `Última: ${getImportName(ultImp)}` : 'Sem importações'}
+              {ultimaMovimentacao ? `Última: ${getImportName()}` : 'Sem importações'}
             </div>
           </button>
 
@@ -326,7 +251,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {ultImp ? (
+            {ultimaMovimentacao ? (
               <>
                 <div className="dbi-import-main">
                   <div className="dbi-import-icon">
@@ -335,25 +260,19 @@ export default function Dashboard() {
 
                   <div className="dbi-import-content">
                     <div className="dbi-import-name">
-                      {getImportName(ultImp)}
+                      {getImportName()}
                     </div>
 
                     <div className="dbi-import-meta">
                       <span>
-                        {getImportDate(ultImp)
-                          ? new Date(getImportDate(ultImp)).toLocaleDateString('pt-BR')
+                        {ultimaMovimentacao.data_importacao
+                          ? new Date(ultimaMovimentacao.data_importacao).toLocaleDateString('pt-BR')
                           : '—'}
                       </span>
 
-                      <span
-                        className={`dbi-badge ${getImportStatus(ultImp) === 'sucesso'
-                          ? 'success'
-                          : getImportStatus(ultImp) === 'erro'
-                            ? 'danger'
-                            : 'info'
-                          }`}
-                      >
-                        {getImportStatus(ultImp)}
+                      <span className={`dbi-badge ${getImportStatus() === 'sucesso' ? 'success' : 
+                                        getImportStatus() === 'erro' ? 'danger' : 'info'}`}>
+                        {getImportStatus()}
                       </span>
                     </div>
                   </div>
@@ -362,22 +281,22 @@ export default function Dashboard() {
                 <div className="dbi-import-stats">
                   <div className="dbi-mini-stat">
                     <span className="dbi-mini-label">Valor total</span>
-                    <strong>{formatCurrency(getImportTotalValue(ultImp))}</strong>
+                    <strong>{formatCurrency(ultimaMovimentacao.valor_total)}</strong>
                   </div>
 
                   <div className="dbi-mini-stat">
                     <span className="dbi-mini-label">Colaboradores</span>
-                    <strong>{getImportFuncionarios(ultImp)}</strong>
+                    <strong>{ultimaMovimentacao.total_funcionarios}</strong>
                   </div>
 
                   <div className="dbi-mini-stat">
                     <span className="dbi-mini-label">Movimentações</span>
-                    <strong>{getImportMovimentacoes(ultImp)}</strong>
+                    <strong>{ultimaMovimentacao.total_movimentacoes}</strong>
                   </div>
 
                   <div className="dbi-mini-stat">
                     <span className="dbi-mini-label">Condomínios</span>
-                    <strong>{getImportCondominios(ultImp)}</strong>
+                    <strong>{ultimaMovimentacao.total_condominios}</strong>
                   </div>
                 </div>
 
@@ -400,6 +319,10 @@ export default function Dashboard() {
               <div className="dbi-empty-state">
                 <IcoFile />
                 <p>Nenhuma importação encontrada.</p>
+                <button className="dbi-btn primary" onClick={() => navigate('/importacao')}>
+                  <IconWrap><IcoImport /></IconWrap>
+                  Iniciar primeira importação
+                </button>
               </div>
             )}
           </div>
@@ -496,7 +419,7 @@ export default function Dashboard() {
                       state: {
                         importacaoId,
                         faturamentoId: importacaoId,
-                        ultimaImportacao: ultImp,
+                        ultimaImportacao: ultimaMovimentacao,
                       },
                     })
                   }
@@ -508,76 +431,10 @@ export default function Dashboard() {
                     <span>{importacaoId ? 'Use a base anterior' : 'Sem base anterior'}</span>
                   </div>
                 </button>
-
-                {/* <button className="dbi-quick-btn" onClick={() => navigate('/pendentes')}>
-                  <IconWrap><IcoCalendar /></IconWrap>
-                  <div>
-                    <strong>Ver pendências</strong>
-                    <span>Acompanhe vencimentos</span>
-                  </div>
-                </button> */}
               </div>
             </div>
           </div>
         </section>
-
-        {/* <section className="dbi-panel">
-          <div className="dbi-panel-head">
-            <div>
-              <p className="dbi-panel-eyebrow">Financeiro</p>
-              <h2 className="dbi-panel-title">Pendências vencidas</h2>
-            </div>
-
-            {pendencias.length > 0 && (
-              <button className="dbi-link-btn" onClick={() => navigate('/pendentes')}>
-                Ver todos
-              </button>
-            )}
-          </div>
-
-          {pendencias.length === 0 ? (
-            <div className="dbi-empty-state">
-              <IcoCheck />
-              <p>Nenhuma pendência vencida. Tudo em dia.</p>
-            </div>
-          ) : (
-            <div className="dbi-table-wrap">
-              <table className="dbi-table">
-                <thead>
-                  <tr>
-                    <th>Condomínio / Devedor</th>
-                    <th>Vencimento</th>
-                    <th>Valor</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendencias.slice(0, 8).map((a) => {
-                    const venc = new Date(a.vencimento + 'T00:00:00')
-                    const hoje = new Date(todayStr + 'T00:00:00')
-                    const dias = Math.floor((hoje - venc) / 86400000)
-
-                    return (
-                      <tr key={a.id} onClick={() => navigate('/pendentes')}>
-                        <td>{a.nome || a.condominio || `Acordo #${a.id}`}</td>
-                        <td>
-                          {venc.toLocaleDateString('pt-BR')}
-                          {dias > 0 && (
-                            <span className="dbi-badge danger inline">{dias}d atraso</span>
-                          )}
-                        </td>
-                        <td>{formatCurrency(a.valor)}</td>
-                        <td>
-                          <span className="dbi-badge warning">{a.status}</span>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section> */}
       </main>
 
       {condoModalOpen && selectedCondo && (

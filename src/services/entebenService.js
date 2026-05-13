@@ -115,9 +115,11 @@ export const entebenService = {
 
   getImportacoes: async () => {
     try {
-      return await apiFetch('/beneficios/importacoes/', {
+      let response = await apiFetch('/beneficios/importacoes/', {
         method: 'GET',
       })
+      console.log("Importações recebidas:", response)
+      return response
     } catch (error) {
       console.error('Erro ao buscar importações:', error)
       throw error
@@ -126,9 +128,11 @@ export const entebenService = {
 
   getUltimaImportacao: async () => {
     try {
-      return await apiFetch('/beneficios/importacoes/ultima/', {
+      let response = await apiFetch('/beneficios/importacoes/ultima/', {
         method: 'GET',
       })
+      console.log("Última importação recebida:", response)
+      return response
     } catch (error) {
       const message = String(error?.message || '')
 
@@ -140,6 +144,25 @@ export const entebenService = {
       }
 
       console.error('Erro ao buscar última importação:', error)
+      throw error
+    }
+  },
+
+  getUltimaMovimentacao: async () => {
+    try {
+      let response = await apiFetch('/beneficios/importacoes/ultima-movimentacao/', {
+        method: 'GET',
+      })
+      console.log("Response MOVIMENTAÇÃO:", response)
+      return response // Agora o backend já retorna no formato correto
+    } catch (error) {
+      const message = String(error?.message || '')
+      console.error('Erro ao buscar última movimentação:', error)
+      
+      if (message.includes('404')) {
+        return null
+      }
+      
       throw error
     }
   },
@@ -290,34 +313,34 @@ export const entebenService = {
     }
   },
 
-downloadDocumentoFaturamento: async (id, tipo = '') => {
-  const token =
-    localStorage.getItem('accessToken') ||
-    localStorage.getItem('access') ||
-    localStorage.getItem('token')
+  downloadDocumentoFaturamento: async (id, tipo = '') => {
+    const token =
+      localStorage.getItem('accessToken') ||
+      localStorage.getItem('access') ||
+      localStorage.getItem('token')
 
-  const baseUrl =
-    'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app/api'
+    const baseUrl =
+      'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app/api'
 
-  const endpoint = tipo
-    ? `${baseUrl}/upload/faturamento/${id}/download/${tipo}`
-    : `${baseUrl}/upload/faturamento/${id}/download/`
+    const endpoint = tipo
+      ? `${baseUrl}/upload/faturamento/${id}/download/${tipo}`
+      : `${baseUrl}/upload/faturamento/${id}/download/`
 
-  const response = await fetch(endpoint, {
-    method: 'GET',
-    headers: token
-      ? {
-          Authorization: `Bearer ${token}`,
-        }
-      : {},
-  })
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {},
+    })
 
-  if (!response.ok) {
-    throw new Error(`Erro ao baixar documento (${response.status})`)
-  }
+    if (!response.ok) {
+      throw new Error(`Erro ao baixar documento (${response.status})`)
+    }
 
-  return await response.blob()
-},
+    return await response.blob()
+  },
 
 }
 
