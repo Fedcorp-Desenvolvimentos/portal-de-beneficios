@@ -290,44 +290,33 @@ export const entebenService = {
     }
   },
 
-  downloadDocumentoFaturamento: async (id, tipo = '') => {
-  try {
-    const token =
-      localStorage.getItem('accessToken') ||
-      localStorage.getItem('access') ||
-      localStorage.getItem('token')
+downloadDocumentoFaturamento: async (id, tipo = '') => {
+  const token =
+    localStorage.getItem('accessToken') ||
+    localStorage.getItem('access') ||
+    localStorage.getItem('token')
 
-    const baseUrl =
-      'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app/api'
+  const baseUrl =
+    'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app/api'
 
-    const endpoint = tipo
-      ? `${baseUrl}/upload/faturamento/${id}/download/${tipo}`
-      : `${baseUrl}/upload/faturamento/${id}/download/`
+  const endpoint = tipo
+    ? `${baseUrl}/upload/faturamento/${id}/download/${tipo}`
+    : `${baseUrl}/upload/faturamento/${id}/download/`
 
-    const response = await fetch(endpoint, {
-      method: 'GET',
-      headers: token
-        ? {
-            Authorization: `Bearer ${token}`,
-          }
-        : {},
-    })
+  const response = await fetch(endpoint, {
+    method: 'GET',
+    headers: token
+      ? {
+          Authorization: `Bearer ${token}`,
+        }
+      : {},
+  })
 
-    if (!response.ok) {
-      throw new Error(
-        `Erro ao baixar documento (${response.status})`
-      )
-    }
-
-    return await response.blob()
-  } catch (error) {
-    console.error(
-      'Erro ao baixar documento faturamento:',
-      error
-    )
-
-    throw error
+  if (!response.ok) {
+    throw new Error(`Erro ao baixar documento (${response.status})`)
   }
+
+  return await response.blob()
 },
 
 }

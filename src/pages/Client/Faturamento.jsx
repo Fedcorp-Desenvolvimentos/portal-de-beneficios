@@ -91,6 +91,7 @@ const isStatusConcluido = (status) => {
     'processado',
     'concluido',
     'concluído',
+    'faturado',
   ].includes(normalized)
 }
 
@@ -308,49 +309,34 @@ export default function Faturamento() {
     }
   }
 
-  async function baixarDocumento(
-    faturamentoId,
-    tipo = ''
-  ) {
-    try {
-      const blob =
-        await entebenService.downloadDocumentoFaturamento(
-          faturamentoId,
-          tipo
-        )
+async function baixarDocumento(faturamentoId, tipo = '') {
+  try {
+    const blob = await entebenService.downloadDocumentoFaturamento(
+      faturamentoId,
+      tipo
+    )
 
-      const fileURL =
-        window.URL.createObjectURL(blob)
+    const fileURL = window.URL.createObjectURL(blob)
 
-      const nomeArquivo = tipo
-        ? `${tipo
-            .replaceAll('/', '')
-            .replaceAll('-', '_')}-${faturamentoId}.pdf`
-        : `faturamento-${faturamentoId}.pdf`
+    const nomeArquivo = tipo
+      ? `${tipo.replaceAll('/', '').replaceAll('-', '_')}-${faturamentoId}.pdf`
+      : `faturamento-${faturamentoId}.pdf`
 
-      const a = document.createElement('a')
+    const a = document.createElement('a')
 
-      a.href = fileURL
-      a.download = nomeArquivo
+    a.href = fileURL
+    a.download = nomeArquivo
 
-      document.body.appendChild(a)
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
 
-      a.click()
-
-      a.remove()
-
-      window.URL.revokeObjectURL(fileURL)
-    } catch (err) {
-      console.error(
-        'Erro ao baixar documento:',
-        err
-      )
-
-      alert(
-        'Não foi possível baixar o documento.'
-      )
-    }
+    window.URL.revokeObjectURL(fileURL)
+  } catch (err) {
+    console.error('Erro ao baixar documento:', err)
+    alert('Não foi possível baixar o documento.')
   }
+}
 
   const opcoesStatus = useMemo(() => {
     return [
@@ -927,7 +913,7 @@ export default function Faturamento() {
                             onClick={() =>
                               baixarDocumento(
                                 group.downloadId,
-                                'nota-fiscal/'
+                                'nota-fiscal-original/'
                               )
                             }
                           >
@@ -952,7 +938,7 @@ export default function Faturamento() {
                             onClick={() =>
                               baixarDocumento(
                                 group.downloadId,
-                                'nota-debito/'
+                                'nota-debito-original/'
                               )
                             }
                           >
@@ -984,12 +970,12 @@ export default function Faturamento() {
 
                                 await baixarDocumento(
                                   group.downloadId,
-                                  'nota-fiscal/'
+                                  'nota-fiscal-original/'
                                 )
 
                                 await baixarDocumento(
                                   group.downloadId,
-                                  'nota-debito/'
+                                  'nota-debito-original/'
                                 )
                               } catch (e) {
                                 console.error(e)
