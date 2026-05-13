@@ -40,7 +40,10 @@ const toArray = (value) => {
 }
 
 const getStatusLabel = (status) => {
-  const normalized = String(status || '').toLowerCase()
+  const normalized = String(status || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
 
   const map = {
     pending: 'Pendente',
@@ -50,8 +53,8 @@ const getStatusLabel = (status) => {
     sucesso: 'Concluído',
     processado: 'Concluído',
     concluido: 'Concluído',
-    concluído: 'Concluído',
     aguardando_faturamento: 'Aguardando faturamento',
+    faturado: 'Faturado',
   }
 
   return map[normalized] || status || '—'
@@ -65,7 +68,8 @@ const getStatusClass = (status) => {
     normalized === 'sucesso' ||
     normalized === 'processado' ||
     normalized === 'concluido' ||
-    normalized === 'concluído'
+    normalized === 'concluído' ||
+    normalized === 'faturado'
   ) {
     return 'success'
   }
@@ -270,32 +274,14 @@ export default function Faturamento() {
         return item
       })
 
-      const comStatus = await Promise.all(
-        historicoComUltimaCompleta.map(async (item) => {
-          try {
-            const statusData =
-              await entebenService.getFaturamentoStatus(
-                item.id
-              )
-
-            return {
-              ...item,
-              faturamento_status:
-                statusData?.status || item.status,
-              faturamento_progresso:
-                statusData?.progresso,
-              faturamento_competencia:
-                statusData?.competencia,
-              criado_em: statusData?.criado_em,
-            }
-          } catch {
-            return {
-              ...item,
-              faturamento_status: item.status,
-            }
-          }
-        })
-      )
+      const comStatus = historicoComUltimaCompleta.map((item) => ({
+        ...item,
+        faturamento_status: item.faturamento_status || item.status,
+        faturamento_progresso:
+          item.faturamento_progresso || item.progresso,
+        faturamento_competencia:
+          item.faturamento_competencia || item.competencia,
+      }))
 
       setImportacoes(comStatus)
     } catch (err) {
