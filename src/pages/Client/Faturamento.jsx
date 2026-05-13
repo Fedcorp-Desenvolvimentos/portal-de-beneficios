@@ -148,16 +148,16 @@ const getValorTotal = (item) => {
 
   const totalMovimentacoesDiretas = Array.isArray(movimentacoesDiretas)
     ? movimentacoesDiretas.reduce((sum, mov) => {
-        return (
-          sum +
-          Number(
-            mov?.valor_recarga_bene ||
-              mov?.valor_total ||
-              mov?.valor ||
-              0
-          )
+      return (
+        sum +
+        Number(
+          mov?.valor_recarga_bene ||
+          mov?.valor_total ||
+          mov?.valor ||
+          0
         )
-      }, 0)
+      )
+    }, 0)
     : 0
 
   const totalMovimentacoesAninhadas =
@@ -166,41 +166,41 @@ const getValorTotal = (item) => {
         sum +
         Number(
           mov?.valor ||
-            mov?.valor_total ||
-            mov?.valor_recarga_bene ||
-            0
+          mov?.valor_total ||
+          mov?.valor_recarga_bene ||
+          0
         ),
       0
     )
 
   return Number(
     totalMovimentacoesDiretas ||
-      totalMovimentacoesAninhadas ||
-      item?.valor_total ||
-      item?.total ||
-      item?.valor_total_beneficios ||
-      item?.summary?.valor_total_beneficios ||
-      item?.summary?.valor_total ||
-      item?.dados_requisicao?.summary?.valor_total_beneficios ||
-      item?.dados_requisicao?.summary?.valor_total ||
-      item?.dados_requisicao?.valor_total_beneficios ||
-      item?.dados_requisicao?.valor_total ||
-      item?.dados_requisicao?.total ||
-      item?.dados_requisicao?.total_geral ||
-      item?.dados_requisicao?.resumo?.valor_total_beneficios ||
-      item?.dados_requisicao?.resumo?.valor_total ||
-      item?.dados_requisicao?.resumo?.total ||
-      0
+    totalMovimentacoesAninhadas ||
+    item?.valor_total ||
+    item?.total ||
+    item?.valor_total_beneficios ||
+    item?.summary?.valor_total_beneficios ||
+    item?.summary?.valor_total ||
+    item?.dados_requisicao?.summary?.valor_total_beneficios ||
+    item?.dados_requisicao?.summary?.valor_total ||
+    item?.dados_requisicao?.valor_total_beneficios ||
+    item?.dados_requisicao?.valor_total ||
+    item?.dados_requisicao?.total ||
+    item?.dados_requisicao?.total_geral ||
+    item?.dados_requisicao?.resumo?.valor_total_beneficios ||
+    item?.dados_requisicao?.resumo?.valor_total ||
+    item?.dados_requisicao?.resumo?.total ||
+    0
   )
 }
 
 const getQuantidade = (item) =>
   Number(
     item?.registros_processados ||
-      item?.total_registros ||
-      item?.total_movimentacoes ||
-      item?.summary?.total_movimentacoes ||
-      0
+    item?.total_registros ||
+    item?.total_movimentacoes ||
+    item?.summary?.total_movimentacoes ||
+    0
   )
 
 export default function Faturamento() {
@@ -249,23 +249,26 @@ export default function Faturamento() {
 
       const historico = toArray(historicoData)
 
-      const historicoComUltimaCompleta =
-        historico.map((item, index) => {
-          const isPrimeira = index === 0
+      const historicoComUltimaCompleta = historico.map((item, index) => {
+        const isPrimeira = index === 0
 
-          if (isPrimeira && ultimaImportacao) {
-            return {
-              ...item,
-              ...ultimaImportacao,
-              id: item.id || ultimaImportacao.id,
-              faturamento_id:
-                item.faturamento_id ||
-                ultimaImportacao.faturamento_id,
-            }
+        if (isPrimeira && ultimaImportacao) {
+          return {
+            ...ultimaImportacao,
+            ...item,
+
+            id: item.id,
+            importacao_id: item.importacao_id || item.id,
+
+            faturamento_id:
+              item.faturamento_id ||
+              item.faturamento?.id ||
+              item.id,
           }
+        }
 
-          return item
-        })
+        return item
+      })
 
       const comStatus = await Promise.all(
         historicoComUltimaCompleta.map(async (item) => {
@@ -309,34 +312,34 @@ export default function Faturamento() {
     }
   }
 
-async function baixarDocumento(faturamentoId, tipo = '') {
-  try {
-    const blob = await entebenService.downloadDocumentoFaturamento(
-      faturamentoId,
-      tipo
-    )
+  async function baixarDocumento(faturamentoId, tipo = '') {
+    try {
+      const blob = await entebenService.downloadDocumentoFaturamento(
+        faturamentoId,
+        tipo
+      )
 
-    const fileURL = window.URL.createObjectURL(blob)
+      const fileURL = window.URL.createObjectURL(blob)
 
-    const nomeArquivo = tipo
-      ? `${tipo.replaceAll('/', '').replaceAll('-', '_')}-${faturamentoId}.pdf`
-      : `faturamento-${faturamentoId}.pdf`
+      const nomeArquivo = tipo
+        ? `${tipo.replaceAll('/', '').replaceAll('-', '_')}-${faturamentoId}.pdf`
+        : `faturamento-${faturamentoId}.pdf`
 
-    const a = document.createElement('a')
+      const a = document.createElement('a')
 
-    a.href = fileURL
-    a.download = nomeArquivo
+      a.href = fileURL
+      a.download = nomeArquivo
 
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
 
-    window.URL.revokeObjectURL(fileURL)
-  } catch (err) {
-    console.error('Erro ao baixar documento:', err)
-    alert('Não foi possível baixar o documento.')
+      window.URL.revokeObjectURL(fileURL)
+    } catch (err) {
+      console.error('Erro ao baixar documento:', err)
+      alert('Não foi possível baixar o documento.')
+    }
   }
-}
 
   const opcoesStatus = useMemo(() => {
     return [
@@ -414,8 +417,8 @@ async function baixarDocumento(faturamentoId, tipo = '') {
           item.faturamento?.id
 
         const downloadId =
-          item.file_upload_id ||
-          item.importacao_id ||
+          item.faturamento_id ||
+          item.faturamento?.id ||
           item.id
 
         const label = `Importação ${item.id}`
@@ -459,8 +462,7 @@ async function baixarDocumento(faturamentoId, tipo = '') {
           total,
           quantidadeBeneficios,
           beneficios: [
-            `Registros processados: ${
-              item.registros_processados || 0
+            `Registros processados: ${item.registros_processados || 0
             }`,
             `Vigência: ${formatDateBR(
               item.vigencia_inicio
@@ -495,24 +497,24 @@ async function baixarDocumento(faturamentoId, tipo = '') {
           String(
             group.status || ''
           ).toLowerCase() ===
-            String(
-              filtroStatus
-            ).toLowerCase()
+          String(
+            filtroStatus
+          ).toLowerCase()
 
         const matchCompetencia =
           !filtroCompetencia ||
           group.competencia ===
-            filtroCompetencia
+          filtroCompetencia
 
         const matchVigencia =
           !filtroVigencia ||
           group.dataVigenciaInicio ===
-            filtroVigencia
+          filtroVigencia
 
         const matchVencimento =
           !filtroVencimento ||
           group.dataVencimento ===
-            filtroVencimento
+          filtroVencimento
 
         return (
           matchSearch &&
@@ -533,7 +535,7 @@ async function baixarDocumento(faturamentoId, tipo = '') {
 
   const totalPaginas = Math.ceil(
     gruposFiltrados.length /
-      itensPorPagina
+    itensPorPagina
   )
 
   const gruposPaginados = useMemo(() => {
@@ -885,7 +887,7 @@ async function baixarDocumento(faturamentoId, tipo = '') {
                                 ? 'Documento disponível apenas quando o faturamento estiver concluído'
                                 : ''
                             }
-                            onClick={() =>
+                            onClick={() => 
                               baixarDocumento(
                                 group.downloadId,
                                 'boleto-original/'
