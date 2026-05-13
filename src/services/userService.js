@@ -1,3 +1,4 @@
+// services/userService.js
 import { apiFetch } from './api.js';
 
 /**
@@ -88,78 +89,117 @@ export const userService = {
     },
 
     /**
-     * Lista todos os usuários (apenas admin).
+     * Lista todos os usuários (com opção de filtro por administradora)
      */
-    listarUsuarios: async () => {
+    listarUsuarios: async (params = {}) => {
         try {
-            const usuarios = await apiFetch('/users/list/', { method: 'GET' });
-            return usuarios;
+            const queryString = new URLSearchParams(params).toString();
+            const url = `/users/list/${queryString ? `?${queryString}` : ''}`;
+            const data = await apiFetch(url, { method: 'GET' });
+            console.log('✅ Usuários carregados:', data?.length || 0);
+            return Array.isArray(data) ? data : [];
         } catch (error) {
-            console.error('Erro ao listar usuários:', error);
-            throw error;
+            console.error('❌ Erro ao listar usuários:', error);
+            return [];
         }
     },
 
     /**
-     * Busca um usuário por ID.
+     * Busca usuário por ID
      */
     buscarUsuarioPorId: async (id) => {
         try {
-            const usuario = await apiFetch(`/users/${id}/`, { method: 'GET' });
-            return usuario;
+            const data = await apiFetch(`/users/${id}/`, { method: 'GET' });
+            return data;
         } catch (error) {
-            console.error('Erro ao buscar usuário:', error);
+            console.error(`❌ Erro ao buscar usuário ${id}:`, error);
             throw error;
         }
     },
 
     /**
-     * Cria um novo usuário vinculado a uma administradora.
+     * Criar novo usuário
      */
     criarUsuario: async (dados) => {
         try {
-            const usuario = await apiFetch('/users/register/', {
-                method: 'POST',
-                body: JSON.stringify(dados),
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+            const payload = {
+                username: dados.username,
+                email: dados.email,
+                password: dados.password,
+                tipo: dados.tipo,
+                administradora: dados.administradora || null
+            };
+            console.log('📝 Criando usuário com payload:', payload);
+            const data = await apiFetch('/users/register/', { 
+                method: 'POST', 
+                body: payload 
             });
-            return usuario;
+            console.log('✅ Usuário criado:', data);
+            return data;
         } catch (error) {
-            console.error('Erro ao criar usuário:', error);
+            console.error('❌ Erro ao criar usuário:', error);
             throw error;
         }
     },
 
     /**
-     * Atualiza um usuário existente.
+     * Atualizar usuário
      */
     atualizarUsuario: async (id, dados) => {
         try {
-            const usuario = await apiFetch(`/users/${id}/`, {
-                method: 'PUT',
-                body: JSON.stringify(dados),
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+            // Primeiro, buscar os dados atuais do usuário
+            const usuarioAtual = await userService.buscarUsuarioPorId(id);
+            
+            // Mesclar os dados atuais com as alterações
+            const payload = {
+                username: dados.username !== undefined ? dados.username : usuarioAtual.username,
+                email: dados.email !== undefined ? dados.email : usuarioAtual.email,
+                tipo: dados.tipo !== undefined ? dados.tipo : usuarioAtual.tipo,
+                administradora: dados.administradora !== undefined ? dados.administradora : usuarioAtual.administradora_id,
+            };
+            
+            // Só incluir senha se foi fornecida
+            if (dados.password && dados.password.trim() !== '') {
+                payload.password = dados.password;
+            }
+            
+            console.log(`✏️ Atualizando usuário ${id} com payload:`, payload);
+            const data = await apiFetch(`/users/${id}/`, { 
+                method: 'PUT', 
+                body: payload 
             });
-            return usuario;
+            console.log('✅ Usuário atualizado:', data);
+            return data;
         } catch (error) {
-            console.error('Erro ao atualizar usuário:', error);
+            console.error(`❌ Erro ao atualizar usuário ${id}:`, error);
             throw error;
         }
     },
 
     /**
-     * Remove um usuário.
+     * Excluir usuário
      */
     excluirUsuario: async (id) => {
         try {
-            await apiFetch(`/users/${id}/`, { method: 'DELETE' });
-            return true;
+            const data = await apiFetch(`/users/${id}/`, { method: 'DELETE' });
+            console.log(`✅ Usuário ${id} excluído`);
+            return data;
         } catch (error) {
-            console.error('Erro ao excluir usuário:', error);
+            console.error(`❌ Erro ao excluir usuário ${id}:`, error);
+            throw error;
+        }
+    },
+
+    /**
+     * Desvincular administradora
+     */
+    desvincularAdministradora: async (userId) => {
+        try {
+            const data = await apiFetch(`/users/${userId}/desvincular-adm/`, { method: 'POST' });
+            console.log(`✅ Usuário ${userId} desvinculado`);
+            return data;
+        } catch (error) {
+            console.error(`❌ Erro ao desvincular usuário ${userId}:`, error);
             throw error;
         }
     },
@@ -177,5 +217,46 @@ export const userService = {
      */
     isAuthenticated: () => {
         return !!localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-    }
+    },
+
+        /**
+     * Lista todas as administradoras
+     */
+    listarAdministradoras: async () => {
+        try {
+            const data = await apiFetch('/entidades/administradoras/', { method: 'GET' });
+            console.log('✅ Administradoras carregadas:', data?.length || 0);
+            return Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.error('❌ Erro ao listar administradoras:', error);
+            return [];
+        }
+    },
+
+    /**
+     * Vincular usuário a uma administradora
+     */
+    vincularAdministradora: async (userId, administradoraId) => {
+        try {
+            const data = await apiFetch(`/users/${userId}/vincular-adm/`, {
+                method: 'POST',
+                body: { administradora_id: administradoraId }
+            });
+            console.log(`✅ Usuário ${userId} vinculado à administradora ${administradoraId}`);
+            return data;
+        } catch (error) {
+            console.error(`❌ Erro ao vincular usuário ${userId}:`, error);
+            throw error;
+        }
+    },
 };
+
+// Exportações únicas (sem duplicação)
+export const getUsuarios = userService.listarUsuarios;
+export const getUsuario = userService.buscarUsuarioPorId;
+export const createUsuario = userService.criarUsuario;
+export const updateUsuario = userService.atualizarUsuario;
+export const deleteUsuario = userService.excluirUsuario;
+export const desvincularAdministradora = userService.desvincularAdministradora;
+export const listarAdministradoras = userService.listarAdministradoras;
+export const vincularAdministradora = userService.vincularAdministradora;

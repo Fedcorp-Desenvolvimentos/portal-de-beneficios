@@ -29,6 +29,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  console.log("user", user)
+
   const navigate = useNavigate()
 
   const hasRole = (allowedRoles = []) => {

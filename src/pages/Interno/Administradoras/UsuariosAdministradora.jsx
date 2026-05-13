@@ -24,7 +24,7 @@ export default function UsuariosAdministradora() {
     const adm = buscarAdministradoraPorId(id)
 
     if (!adm) {
-      navigate('/interno/administradoras')
+      navigate(-1)
       return
     }
 
@@ -83,7 +83,7 @@ export default function UsuariosAdministradora() {
           <button
             type="button"
             className="btn-secondary"
-            onClick={() => navigate('/interno/administradoras')}
+            onClick={() => navigate(-1)}
           >
             Voltar
           </button>

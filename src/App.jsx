@@ -30,6 +30,8 @@ import DetalhesAdministradora from './pages/Interno/Administradoras/DetalhesAdmi
 
 import { AuthProvider } from './context/AuthContext.jsx'
 import ProtectedRoute from './routes/ProtectedRoute.jsx'
+import Usuarios from './pages/Interno/Usuarios/Usuarios.jsx'
+import AdministradorasGeral from './pages/Interno/Administradoras/AdministradorasGeral.jsx'
 
 function Layout() {
   const location = useLocation()
@@ -50,6 +52,7 @@ function Layout() {
     '/interno/administradoras/nova': 'Nova Administradora',
     '/interno/administradoras/usuarios': 'Usuários da Administradora',
     '/interno/administradoras/detalhes': 'Detalhes da Administradora',
+    '/interno/usuarios': 'Gestão de Usuários',
   }
 
   const getTitle = () => {
@@ -107,6 +110,10 @@ function Layout() {
             <Route path="/interno/administradoras/cadastro" element={<CadastroAdministradora />} />
             <Route path="/interno/administradoras/:id" element={<DetalhesAdministradora />} />
             <Route path="/interno/administradoras/editar/:id" element={<EditarAdministradora />} />
+
+            <Route path="/interno/administradoras/minha-administradora" element={<AdministradorasGeral />} />
+
+            <Route path="/interno/usuarios" element={<Usuarios />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

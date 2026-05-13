@@ -1,17 +1,19 @@
-// pages/Interno/Administradoras/DetalhesAdministradora.jsx
+// pages/Interno/Administradoras/AdministradorasGeral.jsx
 
 import React, { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../../context/AuthContext.jsx'
 import { buscarAdministradoraPorId } from '../../../services/administradoraService.js'
 import { userService } from '../../../services/userService.js'
-import UsuarioModal from '../Usuarios/UsuarioModal.jsx'
+import { toast } from 'react-toastify'
 
 import './Administradoras.css'
 import UsuarioTable from '../Usuarios/UsuarioTable.jsx'
+import UsuarioModal from '../Usuarios/UsuarioModal.jsx'
 
-export default function DetalhesAdministradora() {
-  const { id } = useParams()
+export default function AdministradorasGeral() {
   const navigate = useNavigate()
+  const { user } = useAuth() // Pega o usuário logado
   const [administradora, setAdministradora] = useState(null)
   const [usuarios, setUsuarios] = useState([])
   const [loading, setLoading] = useState(true)
@@ -20,11 +22,20 @@ export default function DetalhesAdministradora() {
   const [loadingUsuarios, setLoadingUsuarios] = useState(false)
   const [administradoras, setAdministradoras] = useState([])
 
+  // Pega o ID da administradora do usuário logado
+  const administradoraId = user?.administradora_id
+
   useEffect(() => {
+    if (!administradoraId) {
+      toast.error('Usuário não possui administradora vinculada')
+      navigate('/interno/administradoras')
+      return
+    }
+    
     carregarAdministradora()
     carregarUsuarios()
     carregarAdministradoras()
-  }, [id])
+  }, [administradoraId])
 
   const carregarAdministradoras = async () => {
     try {
@@ -37,11 +48,13 @@ export default function DetalhesAdministradora() {
 
   const carregarAdministradora = async () => {
     try {
-      const data = await buscarAdministradoraPorId(id)
+      setLoading(true)
+      const data = await buscarAdministradoraPorId(administradoraId)
       setAdministradora(data)
       console.log('🏢 Administradora carregada:', data)
     } catch (error) {
       console.error('❌ Erro ao carregar administradora:', error)
+      toast.error('Erro ao carregar administradora')
       navigate('/interno/administradoras')
     } finally {
       setLoading(false)
@@ -51,11 +64,12 @@ export default function DetalhesAdministradora() {
   const carregarUsuarios = async () => {
     try {
       setLoadingUsuarios(true)
-      const usuariosFiltrados = await userService.listarUsuarios({ administradora: id })
+      const usuariosFiltrados = await userService.listarUsuarios({ administradora: administradoraId })
       setUsuarios(Array.isArray(usuariosFiltrados) ? usuariosFiltrados : [])
-      console.log(`👥 Usuários carregados para administradora ${id}:`, usuariosFiltrados?.length || 0)
+      console.log(`👥 Usuários carregados para administradora ${administradoraId}:`, usuariosFiltrados?.length || 0)
     } catch (error) {
       console.error('❌ Erro ao carregar usuários:', error)
+      toast.error('Erro ao carregar usuários')
       setUsuarios([])
     } finally {
       setLoadingUsuarios(false)
@@ -77,8 +91,8 @@ export default function DetalhesAdministradora() {
     if (window.confirm(`Tem certeza que deseja excluir o usuário "${usuario.username}"?`)) {
       try {
         await userService.excluirUsuario(usuario.id)
-        await carregarUsuarios()
         toast.success('Usuário excluído com sucesso')
+        await carregarUsuarios()
       } catch (error) {
         console.error('❌ Erro ao excluir usuário:', error)
         toast.error('Erro ao excluir usuário')
@@ -102,11 +116,12 @@ export default function DetalhesAdministradora() {
       setUsuarioSelecionado(null)
     } catch (error) {
       console.error('❌ Erro ao salvar usuário:', error)
-      toast.error('Erro ao salvar usuário')
+      toast.error(error.response?.data?.detail || 'Erro ao salvar usuário')
+      throw error
     }
   }
 
-  const formatarCartaoAdmin = (cartao_admin) => {
+  const getLocalRecebimentoLabel = (cartao_admin) => {
     return cartao_admin ? 'Na Administradora' : 'No Condomínio'
   }
 
@@ -121,16 +136,18 @@ export default function DetalhesAdministradora() {
     <div className="administradoras-page">
       <div className="administradoras-header">
         <div>
-          <h1>Detalhes da Administradora</h1>
+          <h1>Minha Administradora</h1>
           <p>{administradora.razao_social}</p>
         </div>
         <div className="form-actions">
-          <button className="btn-secondary" onClick={() => navigate(-1)}>
+          <button className="btn-secondary" onClick={() => navigate('/interno/administradoras')}>
             Voltar
           </button>
-          <button className="btn-primary" onClick={() => navigate(`/interno/administradoras/editar/${id}`)}>
-            Editar Administradora
-          </button>
+          {user?.tipo === 'dev' && (
+            <button className="btn-primary" onClick={() => navigate(`/interno/administradoras/editar/${administradora.id}`)}>
+              Editar Administradora
+            </button>
+          )}
         </div>
       </div>
 
@@ -160,8 +177,12 @@ export default function DetalhesAdministradora() {
             </strong>
           </div>
           <div className="details-item">
-            <span>Recebimento do Cartão</span>
-            <strong>{formatarCartaoAdmin(administradora.cartao_admin)}</strong>
+            <span>Local de Recebimento do Cartão</span>
+            <strong>
+              <span className={`cartao-badge ${administradora.cartao_admin ? 'admin' : 'condominio'}`}>
+                {getLocalRecebimentoLabel(administradora.cartao_admin)}
+              </span>
+            </strong>
           </div>
           <div className="details-item">
             <span>Data de Criação</span>
@@ -198,7 +219,7 @@ export default function DetalhesAdministradora() {
         )}
       </div>
 
-      {/* Modal de Usuário Universal */}
+      {/* Modal de Usuário */}
       <UsuarioModal
         isOpen={modalOpen}
         onClose={() => {
@@ -207,9 +228,8 @@ export default function DetalhesAdministradora() {
         }}
         onSave={handleSalvarUsuario}
         usuario={usuarioSelecionado}
-        administradoraId={parseInt(id)}
+        administradoraId={administradoraId}
         administradoras={administradoras}
-        title={usuarioSelecionado ? `Editar Usuário - ${usuarioSelecionado.username}` : 'Novo Usuário'}
       />
     </div>
   )

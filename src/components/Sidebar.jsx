@@ -15,6 +15,10 @@ const navConfig = {
     // Temporariamente para acesso rápido
     { to: '/colaborador/dashboard', label: 'Dashboard Fedcorp' },
     { to: '/interno/administradoras', label: 'Administradoras' },
+
+    { to: '/interno/usuarios', label: 'Gestão de Usuários' },
+
+    { to: '/interno/administradoras/minha-administradora', label: 'Minha Administradora' },
     // { to: '/colaborador/importacaoDocs', label: 'Importação Fedcorp' },
   ],
   colaborador_fedcorp: [
@@ -24,6 +28,11 @@ const navConfig = {
     { to: '/colaborador/importar-faturamento', label: 'Importar Faturamento' },
     { to: '/colaborador/historico', label: 'Histórico' },
     { to: '/interno/administradoras', label: 'Administradoras' },
+
+    { to: '/interno/administradoras/minha-administradora', label: 'Minha Administradora' },
+    
+    { to: '/interno/usuarios', label: 'Gestão de Usuários' },
+
   ],
 }
 

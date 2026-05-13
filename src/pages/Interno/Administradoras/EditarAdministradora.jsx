@@ -176,7 +176,7 @@ export default function EditarAdministradora() {
         </div>
 
         <div className="form-actions">
-          <button type="button" className="btn-secondary" onClick={() => navigate('/interno/administradoras')}>
+          <button type="button" className="btn-secondary" onClick={() => navigate(-1)}>
             Cancelar
           </button>
           <button type="submit" className="btn-primary">
