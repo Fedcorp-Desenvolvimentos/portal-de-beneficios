@@ -15,25 +15,22 @@ const navConfig = {
     // Temporariamente para acesso rápido
     { to: '/colaborador/dashboard', label: 'Dashboard Fedcorp' },
     { to: '/interno/administradoras', label: 'Administradoras' },
-
+{ to: '/colaborador/acompanhamentoFaturados', label: 'Acompanhamento' },
     { to: '/interno/usuarios', label: 'Gestão de Usuários' },
 
     { to: '/interno/administradoras/minha-administradora', label: 'Minha Administradora' },
     // { to: '/colaborador/importacaoDocs', label: 'Importação Fedcorp' },
   ],
-  colaborador_fedcorp: [
-    { to: '/colaborador/dashboard', label: 'Dashboard' },
-     { to: '/colaborador/dashboard', label: 'Dashboard' },
-    { to: '/pendentes', label: 'Pendentes' },
-    { to: '/colaborador/importar-faturamento', label: 'Importar Faturamento' },
-    { to: '/colaborador/historico', label: 'Histórico' },
-    { to: '/interno/administradoras', label: 'Administradoras' },
-
-    { to: '/interno/administradoras/minha-administradora', label: 'Minha Administradora' },
-    
-    { to: '/interno/usuarios', label: 'Gestão de Usuários' },
-
-  ],
+ colaborador_fedcorp: [
+  { to: '/colaborador/dashboard', label: 'Dashboard' },
+  { to: '/colaborador/acompanhamentoFaturados', label: 'Acompanhamento' },
+  { to: '/pendentes', label: 'Pendentes' },
+  { to: '/colaborador/importar-faturamento', label: 'Importar Faturamento' },
+  { to: '/colaborador/historico', label: 'Histórico' },
+  { to: '/interno/administradoras', label: 'Administradoras' },
+  { to: '/interno/administradoras/minha-administradora', label: 'Minha Administradora' },
+  { to: '/interno/usuarios', label: 'Gestão de Usuários' },
+],
 }
 
 export default function Sidebar() {

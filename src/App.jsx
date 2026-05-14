@@ -21,6 +21,7 @@ import RelatoriosBeneficios from './pages/Client/RelatoriosBeneficios.jsx'
 
 import ColaboradorDashboard from './pages/Interno/ColaboradorDashboard.jsx'
 import ImportacaoDocs from './pages/Interno/ImportacaoDocs.jsx'
+import AcompanhamentoFaturados from './pages/Interno/AcompanhamentoFaturados.jsx'
 
 import Administradoras from './pages/Interno/Administradoras/Administradoras.jsx'
 import CadastroAdministradora from './pages/Interno/Administradoras/CadastroAdministradora.jsx'
@@ -48,6 +49,7 @@ function Layout() {
     '/relatorios': 'Relatórios de Benefícios',
     '/colaborador/dashboard': 'Dashboard Fedcorp',
     '/colaborador/importacaoDocs': 'Importação Fedcorp',
+    '/colaborador/acompanhamentoFaturados': 'Acompanhamento',
     '/interno/administradoras': 'Gestão de Administradoras',
     '/interno/administradoras/nova': 'Nova Administradora',
     '/interno/administradoras/usuarios': 'Usuários da Administradora',
@@ -106,6 +108,15 @@ function Layout() {
               }
             />
 
+            <Route
+              path="/colaborador/acompanhamentoFaturados"
+              element={
+                <ProtectedRoute allowedRoles={['dev', 'colaborador_fedcorp']}>
+                  <AcompanhamentoFaturados />
+                </ProtectedRoute>
+              }
+            />
+
             <Route path="/interno/administradoras" element={<Administradoras />} />
             <Route path="/interno/administradoras/cadastro" element={<CadastroAdministradora />} />
             <Route path="/interno/administradoras/:id" element={<DetalhesAdministradora />} />
@@ -116,6 +127,7 @@ function Layout() {
             <Route path="/interno/usuarios" element={<Usuarios />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
+
           </Routes>
         </div>
       </div>
