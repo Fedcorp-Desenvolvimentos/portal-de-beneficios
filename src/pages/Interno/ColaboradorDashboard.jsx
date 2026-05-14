@@ -1,3 +1,5 @@
+ColaboradorDashboard.jsx
+
 import React, { useMemo, useRef, useState, useEffect } from 'react'
 import {
   Download,
@@ -88,6 +90,7 @@ const statusMap = {
   AGUARDANDO_FATURAMENTO: 'aprovado',
   EM_FATURAMENTO: 'em_faturamento',
   FATURADO: 'faturado',
+  COMPRADO: 'comprado',
   CANCELADO: 'cancelado',
 }
 
@@ -99,6 +102,7 @@ const statusLabel = {
   aprovado: 'Aprovado',
   em_faturamento: 'Em faturamento',
   faturado: 'Faturado',
+  comprado: 'Comprado',
   cancelado: 'Cancelado',
 }
 
@@ -106,6 +110,7 @@ const getStatusClass = (status) => {
   if (status === 'faturado') return 'faturado'
   if (status === 'cancelado') return 'cancelado'
   if (status === 'em_faturamento') return 'em_faturamento'
+  if (status === 'comprado') return 'comprado'
   return 'aprovado'
 }
 
@@ -113,6 +118,7 @@ const statusRank = {
   aprovado: 1,
   em_faturamento: 2,
   faturado: 3,
+  comprado: 4,
   cancelado: 99,
 }
 
@@ -141,6 +147,13 @@ const timelineSteps = [
     description: 'Documentos importados e faturamento finalizado.',
     minRank: 3,
   },
+  {
+    key: 'comprado',
+    title: 'Comprado',
+    description: 'Arquivo enviado para provedora de compra.',
+    minRank: 4,
+  },
+
 ]
 
 const getTimelineItems = (pedido) => {
@@ -155,7 +168,9 @@ const getTimelineItems = (pedido) => {
           ? pedido?.aprovadoEm
           : step.key === 'em_faturamento'
             ? pedido?.emFaturamentoEm
-            : pedido?.faturadoEm,
+            : step.key === 'comprado'
+              ? pedido?.compradoEm
+              : pedido?.faturadoEm,
     done: rankAtual >= step.minRank,
     current: pedido?.status === step.key,
   }))
@@ -195,6 +210,7 @@ const extrairResumoPedido = (pedidoApi) => {
     faturadoEm: pedidoApi.data_faturamento || null,
     canceladoEm: pedidoApi.data_cancelamento || null,
     motivoCancelamento: pedidoApi.motivo_cancelamento || '',
+    compradoEm: pedidoApi.data_compra || pedidoApi.data_comprado || null,
   }
 }
 
@@ -373,6 +389,7 @@ export default function ColaboradorDashboard() {
       aprovados: pedidos.filter((p) => p.status === 'aprovado').length,
       emFat: pedidos.filter((p) => p.status === 'em_faturamento').length,
       faturados: pedidos.filter((p) => p.status === 'faturado').length,
+      comprado: pedidos.filter((p) => p.status === 'comprado').length,
       cancelados: pedidos.filter((p) => p.status === 'cancelado').length,
     }),
     [pedidos]
@@ -524,11 +541,11 @@ export default function ColaboradorDashboard() {
         prev.map((item) =>
           item.id === cancelPedido?.id
             ? {
-                ...item,
-                status: 'cancelado',
-                motivoCancelamento: motivo,
-                canceladoEm: new Date().toLocaleDateString('pt-BR'),
-              }
+              ...item,
+              status: 'cancelado',
+              motivoCancelamento: motivo,
+              canceladoEm: new Date().toLocaleDateString('pt-BR'),
+            }
             : item
         )
       )
@@ -554,14 +571,14 @@ export default function ColaboradorDashboard() {
   }
 
   function openImport(pedido) {
-    if (pedido.status === 'aprovado') {
-      pushToast({
-        type: 'warning',
-        title: 'Faturamento não iniciado',
-        message: 'Baixe o faturamento antes de importar documentos.', 
-      })
-      return
-    }
+  if (pedido.status === 'comprado') {
+  pushToast({
+    type: 'info',
+    title: 'Importação bloqueada',
+    message: 'Este pedido já foi comprado.',
+  })
+  return
+}
 
     if (pedido.status === 'cancelado') {
       pushToast({
@@ -575,6 +592,55 @@ export default function ColaboradorDashboard() {
     setSelectedPedido(pedido)
     setDocs([])
     setImportOpen(true)
+  }
+
+  async function handleCompra(pedido) {
+    if (pedido.status !== 'faturado') {
+      pushToast({
+        type: 'warning',
+        title: 'Compra indisponível',
+        message: 'A compra só fica disponível para pedidos faturados.',
+      })
+      return
+    }
+
+    try {
+      setDownloadingId(pedido.id)
+
+      await faturamentoService.baixarTxtCompra(
+        { importacao_id: pedido.id },
+        `compra-${pedido.id}`
+      )
+
+      // Temporário até o backend aceitar o status "comprado"
+      setPedidos((prev) =>
+        prev.map((item) =>
+          item.id === pedido.id
+            ? {
+              ...item,
+              status: 'comprado',
+              compradoEm: new Date().toLocaleDateString('pt-BR'),
+            }
+            : item
+        )
+      )
+
+      pushToast({
+        type: 'success',
+        title: 'Compra realizada',
+        message: `TXT do pedido ${pedido.id} baixado com sucesso.`,
+      })
+    } catch (error) {
+      console.error('Erro ao baixar TXT de compra:', error)
+
+      pushToast({
+        type: 'error',
+        title: 'Falha no download',
+        message: error?.message || 'Não foi possível baixar o TXT de compra.',
+      })
+    } finally {
+      setDownloadingId(null)
+    }
   }
 
   function closeImport() {
@@ -631,21 +697,101 @@ export default function ColaboradorDashboard() {
     })
   }
 
-function requestFinalizeImport() {
-  if (!docs.length) {
-    pushToast({
-      type: 'warning',
-      title: 'Nada para enviar',
-      message: 'Selecione pelo menos um documento.',
+  function requestFinalizeImport() {
+    if (!docs.length) {
+      pushToast({
+        type: 'warning',
+        title: 'Nada para enviar',
+        message: 'Selecione pelo menos um documento.',
+      })
+      return
+    }
+
+    setConfirmFinalize({
+      open: true,
+      title: 'Confirmar importação',
+      message: 'Ao importar a documentação, o pedido ficará disponível para o funcionário. Deseja continuar?',
+      onConfirm: async () => {
+        setConfirmFinalize({
+          open: false,
+          title: '',
+          message: '',
+          onConfirm: null,
+        })
+
+        await handleUpload()
+      },
     })
-    return
   }
 
-  setConfirmFinalize({
-    open: true,
-    title: 'Confirmar importação',
-    message: 'Ao importar a documentação, o pedido ficará disponível para o funcionário. Deseja continuar?',
-    onConfirm: async () => {
+  async function handleUpload() {
+    if (!docs.length || !selectedPedido?.id) return
+
+    const arquivoBoleto = docs.find((file) => {
+      const name = file.name.toLowerCase()
+      return name.includes('boleto') || name.includes('recibo')
+    })
+
+    const arquivoNotaDebito = docs.find((file) => {
+      const name = file.name.toLowerCase()
+      return name.includes('debito') || name.includes('débito')
+    })
+
+    const arquivoNotaFiscal = docs.find((file) => {
+      const name = file.name.toLowerCase()
+      return name.includes('fiscal') || name.includes('nota_fiscal') || name.includes('nf')
+    })
+
+    if (!arquivoBoleto && !arquivoNotaDebito && !arquivoNotaFiscal) {
+      pushToast({
+        type: 'warning',
+        title: 'Arquivos não identificados',
+        message: 'Envie boleto/recibo, nota de débito ou nota fiscal.',
+      })
+      return
+    }
+
+    try {
+      setUploading(true)
+      setUploadProgress(1)
+
+      await faturamentoService.importarDocumentos(
+        {
+          importacaoId: selectedPedido.id,
+          competencia:
+            selectedPedido.competencia ||
+            selectedPedido.dataVencimento ||
+            selectedPedido.mesUtilizacao,
+          arquivoBoleto,
+          arquivoNotaDebito,
+          arquivoNotaFiscal,
+        },
+        (percent) => setUploadProgress(percent)
+      )
+
+      setUploadProgress(100)
+
+      await faturamentoService.alterarStatusPedido(selectedPedido.id, 'faturado')
+
+      setPedidos((prev) =>
+        prev.map((item) =>
+          item.id === selectedPedido.id
+            ? {
+              ...item,
+              status: 'faturado',
+              importadoEm: new Date().toLocaleDateString('pt-BR'),
+              faturadoEm: new Date().toLocaleDateString('pt-BR'),
+            }
+            : item
+        )
+      )
+
+      pushToast({
+        type: 'success',
+        title: 'Upload concluído',
+        message: `Documentos enviados para ${selectedPedido.id}.`,
+      })
+
       setConfirmFinalize({
         open: false,
         title: '',
@@ -653,101 +799,21 @@ function requestFinalizeImport() {
         onConfirm: null,
       })
 
-      await handleUpload()
-    },
-  })
-}
+      closeImport()
+      await carregarPedidos()
+    } catch (error) {
+      console.error('Erro ao importar:', error)
 
- async function handleUpload() {
-  if (!docs.length || !selectedPedido?.id) return
-
-  const arquivoBoleto = docs.find((file) => {
-    const name = file.name.toLowerCase()
-    return name.includes('boleto') || name.includes('recibo')
-  })
-
-  const arquivoNotaDebito = docs.find((file) => {
-    const name = file.name.toLowerCase()
-    return name.includes('debito') || name.includes('débito')
-  })
-
-  const arquivoNotaFiscal = docs.find((file) => {
-    const name = file.name.toLowerCase()
-    return name.includes('fiscal') || name.includes('nota_fiscal') || name.includes('nf')
-  })
-
-  if (!arquivoBoleto && !arquivoNotaDebito && !arquivoNotaFiscal) {
-    pushToast({
-      type: 'warning',
-      title: 'Arquivos não identificados',
-      message: 'Envie boleto/recibo, nota de débito ou nota fiscal.',
-    })
-    return
+      pushToast({
+        type: 'error',
+        title: 'Erro ao importar',
+        message: error?.message || 'Não foi possível concluir a importação.',
+      })
+    } finally {
+      setUploading(false)
+      setUploadProgress(0)
+    }
   }
-
- try {
-  setUploading(true)
-  setUploadProgress(1)
-
-  await faturamentoService.importarDocumentos(
-    {
-      importacaoId: selectedPedido.id,
-      competencia:
-        selectedPedido.competencia ||
-        selectedPedido.dataVencimento ||
-        selectedPedido.mesUtilizacao,
-      arquivoBoleto,
-      arquivoNotaDebito,
-      arquivoNotaFiscal,
-    },
-    (percent) => setUploadProgress(percent)
-  )
-
-  setUploadProgress(100)
-
-  await faturamentoService.alterarStatusPedido(selectedPedido.id, 'faturado')
-
-  setPedidos((prev) =>
-    prev.map((item) =>
-      item.id === selectedPedido.id
-        ? {
-            ...item,
-            status: 'faturado',
-            importadoEm: new Date().toLocaleDateString('pt-BR'),
-            faturadoEm: new Date().toLocaleDateString('pt-BR'),
-          }
-        : item
-    )
-  )
-
-  pushToast({
-    type: 'success',
-    title: 'Upload concluído',
-    message: `Documentos enviados para ${selectedPedido.id}.`,
-  })
-
-  setConfirmFinalize({
-    open: false,
-    title: '',
-    message: '',
-    onConfirm: null,
-  })
-
-  closeImport()
-  await carregarPedidos()
-} catch (error) {
-    console.error('Erro ao importar:', error)
-
-    pushToast({
-      type: 'error',
-      title: 'Erro ao importar',
-      message: error?.message || 'Não foi possível concluir a importação.',
-    })
-  } finally {
-    setUploading(false)
-    setUploadProgress(0)
-  }
-}
 
   useEffect(() => {
     const fn = (e) => {
@@ -835,6 +901,7 @@ function requestFinalizeImport() {
           <option value="aprovado">Aprovados</option>
           <option value="em_faturamento">Em faturamento</option>
           <option value="faturado">Faturados</option>
+          <option value="comprado">Comprado</option>
           <option value="cancelado">Cancelados</option>
         </select>
       </div>
@@ -852,19 +919,20 @@ function requestFinalizeImport() {
               <th>Timeline</th>
               <th>Excel</th>
               <th>Documentos</th>
+              <th>Compra</th>
             </tr>
           </thead>
 
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} className="cf-empty">
+                <td colSpan={10} className="cf-empty">
                   Carregando pedidos...
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={9} className="cf-empty">
+                <td colSpan={10} className="cf-empty">
                   Nenhum pedido encontrado.
                 </td>
               </tr>
@@ -910,6 +978,7 @@ function requestFinalizeImport() {
                         <option value="aprovado">Aprovado</option>
                         <option value="em_faturamento">Em faturamento</option>
                         <option value="faturado">Faturado</option>
+                        <option value="comprado">Comprado</option>
                         <option value="cancelado">Cancelar</option>
                       </select>
                     </div>
@@ -944,11 +1013,26 @@ function requestFinalizeImport() {
                     <button
                       className="cf-btn"
                       onClick={() => openImport(p)}
-                      disabled={p.status === 'cancelado' || p.status === 'faturado'}
+                     disabled={p.status === 'cancelado' || p.status === 'faturado' || p.status === 'comprado'}
                     >
                       <FileSpreadsheet size={14} />
                       Importar
                     </button>
+                  </td>
+
+                  <td>
+                    {p.status === 'faturado' ? (
+                      <button
+                        className="cf-btn primary"
+                        onClick={() => handleCompra(p)}
+                        disabled={downloadingId === p.id}
+                      >
+                        <Download size={14} />
+                        {downloadingId === p.id ? 'Baixando…' : 'Compra'}
+                      </button>
+                    ) : (
+                      <span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>
+                    )}
                   </td>
                 </tr>
               ))
@@ -1020,9 +1104,8 @@ function requestFinalizeImport() {
                 {getTimelineItems(detailsPedido).map((item) => (
                   <div
                     key={item.key}
-                    className={`cf-timeline-step ${item.done ? 'done' : 'pending'} ${
-                      item.current ? 'current' : ''
-                    }`}
+                    className={`cf-timeline-step ${item.done ? 'done' : 'pending'} ${item.current ? 'current' : ''
+                      }`}
                   >
                     <div className="cf-timeline-marker">
                       {item.done ? <CheckCircle2 size={14} /> : <span />}
@@ -1223,9 +1306,8 @@ function requestFinalizeImport() {
       <ConfirmModal
         open={statusConfirm.open}
         title="Confirmar alteração de status"
-        message={`Deseja alterar o pedido ${statusConfirm.pedido?.id || ''} para "${
-          statusLabel[statusConfirm.newStatus] || statusConfirm.newStatus
-        }"?`}
+        message={`Deseja alterar o pedido ${statusConfirm.pedido?.id || ''} para "${statusLabel[statusConfirm.newStatus] || statusConfirm.newStatus
+          }"?`}
         onCancel={cancelStatusChange}
         onConfirm={confirmStatusChange}
         confirmText="Alterar status"

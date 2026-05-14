@@ -1,4 +1,3 @@
-
 import { apiFetch } from './api'
 
 function getAuthToken() {
@@ -59,38 +58,38 @@ function inferExtension(contentType) {
 
 export const faturamentoService = {
   async importarDocumentos({
-  importacaoId,
-  competencia,
-  arquivoBoleto,
-  arquivoNotaDebito,
-  arquivoNotaFiscal = null,
-}) {
-  const formData = new FormData()
+    importacaoId,
+    competencia,
+    arquivoBoleto,
+    arquivoNotaDebito,
+    arquivoNotaFiscal = null,
+  }) {
+    const formData = new FormData()
 
-  formData.append('importacao_id', importacaoId)
-  formData.append('competencia', competencia)
+    formData.append('importacao_id', importacaoId)
+    formData.append('competencia', competencia)
 
-  if (arquivoBoleto) {
-    formData.append('arquivo_boleto', arquivoBoleto)
-  }
+    if (arquivoBoleto) {
+      formData.append('arquivo_boleto', arquivoBoleto)
+    }
 
-  if (arquivoNotaDebito) {
-    formData.append('arquivo_nota_debito', arquivoNotaDebito)
-  }
+    if (arquivoNotaDebito) {
+      formData.append('arquivo_nota_debito', arquivoNotaDebito)
+    }
 
-  if (arquivoNotaFiscal) {
-    formData.append('arquivo_nota_fiscal', arquivoNotaFiscal)
-  }
+    if (arquivoNotaFiscal) {
+      formData.append('arquivo_nota_fiscal', arquivoNotaFiscal)
+    }
 
-  return apiFetch('/upload/faturamento/upload/', {
-    method: 'POST',
-    body: formData,
-  })
-},
+    return apiFetch('/upload/faturamento/upload/', {
+      method: 'POST',
+      body: formData,
+    })
+  },
 
   async uploadDocumentos(payload) {
-  return this.importarDocumentos(payload)
-},
+    return this.importarDocumentos(payload)
+  },
   async listarPedidosFuncionario() {
 
     let token = getAuthToken()
@@ -135,17 +134,17 @@ export const faturamentoService = {
         .sort((a, b) =>
           String(
             b.data_importacao ||
-              b.processed_at ||
-              b.created_at ||
-              b.updated_at ||
-              ''
+            b.processed_at ||
+            b.created_at ||
+            b.updated_at ||
+            ''
           ).localeCompare(
             String(
               a.data_importacao ||
-                a.processed_at ||
-                a.created_at ||
-                a.updated_at ||
-                ''
+              a.processed_at ||
+              a.created_at ||
+              a.updated_at ||
+              ''
             )
           )
         )[0] || null
@@ -185,15 +184,11 @@ export const faturamentoService = {
 
     const queryString = query.toString()
 
-    const API_BASE_URL = 'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app';
-    // const API_BASE_URL = "http://localhost:8000";
+    const API_BASE =
+      import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
-
-    const API_BASE = API_BASE_URL
-
-    return `${API_BASE}/api/upload/export/faturamento/${
-      queryString ? `?${queryString}` : ''
-    }`
+    return `${API_BASE}/api/upload/export/faturamento/${queryString ? `?${queryString}` : ''
+      }`
   },
 
   async baixarExportFaturamento(params = {}, nomeBase = 'faturamento') {
@@ -223,18 +218,18 @@ export const faturamentoService = {
     const contentDisposition = response.headers.get('content-disposition') || ''
     const contentType = response.headers.get('content-type') || ''
     const blob = await response.blob()
-    
+
     console.log('📄 Content-Type:', contentType)
     console.log('📎 Content-Disposition:', contentDisposition)
     console.log('📦 Tamanho do blob:', blob.size, 'bytes')
-    
+
     // Extrair filename do header
     let filename = null
     const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
     if (filenameMatch && filenameMatch[1]) {
       filename = filenameMatch[1].replace(/['"]/g, '')
     }
-    
+
     if (!filename) {
       filename = `${nomeBase}_${Date.now()}.xlsx`
     }
@@ -252,7 +247,7 @@ export const faturamentoService = {
     link.download = filename
     document.body.appendChild(link)
     link.click()
-    
+
     setTimeout(() => {
       document.body.removeChild(link)
       window.URL.revokeObjectURL(blobUrl)
@@ -261,15 +256,52 @@ export const faturamentoService = {
     return { filename, contentType, size: blob.size }
   },
 
-async alterarStatusPedido(pedidoId, novoStatus, motivo = '') {
-  const payload = {
-    status: novoStatus,
-    ...(motivo && { motivo }),
-  }
+  async alterarStatusPedido(pedidoId, novoStatus, motivo = '') {
+    const payload = {
+      status: novoStatus,
+      ...(motivo && { motivo }),
+    }
 
-  return apiFetch(`/beneficios/importacoes/${pedidoId}/status/`, {
-    method: 'PATCH',
-    body: JSON.stringify(payload),
-  })
-},
+    return apiFetch(`/beneficios/importacoes/${pedidoId}/status/`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  async baixarTxtCompra(params, filename = 'compra') {
+    const query = new URLSearchParams(params).toString()
+
+    const response = await fetch(
+      `https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app/api/upload/export/txt-compra/?${query}`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+      }
+    )
+
+    if (!response.ok) {
+      const text = await response.text()
+      throw new Error(text || 'Não foi possível baixar o TXT de compra.')
+    }
+
+    const text = await response.text()
+    const blob = new Blob([text], {
+      type: 'text/plain;charset=utf-8',
+    })
+
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+
+    link.href = url
+    link.download = `${filename}.txt`
+
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+
+    window.URL.revokeObjectURL(url)
+  }
 }
+
