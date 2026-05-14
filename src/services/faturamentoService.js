@@ -185,8 +185,8 @@ export const faturamentoService = {
 
     const queryString = query.toString()
 
-    const API_BASE_URL = 'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app/api';
-    // const API_BASE_URL = "http://localhost:8000/api";
+    const API_BASE_URL = 'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app';
+    // const API_BASE_URL = "http://localhost:8000";
 
 
     const API_BASE = API_BASE_URL
