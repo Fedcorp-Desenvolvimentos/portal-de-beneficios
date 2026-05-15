@@ -227,12 +227,13 @@
 .cf-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 900px;
+    table-layout: fixed;
+    min-width: 1200px;
 }
 
 .cf-table thead th {
     background: var(--bg);
-    padding: 11px 16px;
+    padding: 14px 12px;
     font-family: var(--mono);
     font-size: 10px;
     letter-spacing: .1em;
@@ -986,4 +987,91 @@
   border-radius: inherit;
   background: var(--accent);
   transition: width 0.2s ease;
+}
+
+.cf-admin-cell {
+  max-width: 180px;
+  min-width: 180px;
+}
+
+.cf-admin-name {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+
+  display: -webkit-box;
+  
+  -webkit-box-orient: vertical;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+
+/* Pedido */
+.cf-table th:nth-child(1),
+.cf-table td:nth-child(1) {
+  width: 150px;
+}
+
+/* Administradora */
+.cf-table th:nth-child(2),
+.cf-table td:nth-child(2) {
+  width: 280px;
+}
+
+/* Vencimento */
+.cf-table th:nth-child(3),
+.cf-table td:nth-child(3) {
+  width: 110px;
+}
+
+/* Competência */
+.cf-table th:nth-child(4),
+.cf-table td:nth-child(4) {
+  width: 90px;
+}
+
+/* Funcionários */
+.cf-table th:nth-child(5),
+.cf-table td:nth-child(5) {
+  width: 80px;
+  text-align: center;
+}
+
+/* Valor */
+.cf-table th:nth-child(6),
+.cf-table td:nth-child(6) {
+  width: 120px;
+}
+
+/* Status */
+.cf-table th:nth-child(7),
+.cf-table td:nth-child(7) {
+  width: 140px;
+}
+
+/* Timeline */
+.cf-table th:nth-child(8),
+.cf-table td:nth-child(8) {
+  width: 80px;
+}
+
+/* Excel */
+.cf-table th:nth-child(9),
+.cf-table td:nth-child(9) {
+  width: 90px;
+}
+
+/* Docs */
+.cf-table th:nth-child(10),
+.cf-table td:nth-child(10) {
+  width: 110px;
+}
+
+/* Compra */
+.cf-table th:nth-child(11),
+.cf-table td:nth-child(11) {
+  width: 110px;
 }
