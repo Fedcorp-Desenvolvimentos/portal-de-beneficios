@@ -192,6 +192,7 @@ const getTimelineItems = (pedido) => {
 const extrairResumoPedido = (pedidoApi) => {
   return {
     id: pedidoApi.id,
+    nomeAdministradora: pedidoApi.nome_administradora || '-',
     fileId: pedidoApi.file_upload_id || pedidoApi.file || null,
     status: normalizarStatus(pedidoApi.status),
     dataVencimento: pedidoApi.data_vencimento,
@@ -400,7 +401,14 @@ export default function ColaboradorDashboard() {
 
     return pedidos.filter((p) => {
       const hay = norm(
-        [p.id, p.mesUtilizacao, p.dataVencimento, p.nomeCondominio, p.cnpj, p.cidade, p.uf].join(' ')
+        [p.id,
+        p.nomeAdministradora,
+        p.mesUtilizacao,
+        p.dataVencimento,
+        p.nomeCondominio,
+        p.cnpj,
+        p.cidade,
+        p.uf].join(' ')
       )
 
       return (!q || hay.includes(q)) && (statusFilter === 'todos' || p.status === statusFilter)
@@ -571,14 +579,14 @@ export default function ColaboradorDashboard() {
   }
 
   function openImport(pedido) {
-  if (pedido.status === 'comprado') {
-  pushToast({
-    type: 'info',
-    title: 'Importação bloqueada',
-    message: 'Este pedido já foi comprado.',
-  })
-  return
-}
+    if (pedido.status === 'comprado') {
+      pushToast({
+        type: 'info',
+        title: 'Importação bloqueada',
+        message: 'Este pedido já foi comprado.',
+      })
+      return
+    }
 
     if (pedido.status === 'cancelado') {
       pushToast({
@@ -911,10 +919,11 @@ export default function ColaboradorDashboard() {
           <thead>
             <tr>
               <th>Pedido</th>
+              <th>Administradora</th>
               <th>Vencimento</th>
               <th>Competência</th>
-              <th>Qtd. funcionários</th>
-              <th>Valor Total</th>
+              <th>Funcionários</th>
+              <th>Valor</th>
               <th>Status</th>
               <th>Timeline</th>
               <th>Excel</th>
@@ -926,13 +935,13 @@ export default function ColaboradorDashboard() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={10} className="cf-empty">
+                <td colSpan={11} className="cf-empty">
                   Carregando pedidos...
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={10} className="cf-empty">
+                <td colSpan={11} className="cf-empty">
                   Nenhum pedido encontrado.
                 </td>
               </tr>
@@ -944,7 +953,7 @@ export default function ColaboradorDashboard() {
 
                     {p.importadoEm && (
                       <div className="cf-id-sub" style={{ marginTop: 4 }}>
-                        Processado: {fmtDate(p.importadoEm)}
+                        {fmtDate(p.importadoEm)}
                       </div>
                     )}
 
@@ -955,10 +964,16 @@ export default function ColaboradorDashboard() {
                     )}
                   </td>
 
+                  <td className="cf-admin-cell">
+                    <div className="cf-admin-name">
+                      {p.nomeAdministradora}
+                    </div>
+                  </td>
+
                   <td>
                     <div className="cf-inline">
                       <CalendarDays size={14} />
-                      {fmtDate(p.dataVencimento)}
+                      {fmtDate(p.dataVencimento)} 
                     </div>
                   </td>
 
@@ -1013,7 +1028,7 @@ export default function ColaboradorDashboard() {
                     <button
                       className="cf-btn"
                       onClick={() => openImport(p)}
-                     disabled={p.status === 'cancelado' || p.status === 'faturado' || p.status === 'comprado'}
+                      disabled={p.status === 'cancelado' || p.status === 'faturado' || p.status === 'comprado'}
                     >
                       <FileSpreadsheet size={14} />
                       Importar
