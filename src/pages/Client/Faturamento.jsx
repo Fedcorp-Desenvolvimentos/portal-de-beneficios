@@ -11,6 +11,9 @@ import {
 import { entebenService } from '../../services/entebenService'
 import '../../styles/Faturamento.css'
 
+import PageLayout from '../../Layouts/PageLayout/PageLayout'
+import { useLoading } from '../../hooks/useLoading'
+
 const formatMoney = (value) =>
   Number(value || 0).toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
@@ -209,6 +212,7 @@ const getQuantidade = (item) =>
 
 export default function Faturamento() {
   const [search, setSearch] = useState('')
+  const { loading, startLoading, stopLoading, updateProgress } = useLoading();
 
   const [filtroStatus, setFiltroStatus] = useState('')
   const [filtroCompetencia, setFiltroCompetencia] =
@@ -218,7 +222,6 @@ export default function Faturamento() {
   const [filtroVencimento, setFiltroVencimento] =
     useState('')
 
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [importacoes, setImportacoes] = useState([])
 
@@ -242,7 +245,7 @@ export default function Faturamento() {
 
   async function carregarFaturamentos() {
     try {
-      setLoading(true)
+      startLoading("Carregando faturamentos...")
       setError('')
 
       const [ultimaImportacao, historicoData] =
@@ -294,7 +297,7 @@ export default function Faturamento() {
         'Não foi possível carregar os faturamentos.'
       )
     } finally {
-      setLoading(false)
+      stopLoading();
     }
   }
 
@@ -550,477 +553,483 @@ export default function Faturamento() {
   }
 
   return (
-    <div className="fatv2-page">
-      <section className="fatv2-hero">
-        <div>
-          <p className="fatv2-eyebrow">
-            Faturamento
-          </p>
+    <PageLayout 
+    title="Faturamento" 
+    subtitle="Documentos por importação"
+    description="Cada importação reúne os benefícios faturados e seus documentos vinculados."
+    >
+      <div className="fatv2-page">
+        <section className="fatv2-hero">
+          <div>
+            {/* <p className="fatv2-eyebrow">
+              Faturamento
+            </p> */}
 
-          <h1 className="fatv2-title">
-            Documentos por importação
-          </h1>
+            <h1 className="fatv2-title">
+              Documentos por importação
+            </h1>
 
-          <p className="fatv2-subtitle">
-            Cada importação reúne os
-            benefícios faturados e
-            seus documentos vinculados.
-          </p>
-        </div>
-      </section>
+            <p className="fatv2-subtitle">
+              Cada importação reúne os
+              benefícios faturados e
+              seus documentos vinculados.
+            </p>
+          </div>
+        </section>
 
-      <section className="fatv2-toolbar">
-        <div className="fatv2-search">
-          <Search size={16} />
+        <section className="fatv2-toolbar">
+          <div className="fatv2-search">
+            <Search size={16} />
 
-          <input
-            type="text"
-            placeholder="Buscar por importação, competência ou status..."
-            value={search}
-            onChange={(e) =>
-              setSearch(e.target.value)
-            }
-          />
-        </div>
-
-        <div className="fatv2-filters">
-          <label>
-            <span>Status</span>
-
-            <select
-              value={filtroStatus}
-              className="status"
+            <input
+              type="text"
+              placeholder="Buscar por importação, competência ou status..."
+              value={search}
               onChange={(e) =>
-                setFiltroStatus(
-                  e.target.value
-                )
+                setSearch(e.target.value)
               }
-            >
-              <option value="">
-                Todos
-              </option>
+            />
+          </div>
 
-              {opcoesStatus.map(
-                (status) => (
-                  <option
-                    key={status}
-                    value={status}
-                  >
-                    {getStatusLabel(
-                      status
-                    )}
-                  </option>
-                )
-              )}
-            </select>
-          </label>
+          <div className="fatv2-filters">
+            <label>
+              <span>Status</span>
 
-          <label>
-            <span>Vigência</span>
+              <select
+                value={filtroStatus}
+                className="status"
+                onChange={(e) =>
+                  setFiltroStatus(
+                    e.target.value
+                  )
+                }
+              >
+                <option value="">
+                  Todos
+                </option>
 
-            <select
-              value={filtroVigencia}
-              onChange={(e) =>
-                setFiltroVigencia(
-                  e.target.value
-                )
-              }
-              className="vig"
-            >
-              <option value="">
-                Todas
-              </option>
-
-              {opcoesVigencia.map(
-                (data) => (
-                  <option
-                    key={data}
-                    value={data}
-                  >
-                    {formatDateBR(
-                      data
-                    )}
-                  </option>
-                )
-              )}
-            </select>
-          </label>
-
-          <label>
-            <span>
-              Vencimento
-            </span>
-
-            <select
-              value={
-                filtroVencimento
-              }
-              onChange={(e) =>
-                setFiltroVencimento(
-                  e.target.value
-                )
-              }
-              className="venc"
-            >
-              <option value="">
-                Todos
-              </option>
-
-              {opcoesVencimento.map(
-                (data) => (
-                  <option
-                    key={data}
-                    value={data}
-                  >
-                    {formatDateBR(
-                      data
-                    )}
-                  </option>
-                )
-              )}
-            </select>
-          </label>
-
-          <button
-            type="button"
-            className="fatv2-btn fatv2-clear-btn"
-            onClick={limparFiltros}
-          >
-            Limpar filtros
-          </button>
-        </div>
-      </section>
-
-      {error && (
-        <div className="fatv2-empty">
-          {error}
-        </div>
-      )}
-
-      {loading ? (
-        <div className="fatv2-empty">
-          Carregando faturamentos...
-        </div>
-      ) : (
-        <>
-          <section className="fatv2-list">
-            {gruposPaginados.length ===
-              0 ? (
-              <div className="fatv2-empty">
-                Nenhum faturamento
-                encontrado para os
-                filtros selecionados.
-              </div>
-            ) : (
-              gruposPaginados.map(
-                (group) => {
-                  const podeBaixar =
-                    isStatusConcluido(
-                      group.status
-                    )
-
-                  return (
-                    <article
-                      key={group.key}
-                      className="fatv2-card"
+                {opcoesStatus.map(
+                  (status) => (
+                    <option
+                      key={status}
+                      value={status}
                     >
-                      <div className="fatv2-card-top">
-                        <div className="fatv2-card-main">
-                          <div className="fatv2-icon">
-                            <FileText
-                              size={
-                                18
-                              }
-                            />
+                      {getStatusLabel(
+                        status
+                      )}
+                    </option>
+                  )
+                )}
+              </select>
+            </label>
+
+            <label>
+              <span>Vigência</span>
+
+              <select
+                value={filtroVigencia}
+                onChange={(e) =>
+                  setFiltroVigencia(
+                    e.target.value
+                  )
+                }
+                className="vig"
+              >
+                <option value="">
+                  Todas
+                </option>
+
+                {opcoesVigencia.map(
+                  (data) => (
+                    <option
+                      key={data}
+                      value={data}
+                    >
+                      {formatDateBR(
+                        data
+                      )}
+                    </option>
+                  )
+                )}
+              </select>
+            </label>
+
+            <label>
+              <span>
+                Vencimento
+              </span>
+
+              <select
+                value={
+                  filtroVencimento
+                }
+                onChange={(e) =>
+                  setFiltroVencimento(
+                    e.target.value
+                  )
+                }
+                className="venc"
+              >
+                <option value="">
+                  Todos
+                </option>
+
+                {opcoesVencimento.map(
+                  (data) => (
+                    <option
+                      key={data}
+                      value={data}
+                    >
+                      {formatDateBR(
+                        data
+                      )}
+                    </option>
+                  )
+                )}
+              </select>
+            </label>
+
+            <button
+              type="button"
+              className="fatv2-btn fatv2-clear-btn"
+              onClick={limparFiltros}
+            >
+              Limpar filtros
+            </button>
+          </div>
+        </section>
+
+        {error && (
+          <div className="fatv2-empty">
+            {error}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="fatv2-empty">
+            Carregando faturamentos...
+          </div>
+        ) : (
+          <>
+            <section className="fatv2-list">
+              {gruposPaginados.length ===
+                0 ? (
+                <div className="fatv2-empty">
+                  Nenhum faturamento
+                  encontrado para os
+                  filtros selecionados.
+                </div>
+              ) : (
+                gruposPaginados.map(
+                  (group) => {
+                    const podeBaixar =
+                      isStatusConcluido(
+                        group.status
+                      )
+
+                    return (
+                      <article
+                        key={group.key}
+                        className="fatv2-card"
+                      >
+                        <div className="fatv2-card-top">
+                          <div className="fatv2-card-main">
+                            <div className="fatv2-icon">
+                              <FileText
+                                size={
+                                  18
+                                }
+                              />
+                            </div>
+
+                            <div className="fatv2-main-text">
+                              <h2>
+                                {
+                                  group.importacaoLabel
+                                }
+                              </h2>
+
+                              <p>
+                                ID/Faturamento:{' '}
+                                {
+                                  group.key
+                                }
+                              </p>
+                            </div>
                           </div>
 
-                          <div className="fatv2-main-text">
-                            <h2>
-                              {
-                                group.importacaoLabel
-                              }
-                            </h2>
+                          <div className="fatv2-summary">
+                            <div className="fatv2-summary-item">
+                              <span>
+                                <CalendarDays
+                                  size={
+                                    14
+                                  }
+                                />{' '}
+                                Importação
+                              </span>
 
-                            <p>
-                              ID/Faturamento:{' '}
-                              {
-                                group.key
-                              }
-                            </p>
+                              <strong>
+                                {
+                                  group.importacaoDate
+                                }
+                              </strong>
+                            </div>
+
+                            <div className="fatv2-summary-item">
+                              <span>
+                                <Download
+                                  size={
+                                    14
+                                  }
+                                />{' '}
+                                Competência
+                              </span>
+
+                              <strong>
+                                {
+                                  group.competencia
+                                }
+                              </strong>
+                            </div>
+
+                            <div className="fatv2-summary-item">
+                              <span>
+                                <Files
+                                  size={
+                                    14
+                                  }
+                                />{' '}
+                                Registros
+                              </span>
+
+                              <strong>
+                                {
+                                  group.quantidadeBeneficios
+                                }
+                              </strong>
+                            </div>
+
+                            <div className="fatv2-summary-item">
+                              <span>
+                                <Receipt
+                                  size={
+                                    14
+                                  }
+                                />{' '}
+                                Total
+                              </span>
+
+                              <strong>
+                                R${' '}
+                                {formatMoney(
+                                  group.total
+                                )}
+                              </strong>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="fatv2-summary">
-                          <div className="fatv2-summary-item">
-                            <span>
-                              <CalendarDays
-                                size={
-                                  14
-                                }
-                              />{' '}
-                              Importação
+                        <div className="fatv2-card-body">
+                          <div className="fatv2-benefits">
+                            <span className="fatv2-label">
+                              Resumo
                             </span>
 
-                            <strong>
-                              {
-                                group.importacaoDate
-                              }
-                            </strong>
+                            <div className="fatv2-benefit-tags">
+                              <span
+                                className={`fatv2-tag ${getStatusClass(
+                                  group.status
+                                )}`}
+                              >
+                                {getStatusLabel(
+                                  group.status
+                                )}
+
+                                {group.faturamento_progresso !=
+                                  null
+                                  ? ` - ${group.faturamento_progresso}%`
+                                  : ''}
+                              </span>
+
+                              {group.beneficios.map(
+                                (
+                                  beneficio,
+                                  index
+                                ) => (
+                                  <span
+                                    key={`${beneficio}-${index}`}
+                                    className="fatv2-tag"
+                                  >
+                                    {
+                                      beneficio
+                                    }
+                                  </span>
+                                )
+                              )}
+                            </div>
                           </div>
 
-                          <div className="fatv2-summary-item">
-                            <span>
+                          <div className="fatv2-docs">
+                            <button
+                              className="fatv2-btn"
+                              disabled={
+                                !podeBaixar
+                              }
+                              title={
+                                !podeBaixar
+                                  ? 'Documento disponível apenas quando o faturamento estiver concluído'
+                                  : ''
+                              }
+                              onClick={() =>
+                                baixarDocumento(
+                                  group.downloadId,
+                                  'boleto-original/'
+                                )
+                              }
+                            >
                               <Download
                                 size={
                                   14
                                 }
-                              />{' '}
-                              Competência
-                            </span>
+                              />
+                              Boleto
+                            </button>
 
-                            <strong>
-                              {
-                                group.competencia
+                            <button
+                              className="fatv2-btn"
+                              disabled={
+                                !podeBaixar
                               }
-                            </strong>
-                          </div>
-
-                          <div className="fatv2-summary-item">
-                            <span>
-                              <Files
-                                size={
-                                  14
-                                }
-                              />{' '}
-                              Registros
-                            </span>
-
-                            <strong>
-                              {
-                                group.quantidadeBeneficios
+                              title={
+                                !podeBaixar
+                                  ? 'Documento disponível apenas quando o faturamento estiver concluído'
+                                  : ''
                               }
-                            </strong>
-                          </div>
-
-                          <div className="fatv2-summary-item">
-                            <span>
-                              <Receipt
-                                size={
-                                  14
-                                }
-                              />{' '}
-                              Total
-                            </span>
-
-                            <strong>
-                              R${' '}
-                              {formatMoney(
-                                group.total
-                              )}
-                            </strong>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="fatv2-card-body">
-                        <div className="fatv2-benefits">
-                          <span className="fatv2-label">
-                            Resumo
-                          </span>
-
-                          <div className="fatv2-benefit-tags">
-                            <span
-                              className={`fatv2-tag ${getStatusClass(
-                                group.status
-                              )}`}
-                            >
-                              {getStatusLabel(
-                                group.status
-                              )}
-
-                              {group.faturamento_progresso !=
-                                null
-                                ? ` - ${group.faturamento_progresso}%`
-                                : ''}
-                            </span>
-
-                            {group.beneficios.map(
-                              (
-                                beneficio,
-                                index
-                              ) => (
-                                <span
-                                  key={`${beneficio}-${index}`}
-                                  className="fatv2-tag"
-                                >
-                                  {
-                                    beneficio
-                                  }
-                                </span>
-                              )
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="fatv2-docs">
-                          <button
-                            className="fatv2-btn"
-                            disabled={
-                              !podeBaixar
-                            }
-                            title={
-                              !podeBaixar
-                                ? 'Documento disponível apenas quando o faturamento estiver concluído'
-                                : ''
-                            }
-                            onClick={() =>
-                              baixarDocumento(
-                                group.downloadId,
-                                'boleto-original/'
-                              )
-                            }
-                          >
-                            <Download
-                              size={
-                                14
-                              }
-                            />
-                            Boleto
-                          </button>
-
-                          <button
-                            className="fatv2-btn"
-                            disabled={
-                              !podeBaixar
-                            }
-                            title={
-                              !podeBaixar
-                                ? 'Documento disponível apenas quando o faturamento estiver concluído'
-                                : ''
-                            }
-                            onClick={() =>
-                              baixarDocumento(
-                                group.downloadId,
-                                'nota-fiscal-original/'
-                              )
-                            }
-                          >
-                            <Download
-                              size={
-                                14
-                              }
-                            />
-                            NF
-                          </button>
-
-                          <button
-                            className="fatv2-btn"
-                            disabled={
-                              !podeBaixar
-                            }
-                            title={
-                              !podeBaixar
-                                ? 'Documento disponível apenas quando o faturamento estiver concluído'
-                                : ''
-                            }
-                            onClick={() =>
-                              baixarDocumento(
-                                group.downloadId,
-                                'nota-debito-original/'
-                              )
-                            }
-                          >
-                            <Download
-                              size={
-                                14
-                              }
-                            />
-                            Nota
-                            Débito
-                          </button>
-
-                          <button
-                            className="fatv2-btn fatv2-btn-primary"
-                            disabled={
-                              !podeBaixar
-                            }
-                            title={
-                              !podeBaixar
-                                ? 'Documento disponível apenas quando o faturamento estiver concluído'
-                                : ''
-                            }
-                            onClick={async () => {
-                              try {
-                                await baixarDocumento(
+                              onClick={() =>
+                                baixarDocumento(
                                   group.downloadId,
-                                  'originais/'
+                                  'nota-fiscal-original/'
                                 )
-                              } catch (e) {
-                                console.error(e)
                               }
-                            }}
-                          >
-                            <Download
-                              size={
-                                14
+                            >
+                              <Download
+                                size={
+                                  14
+                                }
+                              />
+                              NF
+                            </button>
+
+                            <button
+                              className="fatv2-btn"
+                              disabled={
+                                !podeBaixar
                               }
-                            />
-                            Baixar
-                            todos
-                          </button>
+                              title={
+                                !podeBaixar
+                                  ? 'Documento disponível apenas quando o faturamento estiver concluído'
+                                  : ''
+                              }
+                              onClick={() =>
+                                baixarDocumento(
+                                  group.downloadId,
+                                  'nota-debito-original/'
+                                )
+                              }
+                            >
+                              <Download
+                                size={
+                                  14
+                                }
+                              />
+                              Nota
+                              Débito
+                            </button>
+
+                            <button
+                              className="fatv2-btn fatv2-btn-primary"
+                              disabled={
+                                !podeBaixar
+                              }
+                              title={
+                                !podeBaixar
+                                  ? 'Documento disponível apenas quando o faturamento estiver concluído'
+                                  : ''
+                              }
+                              onClick={async () => {
+                                try {
+                                  await baixarDocumento(
+                                    group.downloadId,
+                                    'originais/'
+                                  )
+                                } catch (e) {
+                                  console.error(e)
+                                }
+                              }}
+                            >
+                              <Download
+                                size={
+                                  14
+                                }
+                              />
+                              Baixar
+                              todos
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    </article>
-                  )
-                }
-              )
+                      </article>
+                    )
+                  }
+                )
+              )}
+            </section>
+
+            {totalPaginas > 1 && (
+              <div className="fatv2-pagination">
+                <button
+                  type="button"
+                  className="fatv2-btn"
+                  disabled={
+                    paginaAtual === 1
+                  }
+                  onClick={() =>
+                    setPaginaAtual(
+                      (prev) =>
+                        prev - 1
+                    )
+                  }
+                >
+                  Anterior
+                </button>
+
+                <span>
+                  Página{' '}
+                  {paginaAtual} de{' '}
+                  {totalPaginas}
+                </span>
+
+                <button
+                  type="button"
+                  className="fatv2-btn"
+                  disabled={
+                    paginaAtual ===
+                    totalPaginas
+                  }
+                  onClick={() =>
+                    setPaginaAtual(
+                      (prev) =>
+                        prev + 1
+                    )
+                  }
+                >
+                  Próxima
+                </button>
+              </div>
             )}
-          </section>
-
-          {totalPaginas > 1 && (
-            <div className="fatv2-pagination">
-              <button
-                type="button"
-                className="fatv2-btn"
-                disabled={
-                  paginaAtual === 1
-                }
-                onClick={() =>
-                  setPaginaAtual(
-                    (prev) =>
-                      prev - 1
-                  )
-                }
-              >
-                Anterior
-              </button>
-
-              <span>
-                Página{' '}
-                {paginaAtual} de{' '}
-                {totalPaginas}
-              </span>
-
-              <button
-                type="button"
-                className="fatv2-btn"
-                disabled={
-                  paginaAtual ===
-                  totalPaginas
-                }
-                onClick={() =>
-                  setPaginaAtual(
-                    (prev) =>
-                      prev + 1
-                  )
-                }
-              >
-                Próxima
-              </button>
-            </div>
-          )}
-        </>
-      )}
-    </div>
+          </>
+        )}
+      </div>
+    </PageLayout>
   )
 }

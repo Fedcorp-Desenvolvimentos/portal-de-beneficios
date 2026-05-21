@@ -18,6 +18,7 @@ import {
 
 import '../../styles/ColaboradorDashboard.css'
 import { faturamentoService } from '../../services/faturamentoService'
+import PageLayout from '../../Layouts/PageLayout/PageLayout'
 
 const fmtDate = (s) => {
   if (!s) return '-'
@@ -860,14 +861,15 @@ export default function ColaboradorDashboard() {
   ])
 
   return (
+    <PageLayout title={`Dashboard`} subtitle="Gerencie seus pedidos de faturamento, acompanhe o status e importe documentos.">
     <div className="cf-root">
       <Toasts toasts={toasts} onClose={closeToast} />
 
       <div className="cf-page-header">
-        <div>
+        {/* <div>
           <div className="cf-page-title">Faturamento</div>
           <div className="cf-page-sub">Gerencie pedidos aprovados e importe documentos</div>
-        </div>
+        </div> */}
 
         <div className="cf-stats-mini">
           <div className="cf-stat-mini" style={{ '--mini-color': '#16a34a' }}>
@@ -1353,5 +1355,6 @@ export default function ColaboradorDashboard() {
         loading={uploading}
       />
     </div>
+    </PageLayout>
   )
 }

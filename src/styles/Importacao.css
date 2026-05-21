@@ -1,18 +1,5 @@
-:root {
-    --panel: #ffffff;
-    --border: #e2e8f0;
-    --muted: #6b7280;
-}
-
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
-}
-
 .importacao-container {
     padding: 24px;
-    max-width: 1400px;
     margin: 0 auto;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }

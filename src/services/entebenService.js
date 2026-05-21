@@ -1,9 +1,10 @@
-import { apiFetch } from './api'
+import api from "./api"
 
 export const entebenService = {
   getCondominios: async () => {
     try {
-      return await apiFetch('/entidades/condominios/', { method: 'GET' })
+      const response = await api.get('/api/entidades/condominios/')
+      return response.data
     } catch (error) {
       console.error('Erro ao buscar condomínios:', error)
       throw error
@@ -12,11 +13,9 @@ export const entebenService = {
 
   createCondominio: async (data) => {
     try {
-      console.log("Criando condomínio com dados:", data)
-      return await apiFetch('/entidades/condominios/', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      })
+      // console.log("Criando condomínio com dados:", data)
+      const response = await api.post('/api/entidades/condominios/', data)
+      return response.data
     } catch (error) {
       console.error('Erro ao criar condomínio:', error)
       throw error
@@ -25,10 +24,8 @@ export const entebenService = {
 
   updateCondominio: async (cnpj, data) => {
     try {
-      return await apiFetch(`/entidades/condominios/${cnpj}/`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      })
+      const response = await api.put(`/api/entidades/condominios/${cnpj}/`, data)
+      return response.data
     } catch (error) {
       console.error('Erro ao atualizar condomínio:', error)
       throw error
@@ -37,9 +34,8 @@ export const entebenService = {
 
   deleteCondominio: async (cnpj) => {
     try {
-      return await apiFetch(`/entidades/condominios/${cnpj}/`, {
-        method: 'DELETE',
-      })
+      const response = await api.delete(`/api/entidades/condominios/${cnpj}/`)
+      return response.data
     } catch (error) {
       console.error('Erro ao excluir condomínio:', error)
       throw error
@@ -48,7 +44,8 @@ export const entebenService = {
 
   getFuncionarios: async () => {
     try {
-      return await apiFetch('/entidades/funcionarios/', { method: 'GET' })
+      const response = await api.get('/api/entidades/funcionarios/')
+      return response.data
     } catch (error) {
       console.error('Erro ao buscar funcionários:', error)
       throw error
@@ -57,10 +54,8 @@ export const entebenService = {
 
   createFuncionario: async (data) => {
     try {
-      return await apiFetch('/entidades/funcionarios/', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      })
+      const response = await api.post('/api/entidades/funcionarios/', data)
+      return response.data
     } catch (error) {
       console.error('Erro ao criar funcionário:', error)
       throw error
@@ -69,11 +64,9 @@ export const entebenService = {
 
   updateFuncionario: async (cpf, data) => {
     try {
-      console.log("Atualizando funcionário com CPF:", cpf, "e dados:", data)
-      return await apiFetch(`/entidades/funcionarios/${cpf}/`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      })
+      // console.log("Atualizando funcionário com CPF:", cpf, "e dados:", data)
+      const response = await api.put(`/api/entidades/funcionarios/${cpf}/`, data)
+      return response.data
     } catch (error) {
       console.error('Erro ao atualizar funcionário:', error)
       throw error
@@ -82,31 +75,18 @@ export const entebenService = {
   
   getMovimentacoes: async () => {
     try {
-      return await apiFetch('/beneficios/movimentacoes/', {
-        method: 'GET',
-      })
+      const response = await api.get('/api/beneficios/movimentacoes/')
+      return response.data
     } catch (error) {
       console.error('Erro ao buscar movimentações:', error)
       throw error
     }
   },
 
-  getFuncionarios: async () => {
-    try {
-      return await apiFetch('/entidades/funcionarios/', {
-        method: 'GET',
-      })
-    } catch (error) {
-      console.error('Erro ao buscar funcionários:', error)
-      throw error
-    }
-  },
-
   getcondominios: async () => {
     try {
-      return await apiFetch('/entidades/condominios/', {
-        method: 'GET',
-      })
+      const response = await api.get('/api/entidades/condominios/')
+      return response.data
     } catch (error) {
       console.error('Erro ao buscar condomínios:', error)
       throw error
@@ -115,11 +95,9 @@ export const entebenService = {
 
   getImportacoes: async () => {
     try {
-      let response = await apiFetch('/beneficios/importacoes/', {
-        method: 'GET',
-      })
-      console.log("Importações recebidas:", response)
-      return response
+      const response = await api.get('/api/beneficios/importacoes/')
+      // console.log("Importações recebidas:", response.data)
+      return response.data
     } catch (error) {
       console.error('Erro ao buscar importações:', error)
       throw error
@@ -128,17 +106,16 @@ export const entebenService = {
 
   getUltimaImportacao: async () => {
     try {
-      let response = await apiFetch('/beneficios/importacoes/ultima/', {
-        method: 'GET',
-      })
-      console.log("Última importação recebida:", response)
-      return response
+      const response = await api.get('/api/beneficios/importacoes/ultima/')
+      // console.log("Última importação recebida:", response.data)
+      return response.data
     } catch (error) {
       const message = String(error?.message || '')
 
       if (
         message.includes('404') ||
-        message.includes('Nenhuma importação encontrada')
+        message.includes('Nenhuma importação encontrada') ||
+        error.response?.status === 404
       ) {
         return null
       }
@@ -150,16 +127,14 @@ export const entebenService = {
 
   getUltimaMovimentacao: async () => {
     try {
-      let response = await apiFetch('/beneficios/importacoes/ultima-movimentacao/', {
-        method: 'GET',
-      })
-      console.log("Response MOVIMENTAÇÃO:", response)
-      return response // Agora o backend já retorna no formato correto
+      const response = await api.get('/api/beneficios/importacoes/ultima-movimentacao/')
+      // console.log("Response MOVIMENTAÇÃO:", response.data)
+      return response.data
     } catch (error) {
       const message = String(error?.message || '')
       console.error('Erro ao buscar última movimentação:', error)
       
-      if (message.includes('404')) {
+      if (message.includes('404') || error.response?.status === 404) {
         return null
       }
       
@@ -169,14 +144,13 @@ export const entebenService = {
 
   repetirUltimoFaturamento: async () => {
     try {
-      const [ultima, importacoes] = await Promise.all([
-        apiFetch('/beneficios/importacoes/ultima/', {
-          method: 'GET',
-        }),
-        apiFetch('/beneficios/importacoes/', {
-          method: 'GET',
-        }),
+      const [ultimaResponse, importacoesResponse] = await Promise.all([
+        api.get('/api/beneficios/importacoes/ultima/'),
+        api.get('/api/beneficios/importacoes/'),
       ])
+
+      const ultima = ultimaResponse.data
+      const importacoes = importacoesResponse.data
 
       const historico = Array.isArray(importacoes)
         ? importacoes
@@ -280,7 +254,8 @@ export const entebenService = {
 
       if (
         message.includes('404') ||
-        message.includes('Nenhuma importação encontrada')
+        message.includes('Nenhuma importação encontrada') ||
+        error.response?.status === 404
       ) {
         return null
       }
@@ -291,22 +266,21 @@ export const entebenService = {
   },
 
   getFaturamentoStatus: async (id) => {
-    return apiFetch(`/upload/faturamento/${id}/status/`, {
-      method: 'GET',
-    })
+    const response = await api.get(`/api/upload/faturamento/${id}/status/`)
+    return response.data
   },
 
   exportarFaturamento: async () => {
-    return apiFetch('/upload/export/faturamento/', {
-      method: 'GET',
+    const response = await api.get('/api/upload/export/faturamento/', {
+      responseType: 'blob' // Para download de arquivos
     })
+    return response.data
   },
 
   getBeneficios: async () => {
     try {
-      return await apiFetch('/beneficios/produtos/', {
-        method: 'GET',
-      })
+      const response = await api.get('/api/beneficios/produtos/')
+      return response.data
     } catch (error) {
       console.error('Erro ao buscar produtos/benefícios:', error)
       throw error
@@ -314,33 +288,14 @@ export const entebenService = {
   },
 
   downloadDocumentoFaturamento: async (id, tipo = '') => {
-    const token =
-      localStorage.getItem('accessToken') ||
-      localStorage.getItem('access') ||
-      localStorage.getItem('token')
-
-    const baseUrl =
-      'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app/api'
-
     const endpoint = tipo
-      ? `${baseUrl}/upload/faturamento/${id}/download/${tipo}`
-      : `${baseUrl}/upload/faturamento/${id}/download/`
+      ? `/api/upload/faturamento/${id}/download/${tipo}`
+      : `/api/upload/faturamento/${id}/download/`
 
-    const response = await fetch(endpoint, {
-      method: 'GET',
-      headers: token
-        ? {
-            Authorization: `Bearer ${token}`,
-          }
-        : {},
+    const response = await api.get(endpoint, {
+      responseType: 'blob'
     })
 
-    if (!response.ok) {
-      throw new Error(`Erro ao baixar documento (${response.status})`)
-    }
-
-    return await response.blob()
+    return response.data
   },
-
 }
-

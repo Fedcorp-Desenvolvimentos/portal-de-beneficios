@@ -31,6 +31,8 @@ import {
 
 import { entebenService } from '../../services/entebenService'
 import '../../styles/GerenciamentoCondominios.css'
+import { useLoading } from '../../hooks/useLoading'
+
 
 async function ensureXLSX() {
   if (window.XLSX) return window.XLSX
@@ -437,6 +439,7 @@ function FiltroCondominios({ value, onChange, onClear }) {
 }
 
 export default function ConfiguracaoCondominios() {
+  const { loading, startLoading, stopLoading, updateProgress } = useLoading();
   const [modoAtivo, setModoAtivo] = useState('lista')
   const [condominios, setCondominios] = useState([])
   const [todosFuncionarios, setTodosFuncionarios] = useState([])
@@ -487,7 +490,7 @@ export default function ConfiguracaoCondominios() {
 
   const carregarDados = async () => {
     try {
-      setLoadingCondominios(true)
+      startLoading("Carregando condomínios...")
       const [condominiosRes, funcionariosRes] = await Promise.all([
         entebenService.getCondominios(),
         entebenService.getFuncionarios(),
@@ -496,7 +499,7 @@ export default function ConfiguracaoCondominios() {
       const condominiosList = toArray(condominiosRes)
       const funcionariosList = toArray(funcionariosRes)
 
-      console.log("funcionariosList", funcionariosList)
+      // console.log("funcionariosList", funcionariosList)
 
       setTodosFuncionarios(funcionariosList)
 
@@ -520,7 +523,7 @@ export default function ConfiguracaoCondominios() {
       console.error('Erro ao carregar dados:', err)
       setErroCondominios('Não foi possível carregar os dados.')
     } finally {
-      setLoadingCondominios(false)
+      stopLoading()
     }
   }
 
@@ -729,7 +732,12 @@ export default function ConfiguracaoCondominios() {
   const Tabela = () => (
     <div className="card">
       {loadingCondominios ? (
-        <div className="empty"><div className="spinner" /><p>Carregando condomínios...</p></div>
+        <div className="empty">
+          <div className='empty-wrapper'>
+            <div className="spinner" />
+            <p>Carregando condomínios...</p>
+          </div>
+        </div>
       ) : erroCondominios ? (
         <div className="empty"><AlertCircle className="ico xl muted" /><p>{erroCondominios}</p></div>
       ) : (

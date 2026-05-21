@@ -1,18 +1,5 @@
-.fatv2-page {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 28px 28px 64px;
-  color: #0f172a;
-}
 
-.fatv2-hero {
-  margin-bottom: 20px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
-  border: 1px solid #e2e8f0;
-  border-radius: 24px;
-  padding: 28px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-}
+
 
 .fatv2-eyebrow {
   margin: 0 0 8px;

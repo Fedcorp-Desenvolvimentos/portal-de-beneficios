@@ -1,5 +1,5 @@
 // services/userService.js
-import { apiFetch } from './api.js';
+import api from './api.js';
 
 /**
  * Constantes para as chaves de armazenamento.
@@ -20,11 +20,8 @@ export const userService = {
         const payload = { email, password };
 
         try {
-            const data = await apiFetch('/auth/token/', {
-                method: 'POST',
-                body: payload,
-                headers: { 'Authorization': '' } 
-            });
+            const response = await api.post('/api/auth/token/', payload);
+            const data = response.data;
 
             const accessToken = data.access;
             const refreshToken = data.refresh;
@@ -53,11 +50,8 @@ export const userService = {
         }
 
         try {
-            const data = await apiFetch('/auth/token/refresh/', {
-                method: 'POST',
-                body: { refresh: refreshToken },
-                headers: { 'Authorization': '' } 
-            });
+            const response = await api.post('/api/auth/token/refresh/', { refresh: refreshToken });
+            const data = response.data;
 
             const newAccessToken = data.access;
 
@@ -80,8 +74,8 @@ export const userService = {
      */
     getUserData: async () => {
         try {
-            const userData = await apiFetch('/users/me/', { method: 'GET' }); 
-            return userData;
+            const response = await api.get('/api/users/me/');
+            return response.data;
         } catch (error) {
             console.error('Erro ao buscar dados do usuário:', error);
             throw error;
@@ -93,9 +87,8 @@ export const userService = {
      */
     listarUsuarios: async (params = {}) => {
         try {
-            const queryString = new URLSearchParams(params).toString();
-            const url = `/users/list/${queryString ? `?${queryString}` : ''}`;
-            const data = await apiFetch(url, { method: 'GET' });
+            const response = await api.get('/api/users/list/', { params });
+            const data = response.data;
             console.log('✅ Usuários carregados:', data?.length || 0);
             return Array.isArray(data) ? data : [];
         } catch (error) {
@@ -109,8 +102,8 @@ export const userService = {
      */
     buscarUsuarioPorId: async (id) => {
         try {
-            const data = await apiFetch(`/users/${id}/`, { method: 'GET' });
-            return data;
+            const response = await api.get(`/api/users/${id}/`);
+            return response.data;
         } catch (error) {
             console.error(`❌ Erro ao buscar usuário ${id}:`, error);
             throw error;
@@ -129,13 +122,10 @@ export const userService = {
                 tipo: dados.tipo,
                 administradora: dados.administradora || null
             };
-            console.log('📝 Criando usuário com payload:', payload);
-            const data = await apiFetch('/users/register/', { 
-                method: 'POST', 
-                body: payload 
-            });
-            console.log('✅ Usuário criado:', data);
-            return data;
+            // console.log('📝 Criando usuário com payload:', payload);
+            const response = await api.post('/api/users/register/', payload);
+            // console.log('✅ Usuário criado:', response.data);
+            return response.data;
         } catch (error) {
             console.error('❌ Erro ao criar usuário:', error);
             throw error;
@@ -163,13 +153,10 @@ export const userService = {
                 payload.password = dados.password;
             }
             
-            console.log(`✏️ Atualizando usuário ${id} com payload:`, payload);
-            const data = await apiFetch(`/users/${id}/`, { 
-                method: 'PUT', 
-                body: payload 
-            });
-            console.log('✅ Usuário atualizado:', data);
-            return data;
+            // console.log(`✏️ Atualizando usuário ${id} com payload:`, payload);
+            const response = await api.put(`/api/users/${id}/`, payload);
+            // console.log('✅ Usuário atualizado:', response.data);
+            return response.data;
         } catch (error) {
             console.error(`❌ Erro ao atualizar usuário ${id}:`, error);
             throw error;
@@ -181,9 +168,9 @@ export const userService = {
      */
     excluirUsuario: async (id) => {
         try {
-            const data = await apiFetch(`/users/${id}/`, { method: 'DELETE' });
-            console.log(`✅ Usuário ${id} excluído`);
-            return data;
+            const response = await api.delete(`/api/users/${id}/`);
+            // console.log(`✅ Usuário ${id} excluído`);
+            return response.data;
         } catch (error) {
             console.error(`❌ Erro ao excluir usuário ${id}:`, error);
             throw error;
@@ -195,9 +182,9 @@ export const userService = {
      */
     desvincularAdministradora: async (userId) => {
         try {
-            const data = await apiFetch(`/users/${userId}/desvincular-adm/`, { method: 'POST' });
-            console.log(`✅ Usuário ${userId} desvinculado`);
-            return data;
+            const response = await api.post(`/api/users/${userId}/desvincular-adm/`);
+            // console.log(`✅ Usuário ${userId} desvinculado`);
+            return response.data;
         } catch (error) {
             console.error(`❌ Erro ao desvincular usuário ${userId}:`, error);
             throw error;
@@ -219,13 +206,14 @@ export const userService = {
         return !!localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
     },
 
-        /**
+    /**
      * Lista todas as administradoras
      */
     listarAdministradoras: async () => {
         try {
-            const data = await apiFetch('/entidades/administradoras/', { method: 'GET' });
-            console.log('✅ Administradoras carregadas:', data?.length || 0);
+            const response = await api.get('/api/entidades/administradoras/');
+            const data = response.data;
+            // console.log('✅ Administradoras carregadas:', data?.length || 0);
             return Array.isArray(data) ? data : [];
         } catch (error) {
             console.error('❌ Erro ao listar administradoras:', error);
@@ -234,16 +222,31 @@ export const userService = {
     },
 
     /**
+     * Busca os dados do usuário logado.
+     */
+    getMe: async () => {
+        const response = await api.get("/api/users/me/");
+        return response.data;
+    },
+
+    /**
+     * Alterar senha do usuário logado.
+     */
+    changePassword: async (payload) => {
+        const response = await api.post(`/api/users/password/`, payload);
+        return response.data;
+    },
+
+    /**
      * Vincular usuário a uma administradora
      */
     vincularAdministradora: async (userId, administradoraId) => {
         try {
-            const data = await apiFetch(`/users/${userId}/vincular-adm/`, {
-                method: 'POST',
-                body: { administradora_id: administradoraId }
+            const response = await api.post(`/api/users/${userId}/vincular-adm/`, {
+                administradora_id: administradoraId
             });
-            console.log(`✅ Usuário ${userId} vinculado à administradora ${administradoraId}`);
-            return data;
+            // console.log(`✅ Usuário ${userId} vinculado à administradora ${administradoraId}`);
+            return response.data;
         } catch (error) {
             console.error(`❌ Erro ao vincular usuário ${userId}:`, error);
             throw error;

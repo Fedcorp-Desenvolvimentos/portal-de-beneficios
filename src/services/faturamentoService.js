@@ -1,4 +1,4 @@
-import { apiFetch } from './api'
+import api from "./api"
 
 function getAuthToken() {
   try {
@@ -81,25 +81,21 @@ export const faturamentoService = {
       formData.append('arquivo_nota_fiscal', arquivoNotaFiscal)
     }
 
-    return apiFetch('/upload/faturamento/upload/', {
-      method: 'POST',
-      body: formData,
+    const response = await api.post('/api/upload/faturamento/upload/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     })
+    return response.data
   },
 
   async uploadDocumentos(payload) {
     return this.importarDocumentos(payload)
   },
-  async listarPedidosFuncionario() {
 
-    let token = getAuthToken()
-    const response = await apiFetch('/beneficios/importacoes/', {
-      method: 'GET',
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    })
-    return response
+  async listarPedidosFuncionario() {
+    const response = await api.get('/api/beneficios/importacoes/')
+    return response.data
   },
 
   async listarPedidos() {
@@ -118,11 +114,8 @@ export const faturamentoService = {
   },
 
   async listarImportacoes() {
-    const response = await apiFetch('/beneficios/importacoes/', {
-      method: 'GET',
-    })
-
-    return normalizeArray(response)
+    const response = await api.get('/api/beneficios/importacoes/')
+    return normalizeArray(response.data)
   },
 
   async buscarUltimaImportacao() {
@@ -134,17 +127,17 @@ export const faturamentoService = {
         .sort((a, b) =>
           String(
             b.data_importacao ||
-            b.processed_at ||
-            b.created_at ||
-            b.updated_at ||
-            ''
+              b.processed_at ||
+              b.created_at ||
+              b.updated_at ||
+              ''
           ).localeCompare(
             String(
               a.data_importacao ||
-              a.processed_at ||
-              a.created_at ||
-              a.updated_at ||
-              ''
+                a.processed_at ||
+                a.created_at ||
+                a.updated_at ||
+                ''
             )
           )
         )[0] || null
@@ -167,10 +160,8 @@ export const faturamentoService = {
   },
 
   async criarFaturamento(payload) {
-    return apiFetch('/upload/faturamento/repetir/', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    })
+    const response = await api.post('/api/upload/faturamento/repetir/', payload)
+    return response.data
   },
 
   getExportFaturamentoUrl(params = {}) {
@@ -185,11 +176,11 @@ export const faturamentoService = {
     const queryString = query.toString()
 
     const API_BASE =
-      import.meta.env.VITE_API_URL ||
-      'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app'
+      import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
-    return `${API_BASE}/api/upload/export/faturamento/${queryString ? `?${queryString}` : ''
-      }`
+    return `${API_BASE}/api/upload/export/faturamento/${
+      queryString ? `?${queryString}` : ''
+    }`
   },
 
   async baixarExportFaturamento(params = {}, nomeBase = 'faturamento') {
@@ -219,18 +210,18 @@ export const faturamentoService = {
     const contentDisposition = response.headers.get('content-disposition') || ''
     const contentType = response.headers.get('content-type') || ''
     const blob = await response.blob()
-
+    
     console.log('📄 Content-Type:', contentType)
     console.log('📎 Content-Disposition:', contentDisposition)
     console.log('📦 Tamanho do blob:', blob.size, 'bytes')
-
+    
     // Extrair filename do header
     let filename = null
     const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
     if (filenameMatch && filenameMatch[1]) {
       filename = filenameMatch[1].replace(/['"]/g, '')
     }
-
+    
     if (!filename) {
       filename = `${nomeBase}_${Date.now()}.xlsx`
     }
@@ -248,7 +239,7 @@ export const faturamentoService = {
     link.download = filename
     document.body.appendChild(link)
     link.click()
-
+    
     setTimeout(() => {
       document.body.removeChild(link)
       window.URL.revokeObjectURL(blobUrl)
@@ -263,10 +254,8 @@ export const faturamentoService = {
       ...(motivo && { motivo }),
     }
 
-    return apiFetch(`/beneficios/importacoes/${pedidoId}/status/`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    })
+    const response = await api.patch(`/api/beneficios/importacoes/${pedidoId}/status/`, payload)
+    return response.data
   },
 
   async baixarTxtCompra(params, filename = 'compra') {
@@ -305,4 +294,3 @@ export const faturamentoService = {
     window.URL.revokeObjectURL(url)
   }
 }
-

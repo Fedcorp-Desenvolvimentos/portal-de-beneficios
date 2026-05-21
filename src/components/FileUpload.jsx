@@ -3,12 +3,15 @@ import * as XLSX from 'xlsx'
 import StatusBadge from './StatusBadge'
 import { Upload } from './icons/Upload.jsx'
 import { baixarModeloImportacao } from '../utils/modelo_planilha.js'
+import { useLoading } from "../hooks/useLoading";
+import PageLayout from '../Layouts/PageLayout/PageLayout.jsx'
 
 export default function FileUpload({ onUpload }) {
   const inputRef = useRef()
   const [status, setStatus] = useState(null)
   const [message, setMessage] = useState('')
   const [fileName, setFileName] = useState('')
+  const { loading, startLoading, stopLoading, updateProgress } = useLoading();
 
   const handlePick = () => inputRef.current?.click()
 
@@ -18,6 +21,7 @@ export default function FileUpload({ onUpload }) {
     setFileName(file.name)
 
     try {
+      startLoading("Fazendo upload do arquivo...");
       const result = await onUpload?.({ status: 'processando', file })
 
       if (result?.success) {
@@ -30,6 +34,8 @@ export default function FileUpload({ onUpload }) {
     } catch (error) {
       setStatus('erro')
       setMessage('Falha na comunicação: ' + error.message)
+    } finally {
+      stopLoading();
     }
   }
 
@@ -67,6 +73,7 @@ export default function FileUpload({ onUpload }) {
   }
 
   return (
+    <PageLayout title="Importação" subtitle="Importe arquivos .txt, .csv ou .xlsx">
     <div className="upload-card">
       <div className="upload-header upload-header-between">
         <div className="upload-header-main">
@@ -121,5 +128,6 @@ export default function FileUpload({ onUpload }) {
         </div>
       )}
     </div>
+    </PageLayout>
   )
 }

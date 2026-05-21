@@ -433,6 +433,8 @@
     border-top-color: transparent;
     border-radius: 50%;
     animation: spin 1s linear infinite;
+
+    /* border: 2px solid red */
 }
 
 @keyframes spin {
@@ -1172,6 +1174,13 @@
   padding: 48px 20px;
   text-align: center;
   color: #94a3b8;
+}
+
+.empty-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .empty .ico.xl {

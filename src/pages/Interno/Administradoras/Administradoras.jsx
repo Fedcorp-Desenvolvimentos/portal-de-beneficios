@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { listarTodasAdministradoras, excluirAdministradora } from '../../../services/administradoraService.js'
 import './Administradoras.css'
+import { useLoading } from '../../../hooks/useLoading.js'
 
 export default function Administradoras() {
   const navigate = useNavigate()
   const [administradoras, setAdministradoras] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { loading, startLoading, stopLoading, updateProgress } = useLoading();
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -15,16 +16,16 @@ export default function Administradoras() {
 
   const carregarAdministradoras = async () => {
     try {
-      setLoading(true)
+      startLoading("Carregando administradoras...")
       const data = await listarTodasAdministradoras()
-      console.log('📋 Administradoras carregadas:', data)
+      // console.log('📋 Administradoras carregadas:', data)
       setAdministradoras(data)
       setError('')
     } catch (error) {
       console.error('❌ Erro ao carregar administradoras:', error)
       setError('Erro ao carregar lista de administradoras')
     } finally {
-      setLoading(false)
+      stopLoading()
     }
   }
 

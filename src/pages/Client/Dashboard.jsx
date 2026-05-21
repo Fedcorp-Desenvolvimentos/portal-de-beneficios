@@ -6,7 +6,7 @@ import { entebenService } from '../../services/entebenService'
 
 import '../../styles/Dashboard.css'
 
-const API_BASE_URL = 'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app/api'
+const API_BASE_URL = 'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app'
 
 const formatCurrency = (n) =>
   `R$ ${Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
@@ -64,6 +64,9 @@ export default function Dashboard() {
   const [selectedCondo, setSelectedCondo] = useState(null)
   const [condoModalOpen, setCondoModalOpen] = useState(false)
 
+
+  // console.log('Dashboard renderizado', { ultimaMovimentacao })
+
   useEffect(() => {
     (async () => {
       try {
@@ -73,6 +76,8 @@ export default function Dashboard() {
           entebenService.getImportacoes(),
           entebenService.getcondominios(),
         ])
+
+        console.log('Dados do dashboard:', { ultima, historico, acordosData })
 
         setUltimaMovimentacao(ultima)
         setHistoricoImportacoes(toArray(historico))
@@ -160,16 +165,6 @@ export default function Dashboard() {
     setCondoQuery('')
   }
 
-  if (loading) {
-    return (
-      <div className="dbi-root">
-        <div className="dbi-loading">
-          <div className="dbi-spinner" />
-          Carregando dashboard...
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="dbi-root">

@@ -1,5 +1,6 @@
 // components/UsuarioModalUniversal.jsx
 import React, { useState, useEffect } from 'react'
+import { useSnackbar } from 'notistack';
 
 export default function UsuarioModal({ 
   isOpen, 
@@ -10,36 +11,42 @@ export default function UsuarioModal({
   administradoras = [],
   title 
 }) {
+  const { enqueueSnackbar } = useSnackbar();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     tipo: 'adm',
     administradora: null
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [passwordError, setPasswordError] = useState('')
 
-  // Reset quando o modal abre ou o usuário muda
   useEffect(() => {
     if (isOpen) {
       if (usuario) {
-        console.log('📝 Modal Universal - Editando usuário:', usuario)
         setFormData({
           username: usuario.username || '',
           email: usuario.email || '',
           tipo: usuario.tipo || 'adm',
-          administradora: usuario.administradora_id || administradoraId || null
+          administradora: usuario.administradora_id || administradoraId || null,
+          password: '',
+          confirmPassword: ''
         })
       } else {
-        console.log('📝 Modal Universal - Criando novo usuário')
         setFormData({
           username: '',
           email: '',
           tipo: 'adm',
-          administradora: administradoraId || null
+          administradora: administradoraId || null,
+          password: '',
+          confirmPassword: ''
         })
       }
       setError('')
+      setPasswordError('')
     }
   }, [usuario, administradoraId, isOpen])
 
@@ -49,18 +56,48 @@ export default function UsuarioModal({
       ...prev,
       [name]: value
     }))
+    
+    if (name === 'password' || name === 'confirmPassword') {
+      setPasswordError('')
+    }
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    const password = formData.password.trim()
+    const confirmPassword = formData.confirmPassword.trim()
+    
+    if (!usuario && !password) {
+      setError('Senha é obrigatória')
+      enqueueSnackbar('Senha é obrigatória', { variant: 'error' });
+      return
+    }
+    
+    if (password || !usuario) {
+      if (password && password.length < 6) {
+        setPasswordError('A senha deve ter no mínimo 6 caracteres')
+        enqueueSnackbar('A senha deve ter no mínimo 6 caracteres', { variant: 'error' });
+        return
+      }
+      
+      if (password !== confirmPassword) {
+        setPasswordError('As senhas não coincidem')
+        enqueueSnackbar('As senhas não coincidem', { variant: 'error' });
+        return
+      }
+    }
+    
     setLoading(true)
     setError('')
+    setPasswordError('')
     
     try {
       const dadosParaEnvio = {
         username: formData.username.trim(),
         email: formData.email.trim(),
         tipo: formData.tipo,
+        password: password
       }
       
       if (!usuario) {
@@ -73,12 +110,13 @@ export default function UsuarioModal({
       if (!dadosParaEnvio.email) throw new Error('Email é obrigatório')
       if (!dadosParaEnvio.email.includes('@')) throw new Error('Email inválido')
       
-      console.log('📤 Enviando dados para API:', dadosParaEnvio)
       await onSave(dadosParaEnvio)
       onClose()
     } catch (error) {
       console.error('Erro ao salvar:', error)
-      setError(error.message || 'Erro ao salvar usuário')
+      const errorMsg = error.message || 'Erro ao salvar usuário'
+      setError(errorMsg)
+      enqueueSnackbar(errorMsg, { variant: 'error' });
     } finally {
       setLoading(false)
     }
@@ -122,6 +160,37 @@ export default function UsuarioModal({
               required
             />
           </div>
+
+          <div className="form-group">
+            <label>Senha {usuario ? '(deixe em branco para manter a senha atual)' : '*'}</label>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder={usuario ? 'Deixe em branco para manter a senha atual' : 'Mínimo 6 caracteres'}
+              required={!usuario}
+            />
+          </div>
+
+          {((!usuario && formData.password) || (usuario && formData.password)) && (
+            <div className="form-group">
+              <label>Confirmar Senha *</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="Digite a senha novamente"
+                required={!usuario || (usuario && formData.password)}
+              />
+              {passwordError && (
+                <div style={{color: '#d32f2f', fontSize: '12px', marginTop: '5px'}}>
+                  {passwordError}
+                </div>
+              )}
+            </div>
+          )}
           
           <div className="form-group">
             <label>Tipo de usuário *</label>
@@ -132,8 +201,8 @@ export default function UsuarioModal({
               required
             >
               <option value="dev">Desenvolvedor</option>
-              <option value="fin">Financeiro Fedcorp</option>
-              <option value="fat">Faturista Fedcorp</option>
+              <option value="fin">Financeiro</option>
+              <option value="fat">Faturista</option>
               <option value="adm">Usuário da Administradora</option>
               <option value="cli">Cliente (Condomínio)</option>
             </select>

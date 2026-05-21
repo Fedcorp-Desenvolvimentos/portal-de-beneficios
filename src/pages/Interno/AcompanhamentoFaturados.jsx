@@ -8,6 +8,7 @@ import {
 
 import '../../styles/Acompanhamento.css'
 import { faturamentoService } from '../../services/faturamentoService'
+import { useLoading } from '../../hooks/useLoading'
 
 const fmtDate = (s) => {
   if (!s) return '-'
@@ -60,13 +61,12 @@ const extrairResumoPedido = (pedidoApi) => ({
 
 export default function AcompanhamentoFaturados() {
   const [pedidos, setPedidos] = useState([])
-  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const { loading, startLoading, stopLoading, updateProgress } = useLoading()
 
   async function carregarPedidos() {
     try {
-      setLoading(true)
-
+      startLoading("Carregando pedidos...")
       const response = await faturamentoService.listarPedidosFuncionario()
 
       let lista = []
@@ -84,7 +84,7 @@ export default function AcompanhamentoFaturados() {
       console.error('Erro ao carregar compras finalizadas:', error)
       setPedidos([])
     } finally {
-      setLoading(false)
+      stopLoading()
     }
   }
 

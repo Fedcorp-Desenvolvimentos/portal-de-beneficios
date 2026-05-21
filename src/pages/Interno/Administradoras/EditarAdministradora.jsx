@@ -70,7 +70,7 @@ export default function EditarAdministradora() {
       }
 
       
-      console.log('📤 Enviando dados para atualização:', JSON.stringify(formData, null, 2))
+      // console.log('📤 Enviando dados para atualização:', JSON.stringify(formData, null, 2))
       await editarAdministradora(id, formData)
       navigate('/interno/administradoras')
     } catch (error) {
@@ -159,7 +159,7 @@ export default function EditarAdministradora() {
                 checked={form.cartao_admin === 'administradora'}
                 onChange={handleChange}
               />
-              <span>Na Administradora (true)</span>
+              <span>Na Administradora</span>
             </label>
 
             <label className="radio-label">
@@ -170,7 +170,7 @@ export default function EditarAdministradora() {
                 checked={form.cartao_admin === 'condominio'}
                 onChange={handleChange}
               />
-              <span>No Condomínio (false)</span>
+              <span>No Condomínio</span>
             </label>
           </div>
         </div>

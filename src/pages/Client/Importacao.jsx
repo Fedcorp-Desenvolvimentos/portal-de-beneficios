@@ -11,6 +11,8 @@ import {
 
 import { useAuth } from '../../context/AuthContext'
 
+import { useLoading } from "../../hooks/useLoading";
+
 function Modal({ open, title, onClose, children, locked = false }) {
   if (!open) return null
 
@@ -370,6 +372,8 @@ function buildPreviewRowsFromMovimentacoes(movimentacoes = []) {
 export default function Importacao() {
   const [data, setData] = useState(null)
   const [dataSincronizada, setDataSincronizada] = useState(null)
+
+  const { loading, startLoading, stopLoading, updateProgress } = useLoading();
 
   const { user } = useAuth()
 

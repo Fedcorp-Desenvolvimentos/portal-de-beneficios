@@ -1,72 +1,77 @@
+// src/services/api.js
+import axios from "axios";
 
-const API_BASE_URL = 'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app/api';
-// const API_BASE_URL = "http://localhost:8000/api";
-
-const ACCESS_TOKEN_KEY = 'accessToken';
-
-/**
- * Realiza uma requisição à API.
- * @param {string} endpoint - O caminho da API (ex: '/auth/me/').
- * @param {object} options - Opções de fetch (method, body, headers, etc.).
- * @returns {Promise<object>} - O objeto de resposta parseado em JSON ou um objeto vazio para 204.
- */
-export const apiFetch = async (endpoint, options = {}) => {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-
-    const isFormData = options.body instanceof FormData;
+export const API_BASE_URL = 'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app'
+// export const API_BASE_URL = 'http://localhost:8000'
 
 
-    let finalHeaders = {
-        ...options.headers,
-    };
+const api = axios.create({
+  baseURL: API_BASE_URL,
+});
 
-    if (token && !finalHeaders.Authorization) {
-        finalHeaders['Authorization'] = `Bearer ${token}`;
+// Intercepta todas as requisições Axios
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("accessToken");
+
+    // Se o token existir, adicione-o ao cabeçalho Authorization
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
-    if (!isFormData && !finalHeaders['Content-Type']) {
-        finalHeaders['Content-Type'] = 'application/json';
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+const publicRoutes = ["/", "/login", "/esqueci-senha", "/resetar-senha", "/404"];
+
+const isPublic = publicRoutes.some((route) =>
+  window.location.pathname.startsWith(route)
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = localStorage.getItem("refreshToken");
+
+        const response = await axios.post(
+          `${API_BASE_URL}/api/auth/token/refresh/`,
+          {
+            refresh: refreshToken,
+          }
+        );
+
+        const newAccessToken = response.data.access;
+
+        localStorage.setItem("accessToken", newAccessToken);
+
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+        return api(originalRequest);
+      } catch (refreshError) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+
+        window.location.href = "/login";
+
+        return Promise.reject(refreshError);
+      }
     }
 
-    const finalOptions = {
-        ...options,
-        headers: finalHeaders,
-    };
-    if (finalOptions.body && typeof finalOptions.body !== 'string' && !isFormData) {
-        finalOptions.body = JSON.stringify(finalOptions.body);
-    }
+    return Promise.reject(error);
+  }
+);
 
-    try {
-        const response = await fetch(url, finalOptions);
-
-        if (!response.ok) {
-            let errorData = { detail: 'Erro desconhecido.' };
-            try {
-
-                errorData = await response.json();
-            } catch (e) {
-
-                errorData.detail = response.statusText || 'Erro de rede ou servidor.';
-            }
-
-            const errorMessage = errorData.detail || JSON.stringify(errorData);
-            throw new Error(`[${response.status} ${response.statusText}] API Error: ${errorMessage}`);
-        }
-
-        if (response.status === 204 || response.headers.get('content-length') === '0') {
-            return {};
-        }
-
-        if (response.status === 401) {
-            localStorage.removeItem(ACCESS_TOKEN_KEY);
-            window.location.href = '/login/';
-        }
-
-        return await response.json();
-
-    } catch (error) {
-        console.error('Fetch error:', error);
-        throw error;
-    }
-};
+export default api;

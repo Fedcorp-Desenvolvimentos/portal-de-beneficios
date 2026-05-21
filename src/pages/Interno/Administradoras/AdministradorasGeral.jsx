@@ -11,12 +11,15 @@ import './Administradoras.css'
 import UsuarioTable from '../Usuarios/UsuarioTable.jsx'
 import UsuarioModal from '../Usuarios/UsuarioModal.jsx'
 
+import PageLayout from '../../../Layouts/PageLayout/PageLayout'
+import { useLoading } from '../../../hooks/useLoading.js'
+
 export default function AdministradorasGeral() {
   const navigate = useNavigate()
   const { user } = useAuth() // Pega o usuário logado
   const [administradora, setAdministradora] = useState(null)
   const [usuarios, setUsuarios] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { loading, startLoading, stopLoading, updateProgress } = useLoading();
   const [modalOpen, setModalOpen] = useState(false)
   const [usuarioSelecionado, setUsuarioSelecionado] = useState(null)
   const [loadingUsuarios, setLoadingUsuarios] = useState(false)
@@ -48,41 +51,40 @@ export default function AdministradorasGeral() {
 
   const carregarAdministradora = async () => {
     try {
-      setLoading(true)
+      startLoading("Carregando administradora...")
       const data = await buscarAdministradoraPorId(administradoraId)
       setAdministradora(data)
-      console.log('🏢 Administradora carregada:', data)
+      // console.log('🏢 Administradora carregada:', data)
     } catch (error) {
       console.error('❌ Erro ao carregar administradora:', error)
       toast.error('Erro ao carregar administradora')
       navigate('/interno/administradoras')
     } finally {
-      setLoading(false)
+      stopLoading()
     }
   }
 
   const carregarUsuarios = async () => {
     try {
-      setLoadingUsuarios(true)
-      const usuariosFiltrados = await userService.listarUsuarios({ administradora: administradoraId })
+      startLoading("Carregando usuários...")
+
+      const usuariosFiltrados = await userService.listarUsuarios({
+        administradora: administradoraId
+      })
+
       setUsuarios(Array.isArray(usuariosFiltrados) ? usuariosFiltrados : [])
-      console.log(`👥 Usuários carregados para administradora ${administradoraId}:`, usuariosFiltrados?.length || 0)
+
     } catch (error) {
       console.error('❌ Erro ao carregar usuários:', error)
       toast.error('Erro ao carregar usuários')
       setUsuarios([])
     } finally {
-      setLoadingUsuarios(false)
+      stopLoading()
     }
   }
 
-  const handleNovoUsuario = () => {
-    setUsuarioSelecionado(null)
-    setModalOpen(true)
-  }
-
   const handleEditarUsuario = (usuario) => {
-    console.log('✏️ Editando usuário em Detalhes:', usuario)
+    // console.log('✏️ Editando usuário em Detalhes:', usuario)
     setUsuarioSelecionado(usuario)
     setModalOpen(true)
   }
@@ -103,11 +105,11 @@ export default function AdministradorasGeral() {
   const handleSalvarUsuario = async (dados) => {
     try {
       if (usuarioSelecionado) {
-        console.log('📝 Atualizando usuário:', usuarioSelecionado.id, dados)
+        // console.log('📝 Atualizando usuário:', usuarioSelecionado.id, dados)
         await userService.atualizarUsuario(usuarioSelecionado.id, dados)
         toast.success('Usuário atualizado com sucesso')
       } else {
-        console.log('➕ Criando novo usuário:', dados)
+        // console.log('➕ Criando novo usuário:', dados)
         await userService.criarUsuario(dados)
         toast.success('Usuário criado com sucesso')
       }
@@ -129,108 +131,112 @@ export default function AdministradorasGeral() {
     return ativo ? 'status-badge ativa' : 'status-badge inativa'
   }
 
-  if (loading) return <div className="administradoras-page">Carregando...</div>
-  if (!administradora) return <div className="administradoras-page">Administradora não encontrada</div>
+  const handleNovoUsuario = () => {
+    setUsuarioSelecionado(null)
+    setModalOpen(true)
+  }
 
   return (
-    <div className="administradoras-page">
-      <div className="administradoras-header">
-        <div>
-          <h1>Minha Administradora</h1>
-          <p>{administradora.razao_social}</p>
-        </div>
-        <div className="form-actions">
-          <button className="btn-secondary" onClick={() => navigate('/interno/administradoras')}>
-            Voltar
-          </button>
-          {user?.tipo === 'dev' && (
-            <button className="btn-primary" onClick={() => navigate(`/interno/administradoras/editar/${administradora.id}`)}>
-              Editar Administradora
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="administradoras-card">
-        <h2>Dados Gerais</h2>
-        <div className="details-grid">
-          <div className="details-item">
-            <span>CNPJ</span>
-            <strong>{administradora.cnpj}</strong>
-          </div>
-          <div className="details-item">
-            <span>Razão Social</span>
-            <strong>{administradora.razao_social}</strong>
-          </div>
-          <div className="details-item">
-            <span>Nome Fantasia</span>
-            <strong>{administradora.nome_fantasia || '-'}</strong>
-          </div>
-          <div className="details-item">
-            <span>Email</span>
-            <strong>{administradora.email || '-'}</strong>
-          </div>
-          <div className="details-item">
-            <span>Status</span>
-            <strong className={getStatusClass(administradora.ativo)}>
-              {administradora.ativo ? 'Ativa' : 'Inativa'}
-            </strong>
-          </div>
-          <div className="details-item">
-            <span>Local de Recebimento do Cartão</span>
-            <strong>
-              <span className={`cartao-badge ${administradora.cartao_admin ? 'admin' : 'condominio'}`}>
-                {getLocalRecebimentoLabel(administradora.cartao_admin)}
-              </span>
-            </strong>
-          </div>
-          <div className="details-item">
-            <span>Data de Criação</span>
-            <strong>{new Date(administradora.created_at).toLocaleDateString('pt-BR')}</strong>
-          </div>
-          <div className="details-item">
-            <span>Última Atualização</span>
-            <strong>{new Date(administradora.updated_at).toLocaleDateString('pt-BR')}</strong>
-          </div>
-        </div>
-      </div>
-
-      {/* Seção de Usuários */}
-      <div className="administradoras-card">
+    <PageLayout title="Minha Administradora" description="Visualize os detalhes da sua administradora e gerencie os usuários vinculados a ela.">
+      <div className="administradoras-page">
         <div className="administradoras-header">
           <div>
-            <h2>Usuários Vinculados</h2>
-            <p>Gerencie os usuários que têm acesso a esta administradora.</p>
+            {/* <h1>Minha Administradora</h1> */}
+            <p>{administradora?.razao_social || '-'}</p>
           </div>
-          <button className="btn-primary" onClick={handleNovoUsuario}>
-            + Novo Usuário
-          </button>
+          <div className="form-actions">
+            <button className="btn-secondary" onClick={() => navigate('/interno/administradoras')}>
+              Voltar
+            </button>
+            {user?.tipo === 'dev' && (
+              <button className="btn-primary" onClick={() => navigate(`/interno/administradoras/editar/${administradora?.id}`)}>
+                Editar Administradora
+              </button>
+            )}
+          </div>
         </div>
 
-        {loadingUsuarios ? (
-          <div className="loading-message">Carregando usuários...</div>
-        ) : (
-          <UsuarioTable 
-            usuarios={usuarios}
-            onEditar={handleEditarUsuario}
-            onExcluir={handleExcluirUsuario}
-            admNome={administradora.nome_fantasia || administradora.razao_social}
-          />
-        )}
-      </div>
+        <div className="administradoras-card">
+          <h2>Dados Gerais</h2>
+          <div className="details-grid">
+            <div className="details-item">
+              <span>CNPJ</span>
+              <strong>{administradora?.cnpj || '-'}</strong>
+            </div>
+            <div className="details-item">
+              <span>Razão Social</span>
+              <strong>{administradora?.razao_social || '-'}</strong>
+            </div>
+            <div className="details-item">
+              <span>Nome Fantasia</span>
+              <strong>{administradora?.nome_fantasia || '-'}</strong>
+            </div>
+            <div className="details-item">
+              <span>Email</span>
+              <strong>{administradora?.email || '-'}</strong>
+            </div>
+            <div className="details-item">
+              <span>Status</span>
+              <strong className={getStatusClass(administradora?.ativo)}>
+                {administradora?.ativo ? 'Ativa' : 'Inativa'}
+              </strong>
+            </div>
+            <div className="details-item">
+              <span>Local de Recebimento do Cartão</span>
+              <strong>
+                <span className={`cartao-badge ${administradora?.cartao_admin ? 'admin' : 'condominio'}`}>
+                  {getLocalRecebimentoLabel(administradora?.cartao_admin)}
+                </span>
+              </strong>
+            </div>
+            <div className="details-item">
+              <span>Data de Criação</span>
+              <strong>{administradora?.created_at ? new Date(administradora.created_at).toLocaleDateString('pt-BR') : '-'}</strong>
+            </div>
+            <div className="details-item">
+              <span>Última Atualização</span>
+              <strong>{administradora?.updated_at ? new Date(administradora.updated_at).toLocaleDateString('pt-BR') : '-'}</strong>
+            </div>
+          </div>
+        </div>
 
-      {/* Modal de Usuário */}
-      <UsuarioModal
-        isOpen={modalOpen}
-        onClose={() => {
-          setModalOpen(false)
-          setUsuarioSelecionado(null)
-        }}
-        onSave={handleSalvarUsuario}
-        usuario={usuarioSelecionado}
-        administradoraId={administradoraId}
-        administradoras={administradoras}
-      />
-    </div>
+        {/* Seção de Usuários */}
+        <div className="administradoras-card">
+          <div className="administradoras-header">
+            <div>
+              <h2>Usuários Vinculados</h2>
+              <p>Gerencie os usuários que têm acesso a esta administradora.</p>
+            </div>
+            <button className="btn-primary" onClick={handleNovoUsuario}>
+              + Novo Usuário
+            </button>
+          </div>
+
+          {loadingUsuarios ? (
+            <div className="loading-message">Carregando usuários...</div>
+          ) : (
+            <UsuarioTable 
+              usuarios={usuarios}
+              onEditar={handleEditarUsuario}
+              onExcluir={handleExcluirUsuario}
+              admNome={administradora?.nome_fantasia || administradora?.razao_social || '-'}
+            />
+          )}
+        </div>
+
+        {/* Modal de Usuário */}
+        <UsuarioModal
+          isOpen={modalOpen}
+          onClose={() => {
+            setModalOpen(false)
+            setUsuarioSelecionado(null)
+          }}
+          onSave={handleSalvarUsuario}
+          usuario={usuarioSelecionado}
+          administradoraId={administradoraId}
+          administradoras={administradoras}
+        />
+      </div>
+    </PageLayout>
   )
 }

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useSnackbar } from 'notistack'
 import { buscarAdministradoraPorId } from '../../../services/administradoraService.js'
 import { userService } from '../../../services/userService.js'
 import UsuarioModal from '../Usuarios/UsuarioModal.jsx'
@@ -12,6 +13,7 @@ import UsuarioTable from '../Usuarios/UsuarioTable.jsx'
 export default function DetalhesAdministradora() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { enqueueSnackbar } = useSnackbar()
   const [administradora, setAdministradora] = useState(null)
   const [usuarios, setUsuarios] = useState([])
   const [loading, setLoading] = useState(true)
@@ -39,9 +41,10 @@ export default function DetalhesAdministradora() {
     try {
       const data = await buscarAdministradoraPorId(id)
       setAdministradora(data)
-      console.log('🏢 Administradora carregada:', data)
+      // console.log('🏢 Administradora carregada:', data)
     } catch (error) {
       console.error('❌ Erro ao carregar administradora:', error)
+      enqueueSnackbar('Erro ao carregar administradora', { variant: 'error' })
       navigate('/interno/administradoras')
     } finally {
       setLoading(false)
@@ -53,9 +56,10 @@ export default function DetalhesAdministradora() {
       setLoadingUsuarios(true)
       const usuariosFiltrados = await userService.listarUsuarios({ administradora: id })
       setUsuarios(Array.isArray(usuariosFiltrados) ? usuariosFiltrados : [])
-      console.log(`👥 Usuários carregados para administradora ${id}:`, usuariosFiltrados?.length || 0)
+      // console.log(`👥 Usuários carregados para administradora ${id}:`, usuariosFiltrados?.length || 0)
     } catch (error) {
       console.error('❌ Erro ao carregar usuários:', error)
+      enqueueSnackbar('Erro ao carregar usuários', { variant: 'error' })
       setUsuarios([])
     } finally {
       setLoadingUsuarios(false)
@@ -68,7 +72,7 @@ export default function DetalhesAdministradora() {
   }
 
   const handleEditarUsuario = (usuario) => {
-    console.log('✏️ Editando usuário em Detalhes:', usuario)
+    // console.log('✏️ Editando usuário em Detalhes:', usuario)
     setUsuarioSelecionado(usuario)
     setModalOpen(true)
   }
@@ -77,11 +81,11 @@ export default function DetalhesAdministradora() {
     if (window.confirm(`Tem certeza que deseja excluir o usuário "${usuario.username}"?`)) {
       try {
         await userService.excluirUsuario(usuario.id)
+        enqueueSnackbar('Usuário excluído com sucesso', { variant: 'success' })
         await carregarUsuarios()
-        toast.success('Usuário excluído com sucesso')
       } catch (error) {
         console.error('❌ Erro ao excluir usuário:', error)
-        toast.error('Erro ao excluir usuário')
+        enqueueSnackbar('Erro ao excluir usuário', { variant: 'error' })
       }
     }
   }
@@ -89,20 +93,21 @@ export default function DetalhesAdministradora() {
   const handleSalvarUsuario = async (dados) => {
     try {
       if (usuarioSelecionado) {
-        console.log('📝 Atualizando usuário:', usuarioSelecionado.id, dados)
+        // console.log('📝 Atualizando usuário:', usuarioSelecionado.id, dados)
         await userService.atualizarUsuario(usuarioSelecionado.id, dados)
-        toast.success('Usuário atualizado com sucesso')
+        enqueueSnackbar('Usuário atualizado com sucesso', { variant: 'success' })
       } else {
-        console.log('➕ Criando novo usuário:', dados)
+        // console.log('➕ Criando novo usuário:', dados)
         await userService.criarUsuario(dados)
-        toast.success('Usuário criado com sucesso')
+        enqueueSnackbar('Usuário criado com sucesso', { variant: 'success' })
       }
       await carregarUsuarios()
       setModalOpen(false)
       setUsuarioSelecionado(null)
     } catch (error) {
       console.error('❌ Erro ao salvar usuário:', error)
-      toast.error('Erro ao salvar usuário')
+      const errorMsg = error.response?.data?.detail || error.message || 'Erro ao salvar usuário'
+      enqueueSnackbar(errorMsg, { variant: 'error' })
     }
   }
 

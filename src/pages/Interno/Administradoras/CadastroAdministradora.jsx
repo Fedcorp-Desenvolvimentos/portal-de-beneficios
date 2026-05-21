@@ -34,7 +34,7 @@ export default function CadastroAdministradora() {
       
       if (response.sucesso && response.data) {
         const data = response.data
-        console.log("📦 Dados retornados da API:", data)
+        // console.log("📦 Dados retornados da API:", data)
         
         setForm(prev => ({
           ...prev,
@@ -134,7 +134,7 @@ export default function CadastroAdministradora() {
         cartao_admin: cartaoAdminBoolean
       }
       
-      console.log('📤 Enviando dados:', JSON.stringify(formData, null, 2))
+      //console.log('📤 Enviando dados:', JSON.stringify(formData, null, 2))
       
       await criarAdministradora(formData)
       navigate('/interno/administradoras')
@@ -235,7 +235,7 @@ export default function CadastroAdministradora() {
                 onChange={handleChange}
                 disabled={loading}
               />
-              <span>Na Administradora (true)</span>
+              <span>Na Administradora</span>
             </label>
 
             <label className="radio-label">
@@ -247,7 +247,7 @@ export default function CadastroAdministradora() {
                 onChange={handleChange}
                 disabled={loading}
               />
-              <span>No Condomínio (false)</span>
+              <span>No Condomínio</span>
             </label>
           </div>
         </div>
