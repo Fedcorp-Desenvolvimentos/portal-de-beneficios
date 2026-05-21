@@ -490,7 +490,10 @@ export default function ConfiguracaoCondominios() {
 
   const carregarDados = async () => {
     try {
+      setLoadingCondominios(true)
+
       startLoading("Carregando condomínios...")
+
       const [condominiosRes, funcionariosRes] = await Promise.all([
         entebenService.getCondominios(),
         entebenService.getFuncionarios(),
@@ -499,16 +502,21 @@ export default function ConfiguracaoCondominios() {
       const condominiosList = toArray(condominiosRes)
       const funcionariosList = toArray(funcionariosRes)
 
-      // console.log("funcionariosList", funcionariosList)
-
       setTodosFuncionarios(funcionariosList)
 
-      // Mapear funcionários por condomínio (usando a FK condominio_id)
       const funcionariosPorCondominio = {}
+
       funcionariosList.forEach(func => {
         if (func.condominio) {
-          const cnpjCond = typeof func.condominio === 'object' ? func.condominio.cnpj : func.condominio
-          if (!funcionariosPorCondominio[cnpjCond]) funcionariosPorCondominio[cnpjCond] = []
+          const cnpjCond =
+            typeof func.condominio === 'object'
+              ? func.condominio.cnpj
+              : func.condominio
+
+          if (!funcionariosPorCondominio[cnpjCond]) {
+            funcionariosPorCondominio[cnpjCond] = []
+          }
+
           funcionariosPorCondominio[cnpjCond].push(func)
         }
       })
@@ -519,10 +527,13 @@ export default function ConfiguracaoCondominios() {
       }))
 
       setCondominios(condominiosComFuncionarios)
+
+      setErroCondominios('')
     } catch (err) {
       console.error('Erro ao carregar dados:', err)
       setErroCondominios('Não foi possível carregar os dados.')
     } finally {
+      setLoadingCondominios(false)
       stopLoading()
     }
   }
