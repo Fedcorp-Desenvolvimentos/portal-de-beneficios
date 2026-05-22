@@ -16,11 +16,15 @@ import NotFound from '../components/NotFound/NotFound'
 import PrivateRouter from './PrivateRouter'
 
 // Client
-import Dashboard from '../pages/Home'
-import Importacao from '../pages/Client/Importacao'
+import Dashboard from '../pages/Home/Dashboard'
+import ColaboradorDashboard from '../pages/Interno/ColaboradorDashboard'
+
+
 import Faturamento from '../pages/Client/Faturamento'
 import FaturamentoFormulario from '../pages/Client/FaturamentoFormulario'
 import RelatoriosBeneficios from '../pages/Client/RelatoriosBeneficios'
+
+import Importacao from '../pages/Client//Importacao/Importacao'
 
 import GerenciamentoCondominios from '../pages/GerenciamentoCondominios/GerenciamentoCondominios'
 
@@ -29,7 +33,6 @@ import Pendentes from '../pages/Comuns/Pendentes'
 import Historico from '../pages/Comuns/Historico'
 
 // Interno
-import ColaboradorDashboard from '../pages/Interno/ColaboradorDashboard'
 import ImportacaoDocs from '../pages/Interno/ImportacaoDocs'
 
 import Administradoras from '../pages/Interno/Administradoras/Administradoras'

@@ -73,7 +73,6 @@ export default function FileUpload({ onUpload }) {
   }
 
   return (
-    <PageLayout title="Importação" subtitle="Importe arquivos .txt, .csv ou .xlsx">
     <div className="upload-card">
       <div className="upload-header upload-header-between">
         <div className="upload-header-main">
@@ -128,6 +127,5 @@ export default function FileUpload({ onUpload }) {
         </div>
       )}
     </div>
-    </PageLayout>
   )
 }

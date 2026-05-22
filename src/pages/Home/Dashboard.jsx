@@ -1,0 +1,519 @@
+// pages/Dashboard/Dashboard.jsx
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
+import { 
+  FiDollarSign, 
+  FiCalendar, 
+  FiFile, 
+  FiList, 
+  FiDownload, 
+  FiSearch, 
+  FiCheck,
+  FiPlus,
+  FiArrowRight
+} from 'react-icons/fi';
+import { BiImport } from 'react-icons/bi';
+
+import PendenciasDoDiaModal from '../../components/PendenciasDoDiaModal';
+import { entebenService } from '../../services/entebenService';
+import { API_BASE_URL } from '../../services/api';
+import { useLoading } from "../../hooks/useLoading";
+import PageLayout from '../../Layouts/PageLayout/PageLayout';
+import { useAuth } from '../../context/AuthContext.jsx';
+
+import { S } from './DashboardStyles';
+
+const formatCurrency = (n) =>
+  `R$ ${Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+const normTxt = (s) =>
+  (s || '')
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+const onlyDigits = (s) => (s || '').toString().replace(/\D/g, '');
+
+const toArray = (value) => {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.results)) return value.results;
+  if (Array.isArray(value?.data)) return value.data;
+  return [];
+};
+
+export default function Dashboard() {
+  const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
+  const { loading, startLoading, stopLoading, updateProgress } = useLoading();
+  
+  const [ultimaMovimentacao, setUltimaMovimentacao] = useState(null);
+  const [historicoImportacoes, setHistoricoImportacoes] = useState([]);
+  const [acordos, setAcordos] = useState([]);
+  const [condoQuery, setCondoQuery] = useState('');
+  const [selectedCondo, setSelectedCondo] = useState(null);
+  const [condoModalOpen, setCondoModalOpen] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    (async () => {
+      startLoading("");
+      try {
+        const [ultima, historico, acordosData] = await Promise.all([
+          entebenService.getUltimaMovimentacao(),
+          entebenService.getImportacoes(),
+          entebenService.getcondominios(),
+        ]);
+
+        setUltimaMovimentacao(ultima);
+        setHistoricoImportacoes(toArray(historico));
+        setAcordos(toArray(acordosData));
+        
+      } catch (e) {
+        console.error('Erro ao carregar dashboard:', e);
+        enqueueSnackbar('Erro ao carregar dados do dashboard', { variant: 'error' });
+      } finally {
+        stopLoading();
+      }
+    })();
+  }, []);
+
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+      d.getDate()
+    ).padStart(2, '0')}`;
+  }, []);
+
+  const pendencias = useMemo(
+    () => acordos.filter((a) => a.status !== 'Fechado' && a.vencimento <= todayStr),
+    [acordos, todayStr]
+  );
+
+  const condoResults = useMemo(() => {
+    const qTxt = normTxt(condoQuery);
+    const qDigits = onlyDigits(condoQuery);
+
+    if (!qTxt) return [];
+
+    return acordos
+      .filter((c) => {
+        const nome = c.nome || c.condominio || c.razao_social || c.fantasia || c.nome_condominio || '';
+        const cnpj = c.cnpj || c.cnpj_condominio || c.documento || c.cgc || '';
+
+        return normTxt(nome).includes(qTxt) || (qDigits && onlyDigits(cnpj).includes(qDigits));
+      })
+      .slice(0, 8);
+  }, [acordos, condoQuery]);
+
+  const totalImportacoes = historicoImportacoes.length;
+  const faturamentoTotal = ultimaMovimentacao?.valor_total || 
+    acordos.reduce((s, a) => s + Number(a.valor || 0), 0);
+  const totalAberto = acordos.filter((a) => a.status !== 'Fechado').length;
+  const totalCondominios = ultimaMovimentacao?.total_condominios || acordos.length;
+
+  const getImportName = () => ultimaMovimentacao?.importacao_nome || `IMP-${ultimaMovimentacao?.id || 'última'}`;
+
+  const getImportStatus = () => {
+    const status = ultimaMovimentacao?.status || 'processado';
+    if (status === 'COMPLETED') return 'sucesso';
+    if (status === 'PENDING') return 'processando';
+    if (status === 'FAILED') return 'erro';
+    return status;
+  };
+
+  const importacaoId = ultimaMovimentacao?.id || null;
+  const excelUrl = `${API_BASE_URL}/upload/export/faturamento/`;
+
+  const getCondoNome = (c) =>
+    c?.nome || c?.condominio || c?.razao_social || c?.fantasia || c?.nome_condominio || `Condomínio #${c?.id}`;
+
+  const getCondoCnpj = (c) => c?.cnpj || c?.cnpj_condominio || c?.documento || c?.cgc || '—';
+  
+  const getCondoEndereco = (c) =>
+    c?.endereco || c?.logradouro || c?.endereco_completo || 
+    [c?.rua, c?.numero, c?.bairro].filter(Boolean).join(', ') || '—';
+
+  const getCondoContato = (c) => c?.telefone || c?.contato || c?.email || '—';
+  
+  const getQtdFuncionarios = (c) =>
+    c?.quantidade_funcionarios || c?.total_funcionarios || c?.qtd_funcionarios || 
+    c?.funcionarios_count || c?.funcionarios?.length || '—';
+
+  const getUltimoFaturamento = (c) =>
+    c?.ultimo_faturamento || c?.valor_ultimo_faturamento || 
+    c?.ultimo_valor_faturado || c?.faturamento || c?.valor || null;
+
+  const getVencimento = (c) => c?.vencimento || c?.data_vencimento || c?.proximo_vencimento || '—';
+
+  const closeCondoModal = () => {
+    setCondoModalOpen(false);
+    setSelectedCondo(null);
+    setCondoQuery('');
+  };
+
+  const handleDownloadExcel = () => {
+    window.open(excelUrl, '_blank');
+    enqueueSnackbar('Download do Excel iniciado', { variant: 'info' });
+  };
+
+  return (
+    <PageLayout 
+      title={`Bem vindo, ${user?.nome || user?.username || user?.email || 'Usuário'}!`} 
+      subtitle="Acompanhe importações, faturamento, pendências e documentos em um só lugar."
+    >
+      <S.Root>
+        <PendenciasDoDiaModal items={pendencias} onGoToPendentes={() => navigate('/pendentes')} />
+
+        <S.Body>
+          <S.Hero>
+            <div>
+              <S.Eyebrow>Portal de Benefícios</S.Eyebrow>
+              <S.Title>Visão Geral</S.Title>
+              <S.Subtitle>
+                Acompanhe importações, faturamento, pendências e documentos em um só lugar.
+              </S.Subtitle>
+            </div>
+
+            <S.HeroActions>
+              <S.Button variant="primary" onClick={() => navigate('/importacao')}>
+                <BiImport size={18} />
+                Nova importação
+              </S.Button>
+
+              <S.Button variant="secondary" onClick={() => navigate('/faturamento')}>
+                <FiDollarSign size={18} />
+                Ir para faturamento
+              </S.Button>
+            </S.HeroActions>
+          </S.Hero>
+
+          <S.KPIs>
+            <S.KPICard onClick={() => navigate('/faturamento')}>
+              <S.KPITop>
+                <FiDollarSign size={18} />
+                <S.KPILabel>Faturamento total</S.KPILabel>
+              </S.KPITop>
+              <S.KPIValue>{formatCurrency(faturamentoTotal)}</S.KPIValue>
+              <S.KPIFoot>Base da última importação</S.KPIFoot>
+            </S.KPICard>
+
+            <S.KPICard onClick={() => navigate('/gerenciamento')}>
+              <S.KPITop>
+                <FiCalendar size={18} />
+                <S.KPILabel>Gerenciamento de Condomínios</S.KPILabel>
+              </S.KPITop>
+              <S.KPIValue>{totalAberto}</S.KPIValue>
+              <S.KPIFoot>
+                {pendencias.length > 0
+                  ? `${pendencias.length} condominio${pendencias.length > 1 ? 's' : ''} com pendência`
+                  : 'Nenhuma pendência'}
+              </S.KPIFoot>
+            </S.KPICard>
+
+            <S.KPICard onClick={() => navigate('/importacao')}>
+              <S.KPITop>
+                <FiFile size={18} />
+                <S.KPILabel>Importações</S.KPILabel>
+              </S.KPITop>
+              <S.KPIValue>{totalImportacoes}</S.KPIValue>
+              <S.KPIFoot>
+                {ultimaMovimentacao ? `Última: ${getImportName()}` : 'Sem importações'}
+              </S.KPIFoot>
+            </S.KPICard>
+
+            <S.KPICard as="div">
+              <S.KPITop>
+                <FiList size={18} />
+                <S.KPILabel>Condomínios</S.KPILabel>
+              </S.KPITop>
+              <S.KPIValue>{totalCondominios}</S.KPIValue>
+              <S.KPIFoot>Base monitorada</S.KPIFoot>
+            </S.KPICard>
+          </S.KPIs>
+
+          <S.GridMain>
+            <S.Panel highlight>
+              <S.PanelHead>
+                <div>
+                  <S.PanelEyebrow>Importação</S.PanelEyebrow>
+                  <S.PanelTitle>Última movimentação</S.PanelTitle>
+                </div>
+              </S.PanelHead>
+
+              {ultimaMovimentacao ? (
+                <>
+                  <S.ImportMain>
+                    <S.ImportIcon>
+                      <FiFile size={18} />
+                    </S.ImportIcon>
+
+                    <S.ImportContent>
+                      <S.ImportName>{getImportName()}</S.ImportName>
+                      <S.ImportMeta>
+                        <span>
+                          {ultimaMovimentacao.data_importacao
+                            ? new Date(ultimaMovimentacao.data_importacao).toLocaleDateString('pt-BR')
+                            : '—'}
+                        </span>
+                        <S.Badge status={getImportStatus()}>
+                          {getImportStatus()}
+                        </S.Badge>
+                      </S.ImportMeta>
+                    </S.ImportContent>
+                  </S.ImportMain>
+
+                  <S.ImportStats>
+                    <S.MiniStat>
+                      <S.MiniLabel>Valor total</S.MiniLabel>
+                      <strong>{formatCurrency(ultimaMovimentacao.valor_total)}</strong>
+                    </S.MiniStat>
+                    <S.MiniStat>
+                      <S.MiniLabel>Colaboradores</S.MiniLabel>
+                      <strong>{ultimaMovimentacao.total_funcionarios}</strong>
+                    </S.MiniStat>
+                    <S.MiniStat>
+                      <S.MiniLabel>Movimentações</S.MiniLabel>
+                      <strong>{ultimaMovimentacao.total_movimentacoes}</strong>
+                    </S.MiniStat>
+                    <S.MiniStat>
+                      <S.MiniLabel>Condomínios</S.MiniLabel>
+                      <strong>{ultimaMovimentacao.total_condominios}</strong>
+                    </S.MiniStat>
+                  </S.ImportStats>
+
+                  <S.PanelActions>
+                    <S.Button variant="success" onClick={handleDownloadExcel}>
+                      <FiDownload size={18} />
+                      Baixar Excel
+                    </S.Button>
+                    <S.Button variant="secondary" onClick={() => navigate('/importacao')}>
+                      <BiImport size={18} />
+                      Nova importação
+                    </S.Button>
+                  </S.PanelActions>
+                </>
+              ) : (
+                <S.EmptyState>
+                  <FiFile size={18} />
+                  <p>Nenhuma importação encontrada.</p>
+                  <S.Button variant="primary" onClick={() => navigate('/importacao')}>
+                    <BiImport size={18} />
+                    Iniciar primeira importação
+                  </S.Button>
+                </S.EmptyState>
+              )}
+            </S.Panel>
+
+            <S.SideStack>
+              <S.Panel>
+                <S.PanelHead>
+                  <div>
+                    <S.PanelEyebrow>Busca rápida</S.PanelEyebrow>
+                    <S.PanelTitle>Condomínio</S.PanelTitle>
+                  </div>
+                </S.PanelHead>
+
+                <S.SearchBox>
+                  <S.SearchIcon>
+                    <FiSearch size={18} />
+                  </S.SearchIcon>
+                  <input
+                    value={condoQuery}
+                    onChange={(e) => {
+                      setCondoQuery(e.target.value);
+                      setSelectedCondo(null);
+                    }}
+                    placeholder="Pesquisar por nome ou CNPJ"
+                  />
+                  {condoQuery && (
+                    <S.SearchClear
+                      onClick={() => {
+                        setCondoQuery('');
+                        setSelectedCondo(null);
+                      }}
+                      type="button"
+                      aria-label="Limpar busca"
+                    >
+                      ×
+                    </S.SearchClear>
+                  )}
+                </S.SearchBox>
+
+                {condoQuery && !selectedCondo && condoResults.length > 0 && (
+                  <S.SearchResults>
+                    {condoResults.map((c) => {
+                      const nome = getCondoNome(c);
+                      const cnpj = c.cnpj || c.cnpj_condominio || c.documento || c.cgc || '';
+
+                      return (
+                        <S.SearchItem
+                          key={c.id ?? `${nome}-${cnpj}`}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCondo(c);
+                            setCondoQuery(nome);
+                            setCondoModalOpen(true);
+                          }}
+                        >
+                          <strong>{nome}</strong>
+                          <span>{cnpj ? `CNPJ: ${cnpj}` : 'CNPJ não informado'}</span>
+                        </S.SearchItem>
+                      );
+                    })}
+                  </S.SearchResults>
+                )}
+
+                {condoQuery && !selectedCondo && condoResults.length === 0 && (
+                  <S.EmptyInline>Nenhum condomínio encontrado.</S.EmptyInline>
+                )}
+              </S.Panel>
+
+              <S.Panel>
+                <S.PanelHead>
+                  <div>
+                    <S.PanelEyebrow>Ações</S.PanelEyebrow>
+                    <S.PanelTitle>Atalhos rápidos</S.PanelTitle>
+                  </div>
+                </S.PanelHead>
+
+                <S.QuickActions>
+                  <S.QuickBtn onClick={() => navigate('/importacao')}>
+                    <BiImport size={18} />
+                    <div>
+                      <strong>Nova importação</strong>
+                      <span>Importe planilhas e arquivos</span>
+                    </div>
+                  </S.QuickBtn>
+
+                  <S.QuickBtn
+                    onClick={() =>
+                      navigate('/faturamento/repetir', {
+                        state: {
+                          importacaoId,
+                          faturamentoId: importacaoId,
+                          ultimaImportacao: ultimaMovimentacao,
+                        },
+                      })
+                    }
+                    disabled={!importacaoId}
+                  >
+                    <FiFile size={18} />
+                    <div>
+                      <strong>Repetir faturamento</strong>
+                      <span>{importacaoId ? 'Use a base anterior' : 'Sem base anterior'}</span>
+                    </div>
+                  </S.QuickBtn>
+                </S.QuickActions>
+              </S.Panel>
+            </S.SideStack>
+          </S.GridMain>
+        </S.Body>
+
+        {condoModalOpen && selectedCondo && (
+          <S.ModalOverlay
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) {
+                closeCondoModal();
+              }
+            }}
+          >
+            <S.Modal role="dialog" aria-modal="true">
+              <S.ModalHeader>
+                <div>
+                  <S.PanelEyebrow>Condomínio</S.PanelEyebrow>
+                  <S.ModalTitle>{getCondoNome(selectedCondo)}</S.ModalTitle>
+                </div>
+                <S.ModalClose onClick={closeCondoModal}>×</S.ModalClose>
+              </S.ModalHeader>
+
+              <S.ModalBody>
+                <S.ModalStatusRow>
+                  <S.Badge status={selectedCondo.status === 'Fechado' ? 'success' : 'warning'}>
+                    {selectedCondo.status || 'Ativo'}
+                  </S.Badge>
+                </S.ModalStatusRow>
+
+                <S.ModalGrid>
+                  <S.ModalInfo>
+                    <S.MiniLabel>CNPJ</S.MiniLabel>
+                    <strong>{getCondoCnpj(selectedCondo)}</strong>
+                  </S.ModalInfo>
+
+                  <S.ModalInfo>
+                    <S.MiniLabel>Cidade / UF</S.MiniLabel>
+                    <strong>
+                      {selectedCondo.cidade || '—'}
+                      {selectedCondo.uf ? ` / ${selectedCondo.uf}` : ''}
+                    </strong>
+                  </S.ModalInfo>
+
+                  <S.ModalInfo className="full">
+                    <S.MiniLabel>Endereço</S.MiniLabel>
+                    <strong>{getCondoEndereco(selectedCondo)}</strong>
+                  </S.ModalInfo>
+
+                  {selectedCondo.bairro && (
+                    <S.ModalInfo>
+                      <S.MiniLabel>Bairro</S.MiniLabel>
+                      <strong>{selectedCondo.bairro}</strong>
+                    </S.ModalInfo>
+                  )}
+
+                  {selectedCondo.cep && (
+                    <S.ModalInfo>
+                      <S.MiniLabel>CEP</S.MiniLabel>
+                      <strong>{selectedCondo.cep}</strong>
+                    </S.ModalInfo>
+                  )}
+
+                  <S.ModalInfo>
+                    <S.MiniLabel>Contato</S.MiniLabel>
+                    <strong>{getCondoContato(selectedCondo)}</strong>
+                  </S.ModalInfo>
+
+                  <S.ModalInfo>
+                    <S.MiniLabel>Quantidade de funcionários</S.MiniLabel>
+                    <strong>{getQtdFuncionarios(selectedCondo)}</strong>
+                  </S.ModalInfo>
+
+                  <S.ModalInfo>
+                    <S.MiniLabel>Último faturamento registrado</S.MiniLabel>
+                    <strong>
+                      {getUltimoFaturamento(selectedCondo) != null
+                        ? formatCurrency(getUltimoFaturamento(selectedCondo))
+                        : '—'}
+                    </strong>
+                  </S.ModalInfo>
+
+                  <S.ModalInfo>
+                    <S.MiniLabel>Vencimento</S.MiniLabel>
+                    <strong>{getVencimento(selectedCondo)}</strong>
+                  </S.ModalInfo>
+
+                  {selectedCondo.email && (
+                    <S.ModalInfo>
+                      <S.MiniLabel>E-mail</S.MiniLabel>
+                      <strong>{selectedCondo.email}</strong>
+                    </S.ModalInfo>
+                  )}
+                </S.ModalGrid>
+
+                <S.ModalActions>
+                  <S.Button variant="secondary" onClick={() => navigate('/faturamento')}>
+                    Ver faturamento
+                  </S.Button>
+                  <S.Button variant="primary" onClick={closeCondoModal}>
+                    Fechar
+                  </S.Button>
+                </S.ModalActions>
+              </S.ModalBody>
+            </S.Modal>
+          </S.ModalOverlay>
+        )}
+      </S.Root>
+    </PageLayout>
+  );
+}
