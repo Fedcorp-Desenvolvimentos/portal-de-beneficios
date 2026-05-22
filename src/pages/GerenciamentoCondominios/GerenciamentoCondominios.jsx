@@ -443,6 +443,7 @@ export default function ConfiguracaoCondominios() {
   const { loading, startLoading, stopLoading, updateProgress } = useLoading();
   const [modoAtivo, setModoAtivo] = useState('lista')
   const [condominios, setCondominios] = useState([])
+  const [totalCondominios, setTotalCondominios] = useState(0)
   const [todosFuncionarios, setTodosFuncionarios] = useState([])
   const [loadingCondominios, setLoadingCondominios] = useState(true)
   const [loadingAction, setLoadingAction] = useState(false)
@@ -482,61 +483,55 @@ export default function ConfiguracaoCondominios() {
   const toastTimer = useRef(null)
 
   useEffect(() => {
-    carregarDados()
+    carregarCondominios(busca, paginaAtual)
+    carregarFuncionarios()
   }, [])
 
   useEffect(() => {
-    setPaginaAtual(1)
-  }, [busca])
+    carregarCondominios(busca, paginaAtual)
+  }, [busca, paginaAtual])
 
-  const carregarDados = async () => {
+  const carregarCondominios = async (cnpj, page) => {
     try {
       setLoadingCondominios(true)
-
       startLoading("Carregando condomínios...")
 
-      const [condominiosRes, funcionariosRes] = await Promise.all([
-        entebenService.getCondominios(),
-        entebenService.getFuncionarios(),
-      ])
+      const response = await entebenService.getCondominios(cnpj, page)
+      const results = toArray(response)
+      const total = response?.count || results.length
 
-      const condominiosList = toArray(condominiosRes)
-      const funcionariosList = toArray(funcionariosRes)
-
-      setTodosFuncionarios(funcionariosList)
-
-      const funcionariosPorCondominio = {}
-
-      funcionariosList.forEach(func => {
-        if (func.condominio) {
-          const cnpjCond =
-            typeof func.condominio === 'object'
-              ? func.condominio.cnpj
-              : func.condominio
-
-          if (!funcionariosPorCondominio[cnpjCond]) {
-            funcionariosPorCondominio[cnpjCond] = []
-          }
-
-          funcionariosPorCondominio[cnpjCond].push(func)
-        }
-      })
-
-      const condominiosComFuncionarios = condominiosList.map(cond => ({
-        ...cond,
-        funcionarios: funcionariosPorCondominio[cond.cnpj] || [],
-      }))
-
-      setCondominios(condominiosComFuncionarios)
-
+      setCondominios(results)
+      setTotalCondominios(total)
       setErroCondominios('')
     } catch (err) {
-      console.error('Erro ao carregar dados:', err)
+      console.error('Erro ao carregar condomínios:', err)
       setErroCondominios('Não foi possível carregar os dados.')
     } finally {
       setLoadingCondominios(false)
       stopLoading()
     }
+  }
+
+  const carregarFuncionarios = async () => {
+    try {
+      const response = await entebenService.getFuncionarios()
+      const list = toArray(response)
+      setTodosFuncionarios(list)
+    } catch (err) {
+      console.error('Erro ao carregar funcionários:', err)
+    }
+  }
+
+  const carregarDados = async () => {
+    await Promise.all([
+      carregarCondominios(busca, paginaAtual),
+      carregarFuncionarios(),
+    ])
+  }
+
+  const handleBuscaChange = (value) => {
+    setBusca(value)
+    setPaginaAtual(1)
   }
 
   const showToast = (message, type = 'success') => {
@@ -717,29 +712,21 @@ export default function ConfiguracaoCondominios() {
   }
 
   const funcionariosDisponiveis = useMemo(() => {
-    const vinculadosCnpjs = new Set()
-    condominios.forEach(cond => {
-      (cond.funcionarios || []).forEach(func => vinculadosCnpjs.add(func.cpf))
+    return todosFuncionarios.filter(func => {
+      if (!func.condominio) return true
+      if (typeof func.condominio === 'object' && !func.condominio.cnpj) return true
+      return false
     })
-    return todosFuncionarios.filter(func => !vinculadosCnpjs.has(func.cpf))
-  }, [todosFuncionarios, condominios])
+  }, [todosFuncionarios])
 
-  const condominiosFiltrados = useMemo(() => {
-    if (!busca.trim()) return condominios
-    const term = normalizarTexto(busca)
-    const digits = somenteDigitos(busca)
-    return condominios.filter(c => {
-      const nome = normalizarTexto(c.nome)
-      const cnpj = somenteDigitos(c.cnpj)
-      return nome.includes(term) || (digits && cnpj.includes(digits))
+  const totalPaginas = Math.max(1, Math.ceil(totalCondominios / itensPorPagina))
+
+  const getFuncionariosPorCNPJ = (cnpj) => {
+    return todosFuncionarios.filter(f => {
+      const cnpjCond = typeof f.condominio === 'object' ? f.condominio?.cnpj : f.condominio
+      return cnpjCond === cnpj
     })
-  }, [busca, condominios])
-
-  const totalPaginas = Math.max(1, Math.ceil(condominiosFiltrados.length / itensPorPagina))
-  const condominiosPaginados = useMemo(() => {
-    const inicio = (paginaAtual - 1) * itensPorPagina
-    return condominiosFiltrados.slice(inicio, inicio + itensPorPagina)
-  }, [condominiosFiltrados, paginaAtual])
+  }
 
   const Tabela = () => (
     <div className="card">
@@ -760,33 +747,35 @@ export default function ConfiguracaoCondominios() {
                 <tr><th>Condomínio</th><th>CNPJ</th><th>Funcionários</th><th className="text-right">Ações</th></tr>
               </thead>
               <tbody>
-                {condominiosPaginados.map((cond) => (
-                  <tr key={cond.cnpj}>
-                    <td><div className="cell-flex"><Building2 className="ico brand" /><div><div className="cell-title">{cond.nome}</div></div></div></td>
-                    <td className="muted">{formatarCNPJ(cond.cnpj)}</td>
-                    <td>
-                      <button className="cfg-func-count-btn" onClick={() => setFuncionariosModal({ open: true, condominio: cond, funcionarios: cond.funcionarios || [] })}>
-                        <Users className="ico" /><span className="cfg-func-count">{(cond.funcionarios || []).length}</span><Eye className="ico sm" />
-                      </button>
-                    </td>
-                    <td className="text-right">
-                      <div className="cfg-row-actions">
-                        <button className="icon-btn cfg-table-action green" onClick={() => setVincularModal({ open: true, condominio: cond })} title="Vincular funcionários"><Link className="ico" /></button>
-                        <button className="icon-btn cfg-table-action blue" onClick={() => handleEditar(cond)} title="Editar"><Pencil className="ico" /></button>
-                        <button className="icon-btn cfg-table-action red" onClick={() => setColaboradorModal({ open: true, condominio: cond })} title="Novo colaborador"><UserPlus className="ico" /></button>
-                        <button className="icon-btn cfg-table-action red" onClick={() => setConfirm({ open: true, id: cond.cnpj, nome: cond.nome })} title="Excluir"><Trash2 className="ico" /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {condominios.map((cond) => {
+                  const funcionariosCond = getFuncionariosPorCNPJ(cond.cnpj)
+                  return (
+                    <tr key={cond.cnpj}>
+                      <td><div className="cell-flex"><Building2 className="ico brand" /><div><div className="cell-title">{cond.nome}</div></div></div></td>
+                      <td className="muted">{formatarCNPJ(cond.cnpj)}</td>
+                      <td>
+                        <button className="cfg-func-count-btn" onClick={() => setFuncionariosModal({ open: true, condominio: cond, funcionarios: funcionariosCond })}>
+                          <Users className="ico" /><span className="cfg-func-count">{funcionariosCond.length}</span><Eye className="ico sm" />
+                        </button>
+                      </td>
+                      <td className="text-right">
+                        <div className="cfg-row-actions">
+                          <button className="icon-btn cfg-table-action green" onClick={() => setVincularModal({ open: true, condominio: cond })} title="Vincular funcionários"><Link className="ico" /></button>
+                          <button className="icon-btn cfg-table-action blue" onClick={() => handleEditar(cond)} title="Editar"><Pencil className="ico" /></button>
+                          <button className="icon-btn cfg-table-action red" onClick={() => setColaboradorModal({ open: true, condominio: cond })} title="Novo colaborador"><UserPlus className="ico" /></button>
+                          <button className="icon-btn cfg-table-action red" onClick={() => setConfirm({ open: true, id: cond.cnpj, nome: cond.nome })} title="Excluir"><Trash2 className="ico" /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
-          {condominios.length === 0 && <div className="empty"><Building2 className="ico xl muted" /><p>Nenhum condomínio cadastrado</p></div>}
-          {condominios.length > 0 && condominiosFiltrados.length === 0 && <div className="empty"><Building2 className="ico xl muted" /><p>Nenhum condomínio encontrado</p></div>}
-          {condominiosFiltrados.length > itensPorPagina && (
+          {condominios.length === 0 && !loadingCondominios && <div className="empty"><Building2 className="ico xl muted" /><p>Nenhum condomínio cadastrado</p></div>}
+          {totalCondominios > itensPorPagina && (
             <div className="cfg-pagination">
-              <div className="cfg-pagination-info">Exibindo {(paginaAtual-1)*itensPorPagina+1}–{Math.min(paginaAtual*itensPorPagina, condominiosFiltrados.length)} de {condominiosFiltrados.length}</div>
+              <div className="cfg-pagination-info">Exibindo {(paginaAtual-1)*itensPorPagina+1}–{Math.min(paginaAtual*itensPorPagina, totalCondominios)} de {totalCondominios}</div>
               <div className="cfg-pagination-actions">
                 <button className="cfg-page-btn" onClick={() => setPaginaAtual(p => Math.max(1, p-1))} disabled={paginaAtual === 1}><ChevronLeft className="ico" /></button>
                 <span className="cfg-page-current">Página {paginaAtual} de {totalPaginas}</span>
@@ -829,7 +818,7 @@ export default function ConfiguracaoCondominios() {
       <div className="cfg-page">
         {modoAtivo === 'lista' && (
           <>
-            <FiltroCondominios value={busca} onChange={setBusca} onClear={() => setBusca('')} />
+            <FiltroCondominios value={busca} onChange={handleBuscaChange} onClear={() => { setBusca(''); setPaginaAtual(1) }} />
             <div className="cfg-actions">
               <button onClick={() => setModoAtivo('form')} className="btn btn-primary"><Plus className="ico" /><span>Novo Condomínio</span></button>
               <button onClick={carregarDados} className="btn btn-light"><RefreshCw className="ico" /><span>Atualizar</span></button>
