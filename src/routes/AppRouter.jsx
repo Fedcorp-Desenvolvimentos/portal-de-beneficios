@@ -48,7 +48,7 @@ import MinhaConta from '../pages/MinhaConta/MinhaConta'
 import AcompanhamentoFaturados from '../pages/Interno/AcompanhamentoFaturados/AcompanhamentoFaturados'
 
 const AppRouter = () => {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
 
   return (
     <>
@@ -58,8 +58,12 @@ const AppRouter = () => {
           path="/"
           element={
             isAuthenticated
-              ? <Navigate to="/home" replace />
-              : <Login />
+            ? (
+                user?.tipo === 'fat'
+                  ? <Navigate to="/dashboard" replace />
+                  : <Navigate to="/home" replace />
+              )
+            : <Login />
           }
         />
 
@@ -67,7 +71,11 @@ const AppRouter = () => {
           path="/login"
           element={
             isAuthenticated
-              ? <Navigate to="/home" replace />
+              ? (
+                  user?.tipo === 'fat'
+                    ? <Navigate to="/dashboard" replace />
+                    : <Navigate to="/home" replace />
+                )
               : <Login />
           }
         />
@@ -76,7 +84,11 @@ const AppRouter = () => {
           path="/esqueci-senha"
           element={
             isAuthenticated
-              ? <Navigate to="/home" replace />
+              ? (
+                  user?.tipo === 'fat'
+                    ? <Navigate to="/dashboard" replace />
+                    : <Navigate to="/home" replace />
+                )
               : <EsqueciSenha />
           }
         />

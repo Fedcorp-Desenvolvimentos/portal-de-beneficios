@@ -17,8 +17,6 @@ const Login = () => {
     const { user, login, loginGoogle } = useAuth();
     const navigate = useNavigate();
 
-    console.log("Login component - user:", user);
-
     const handleSubmit = async (event) => {
         event.preventDefault();
         setError(null);
@@ -26,7 +24,13 @@ const Login = () => {
         try {
             const result = await login({ email, password });
 
-            if (result.success) {
+            // console.log("result em login: ", result)
+
+            console.log("Tipo do usuário:", result.user?.tipo);
+
+            if (result.success && result.user?.tipo === "fat") {
+                navigate('/dashboard');
+            } else if (result.success && result.user?.tipo === "adm") {
                 navigate('/home');
             } else {
                 setError(result.error || 'Falha no login. Verifique suas credenciais.');

@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
     const { loading, setLoading, setLoadingMessage } = useGlobal();
     const navigate = useNavigate();
 
-    // console.log("user", user)
+    // console.log("user - context", user)
 
     const login = useCallback(async (credentials) => {
         setLoadingMessage("Fazendo login...");
@@ -28,10 +28,14 @@ export const AuthProvider = ({ children }) => {
             // console.log('Login response:', response.data);
             localStorage.setItem('accessToken', response.data.access);
             const userResponse = await api.get('/api/users/me/');
+            // console.log('User data response:', userResponse.data);
             setUser(userResponse.data);
             setIsAuthenticated(true);
 
-            return { success: true };
+            return {
+                success: true,
+                user: userResponse.data
+            };
         } catch (error) {
             console.error("Login failed:", error.response?.data || error.message);
             localStorage.removeItem('accessToken');
@@ -65,7 +69,10 @@ export const AuthProvider = ({ children }) => {
             setUser(userResponse.data);
             setIsAuthenticated(true);
 
-            return { success: true };
+            return {
+                success: true,
+                user: userResponse.data
+            };
 
         } catch (error) {
             console.error(error);
