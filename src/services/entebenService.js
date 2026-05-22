@@ -1,9 +1,12 @@
 import api from "./api"
 
 export const entebenService = {
-  getCondominios: async () => {
+  getCondominios: async (cnpj = '', page = 1) => {
     try {
-      const response = await api.get('/api/entidades/condominios/')
+      const params = {}
+      if (cnpj) params.cnpj = cnpj
+      if (page > 1) params.page = page
+      const response = await api.get('/api/entidades/condominios/', { params })
       return response.data
     } catch (error) {
       console.error('Erro ao buscar condomínios:', error)
