@@ -96,19 +96,18 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       icon: <FaFileUpload />,
       allowed: ["adm", "dev"]
     },
-<<<<<<< HEAD
+
     { 
       path: "/faturamento", 
       label: "Faturamento", 
       icon: <FaFileInvoiceDollar />, 
       allowed: ["adm", "dev"] 
-=======
+    },
     {
       path: "/faturamento",
       label: "Faturamento",
       icon: <FaFileInvoiceDollar />,
       allowed: ["fat", "dev"]
->>>>>>> ce3d0635729f7d87ba319e3c79735acda00a8d9f
     },
     {
       path: "/gerenciamento",
@@ -122,13 +121,12 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       icon: <FaUsers />,
       allowed: ["dev", "fat"]
     },
-<<<<<<< HEAD
     { 
       path: "/colaboradores/acompanhamento", 
       label: "Acompanhamento", 
       icon: <FaChartLine />, 
       allowed: ["adm", "dev"] 
-=======
+    },
     // {
     //   path: "/colaboradores/acompanhamento",
     //   label: "Acompanhamento",
@@ -140,7 +138,6 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       label: "Administradoras",
       icon: <FaBuilding />,
       allowed: ["dev", "fat"]
->>>>>>> ce3d0635729f7d87ba319e3c79735acda00a8d9f
     },
     {
       path: "/interno/minha-administradora",
