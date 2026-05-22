@@ -31,7 +31,6 @@ import {
 
 import './GerenciamentoCondominios.css'
 import { entebenService } from '../../services/entebenService'
-import { useLoading } from '../../hooks/useLoading'
 import PageLayout from '../../Layouts/PageLayout/PageLayout'
 
 
@@ -440,7 +439,6 @@ function FiltroCondominios({ value, onChange, onClear }) {
 }
 
 export default function ConfiguracaoCondominios() {
-  const { loading, startLoading, stopLoading, updateProgress } = useLoading();
   const [modoAtivo, setModoAtivo] = useState('lista')
   const [condominios, setCondominios] = useState([])
   const [totalCondominios, setTotalCondominios] = useState(0)
@@ -494,7 +492,6 @@ export default function ConfiguracaoCondominios() {
   const carregarCondominios = async (cnpj, page) => {
     try {
       setLoadingCondominios(true)
-      startLoading("Carregando condomínios...")
 
       const response = await entebenService.getCondominios(cnpj, page)
       const results = toArray(response)
@@ -508,7 +505,6 @@ export default function ConfiguracaoCondominios() {
       setErroCondominios('Não foi possível carregar os dados.')
     } finally {
       setLoadingCondominios(false)
-      stopLoading()
     }
   }
 
@@ -731,10 +727,24 @@ export default function ConfiguracaoCondominios() {
   const Tabela = () => (
     <div className="card">
       {loadingCondominios ? (
-        <div className="empty">
-          <div className='empty-wrapper'>
-            <div className="spinner" />
-            <p>Carregando condomínios...</p>
+        <div className="cfg-shimmer-table">
+          <div className="cfg-shimmer-header">
+            <div className="cfg-shimmer-row">
+              <div className="cfg-shimmer-cell w-40"><div className="cfg-shimmer-line" /></div>
+              <div className="cfg-shimmer-cell w-25"><div className="cfg-shimmer-line" /></div>
+              <div className="cfg-shimmer-cell w-20"><div className="cfg-shimmer-line" /></div>
+              <div className="cfg-shimmer-cell w-15"><div className="cfg-shimmer-line" /></div>
+            </div>
+          </div>
+          <div className="cfg-shimmer-body">
+            {Array.from({ length: itensPorPagina }).map((_, i) => (
+              <div key={i} className="cfg-shimmer-row">
+                <div className="cfg-shimmer-cell w-40"><div className="cfg-shimmer-line" /></div>
+                <div className="cfg-shimmer-cell w-25"><div className="cfg-shimmer-line" /></div>
+                <div className="cfg-shimmer-cell w-20"><div className="cfg-shimmer-line" /></div>
+                <div className="cfg-shimmer-cell w-15"><div className="cfg-shimmer-line" /></div>
+              </div>
+            ))}
           </div>
         </div>
       ) : erroCondominios ? (
