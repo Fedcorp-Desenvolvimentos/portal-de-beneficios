@@ -20,8 +20,9 @@ import Dashboard from '../pages/Home'
 import Importacao from '../pages/Client/Importacao'
 import Faturamento from '../pages/Client/Faturamento'
 import FaturamentoFormulario from '../pages/Client/FaturamentoFormulario'
-import GerenciamentoCondominios from '../pages/Client/GerenciamentoCondominios'
 import RelatoriosBeneficios from '../pages/Client/RelatoriosBeneficios'
+
+import GerenciamentoCondominios from '../pages/GerenciamentoCondominios/GerenciamentoCondominios'
 
 // Comuns
 import Pendentes from '../pages/Comuns/Pendentes'
@@ -41,7 +42,7 @@ import Usuarios from '../pages/Interno/Usuarios/Usuarios'
 
 import MinhaConta from '../pages/MinhaConta/MinhaConta'
 
-import AcompanhamentoFaturados from '../pages/Interno/AcompanhamentoFaturados'
+import AcompanhamentoFaturados from '../pages/Interno/AcompanhamentoFaturados/AcompanhamentoFaturados'
 
 const AppRouter = () => {
   const { isAuthenticated } = useAuth()

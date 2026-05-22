@@ -96,13 +96,6 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       icon: <FaFileUpload />,
       allowed: ["adm", "dev"]
     },
-
-    { 
-      path: "/faturamento", 
-      label: "Faturamento", 
-      icon: <FaFileInvoiceDollar />, 
-      allowed: ["adm", "dev"] 
-    },
     {
       path: "/faturamento",
       label: "Faturamento",

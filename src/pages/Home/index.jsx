@@ -170,7 +170,7 @@ export default function Dashboard() {
   }
 
   return (
-    <PageLayout title={`Bem vindo, ${user?.nome || user?.username || user?.email || 'Usuário'} !`} description="Acompanhe importações, faturamento, pendências e documentos em um só lugar.">
+    <PageLayout title={`Bem vindo, ${user?.nome || user?.username || user?.email || 'Usuário'} !`} subtitle="Acompanhe importações, faturamento, pendências e documentos em um só lugar.">
       <div className="dbi-root"> 
         <PendenciasDoDiaModal items={pendencias} onGoToPendentes={() => navigate('/pendentes')} />
 

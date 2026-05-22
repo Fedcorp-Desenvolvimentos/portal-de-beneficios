@@ -5,6 +5,7 @@ import { useSnackbar } from 'notistack';
 import './Usuarios.css';
 import { useLoading } from '../../../hooks/useLoading.js';
 import UsuarioModal from './UsuarioModal.jsx';
+import PageLayout from '../../../Layouts/PageLayout/PageLayout.jsx';
 
 export default function Usuarios() {
   const { enqueueSnackbar } = useSnackbar();
@@ -158,135 +159,124 @@ export default function Usuarios() {
   };
 
   return (
-    <div className="usuarios-container">
-      <div className="header-actions">
-        <h2>Gerenciamento de Usuários</h2>
-        <button 
-          className="btn-primary"
-          onClick={() => {
-            setSelectedUser(null);
-            setModalOpen(true);
-          }}
-        >
-          + Novo Usuário
-        </button>
-      </div>
-
-      <div className="filtros">
-        <select 
-          value={filtroAdm} 
-          onChange={(e) => setFiltroAdm(e.target.value)}
-          className="filtro-select"
-        >
-          <option value="">Todas as administradoras</option>
-          {administradoras.map(adm => (
-            <option key={adm.id} value={adm.id}>
-              {adm.razao_social || adm.nome_fantasia || adm.nome || `ADM ${adm.id}`}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {loading ? (
-        <div className="loading-message">Carregando usuários...</div>
-      ) : usuarios.length === 0 ? (
-        <div className="empty-state">
-          <p>Nenhum usuário encontrado.</p>
-          {filtroAdm && <p>Tente remover o filtro de administradora.</p>}
-        </div>
-      ) : (
-        <table className="usuarios-table">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Email</th>
-              <th>Tipo</th>
-              <th>Administradora</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {usuarios.map(user => (
-              <tr key={user.id}>
-                <td>{user.username}</td>
-                <td>{user.email}</td>
-                <td>{getTipoLabel(user.tipo)}</td>
-                <td className="adm-cell">
-                  {user.administradora_id ? (
-                    <div className="vinculado-info">
-                      <span className="vinculado-badge">
-                        {user.administradora_nome || `ID: ${user.administradora_id}`}
-                      </span>
-                      <button 
-                        className="btn-desvincular"
-                        onClick={() => handleDesvincular(user.id, user.username)}
-                        title="Desvincular"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="nao-vinculado-info">
-                      <span className="nao-vinculado-badge">Não vinculado</span>
-                      <div className="vincular-container">
-                        <select
-                          value={vinculandoId === user.id ? selectedAdmId : ''}
-                          onChange={(e) => {
-                            setSelectedAdmId(e.target.value);
-                            setVinculandoId(user.id);
-                          }}
-                          className="vincular-select"
-                        >
-                          <option value="">Selecionar adm...</option>
-                          {administradoras.map(adm => (
-                            <option key={adm.id} value={adm.id}>
-                              {adm.razao_social || adm.nome_fantasia || `ADM ${adm.id}`}
-                            </option>
-                          ))}
-                        </select>
-                        {vinculandoId === user.id && selectedAdmId && (
-                          <button
-                            className="btn-vincular"
-                            onClick={() => handleVincular(user.id)}
-                          >
-                            Vincular
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </td>
-                <td className="acoes">
-                  <button 
-                    className="btn-edit"
-                    onClick={() => handleEditar(user)}
-                  >
-                    Editar
-                  </button>
-                  <button 
-                    className="btn-delete"
-                    onClick={() => handleDelete(user.id, user.username)}
-                  >
-                    Excluir
-                  </button>
-                </td>
-              </tr>
+    <PageLayout title='Gerenciamento de Usuários' subtitle='Gerencie os usuários cadastrados na plataforma'>
+      <div className="usuarios-container">
+        <div className="filtros">
+          <select 
+            value={filtroAdm} 
+            onChange={(e) => setFiltroAdm(e.target.value)}
+            className="filtro-select"
+          >
+            <option value="">Todas as administradoras</option>
+            {administradoras.map(adm => (
+              <option key={adm.id} value={adm.id}>
+                {adm.razao_social || adm.nome_fantasia || adm.nome || `ADM ${adm.id}`}
+              </option>
             ))}
-          </tbody>
-        </table>
-      )}
+          </select>
+        </div>
 
-      <UsuarioModal 
-        isOpen={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setSelectedUser(null);
-        }}
-        onSave={handleSalvarUsuario}
-        usuario={selectedUser}
-        administradoraId={filtroAdm || null}
-        administradoras={administradoras}
-      />
-    </div>
+        {loading ? (
+          <div className="loading-message">Carregando usuários...</div>
+        ) : usuarios.length === 0 ? (
+          <div className="empty-state">
+            <p>Nenhum usuário encontrado.</p>
+            {filtroAdm && <p>Tente remover o filtro de administradora.</p>}
+          </div>
+        ) : (
+          <table className="usuarios-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Tipo</th>
+                <th>Administradora</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {usuarios.map(user => (
+                <tr key={user.id}>
+                  <td>{user.username}</td>
+                  <td>{user.email}</td>
+                  <td>{getTipoLabel(user.tipo)}</td>
+                  <td className="adm-cell">
+                    {user.administradora_id ? (
+                      <div className="vinculado-info">
+                        <span className="vinculado-badge">
+                          {user.administradora_nome || `ID: ${user.administradora_id}`}
+                        </span>
+                        <button 
+                          className="btn-desvincular"
+                          onClick={() => handleDesvincular(user.id, user.username)}
+                          title="Desvincular"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="nao-vinculado-info">
+                        <span className="nao-vinculado-badge">Não vinculado</span>
+                        <div className="vincular-container">
+                          <select
+                            value={vinculandoId === user.id ? selectedAdmId : ''}
+                            onChange={(e) => {
+                              setSelectedAdmId(e.target.value);
+                              setVinculandoId(user.id);
+                            }}
+                            className="vincular-select"
+                          >
+                            <option value="">Selecionar adm...</option>
+                            {administradoras.map(adm => (
+                              <option key={adm.id} value={adm.id}>
+                                {adm.razao_social || adm.nome_fantasia || `ADM ${adm.id}`}
+                              </option>
+                            ))}
+                          </select>
+                          {vinculandoId === user.id && selectedAdmId && (
+                            <button
+                              className="btn-vincular"
+                              onClick={() => handleVincular(user.id)}
+                            >
+                              Vincular
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </td>
+                  <td className="acoes">
+                    <button 
+                      className="btn-edit"
+                      onClick={() => handleEditar(user)}
+                    >
+                      Editar
+                    </button>
+                    <button 
+                      className="btn-delete"
+                      onClick={() => handleDelete(user.id, user.username)}
+                    >
+                      Excluir
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        <UsuarioModal 
+          isOpen={modalOpen}
+          onClose={() => {
+            setModalOpen(false);
+            setSelectedUser(null);
+          }}
+          onSave={handleSalvarUsuario}
+          usuario={selectedUser}
+          administradoraId={filtroAdm || null}
+          administradoras={administradoras}
+        />
+      </div>
+    </PageLayout>
   );
 }
