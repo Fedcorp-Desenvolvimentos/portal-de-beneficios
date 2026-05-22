@@ -50,6 +50,39 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
+    const loginGoogle = useCallback(async (credential) => {
+        try {
+            setLoading(true);
+
+            const response = await api.post('/api/users/google-login/', {
+                credential
+            });
+
+            localStorage.setItem('accessToken', response.data.access);
+
+            const userResponse = await api.get('/api/users/me/');
+
+            setUser(userResponse.data);
+            setIsAuthenticated(true);
+
+            return { success: true };
+
+        } catch (error) {
+            console.error(error);
+
+            localStorage.removeItem('accessToken');
+            setIsAuthenticated(false);
+            setUser(null);
+
+            return {
+                success: false,
+                error: error.response?.data?.detail || 'Erro login Google'
+            };
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     const logout = useCallback(() => {
         setLoadingMessage("Fazendo logout...");
         setLoading(true);
@@ -112,9 +145,17 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         loading,
         login,
+        loginGoogle,
         logout,
         isAuthenticatedCheck
-    }), [user, isAuthenticated, loading, login, logout]);
+    }), [
+        user,
+        isAuthenticated,
+        loading,
+        login,
+        loginGoogle,
+        logout
+    ]);
 
     return (
         <AuthContext.Provider value={authContextValue}>

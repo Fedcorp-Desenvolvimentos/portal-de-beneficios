@@ -23,6 +23,18 @@ const pulse = keyframes`
   }
 `;
 
+export const Divider = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
+
+    span {
+        color: #999;
+        font-size: 14px;
+    }
+`;
+
 export const GradientBg = styled.div`
   position: fixed;
   inset: 0;

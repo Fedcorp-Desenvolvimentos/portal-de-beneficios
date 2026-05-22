@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { 
-  FaHome, 
-  FaClipboardList, 
-  FaBriefcase, 
-  FaTools, 
-  FaWallet, 
-  FaChartBar, 
+import {
+  FaHome,
+  FaClipboardList,
+  FaBriefcase,
+  FaTools,
+  FaWallet,
+  FaChartBar,
   FaCalendarAlt,
   FaChartLine,
   FaCog,
@@ -40,7 +40,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       setIsMobile(mobile);
       if (!mobile) setSidebarOpen(true);
     };
-    
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [setSidebarOpen]);
@@ -51,14 +51,14 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
 
   useEffect(() => {
     if (!isMobile) return;
-    
+
     function handleClickOutside(e) {
       if (sidebarOpen && sidebarRef.current && !sidebarRef.current.contains(e.target)) {
         setSidebarOpen(false);
         setOverlayVisible(false);
       }
     }
-    
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [sidebarOpen, setSidebarOpen, isMobile]);
@@ -78,59 +78,75 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
 
   const navItems = [
     // Rotas base (liberadas)
-    { 
-      path: "/home", 
-      label: "Início", 
-      icon: <FaHome />, 
-      allowed: ["adm", "cli", "fin", "fat", "dev"] 
+    {
+      path: "/home",
+      label: "Início",
+      icon: <FaHome />,
+      allowed: ["adm", "dev"]
     },
-    { 
-      path: "/dashboard", 
-      label: "Dashboard", 
-      icon: <FaChartBar />, 
-      allowed: ["fat", "fin", "dev"] 
+    {
+      path: "/dashboard",
+      label: "Dashboard",
+      icon: <FaChartBar />,
+      allowed: ["fat", "fin", "dev"]
     },
-    { 
-      path: "/importacao", 
-      label: "Upload", 
-      icon: <FaFileUpload />, 
-      allowed: ["adm", "dev"] 
+    {
+      path: "/importacao",
+      label: "Upload",
+      icon: <FaFileUpload />,
+      allowed: ["adm", "dev"]
     },
+<<<<<<< HEAD
     { 
       path: "/faturamento", 
       label: "Faturamento", 
       icon: <FaFileInvoiceDollar />, 
-      allowed: ["fat", "dev"] 
-    },
-    { 
-      path: "/gerenciamento", 
-      label: "Condomínios", 
-      icon: <FaBuilding />, 
       allowed: ["adm", "dev"] 
+=======
+    {
+      path: "/faturamento",
+      label: "Faturamento",
+      icon: <FaFileInvoiceDollar />,
+      allowed: ["fat", "dev"]
+>>>>>>> ce3d0635729f7d87ba319e3c79735acda00a8d9f
     },
-    { 
-      path: "/interno/usuarios", 
-      label: "Usuários", 
-      icon: <FaUsers />, 
-      allowed: ["dev"] 
+    {
+      path: "/gerenciamento",
+      label: "Condomínios",
+      icon: <FaBuilding />,
+      allowed: ["fat", "adm", "dev"]
     },
+    {
+      path: "/interno/usuarios",
+      label: "Usuários",
+      icon: <FaUsers />,
+      allowed: ["dev", "fat"]
+    },
+<<<<<<< HEAD
     { 
       path: "/colaboradores/acompanhamento", 
       label: "Acompanhamento", 
       icon: <FaChartLine />, 
-      allowed: ["fat", "dev"] 
+      allowed: ["adm", "dev"] 
+=======
+    // {
+    //   path: "/colaboradores/acompanhamento",
+    //   label: "Acompanhamento",
+    //   icon: <FaChartLine />,
+    //   allowed: ["fat", "dev"]
+    // },
+    {
+      path: "/interno/administradoras",
+      label: "Administradoras",
+      icon: <FaBuilding />,
+      allowed: ["dev", "fat"]
+>>>>>>> ce3d0635729f7d87ba319e3c79735acda00a8d9f
     },
-    { 
-      path: "/interno/administradoras", 
-      label: "Administradoras", 
-      icon: <FaBuilding />, 
-      allowed: ["dev"] 
-    },
-    { 
-      path: "/interno/minha-administradora", 
-      label: "Minha Administradora", 
-      icon: <FaBuilding />, 
-      allowed: ["adm", "fat", "dev"] 
+    {
+      path: "/interno/minha-administradora",
+      label: "Minha Administradora",
+      icon: <FaBuilding />,
+      allowed: ["adm", "fat", "dev"]
     },
     // {
     //   path: '/minha-conta',
@@ -164,23 +180,23 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
         }} />
       )}
 
-      <S.SidebarContainer 
+      <S.SidebarContainer
         ref={sidebarRef}
         $isOpen={sidebarOpen}
         aria-label="Menu lateral principal"
       >
         <S.SidebarHeader>
           <S.LogoLink href="/home" onClick={handleLinkClick}>
-            <S.Logo 
-              src="/imagens/LOGO.png" 
+            <S.Logo
+              src="/imagens/LOGO.png"
               alt="Fedcorp Logo"
               $isClosed={!sidebarOpen}
               $isMobile={isMobile}
             />
           </S.LogoLink>
-          
+
           {isMobile && (
-            <S.CloseButton 
+            <S.CloseButton
               $isOpen={sidebarOpen}
               onClick={() => {
                 setSidebarOpen(false);
@@ -196,9 +212,9 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
         <S.Nav>
           <ul>
             {filteredNavItems.map((item) => {
-              const isActive = location.pathname === item.path || 
-                              location.pathname.startsWith(item.path + "/");
-              
+              const isActive = location.pathname === item.path ||
+                location.pathname.startsWith(item.path + "/");
+
               return (
                 <li key={item.path} className={isActive ? "active" : ""}>
                   <S.NavLink

@@ -8,6 +8,9 @@ import ScrollToTop from './utils/scrolltop';
 import App from './App.jsx';
 import { SnackbarProvider } from 'notistack';
 import { GlobalStyles } from './styles/GlobalStyles';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -19,13 +22,15 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       }}>
       <GlobalProvider>
         <AuthProvider>
-          <ScrollToTop />
-          <SnackbarProvider
-            maxSnack={3}
-            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+            <ScrollToTop />
+            <SnackbarProvider
+              maxSnack={3}
+              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
           >
             <App />
           </SnackbarProvider>
+        </GoogleOAuthProvider>
         </AuthProvider>
       </GlobalProvider>
     </Router>

@@ -1,9 +1,11 @@
+// src/pages/Login/Login.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import { useGlobal } from '../../context/GlobalContext';
 import * as S from './LoginStyles';
+import { GoogleLogin } from '@react-oauth/google';
+import { useGlobal } from '../../context/GlobalContext';
+import { useAuth } from '../../context/AuthContext';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -12,16 +14,16 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
 
     const { loading, setLoading } = useGlobal();
-    const { login } = useAuth();
+    const { user, login, loginGoogle } = useAuth();
     const navigate = useNavigate();
+
+    console.log("Login component - user:", user);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        setLoading(true);
         setError(null);
         
         try {
-
             const result = await login({ email, password });
 
             if (result.success) {
@@ -32,9 +34,31 @@ const Login = () => {
         } catch (err) {
             setError('Ocorreu um erro inesperado durante o login.');
             console.error('Erro de login no componente:', err);
-        } finally {
-            setLoading(false);
         }
+    };
+
+    const handleGoogleSuccess = async (credentialResponse) => {
+        setError(null);
+        
+        try {
+            console.log('Google credential received');
+            
+            const result = await loginGoogle(credentialResponse.credential);
+
+            if (result.success) {
+                navigate('/home');
+            } else {
+                setError(result.error || 'Falha no login com Google');
+            }
+        } catch (err) {
+            console.error('Google login error:', err);
+            setError('Erro ao autenticar com Google. Tente novamente.');
+        }
+    };
+
+    const handleGoogleError = () => {
+        console.error('Google login failed');
+        setError('Erro no login com Google. Tente novamente ou use email/senha.');
     };
 
     return (
@@ -62,19 +86,21 @@ const Login = () => {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
+                                    disabled={loading}
                                 />
                             </S.InputGroup>
 
                             <S.InputGroup>
-                                <S.Label htmlFor="password">Password:</S.Label>
+                                <S.Label htmlFor="password">Senha:</S.Label>
                                 <S.PasswordWrapper>
                                     <S.Input
                                         type={showPassword ? "text" : "password"}
                                         id="password"
-                                        placeholder="Digite sua password"
+                                        placeholder="Digite sua senha"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
+                                        disabled={loading}
                                     />
                                     <S.TogglePasswordButton
                                         type="button"
@@ -95,8 +121,22 @@ const Login = () => {
                                 {loading ? 'Entrando...' : 'Entrar'}
                             </S.LoginButton>
 
-                            <S.ForgotPassword href="/recuperar-password">
-                                Esqueceu sua password?
+                            <S.Divider>
+                                <span>ou</span>
+                            </S.Divider>
+
+                            <GoogleLogin
+                                onSuccess={handleGoogleSuccess}
+                                onError={handleGoogleError}
+                                useOneTap={false}
+                                theme="outline"
+                                size="large"
+                                text="continue_with"
+                                shape="rectangular"
+                            />
+
+                            <S.ForgotPassword href="/recuperar-senha">
+                                Esqueceu sua senha?
                             </S.ForgotPassword>
                         </S.Form>
                     </S.LoginBox>
