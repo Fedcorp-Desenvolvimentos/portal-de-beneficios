@@ -110,7 +110,7 @@ function ModalFuncionarios({ open, condominio, funcionarios, loading, onClose, o
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal cfg-funcionarios-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="cfg-funcionarios-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title">
             <Users className="ico brand" />
@@ -250,7 +250,7 @@ function ModalVincularFuncionarios({ open, condominio, funcionariosDisponiveis, 
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal cfg-funcionarios-modal" onClick={(e) => e.stopPropagation()}>
+     <div className="modal cfg-funcionarios-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title">
             <Link className="ico brand" />
