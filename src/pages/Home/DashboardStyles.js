@@ -10,7 +10,6 @@ export const S = {
   `,
 
   Body: styled.main`
-    max-width: 1240px;
     margin: 0 auto;
     padding: 28px 28px 72px;
 

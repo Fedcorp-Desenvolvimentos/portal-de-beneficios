@@ -17,10 +17,10 @@ import PrivateRouter from './PrivateRouter'
 
 // Client
 import Dashboard from '../pages/Home/Dashboard'
-import ColaboradorDashboard from '../pages/Interno/ColaboradorDashboard'
+import ColaboradorDashboard from '../pages/ColaboradorDashboard/ColaboradorDashboard'
 
 
-import Faturamento from '../pages/Client/Faturamento'
+import Faturamento from '../pages/Client/Faturamento/Faturamento'
 import FaturamentoFormulario from '../pages/Client/FaturamentoFormulario'
 import RelatoriosBeneficios from '../pages/Client/RelatoriosBeneficios'
 

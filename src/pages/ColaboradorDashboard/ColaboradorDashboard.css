@@ -1,26 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
 
-.cf-root {
-    --bg: #f7f8fa;
-    --surface: #ffffff;
-    --border: #e4e7ec;
-    --border2: #d0d5dd;
-    --accent: #2563eb;
-    --accent-l: #eff4ff;
-    --accent2: #f59e0b;
-    --accent3: #10b981;
-    --danger: #ef4444;
-    --text: #111827;
-    --sub: #6b7280;
-    --font: 'Geist', sans-serif;
-    --mono: 'Geist Mono', monospace;
 
-    font-family: var(--font);
-    color: var(--text);
-    background: var(--bg);
-    min-height: 100vh;
-    padding: 32px 36px 64px;
-}
 
 .cf-page-header {
     display: flex;

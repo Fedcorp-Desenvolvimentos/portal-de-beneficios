@@ -2,29 +2,56 @@
 import React, { useState, useEffect } from 'react';
 import { userService } from '../../../services/userService';
 import { useSnackbar } from 'notistack';
-import './Usuarios.css';
 import { useLoading } from '../../../hooks/useLoading.js';
 import UsuarioModal from './UsuarioModal.jsx';
 import PageLayout from '../../../Layouts/PageLayout/PageLayout.jsx';
+import { S } from './UsuariosStyles';
+
+// Skeleton Component
+const SkeletonTable = () => (
+  <S.SkeletonTable>
+    <S.SkeletonHeader>
+      <S.SkeletonHeaderCell $width="200px" />
+      <S.SkeletonHeaderCell $width="250px" />
+      <S.SkeletonHeaderCell $width="150px" />
+      <S.SkeletonHeaderCell $width="300px" />
+      <S.SkeletonHeaderCell $width="120px" />
+    </S.SkeletonHeader>
+    {[...Array(5)].map((_, i) => (
+      <S.SkeletonRow key={i}>
+        <S.SkeletonCell $width="180px" />
+        <S.SkeletonCell $width="220px" />
+        <S.SkeletonCell $width="120px" />
+        <S.SkeletonCell $width="280px" />
+        <S.SkeletonCell $width="100px" />
+      </S.SkeletonRow>
+    ))}
+  </S.SkeletonTable>
+);
 
 export default function Usuarios() {
   const { enqueueSnackbar } = useSnackbar();
   const [usuarios, setUsuarios] = useState([]);
-  const { loading, startLoading, stopLoading } = useLoading()
+  const { loading, startLoading, stopLoading } = useLoading();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [filtroAdm, setFiltroAdm] = useState('');
   const [administradoras, setAdministradoras] = useState([]);
   const [vinculandoId, setVinculandoId] = useState(null);
   const [selectedAdmId, setSelectedAdmId] = useState('');
-  
-  useEffect(() => {
-    carregarUsuarios();
-    carregarAdministradoras();
-  }, [filtroAdm]);
+
+  const getTipoLabel = (tipo) => {
+    const tipos = {
+      dev: 'Desenvolvedor',
+      fin: 'Financeiro Fedcorp',
+      fat: 'Faturista Fedcorp',
+      adm: 'Admin Administradora',
+      cli: 'Cliente'
+    };
+    return tipos[tipo] || tipo;
+  };
 
   const carregarUsuarios = async () => {
-    startLoading("Carregando usuários...");
     try {
       const params = filtroAdm ? { administradora: filtroAdm } : {};
       const data = await userService.listarUsuarios(params);
@@ -33,13 +60,10 @@ export default function Usuarios() {
       console.error('❌ Erro ao carregar usuários:', error);
       enqueueSnackbar('Erro ao carregar usuários', { variant: 'error' });
       setUsuarios([]);
-    } finally {
-      stopLoading();
     }
   };
 
   const carregarAdministradoras = async () => {
-    startLoading("Por favor aguarde...");
     try {
       const data = await userService.listarAdministradoras();
       setAdministradoras(data);
@@ -47,10 +71,17 @@ export default function Usuarios() {
       console.error('❌ Erro ao carregar administradoras:', error);
       enqueueSnackbar('Erro ao carregar administradoras', { variant: 'error' });
       setAdministradoras([]);
-    } finally {
-      stopLoading();
     }
   };
+
+  useEffect(() => {
+    const loadData = async () => {
+      startLoading("Carregando dados...");
+      await Promise.all([carregarUsuarios(), carregarAdministradoras()]);
+      stopLoading();
+    };
+    loadData();
+  }, [filtroAdm]);
 
   const handleDelete = async (id, username) => {
     if (window.confirm(`Tem certeza que deseja excluir o usuário "${username}"? Esta ação não pode ser desfeita.`)) {
@@ -83,7 +114,7 @@ export default function Usuarios() {
       enqueueSnackbar('Selecione uma administradora para vincular', { variant: 'warning' });
       return;
     }
-    
+
     if (window.confirm(`Deseja vincular este usuário à administradora selecionada?`)) {
       setVinculandoId(userId);
       try {
@@ -107,28 +138,26 @@ export default function Usuarios() {
 
   const handleSalvarUsuario = async (dados) => {
     try {
-      console.log('💾 Salvando usuário:', selectedUser ? `ID ${selectedUser.id}` : 'Novo usuário', dados);
-      
       if (!dados.username || dados.username.trim() === '') {
         enqueueSnackbar('Nome de usuário é obrigatório', { variant: 'error' });
         throw new Error('Nome de usuário é obrigatório');
       }
-      
+
       if (!dados.email || !dados.email.includes('@')) {
         enqueueSnackbar('Email válido é obrigatório', { variant: 'error' });
         throw new Error('Email válido é obrigatório');
       }
-      
+
       if (!selectedUser && (!dados.password || dados.password.trim() === '')) {
         enqueueSnackbar('Senha é obrigatória para novo usuário', { variant: 'error' });
         throw new Error('Senha é obrigatória');
       }
-      
+
       if (selectedUser && dados.password && dados.password.length < 6) {
         enqueueSnackbar('A senha deve ter no mínimo 6 caracteres', { variant: 'error' });
         throw new Error('Senha muito curta');
       }
-      
+
       if (selectedUser) {
         await userService.atualizarUsuario(selectedUser.id, dados);
         enqueueSnackbar('Usuário atualizado com sucesso', { variant: 'success' });
@@ -147,25 +176,14 @@ export default function Usuarios() {
     }
   };
 
-  const getTipoLabel = (tipo) => {
-    const tipos = {
-      dev: 'Desenvolvedor',
-      fin: 'Financeiro Fedcorp',
-      fat: 'Faturista Fedcorp',
-      adm: 'Admin Administradora',
-      cli: 'Cliente'
-    };
-    return tipos[tipo] || tipo;
-  };
-
   return (
-    <PageLayout title='Gerenciamento de Usuários' subtitle='Gerencie os usuários cadastrados na plataforma'>
-      <div className="usuarios-container">
-        <div className="filtros">
-          <select 
-            value={filtroAdm} 
+    <PageLayout title="Gerenciamento de Usuários" subtitle="Gerencie os usuários cadastrados na plataforma">
+      <S.Container>
+        <S.Filters>
+          <S.FilterSelect
+            value={filtroAdm}
             onChange={(e) => setFiltroAdm(e.target.value)}
-            className="filtro-select"
+            disabled={loading}
           >
             <option value="">Todas as administradoras</option>
             {administradoras.map(adm => (
@@ -173,99 +191,99 @@ export default function Usuarios() {
                 {adm.razao_social || adm.nome_fantasia || adm.nome || `ADM ${adm.id}`}
               </option>
             ))}
-          </select>
-        </div>
+          </S.FilterSelect>
+          
+        </S.Filters>
 
         {loading ? (
-          <div className="loading-message">Carregando usuários...</div>
+          <SkeletonTable />
         ) : usuarios.length === 0 ? (
-          <div className="empty-state">
+          <S.EmptyState>
             <p>Nenhum usuário encontrado.</p>
             {filtroAdm && <p>Tente remover o filtro de administradora.</p>}
-          </div>
+          </S.EmptyState>
         ) : (
-          <table className="usuarios-table">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Email</th>
-                <th>Tipo</th>
-                <th>Administradora</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {usuarios.map(user => (
-                <tr key={user.id}>
-                  <td>{user.username}</td>
-                  <td>{user.email}</td>
-                  <td>{getTipoLabel(user.tipo)}</td>
-                  <td className="adm-cell">
-                    {user.administradora_id ? (
-                      <div className="vinculado-info">
-                        <span className="vinculado-badge">
-                          {user.administradora_nome || `ID: ${user.administradora_id}`}
-                        </span>
-                        <button 
-                          className="btn-desvincular"
-                          onClick={() => handleDesvincular(user.id, user.username)}
-                          title="Desvincular"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="nao-vinculado-info">
-                        <span className="nao-vinculado-badge">Não vinculado</span>
-                        <div className="vincular-container">
-                          <select
-                            value={vinculandoId === user.id ? selectedAdmId : ''}
-                            onChange={(e) => {
-                              setSelectedAdmId(e.target.value);
-                              setVinculandoId(user.id);
-                            }}
-                            className="vincular-select"
-                          >
-                            <option value="">Selecionar adm...</option>
-                            {administradoras.map(adm => (
-                              <option key={adm.id} value={adm.id}>
-                                {adm.razao_social || adm.nome_fantasia || `ADM ${adm.id}`}
-                              </option>
-                            ))}
-                          </select>
-                          {vinculandoId === user.id && selectedAdmId && (
-                            <button
-                              className="btn-vincular"
-                              onClick={() => handleVincular(user.id)}
-                            >
-                              Vincular
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </td>
-                  <td className="acoes">
-                    <button 
-                      className="btn-edit"
-                      onClick={() => handleEditar(user)}
-                    >
-                      Editar
-                    </button>
-                    <button 
-                      className="btn-delete"
-                      onClick={() => handleDelete(user.id, user.username)}
-                    >
-                      Excluir
-                    </button>
-                  </td>
+          <S.TableWrapper>
+            <S.Table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Email</th>
+                  <th>Tipo</th>
+                  <th>Administradora</th>
+                  <th>Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {usuarios.map(user => (
+                  <tr key={user.id}>
+                    <td>{user.username}</td>
+                    <td>{user.email}</td>
+                    <td>{getTipoLabel(user.tipo)}</td>
+                    <td>
+                      {user.administradora_id ? (
+                        <S.VinculadoInfo>
+                          <S.VinculadoBadge>
+                            {user.administradora_nome || `ID: ${user.administradora_id}`}
+                          </S.VinculadoBadge>
+                          <S.Button
+                            $variant="unlink"
+                            $size="small"
+                            onClick={() => handleDesvincular(user.id, user.username)}
+                            title="Desvincular"
+                          >
+                            ✕
+                          </S.Button>
+                        </S.VinculadoInfo>
+                      ) : (
+                        <S.NaoVinculadoInfo>
+                          <S.NaoVinculadoBadge>Não vinculado</S.NaoVinculadoBadge>
+                          <S.VincularContainer>
+                            <S.VincularSelect
+                              value={vinculandoId === user.id ? selectedAdmId : ''}
+                              onChange={(e) => {
+                                setSelectedAdmId(e.target.value);
+                                setVinculandoId(user.id);
+                              }}
+                            >
+                              <option value="">Selecionar administradora...</option>
+                              {administradoras.map(adm => (
+                                <option key={adm.id} value={adm.id}>
+                                  {adm.razao_social || adm.nome_fantasia || `ADM ${adm.id}`}
+                                </option>
+                              ))}
+                            </S.VincularSelect>
+                            {vinculandoId === user.id && selectedAdmId && (
+                              <S.Button
+                                $variant="link"
+                                $size="small"
+                                onClick={() => handleVincular(user.id)}
+                              >
+                                Vincular
+                              </S.Button>
+                            )}
+                          </S.VincularContainer>
+                        </S.NaoVinculadoInfo>
+                      )}
+                    </td>
+                    <td>
+                      <S.Actions>
+                        <S.Button $variant="edit" onClick={() => handleEditar(user)}>
+                          Editar
+                        </S.Button>
+                        <S.Button $variant="delete" onClick={() => handleDelete(user.id, user.username)}>
+                          Excluir
+                        </S.Button>
+                      </S.Actions>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </S.Table>
+          </S.TableWrapper>
         )}
 
-        <UsuarioModal 
+        <UsuarioModal
           isOpen={modalOpen}
           onClose={() => {
             setModalOpen(false);
@@ -276,7 +294,7 @@ export default function Usuarios() {
           administradoraId={filtroAdm || null}
           administradoras={administradoras}
         />
-      </div>
+      </S.Container>
     </PageLayout>
   );
 }

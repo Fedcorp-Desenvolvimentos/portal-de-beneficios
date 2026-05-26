@@ -1,83 +1,83 @@
-ColaboradorDashboard.jsx
-
-import React, { useMemo, useRef, useState, useEffect } from 'react'
+// pages/ColaboradorDashboard/ColaboradorDashboard.jsx
+import React, { useMemo, useRef, useState, useEffect } from 'react';
+import { useSnackbar } from 'notistack';
 import {
-  Download,
-  Search,
-  CalendarDays,
-  FileSpreadsheet,
-  X,
-  Upload,
-  FileText,
-  Trash2,
-  Info,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-} from 'lucide-react'
+  FiDownload,
+  FiSearch,
+  FiCalendar,
+  FiFileText,
+  FiX,
+  FiUpload,
+  FiTrash2,
+  FiInfo,
+  FiCheckCircle,
+  FiAlertTriangle,
+  FiXCircle,
+} from 'react-icons/fi';
+import { BiSpreadsheet } from 'react-icons/bi';
 
-import './ColaboradorDashboard.css'
-import { faturamentoService } from '../../services/faturamentoService'
-import PageLayout from '../../Layouts/PageLayout/PageLayout'
+import { faturamentoService } from '../../services/faturamentoService';
+import PageLayout from '../../Layouts/PageLayout/PageLayout';
+import { S } from './ColaboradorDashboardStyles';
 
+// ============================================
+// UTILITÁRIOS
+// ============================================
 const fmtDate = (s) => {
-  if (!s) return '-'
-  const value = String(s).trim()
-  if (!value) return '-'
-  if (value.includes('/')) return value
+  if (!s) return '-';
+  const value = String(s).trim();
+  if (!value) return '-';
+  if (value.includes('/')) return value;
 
   if (value.includes('T')) {
-    const date = new Date(value)
-    if (!isNaN(date.getTime())) return date.toLocaleDateString('pt-BR')
+    const date = new Date(value);
+    if (!isNaN(date.getTime())) return date.toLocaleDateString('pt-BR');
   }
 
-  const parts = value.split('-')
+  const parts = value.split('-');
 
   if (parts.length === 3) {
     if (parts[0]?.length === 4) {
-      const [y, m, d] = parts
-      return `${d}/${m}/${y}`
+      const [y, m, d] = parts;
+      return `${d}/${m}/${y}`;
     }
-
-    const [d, m, y] = parts
-    return y ? `${d}/${m}/${y}` : value
+    const [d, m, y] = parts;
+    return y ? `${d}/${m}/${y}` : value;
   }
 
-  return value
-}
+  return value;
+};
 
 const fmtMonthYear = (value) => {
-  if (!value) return '-'
-  const raw = String(value).trim()
-  if (!raw) return '-'
+  if (!value) return '-';
+  const raw = String(value).trim();
+  if (!raw) return '-';
 
   if (raw.includes('-')) {
-    const parts = raw.split('-')
-    if (parts.length >= 2) return `${parts[1]}/${parts[0]}`
+    const parts = raw.split('-');
+    if (parts.length >= 2) return `${parts[1]}/${parts[0]}`;
   }
 
-  const brMonthYear = raw.match(/^(0?[1-9]|1[0-2])\/(\d{4})$/)
-
+  const brMonthYear = raw.match(/^(0?[1-9]|1[0-2])\/(\d{4})$/);
   if (brMonthYear) {
-    const [, month, year] = brMonthYear
-    return `${month.padStart(2, '0')}/${year}`
+    const [, month, year] = brMonthYear;
+    return `${month.padStart(2, '0')}/${year}`;
   }
 
-  const isoMonthYear = raw.match(/^(\d{4})-(0?[1-9]|1[0-2])$/)
-
+  const isoMonthYear = raw.match(/^(\d{4})-(0?[1-9]|1[0-2])$/);
   if (isoMonthYear) {
-    const [, year, month] = isoMonthYear
-    return `${month.padStart(2, '0')}/${year}`
+    const [, year, month] = isoMonthYear;
+    return `${month.padStart(2, '0')}/${year}`;
   }
 
-  return fmtDate(raw)
-}
+  return fmtDate(raw);
+};
 
 const fmtMoney = (value) =>
   Number(value || 0).toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-  })
+  });
 
 const norm = (s) =>
   (s || '')
@@ -85,7 +85,7 @@ const norm = (s) =>
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-    .trim()
+    .trim();
 
 const statusMap = {
   AGUARDANDO_FATURAMENTO: 'aprovado',
@@ -93,11 +93,11 @@ const statusMap = {
   FATURADO: 'faturado',
   COMPRADO: 'comprado',
   CANCELADO: 'cancelado',
-}
+};
 
 const normalizarStatus = (status) => {
-  return statusMap[status] || statusMap[String(status || '').toUpperCase()] || 'aprovado'
-}
+  return statusMap[status] || statusMap[String(status || '').toUpperCase()] || 'aprovado';
+};
 
 const statusLabel = {
   aprovado: 'Aprovado',
@@ -105,15 +105,7 @@ const statusLabel = {
   faturado: 'Faturado',
   comprado: 'Comprado',
   cancelado: 'Cancelado',
-}
-
-const getStatusClass = (status) => {
-  if (status === 'faturado') return 'faturado'
-  if (status === 'cancelado') return 'cancelado'
-  if (status === 'em_faturamento') return 'em_faturamento'
-  if (status === 'comprado') return 'comprado'
-  return 'aprovado'
-}
+};
 
 const statusRank = {
   aprovado: 1,
@@ -121,60 +113,29 @@ const statusRank = {
   faturado: 3,
   comprado: 4,
   cancelado: 99,
-}
+};
 
 const timelineSteps = [
-  {
-    key: 'importacao',
-    title: 'Importação recebida',
-    description: 'Arquivo importado e processado no sistema.',
-    minRank: 0,
-  },
-  {
-    key: 'aprovado',
-    title: 'Aprovado',
-    description: 'Pedido liberado para iniciar o faturamento.',
-    minRank: 1,
-  },
-  {
-    key: 'em_faturamento',
-    title: 'Em faturamento',
-    description: 'Planilha de faturamento baixada/iniciada.',
-    minRank: 2,
-  },
-  {
-    key: 'faturado',
-    title: 'Faturado',
-    description: 'Documentos importados e faturamento finalizado.',
-    minRank: 3,
-  },
-  {
-    key: 'comprado',
-    title: 'Comprado',
-    description: 'Arquivo enviado para provedora de compra.',
-    minRank: 4,
-  },
-
-]
+  { key: 'importacao', title: 'Importação recebida', description: 'Arquivo importado e processado no sistema.', minRank: 0 },
+  { key: 'aprovado', title: 'Aprovado', description: 'Pedido liberado para iniciar o faturamento.', minRank: 1 },
+  { key: 'em_faturamento', title: 'Em faturamento', description: 'Planilha de faturamento baixada/iniciada.', minRank: 2 },
+  { key: 'faturado', title: 'Faturado', description: 'Documentos importados e faturamento finalizado.', minRank: 3 },
+  { key: 'comprado', title: 'Comprado', description: 'Arquivo enviado para provedora de compra.', minRank: 4 },
+];
 
 const getTimelineItems = (pedido) => {
-  const rankAtual = statusRank[pedido?.status] || 0
+  const rankAtual = statusRank[pedido?.status] || 0;
 
   const items = timelineSteps.map((step) => ({
     ...step,
-    date:
-      step.key === 'importacao'
-        ? pedido?.dataImportacao
-        : step.key === 'aprovado'
-          ? pedido?.aprovadoEm
-          : step.key === 'em_faturamento'
-            ? pedido?.emFaturamentoEm
-            : step.key === 'comprado'
-              ? pedido?.compradoEm
-              : pedido?.faturadoEm,
+    date: step.key === 'importacao' ? pedido?.dataImportacao
+      : step.key === 'aprovado' ? pedido?.aprovadoEm
+      : step.key === 'em_faturamento' ? pedido?.emFaturamentoEm
+      : step.key === 'comprado' ? pedido?.compradoEm
+      : pedido?.faturadoEm,
     done: rankAtual >= step.minRank,
     current: pedido?.status === step.key,
-  }))
+  }));
 
   if (pedido?.status === 'cancelado') {
     items.push({
@@ -184,206 +145,98 @@ const getTimelineItems = (pedido) => {
       date: pedido?.canceladoEm,
       done: true,
       current: true,
-    })
+    });
   }
 
-  return items
-}
+  return items;
+};
 
-const extrairResumoPedido = (pedidoApi) => {
-  return {
-    id: pedidoApi.id,
-    nomeAdministradora: pedidoApi.nome_administradora || '-',
-    fileId: pedidoApi.file_upload_id || pedidoApi.file || null,
-    status: normalizarStatus(pedidoApi.status),
-    dataVencimento: pedidoApi.data_vencimento,
-    mesUtilizacao: fmtMonthYear(pedidoApi.vigencia_inicio || pedidoApi.competencia),
-    quantidadeDias: pedidoApi.quantidade_dias || '-',
-    dataImportacao: pedidoApi.data_importacao,
-    valorTotal: parseFloat(pedidoApi.valor_total || 0),
-    totalFuncionarios: pedidoApi.total_funcionarios || pedidoApi.registros_processados || 0,
-    nomeCondominio: pedidoApi.nome_condominio || `Pedido ${pedidoApi.id}`,
-    cnpj: pedidoApi.cnpj || '-',
-    cidade: pedidoApi.cidade || '-',
-    uf: pedidoApi.uf || '-',
-    importadoEm: pedidoApi.data_importacao,
-    aprovadoEm: pedidoApi.data_aprovacao || pedidoApi.data_importacao,
-    emFaturamentoEm: pedidoApi.data_em_faturamento || null,
-    faturadoEm: pedidoApi.data_faturamento || null,
-    canceladoEm: pedidoApi.data_cancelamento || null,
-    motivoCancelamento: pedidoApi.motivo_cancelamento || '',
-    compradoEm: pedidoApi.data_compra || pedidoApi.data_comprado || null,
-  }
-}
+const extrairResumoPedido = (pedidoApi) => ({
+  id: pedidoApi.id,
+  nomeAdministradora: pedidoApi.nome_administradora || '-',
+  fileId: pedidoApi.file_upload_id || pedidoApi.file || null,
+  status: normalizarStatus(pedidoApi.status),
+  dataVencimento: pedidoApi.data_vencimento,
+  mesUtilizacao: fmtMonthYear(pedidoApi.vigencia_inicio || pedidoApi.competencia),
+  quantidadeDias: pedidoApi.quantidade_dias || '-',
+  dataImportacao: pedidoApi.data_importacao,
+  valorTotal: parseFloat(pedidoApi.valor_total || 0),
+  totalFuncionarios: pedidoApi.total_funcionarios || pedidoApi.registros_processados || 0,
+  nomeCondominio: pedidoApi.nome_condominio || `Pedido ${pedidoApi.id}`,
+  cnpj: pedidoApi.cnpj || '-',
+  cidade: pedidoApi.cidade || '-',
+  uf: pedidoApi.uf || '-',
+  importadoEm: pedidoApi.data_importacao,
+  aprovadoEm: pedidoApi.data_aprovacao || pedidoApi.data_importacao,
+  emFaturamentoEm: pedidoApi.data_em_faturamento || null,
+  faturadoEm: pedidoApi.data_faturamento || null,
+  canceladoEm: pedidoApi.data_cancelamento || null,
+  motivoCancelamento: pedidoApi.motivo_cancelamento || '',
+  compradoEm: pedidoApi.data_compra || pedidoApi.data_comprado || null,
+});
 
-function Toasts({ toasts, onClose }) {
-  return (
-    <div className="cf-toast-stack" aria-live="polite">
-      {toasts.map((t) => (
-        <div key={t.id} className={`cf-toast ${t.type}`}>
-          <div className="cf-toast-icon">
-            {t.type === 'success' ? (
-              <CheckCircle2 size={16} />
-            ) : t.type === 'error' ? (
-              <XCircle size={16} />
-            ) : t.type === 'warning' ? (
-              <AlertTriangle size={16} />
-            ) : (
-              <Info size={16} />
-            )}
-          </div>
-
-          <div>
-            {t.title && <div className="cf-toast-title">{t.title}</div>}
-            <div className="cf-toast-message">{t.message}</div>
-          </div>
-
-          <button className="cf-toast-close" onClick={() => onClose(t.id)}>
-            <X size={14} />
-          </button>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function ConfirmModal({
-  open,
-  title,
-  message,
-  onConfirm,
-  onCancel,
-  confirmText = 'Confirmar',
-  confirmColor = '#2563eb',
-  loading = false,
-}) {
-  if (!open) return null
-
-  return (
-    <div
-      className="cf-overlay"
-      onMouseDown={(e) => {
-        if (e.target.classList.contains('cf-overlay') && !loading) {
-          onCancel()
-        }
-      }}
-    >
-      <div className="cf-modal" role="dialog" style={{ maxWidth: 400 }}>
-        <div className="cf-modal-header">
-          <div>
-            <div className="cf-modal-title">{title}</div>
-          </div>
-
-          <button className="cf-modal-close" onClick={onCancel} disabled={loading}>
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="cf-modal-body">
-          <p className="cf-confirm-msg">{message}</p>
-        </div>
-
-        <div className="cf-modal-footer">
-          <button className="cf-btn secondary" onClick={onCancel} disabled={loading}>
-            Cancelar
-          </button>
-
-          <button
-            className="cf-btn primary"
-            onClick={onConfirm}
-            disabled={loading}
-            style={{ background: confirmColor, borderColor: confirmColor }}
-          >
-            {loading ? 'Processando...' : confirmText}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
+// ============================================
+// COMPONENTE PRINCIPAL
+// ============================================
 export default function ColaboradorDashboard() {
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('todos')
-  const [pedidos, setPedidos] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [downloadingId, setDownloadingId] = useState(null)
-  const [importOpen, setImportOpen] = useState(false)
-  const [selectedPedido, setSelectedPedido] = useState(null)
-  const [docs, setDocs] = useState([])
-  const [uploading, setUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [toasts, setToasts] = useState([])
-  const [detailsOpen, setDetailsOpen] = useState(false)
-  const [detailsPedido, setDetailsPedido] = useState(null)
-  const [cancelOpen, setCancelOpen] = useState(false)
-  const [cancelReason, setCancelReason] = useState('')
-  const [cancelError, setCancelError] = useState('')
-  const [cancelPedido, setCancelPedido] = useState(null)
-  const [confirm, setConfirm] = useState({ open: false, title: '', message: '', onConfirm: null })
-  const [confirmFinalize, setConfirmFinalize] = useState({
-    open: false,
-    title: '',
-    message: '',
-    onConfirm: null,
-  })
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('todos');
+  const [pedidos, setPedidos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [selectedPedido, setSelectedPedido] = useState(null);
+  const [docs, setDocs] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsPedido, setDetailsPedido] = useState(null);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelError, setCancelError] = useState('');
+  const [cancelPedido, setCancelPedido] = useState(null);
+  const [confirm, setConfirm] = useState({ open: false, title: '', message: '', onConfirm: null });
+  const [confirmFinalize, setConfirmFinalize] = useState({ open: false, title: '', message: '', onConfirm: null });
+  const [statusConfirm, setStatusConfirm] = useState({ open: false, pedido: null, newStatus: '' });
+  const [statusChanging, setStatusChanging] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const fileRef = useRef(null);
 
-  const [statusConfirm, setStatusConfirm] = useState({
-    open: false,
-    pedido: null,
-    newStatus: '',
-  })
-  const [statusChanging, setStatusChanging] = useState(false)
-
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
-
-  const fileRef = useRef(null)
-
-  const pushToast = ({ type = 'info', title = '', message = '', duration = 3500 }) => {
-    const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`
-    setToasts((prev) => [...prev, { id, type, title, message }])
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), duration)
-  }
-
-  const closeToast = (id) => setToasts((prev) => prev.filter((t) => t.id !== id))
+  const showToast = (message, options = {}) => {
+    enqueueSnackbar(message, {
+      variant: options.variant || 'info',
+      anchorOrigin: { vertical: 'top', horizontal: 'right' },
+      ...options,
+    });
+  };
 
   async function carregarPedidos() {
     try {
-      setLoading(true)
+      setLoading(true);
+      const response = await faturamentoService.listarPedidosFuncionario();
 
-      const response = await faturamentoService.listarPedidosFuncionario()
+      let lista = [];
+      if (Array.isArray(response)) lista = response;
+      else if (response?.results && Array.isArray(response.results)) lista = response.results;
+      else if (response?.data && Array.isArray(response.data)) lista = response.data;
+      else lista = [];
 
-      let lista = []
-
-      if (Array.isArray(response)) lista = response
-      else if (response?.results && Array.isArray(response.results)) lista = response.results
-      else if (response?.data && Array.isArray(response.data)) lista = response.data
-      else lista = []
-
-      const pedidosFormatados = lista.map(extrairResumoPedido)
-
-      console.log('Pedidos formatados:', pedidosFormatados)
-
-      setPedidos(pedidosFormatados)
+      const pedidosFormatados = lista.map(extrairResumoPedido);
+      setPedidos(pedidosFormatados);
     } catch (error) {
-      console.error('Erro ao carregar pedidos:', error)
-
-      pushToast({
-        type: 'error',
-        title: 'Erro ao carregar',
-        message: 'Não foi possível carregar os pedidos.',
-      })
-
-      setPedidos([])
+      console.error('Erro ao carregar pedidos:', error);
+      showToast('Não foi possível carregar os pedidos.', { variant: 'error' });
+      setPedidos([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   useEffect(() => {
-    carregarPedidos()
-  }, [])
+    carregarPedidos();
+  }, []);
 
   const stats = useMemo(
     () => ({
@@ -395,325 +248,202 @@ export default function ColaboradorDashboard() {
       cancelados: pedidos.filter((p) => p.status === 'cancelado').length,
     }),
     [pedidos]
-  )
+  );
 
   const filtered = useMemo(() => {
-    const q = norm(search)
-
+    const q = norm(search);
     return pedidos.filter((p) => {
       const hay = norm(
-        [p.id,
-        p.nomeAdministradora,
-        p.mesUtilizacao,
-        p.dataVencimento,
-        p.nomeCondominio,
-        p.cnpj,
-        p.cidade,
-        p.uf].join(' ')
-      )
+        [p.id, p.nomeAdministradora, p.mesUtilizacao, p.dataVencimento, p.nomeCondominio, p.cnpj, p.cidade, p.uf].join(' ')
+      );
+      return (!q || hay.includes(q)) && (statusFilter === 'todos' || p.status === statusFilter);
+    });
+  }, [pedidos, search, statusFilter]);
 
-      return (!q || hay.includes(q)) && (statusFilter === 'todos' || p.status === statusFilter)
-    })
-  }, [pedidos, search, statusFilter])
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
-
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
   const paginatedPedidos = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage
-    return filtered.slice(start, start + itemsPerPage)
-  }, [filtered, currentPage])
+    const start = (currentPage - 1) * itemsPerPage;
+    return filtered.slice(start, start + itemsPerPage);
+  }, [filtered, currentPage]);
 
   useEffect(() => {
-    setCurrentPage(1)
-  }, [search, statusFilter])
+    setCurrentPage(1);
+  }, [search, statusFilter]);
 
   async function handleDownload(pedido) {
     if (pedido.status === 'cancelado') {
-      pushToast({
-        type: 'warning',
-        title: 'Pedido cancelado',
-        message: 'Não é possível baixar o faturamento de um pedido cancelado.',
-      })
-      return
+      showToast('Não é possível baixar o faturamento de um pedido cancelado.', { variant: 'warning' });
+      return;
     }
 
     try {
-      setDownloadingId(pedido.id)
-
+      setDownloadingId(pedido.id);
       setPedidos((prev) =>
         prev.map((item) => (item.id === pedido.id ? { ...item, status: 'em_faturamento' } : item))
-      )
+      );
 
-      await faturamentoService.baixarExportFaturamento({ importacao_id: pedido.id }, `pedido-${pedido.id}`)
-
-      pushToast({
-        type: 'success',
-        title: 'Faturamento iniciado',
-        message: `O pedido ${pedido.id} foi movido para "Em faturamento".`,
-      })
+      await faturamentoService.baixarExportFaturamento({ importacao_id: pedido.id }, `pedido-${pedido.id}`);
+      showToast(`O pedido ${pedido.id} foi movido para "Em faturamento".`, { variant: 'success' });
     } catch (error) {
-      console.error('Erro no download:', error)
-
-      pushToast({
-        type: 'error',
-        title: 'Falha no download',
-        message: 'Não foi possível baixar a planilha deste pedido.',
-      })
+      console.error('Erro no download:', error);
+      showToast('Não foi possível baixar a planilha deste pedido.', { variant: 'error' });
     } finally {
-      setDownloadingId(null)
+      setDownloadingId(null);
     }
   }
 
   async function handleChangeStatus(pedido, newStatus) {
     if (newStatus === 'cancelado') {
-      setCancelPedido(pedido)
-      setCancelReason('')
-      setCancelError('')
-      setCancelOpen(true)
-      return
+      setCancelPedido(pedido);
+      setCancelReason('');
+      setCancelError('');
+      setCancelOpen(true);
+      return;
     }
 
-    await faturamentoService.alterarStatusPedido(pedido.id, newStatus)
-
+    await faturamentoService.alterarStatusPedido(pedido.id, newStatus);
     setPedidos((prev) =>
       prev.map((item) => (item.id === pedido.id ? { ...item, status: newStatus } : item))
-    )
-
-    pushToast({
-      type: 'success',
-      title: 'Status atualizado',
-      message: `Pedido ${pedido.id} alterado para "${statusLabel[newStatus]}".`,
-    })
+    );
+    showToast(`Pedido ${pedido.id} alterado para "${statusLabel[newStatus]}".`, { variant: 'success' });
   }
 
   function requestStatusChange(pedido, newStatus) {
-    if (!pedido || !newStatus || newStatus === pedido.status) return
-
-    setStatusConfirm({
-      open: true,
-      pedido,
-      newStatus,
-    })
+    if (!pedido || !newStatus || newStatus === pedido.status) return;
+    setStatusConfirm({ open: true, pedido, newStatus });
   }
 
   async function confirmStatusChange() {
-    if (!statusConfirm.pedido || !statusConfirm.newStatus || statusChanging) return
-
-    const pedido = statusConfirm.pedido
-    const newStatus = statusConfirm.newStatus
+    if (!statusConfirm.pedido || !statusConfirm.newStatus || statusChanging) return;
 
     try {
-      setStatusChanging(true)
-
-      await handleChangeStatus(pedido, newStatus)
-
-      setStatusConfirm({
-        open: false,
-        pedido: null,
-        newStatus: '',
-      })
+      setStatusChanging(true);
+      await handleChangeStatus(statusConfirm.pedido, statusConfirm.newStatus);
+      setStatusConfirm({ open: false, pedido: null, newStatus: '' });
     } catch (error) {
-      console.error('Erro ao alterar status:', error)
-
-      pushToast({
-        type: 'error',
-        title: 'Falha ao alterar status',
-        message: error?.message || 'Não foi possível alterar o status.',
-      })
+      console.error('Erro ao alterar status:', error);
+      showToast(error?.message || 'Não foi possível alterar o status.', { variant: 'error' });
     } finally {
-      setStatusChanging(false)
+      setStatusChanging(false);
     }
   }
 
   function cancelStatusChange() {
-    if (statusChanging) return
-
-    setStatusConfirm({
-      open: false,
-      pedido: null,
-      newStatus: '',
-    })
+    if (statusChanging) return;
+    setStatusConfirm({ open: false, pedido: null, newStatus: '' });
   }
 
   async function handleCancelBilling() {
-    const motivo = cancelReason.trim()
-
+    const motivo = cancelReason.trim();
     if (!motivo) {
-      setCancelError('Informe o motivo do cancelamento.')
-      return
+      setCancelError('Informe o motivo do cancelamento.');
+      return;
     }
 
     try {
-      await faturamentoService.alterarStatusPedido(cancelPedido?.id, 'cancelado', motivo)
-
+      await faturamentoService.alterarStatusPedido(cancelPedido?.id, 'cancelado', motivo);
       setPedidos((prev) =>
         prev.map((item) =>
           item.id === cancelPedido?.id
-            ? {
-              ...item,
-              status: 'cancelado',
-              motivoCancelamento: motivo,
-              canceladoEm: new Date().toLocaleDateString('pt-BR'),
-            }
+            ? { ...item, status: 'cancelado', motivoCancelamento: motivo, canceladoEm: new Date().toLocaleDateString('pt-BR') }
             : item
         )
-      )
-
-      pushToast({
-        type: 'warning',
-        title: 'Faturamento cancelado',
-        message: `O pedido ${cancelPedido?.id} foi cancelado.`,
-      })
-
-      setCancelOpen(false)
-      setCancelPedido(null)
-      setCancelReason('')
+      );
+      showToast(`O pedido ${cancelPedido?.id} foi cancelado.`, { variant: 'warning' });
+      setCancelOpen(false);
+      setCancelPedido(null);
+      setCancelReason('');
     } catch (error) {
-      console.error('Erro ao cancelar:', error)
-
-      pushToast({
-        type: 'error',
-        title: 'Erro ao cancelar',
-        message: error?.message || 'Não foi possível cancelar o pedido.',
-      })
+      console.error('Erro ao cancelar:', error);
+      showToast(error?.message || 'Não foi possível cancelar o pedido.', { variant: 'error' });
     }
   }
 
   function openImport(pedido) {
     if (pedido.status === 'comprado') {
-      pushToast({
-        type: 'info',
-        title: 'Importação bloqueada',
-        message: 'Este pedido já foi comprado.',
-      })
-      return
+      showToast('Este pedido já foi comprado.', { variant: 'info' });
+      return;
     }
-
     if (pedido.status === 'cancelado') {
-      pushToast({
-        type: 'info',
-        title: 'Importação bloqueada',
-        message: 'Este pedido está cancelado.',
-      })
-      return
+      showToast('Este pedido está cancelado.', { variant: 'info' });
+      return;
     }
-
-    setSelectedPedido(pedido)
-    setDocs([])
-    setImportOpen(true)
+    setSelectedPedido(pedido);
+    setDocs([]);
+    setImportOpen(true);
   }
 
   async function handleCompra(pedido) {
     if (pedido.status !== 'faturado') {
-      pushToast({
-        type: 'warning',
-        title: 'Compra indisponível',
-        message: 'A compra só fica disponível para pedidos faturados.',
-      })
-      return
+      showToast('A compra só fica disponível para pedidos faturados.', { variant: 'warning' });
+      return;
     }
 
     try {
-      setDownloadingId(pedido.id)
-
-      await faturamentoService.baixarTxtCompra(
-        { importacao_id: pedido.id },
-        `compra-${pedido.id}`
-      )
-
-      // Temporário até o backend aceitar o status "comprado"
+      setDownloadingId(pedido.id);
+      await faturamentoService.baixarTxtCompra({ importacao_id: pedido.id }, `compra-${pedido.id}`);
       setPedidos((prev) =>
         prev.map((item) =>
           item.id === pedido.id
-            ? {
-              ...item,
-              status: 'comprado',
-              compradoEm: new Date().toLocaleDateString('pt-BR'),
-            }
+            ? { ...item, status: 'comprado', compradoEm: new Date().toLocaleDateString('pt-BR') }
             : item
         )
-      )
-
-      pushToast({
-        type: 'success',
-        title: 'Compra realizada',
-        message: `TXT do pedido ${pedido.id} baixado com sucesso.`,
-      })
+      );
+      showToast(`TXT do pedido ${pedido.id} baixado com sucesso.`, { variant: 'success' });
     } catch (error) {
-      console.error('Erro ao baixar TXT de compra:', error)
-
-      pushToast({
-        type: 'error',
-        title: 'Falha no download',
-        message: error?.message || 'Não foi possível baixar o TXT de compra.',
-      })
+      console.error('Erro ao baixar TXT de compra:', error);
+      showToast(error?.message || 'Não foi possível baixar o TXT de compra.', { variant: 'error' });
     } finally {
-      setDownloadingId(null)
+      setDownloadingId(null);
     }
   }
 
   function closeImport() {
-    if (uploading) return
-
-    setImportOpen(false)
-    setSelectedPedido(null)
-    setDocs([])
+    if (uploading) return;
+    setImportOpen(false);
+    setSelectedPedido(null);
+    setDocs([]);
   }
 
   function handleFiles(list) {
-    const allowed = []
-    const rejected = []
+    const allowed = [];
+    const rejected = [];
 
     for (const f of Array.from(list || [])) {
-      if (/\.(pdf|xml|png|jpg|jpeg)$/i.test(f.name)) allowed.push(f)
-      else rejected.push(f)
+      if (/\.(pdf|xml|png|jpg|jpeg)$/i.test(f.name)) allowed.push(f);
+      else rejected.push(f);
     }
 
     if (rejected.length) {
-      pushToast({
-        type: 'warning',
-        title: 'Arquivos ignorados',
-        message: `Formatos aceitos: PDF, XML, PNG, JPG. Ignorados: ${rejected
-          .slice(0, 3)
-          .map((r) => r.name)
-          .join(', ')}`,
-      })
+      showToast(`Formatos aceitos: PDF, XML, PNG, JPG. Ignorados: ${rejected.slice(0, 3).map((r) => r.name).join(', ')}`, {
+        variant: 'warning',
+      });
     }
 
     setDocs((prev) => {
-      const keys = new Set(prev.map((f) => `${f.name}-${f.size}`))
-      return [...prev, ...allowed.filter((f) => !keys.has(`${f.name}-${f.size}`))]
-    })
+      const keys = new Set(prev.map((f) => `${f.name}-${f.size}`));
+      return [...prev, ...allowed.filter((f) => !keys.has(`${f.name}-${f.size}`))];
+    });
   }
 
   function requestRemove(idx) {
-    const file = docs[idx]
-
+    const file = docs[idx];
     setConfirm({
       open: true,
       title: 'Remover documento',
       message: `Remover "${file?.name}" da lista?`,
       onConfirm: () => {
-        setDocs((prev) => prev.filter((_, i) => i !== idx))
-        setConfirm({ open: false, title: '', message: '', onConfirm: null })
-
-        pushToast({
-          type: 'info',
-          title: 'Removido',
-          message: 'Documento removido da lista.',
-        })
+        setDocs((prev) => prev.filter((_, i) => i !== idx));
+        setConfirm({ open: false, title: '', message: '', onConfirm: null });
+        showToast('Documento removido da lista.', { variant: 'info' });
       },
-    })
+    });
   }
 
   function requestFinalizeImport() {
     if (!docs.length) {
-      pushToast({
-        type: 'warning',
-        title: 'Nada para enviar',
-        message: 'Selecione pelo menos um documento.',
-      })
-      return
+      showToast('Selecione pelo menos um documento.', { variant: 'warning' });
+      return;
     }
 
     setConfirmFinalize({
@@ -721,640 +451,475 @@ export default function ColaboradorDashboard() {
       title: 'Confirmar importação',
       message: 'Ao importar a documentação, o pedido ficará disponível para o funcionário. Deseja continuar?',
       onConfirm: async () => {
-        setConfirmFinalize({
-          open: false,
-          title: '',
-          message: '',
-          onConfirm: null,
-        })
-
-        await handleUpload()
+        setConfirmFinalize({ open: false, title: '', message: '', onConfirm: null });
+        await handleUpload();
       },
-    })
+    });
   }
 
   async function handleUpload() {
-    if (!docs.length || !selectedPedido?.id) return
+    if (!docs.length || !selectedPedido?.id) return;
 
     const arquivoBoleto = docs.find((file) => {
-      const name = file.name.toLowerCase()
-      return name.includes('boleto') || name.includes('recibo')
-    })
-
+      const name = file.name.toLowerCase();
+      return name.includes('boleto') || name.includes('recibo');
+    });
     const arquivoNotaDebito = docs.find((file) => {
-      const name = file.name.toLowerCase()
-      return name.includes('debito') || name.includes('débito')
-    })
-
+      const name = file.name.toLowerCase();
+      return name.includes('debito') || name.includes('débito');
+    });
     const arquivoNotaFiscal = docs.find((file) => {
-      const name = file.name.toLowerCase()
-      return name.includes('fiscal') || name.includes('nota_fiscal') || name.includes('nf')
-    })
+      const name = file.name.toLowerCase();
+      return name.includes('fiscal') || name.includes('nota_fiscal') || name.includes('nf');
+    });
 
     if (!arquivoBoleto && !arquivoNotaDebito && !arquivoNotaFiscal) {
-      pushToast({
-        type: 'warning',
-        title: 'Arquivos não identificados',
-        message: 'Envie boleto/recibo, nota de débito ou nota fiscal.',
-      })
-      return
+      showToast('Envie boleto/recibo, nota de débito ou nota fiscal.', { variant: 'warning' });
+      return;
     }
 
     try {
-      setUploading(true)
-      setUploadProgress(1)
+      setUploading(true);
+      setUploadProgress(1);
 
       await faturamentoService.importarDocumentos(
         {
           importacaoId: selectedPedido.id,
-          competencia:
-            selectedPedido.competencia ||
-            selectedPedido.dataVencimento ||
-            selectedPedido.mesUtilizacao,
+          competencia: selectedPedido.competencia || selectedPedido.dataVencimento || selectedPedido.mesUtilizacao,
           arquivoBoleto,
           arquivoNotaDebito,
           arquivoNotaFiscal,
         },
         (percent) => setUploadProgress(percent)
-      )
+      );
 
-      setUploadProgress(100)
-
-      await faturamentoService.alterarStatusPedido(selectedPedido.id, 'faturado')
+      setUploadProgress(100);
+      await faturamentoService.alterarStatusPedido(selectedPedido.id, 'faturado');
 
       setPedidos((prev) =>
         prev.map((item) =>
           item.id === selectedPedido.id
-            ? {
-              ...item,
-              status: 'faturado',
-              importadoEm: new Date().toLocaleDateString('pt-BR'),
-              faturadoEm: new Date().toLocaleDateString('pt-BR'),
-            }
+            ? { ...item, status: 'faturado', importadoEm: new Date().toLocaleDateString('pt-BR'), faturadoEm: new Date().toLocaleDateString('pt-BR') }
             : item
         )
-      )
+      );
 
-      pushToast({
-        type: 'success',
-        title: 'Upload concluído',
-        message: `Documentos enviados para ${selectedPedido.id}.`,
-      })
-
-      setConfirmFinalize({
-        open: false,
-        title: '',
-        message: '',
-        onConfirm: null,
-      })
-
-      closeImport()
-      await carregarPedidos()
+      showToast(`Documentos enviados para ${selectedPedido.id}.`, { variant: 'success' });
+      setConfirmFinalize({ open: false, title: '', message: '', onConfirm: null });
+      closeImport();
+      await carregarPedidos();
     } catch (error) {
-      console.error('Erro ao importar:', error)
-
-      pushToast({
-        type: 'error',
-        title: 'Erro ao importar',
-        message: error?.message || 'Não foi possível concluir a importação.',
-      })
+      console.error('Erro ao importar:', error);
+      showToast(error?.message || 'Não foi possível concluir a importação.', { variant: 'error' });
     } finally {
-      setUploading(false)
-      setUploadProgress(0)
+      setUploading(false);
+      setUploadProgress(0);
     }
   }
 
   useEffect(() => {
-    const fn = (e) => {
-      if (e.key !== 'Escape') return
-
-      if (statusConfirm.open && !statusChanging) {
-        cancelStatusChange()
-      } else if (confirm.open) {
-        setConfirm({ open: false, title: '', message: '', onConfirm: null })
-      } else if (confirmFinalize.open && !uploading) {
-        setConfirmFinalize({ open: false, title: '', message: '', onConfirm: null })
-      } else if (cancelOpen) {
-        setCancelOpen(false)
-        setCancelPedido(null)
-        setCancelReason('')
-      } else if (importOpen && !uploading) {
-        closeImport()
-      } else if (detailsOpen) {
-        setDetailsOpen(false)
-        setDetailsPedido(null)
-      }
-    }
-
-    window.addEventListener('keydown', fn)
-
-    return () => window.removeEventListener('keydown', fn)
-  }, [
-    importOpen,
-    confirm.open,
-    confirmFinalize.open,
-    cancelOpen,
-    uploading,
-    detailsOpen,
-    statusConfirm.open,
-    statusChanging,
-  ])
+    const handleEscape = (e) => {
+      if (e.key !== 'Escape') return;
+      if (statusConfirm.open && !statusChanging) cancelStatusChange();
+      else if (confirm.open) setConfirm({ open: false, title: '', message: '', onConfirm: null });
+      else if (confirmFinalize.open && !uploading) setConfirmFinalize({ open: false, title: '', message: '', onConfirm: null });
+      else if (cancelOpen) { setCancelOpen(false); setCancelPedido(null); setCancelReason(''); }
+      else if (importOpen && !uploading) closeImport();
+      else if (detailsOpen) { setDetailsOpen(false); setDetailsPedido(null); }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [importOpen, confirm.open, confirmFinalize.open, cancelOpen, uploading, detailsOpen, statusConfirm.open, statusChanging]);
 
   return (
-    <PageLayout title={`Dashboard`} subtitle="Gerencie seus pedidos de faturamento, acompanhe o status e importe documentos.">
-    <div className="cf-root">
-      <Toasts toasts={toasts} onClose={closeToast} />
+    <PageLayout
+      title="Dashboard do Colaborador"
+      subtitle="Gerencie seus pedidos de faturamento, acompanhe o status e importe documentos."
+    >
+      <S.Root>
+        <S.PageHeader>
+          <S.StatsMini>
+            <S.StatMini $color="#16a34a">
+              <span className="value">{stats.aprovados}</span>
+              <span className="label">Aprovados</span>
+            </S.StatMini>
+            <S.StatMini $color="#d97706">
+              <span className="value">{stats.emFat}</span>
+              <span className="label">Em Faturamento</span>
+            </S.StatMini>
+            <S.StatMini $color="#2563eb">
+              <span className="value">{stats.faturados}</span>
+              <span className="label">Faturados</span>
+            </S.StatMini>
+          </S.StatsMini>
+        </S.PageHeader>
 
-      <div className="cf-page-header">
-        {/* <div>
-          <div className="cf-page-title">Faturamento</div>
-          <div className="cf-page-sub">Gerencie pedidos aprovados e importe documentos</div>
-        </div> */}
-
-        <div className="cf-stats-mini">
-          <div className="cf-stat-mini" style={{ '--mini-color': '#16a34a' }}>
-            <span className="cf-stat-mini-value">{stats.aprovados}</span>
-            <span className="cf-stat-mini-label">Aprovados</span>
-          </div>
-
-          <div className="cf-stat-mini" style={{ '--mini-color': '#d97706' }}>
-            <span className="cf-stat-mini-value">{stats.emFat}</span>
-            <span className="cf-stat-mini-label">Em Faturamento</span>
-          </div>
-
-          <div className="cf-stat-mini" style={{ '--mini-color': '#3a49ed' }}>
-            <span className="cf-stat-mini-value">{stats.faturados}</span>
-            <span className="cf-stat-mini-label">Faturados</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="cf-filters">
-        <div className="cf-search">
-          <Search size={15} />
-
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por pedido, data, CNPJ..."
-          />
-
-          {search && (
-            <button className="cf-search-clear" onClick={() => setSearch('')}>
-              <X size={14} />
-            </button>
-          )}
-        </div>
-
-        <select className="cf-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-          <option value="todos">Todos os status</option>
-          <option value="aprovado">Aprovados</option>
-          <option value="em_faturamento">Em faturamento</option>
-          <option value="faturado">Faturados</option>
-          <option value="comprado">Comprado</option>
-          <option value="cancelado">Cancelados</option>
-        </select>
-      </div>
-
-      <div className="cf-table-wrap">
-        <table className="cf-table">
-          <thead>
-            <tr>
-              <th>Pedido</th>
-              <th>Administradora</th>
-              <th>Vencimento</th>
-              <th>Competência</th>
-              <th>Funcionários</th>
-              <th>Valor</th>
-              <th>Status</th>
-              <th>Timeline</th>
-              <th>Excel</th>
-              <th>Documentos</th>
-              <th>Compra</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={11} className="cf-empty">
-                  Carregando pedidos...
-                </td>
-              </tr>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={11} className="cf-empty">
-                  Nenhum pedido encontrado.
-                </td>
-              </tr>
-            ) : (
-              paginatedPedidos.map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    <div className="cf-id-main">Pedido #{p.id}</div>
-
-                    {p.importadoEm && (
-                      <div className="cf-id-sub" style={{ marginTop: 4 }}>
-                        {fmtDate(p.importadoEm)}
-                      </div>
-                    )}
-
-                    {p.status === 'cancelado' && p.motivoCancelamento && (
-                      <div className="cf-id-sub" style={{ color: '#b91c1c', marginTop: 4 }}>
-                        Motivo: {p.motivoCancelamento}
-                      </div>
-                    )}
-                  </td>
-
-                  <td className="cf-admin-cell">
-                    <div className="cf-admin-name">
-                      {p.nomeAdministradora}
-                    </div>
-                  </td>
-
-                  <td>
-                    <div className="cf-inline">
-                      <CalendarDays size={14} />
-                      {fmtDate(p.dataVencimento)} 
-                    </div>
-                  </td>
-
-                  <td style={{ fontSize: 13 }}>{p.mesUtilizacao}</td>
-
-                  <td style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>{p.totalFuncionarios || 0}</td>
-
-                  <td style={{ fontWeight: 600, color: '#16a34a' }}>{fmtMoney(p.valorTotal)}</td>
-
-                  <td>
-                    <div className={`cf-status-select ${getStatusClass(p.status)}`}>
-                      <select
-                        value={p.status}
-                        disabled={statusChanging}
-                        onChange={(e) => requestStatusChange(p, e.target.value)}
-                      >
-                        <option value="aprovado">Aprovado</option>
-                        <option value="em_faturamento">Em faturamento</option>
-                        <option value="faturado">Faturado</option>
-                        <option value="comprado">Comprado</option>
-                        <option value="cancelado">Cancelar</option>
-                      </select>
-                    </div>
-                  </td>
-
-                  <td>
-                    <button
-                      className="cf-btn cf-btn-sm"
-                      onClick={() => {
-                        setDetailsPedido(p)
-                        setDetailsOpen(true)
-                      }}
-                      title="Ver timeline"
-                    >
-                      <Info size={14} />
-                      Ver
-                    </button>
-                  </td>
-
-                  <td>
-                    <button
-                      className="cf-btn"
-                      onClick={() => handleDownload(p)}
-                      disabled={downloadingId === p.id || p.status === 'cancelado'}
-                    >
-                      <Download size={14} />
-                      {downloadingId === p.id ? 'Baixando…' : 'Baixar'}
-                    </button>
-                  </td>
-
-                  <td>
-                    <button
-                      className="cf-btn"
-                      onClick={() => openImport(p)}
-                      disabled={p.status === 'cancelado' || p.status === 'faturado' || p.status === 'comprado'}
-                    >
-                      <FileSpreadsheet size={14} />
-                      Importar
-                    </button>
-                  </td>
-
-                  <td>
-                    {p.status === 'faturado' ? (
-                      <button
-                        className="cf-btn primary"
-                        onClick={() => handleCompra(p)}
-                        disabled={downloadingId === p.id}
-                      >
-                        <Download size={14} />
-                        {downloadingId === p.id ? 'Baixando…' : 'Compra'}
-                      </button>
-                    ) : (
-                      <span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>
-                    )}
-                  </td>
-                </tr>
-              ))
+        <S.Filters>
+          <S.Search>
+            <FiSearch size={15} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por pedido, administradora, CNPJ..."
+            />
+            {search && (
+              <S.SearchClear onClick={() => setSearch('')}>
+                <FiX size={14} />
+              </S.SearchClear>
             )}
-          </tbody>
-        </table>
-      </div>
+          </S.Search>
 
-      {!loading && filtered.length > 0 && (
-        <div className="cf-pagination">
-          <div className="cf-pagination-info">
-            Mostrando {(currentPage - 1) * itemsPerPage + 1}–
-            {Math.min(currentPage * itemsPerPage, filtered.length)} de {filtered.length} pedidos
-          </div>
+          <S.Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="todos">Todos os status</option>
+            <option value="aprovado">Aprovados</option>
+            <option value="em_faturamento">Em faturamento</option>
+            <option value="faturado">Faturados</option>
+            <option value="comprado">Comprado</option>
+            <option value="cancelado">Cancelados</option>
+          </S.Select>
+        </S.Filters>
 
-          <div className="cf-pagination-actions">
-            <button
-              className="cf-btn"
-              onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
-              disabled={currentPage === 1}
-            >
-              Anterior
-            </button>
+        <S.TableWrap>
+          <S.Table>
+            <thead>
+              <tr>
+                <th>Pedido</th>
+                <th>Administradora</th>
+                <th>Vencimento</th>
+                <th>Competência</th>
+                {/* <th>Func.</th> */}
+                <th>Valor</th>
+                <th>Status</th>
+                <th>Timeline</th>
+                <th>Excel</th>
+                <th>Docs</th>
+                <th>Compra</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <S.Empty colSpan={11}>Carregando pedidos...</S.Empty>
+                </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <S.Empty colSpan={11}>Nenhum pedido encontrado.</S.Empty>
+                </tr>
+              ) : (
+                paginatedPedidos.map((p) => (
+                  <tr key={p.id}>
+                    <td>
+                      <S.IdMain>Pedido #{p.id}</S.IdMain>
+                      {p.importadoEm && <S.IdSub>{fmtDate(p.importadoEm)}</S.IdSub>}
+                      {p.status === 'cancelado' && p.motivoCancelamento && (
+                        <S.IdSub style={{ color: '#b91c1c' }}>Motivo: {p.motivoCancelamento}</S.IdSub>
+                      )}
+                    </td>
+                    <S.AdminCell>
+                      <S.AdminName>{p.nomeAdministradora}</S.AdminName>
+                    </S.AdminCell>
+                    <td>
+                      <S.Inline>
+                        <FiCalendar size={14} />
+                        {fmtDate(p.dataVencimento)}
+                      </S.Inline>
+                    </td>
+                    <td style={{ fontSize: 13 }}>{p.mesUtilizacao}</td>
+                    {/* <td style={{ fontFamily: 'var(--mono)', fontSize: 12, textAlign: 'center' }}>{p.totalFuncionarios || 0}</td> */}
+                    <td style={{ fontWeight: 600, color: '#16a34a' }}>{fmtMoney(p.valorTotal)}</td>
+                    <td>
+                      <S.StatusSelect $status={p.status}>
+                        <select
+                          value={p.status}
+                          disabled={statusChanging}
+                          onChange={(e) => requestStatusChange(p, e.target.value)}
+                        >
+                          <option value="aprovado">Aprovado</option>
+                          <option value="em_faturamento">Em faturamento</option>
+                          <option value="faturado">Faturado</option>
+                          <option value="comprado">Comprado</option>
+                          <option value="cancelado">Cancelar</option>
+                        </select>
+                      </S.StatusSelect>
+                    </td>
+                    <td>
+                      <S.Btn $size="sm" onClick={() => { setDetailsPedido(p); setDetailsOpen(true); }} title="Ver timeline">
+                        <FiInfo size={14} />
+                        Ver
+                      </S.Btn>
+                    </td>
+                    <td>
+                      <S.Btn onClick={() => handleDownload(p)} disabled={downloadingId === p.id || p.status === 'cancelado'}>
+                        <FiDownload size={14} />
+                        {downloadingId === p.id ? 'Baixando…' : 'Baixar'}
+                      </S.Btn>
+                    </td>
+                    <td>
+                      <S.Btn
+                        onClick={() => openImport(p)}
+                        disabled={p.status === 'cancelado' || p.status === 'faturado' || p.status === 'comprado'}
+                      >
+                        <BiSpreadsheet size={14} />
+                        Importar
+                      </S.Btn>
+                    </td>
+                    <td>
+                      {p.status === 'faturado' ? (
+                        <S.Btn $variant="primary" onClick={() => handleCompra(p)} disabled={downloadingId === p.id}>
+                          <FiDownload size={14} />
+                          {downloadingId === p.id ? 'Baixando…' : 'Compra'}
+                        </S.Btn>
+                      ) : (
+                        <span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </S.Table>
+        </S.TableWrap>
 
-            <span className="cf-pagination-page">
-              Página {currentPage} de {totalPages}
-            </span>
+        {!loading && filtered.length > 0 && (
+          <S.Pagination>
+            <S.PaginationInfo>
+              Mostrando {(currentPage - 1) * itemsPerPage + 1}–
+              {Math.min(currentPage * itemsPerPage, filtered.length)} de {filtered.length} pedidos
+            </S.PaginationInfo>
+            <S.PaginationActions className="actions">
+              <S.Btn onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))} disabled={currentPage === 1}>
+                Anterior
+              </S.Btn>
+              <S.PaginationPage>Página {currentPage} de {totalPages}</S.PaginationPage>
+              <S.Btn onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))} disabled={currentPage === totalPages}>
+                Próxima
+              </S.Btn>
+            </S.PaginationActions>
+          </S.Pagination>
+        )}
+      </S.Root>
 
-            <button
-              className="cf-btn"
-              onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
-              disabled={currentPage === totalPages}
-            >
-              Próxima
-            </button>
-          </div>
-        </div>
-      )}
-
+      {/* Modal de Timeline */}
       {detailsOpen && detailsPedido && (
-        <div
-          className="cf-overlay"
-          onMouseDown={(e) =>
-            e.target.classList.contains('cf-overlay') && (setDetailsOpen(false), setDetailsPedido(null))
-          }
-        >
-          <div className="cf-modal" style={{ maxWidth: 520 }}>
-            <div className="cf-modal-header">
+        <S.Overlay onMouseDown={(e) => e.target === e.currentTarget && (setDetailsOpen(false), setDetailsPedido(null))}>
+          <S.Modal style={{ maxWidth: 520 }}>
+            <S.ModalHeader>
               <div>
-                <div className="cf-modal-title">Timeline do pedido</div>
-                <div className="cf-modal-sub">
-                  Pedido {detailsPedido.id} · {detailsPedido.nomeCondominio}
-                </div>
+                <S.ModalTitle>Timeline do pedido</S.ModalTitle>
+                <S.ModalSub>Pedido {detailsPedido.id} · {detailsPedido.nomeCondominio}</S.ModalSub>
               </div>
-
-              <button
-                className="cf-modal-close"
-                onClick={() => {
-                  setDetailsOpen(false)
-                  setDetailsPedido(null)
-                }}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="cf-modal-body">
-              <div className="cf-timeline">
+              <S.ModalClose onClick={() => { setDetailsOpen(false); setDetailsPedido(null); }}>
+                <FiX size={18} />
+              </S.ModalClose>
+            </S.ModalHeader>
+            <S.ModalBody>
+              <S.Timeline>
                 {getTimelineItems(detailsPedido).map((item) => (
-                  <div
-                    key={item.key}
-                    className={`cf-timeline-step ${item.done ? 'done' : 'pending'} ${item.current ? 'current' : ''
-                      }`}
-                  >
-                    <div className="cf-timeline-marker">
-                      {item.done ? <CheckCircle2 size={14} /> : <span />}
-                    </div>
-
-                    <div className="cf-timeline-content">
-                      <div className="cf-timeline-top">
+                  <S.TimelineStep key={item.key}>
+                    <S.TimelineMarker $done={item.done} $current={item.current}>
+                      {item.done ? <FiCheckCircle size={14} /> : <span />}
+                    </S.TimelineMarker>
+                    <S.TimelineContent $current={item.current}>
+                      <S.TimelineTop>
                         <strong>{item.title}</strong>
                         <span>{item.date ? fmtDate(item.date) : 'Pendente'}</span>
-                      </div>
-
-                      <p>{item.description}</p>
-                    </div>
-                  </div>
+                      </S.TimelineTop>
+                      <S.TimelineDescription>{item.description}</S.TimelineDescription>
+                    </S.TimelineContent>
+                  </S.TimelineStep>
                 ))}
-              </div>
-            </div>
-          </div>
-        </div>
+              </S.Timeline>
+            </S.ModalBody>
+          </S.Modal>
+        </S.Overlay>
       )}
 
+      {/* Modal de Importação */}
       {importOpen && selectedPedido && (
-        <div
-          className="cf-overlay"
-          onMouseDown={(e) => e.target.classList.contains('cf-overlay') && !uploading && closeImport()}
-        >
-          <div className="cf-modal">
-            <div className="cf-modal-header">
+        <S.Overlay onMouseDown={(e) => e.target === e.currentTarget && !uploading && closeImport()}>
+          <S.Modal>
+            <S.ModalHeader>
               <div>
-                <div className="cf-modal-title">Importar documentos</div>
-                <div className="cf-modal-sub">
-                  Pedido {selectedPedido.id} · {selectedPedido.nomeCondominio}
-                </div>
+                <S.ModalTitle>Importar documentos</S.ModalTitle>
+                <S.ModalSub>Pedido {selectedPedido.id} · {selectedPedido.nomeCondominio}</S.ModalSub>
               </div>
-
-              <button className="cf-modal-close" onClick={closeImport} disabled={uploading}>
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="cf-modal-body">
-              <div
-                className="cf-dropzone"
+              <S.ModalClose onClick={closeImport} disabled={uploading}>
+                <FiX size={18} />
+              </S.ModalClose>
+            </S.ModalHeader>
+            <S.ModalBody>
+              <S.Dropzone
                 onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  if (!uploading) handleFiles(e.dataTransfer.files)
-                }}
+                onDrop={(e) => { e.preventDefault(); if (!uploading) handleFiles(e.dataTransfer.files); }}
                 onClick={() => !uploading && fileRef.current?.click()}
               >
-                <div className="cf-dropzone-icon">
-                  <Upload size={16} />
-                </div>
-
+                <S.DropzoneIcon>
+                  <FiUpload size={16} />
+                </S.DropzoneIcon>
                 <div>
-                  <div className="cf-dropzone-title">Arraste ou clique para selecionar</div>
-                  <div className="cf-dropzone-hint">PDF, XML, PNG, JPG · múltiplos arquivos</div>
+                  <S.DropzoneTitle>Arraste ou clique para selecionar</S.DropzoneTitle>
+                  <S.DropzoneHint>PDF, XML, PNG, JPG · múltiplos arquivos</S.DropzoneHint>
                 </div>
-
-                <input
+                <S.FileInput
                   ref={fileRef}
                   type="file"
                   multiple
                   accept=".pdf,.xml,.png,.jpg,.jpeg"
-                  className="cf-file-input"
                   onChange={(e) => handleFiles(e.target.files)}
                   disabled={uploading}
                 />
-              </div>
+              </S.Dropzone>
 
               {docs.length === 0 ? (
-                <div className="cf-files-empty">Nenhum documento selecionado ainda.</div>
+                <S.FilesEmpty>Nenhum documento selecionado ainda.</S.FilesEmpty>
               ) : (
-                <div className="cf-files-list">
+                <S.FilesList>
                   {docs.map((f, i) => (
-                    <div key={`${f.name}-${f.size}-${i}`} className="cf-file-row">
-                      <div className="cf-file-left">
-                        <FileText size={15} />
-
+                    <S.FileRow key={`${f.name}-${f.size}-${i}`}>
+                      <S.FileLeft>
+                        <FiFileText size={15} />
                         <div>
-                          <div className="cf-file-name">{f.name}</div>
-                          <div className="cf-file-sub">
-                            {(f.size / 1024).toFixed(1)} KB · {f.type || 'tipo desconhecido'}
-                          </div>
+                          <S.FileName>{f.name}</S.FileName>
+                          <S.FileSub>{(f.size / 1024).toFixed(1)} KB · {f.type || 'tipo desconhecido'}</S.FileSub>
                         </div>
-                      </div>
-
-                      <button className="cf-file-remove" onClick={() => requestRemove(i)} disabled={uploading}>
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                      </S.FileLeft>
+                      <S.FileRemove onClick={() => requestRemove(i)} disabled={uploading}>
+                        <FiTrash2 size={14} />
+                      </S.FileRemove>
+                    </S.FileRow>
                   ))}
-                </div>
+                </S.FilesList>
               )}
 
               {uploading && (
-                <div className="cf-upload-progress">
-                  <div className="cf-upload-progress-top">
+                <S.UploadProgress>
+                  <S.UploadProgressTop>
                     <span>Enviando documentos...</span>
                     <strong>{uploadProgress}%</strong>
-                  </div>
-
-                  <div className="cf-upload-progress-bar">
-                    <div
-                      className="cf-upload-progress-fill"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
-                  </div>
-                </div>
+                  </S.UploadProgressTop>
+                  <S.UploadProgressBar>
+                    <S.UploadProgressFill style={{ width: `${uploadProgress}%` }} />
+                  </S.UploadProgressBar>
+                </S.UploadProgress>
               )}
-            </div>
-
-            <div className="cf-modal-footer">
-              <button className="cf-btn secondary" onClick={closeImport} disabled={uploading}>
-                Cancelar
-              </button>
-
-              <button className="cf-btn primary" onClick={requestFinalizeImport} disabled={!docs.length || uploading}>
-                <Upload size={14} />
+            </S.ModalBody>
+            <S.ModalFooter>
+              <S.Btn onClick={closeImport} disabled={uploading}>Cancelar</S.Btn>
+              <S.Btn $variant="primary" onClick={requestFinalizeImport} disabled={!docs.length || uploading}>
+                <FiUpload size={14} />
                 {uploading ? `Enviando ${uploadProgress}%` : 'Enviar documentos'}
-              </button>
-            </div>
-          </div>
-        </div>
+              </S.Btn>
+            </S.ModalFooter>
+          </S.Modal>
+        </S.Overlay>
       )}
 
+      {/* Modal de Cancelamento */}
       {cancelOpen && cancelPedido && (
-        <div
-          className="cf-overlay"
-          onMouseDown={(e) =>
-            e.target.classList.contains('cf-overlay') &&
-            (setCancelOpen(false), setCancelPedido(null), setCancelReason(''))
-          }
-        >
-          <div className="cf-modal" style={{ maxWidth: 460 }}>
-            <div className="cf-modal-header">
+        <S.Overlay onMouseDown={(e) => e.target === e.currentTarget && (setCancelOpen(false), setCancelPedido(null), setCancelReason(''))}>
+          <S.Modal style={{ maxWidth: 460 }}>
+            <S.ModalHeader>
               <div>
-                <div className="cf-modal-title">Cancelar faturamento</div>
-                <div className="cf-modal-sub">Pedido {cancelPedido.id}</div>
+                <S.ModalTitle>Cancelar faturamento</S.ModalTitle>
+                <S.ModalSub>Pedido {cancelPedido.id}</S.ModalSub>
               </div>
-
-              <button
-                className="cf-modal-close"
-                onClick={() => {
-                  setCancelOpen(false)
-                  setCancelPedido(null)
-                  setCancelReason('')
-                }}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="cf-modal-body">
-              <label className="cf-field-label" htmlFor="cancel-reason">
-                Motivo do cancelamento
-              </label>
-
-              <textarea
+              <S.ModalClose onClick={() => { setCancelOpen(false); setCancelPedido(null); setCancelReason(''); }}>
+                <FiX size={18} />
+              </S.ModalClose>
+            </S.ModalHeader>
+            <S.ModalBody>
+              <S.FieldLabel htmlFor="cancel-reason">Motivo do cancelamento</S.FieldLabel>
+              <S.Textarea
                 id="cancel-reason"
-                className="cf-textarea"
                 value={cancelReason}
-                onChange={(e) => {
-                  setCancelReason(e.target.value)
-                  setCancelError('')
-                }}
+                onChange={(e) => { setCancelReason(e.target.value); setCancelError(''); }}
                 placeholder="Descreva o motivo..."
                 rows={4}
               />
-
-              {cancelError && <div className="cf-field-error">{cancelError}</div>}
-            </div>
-
-            <div className="cf-modal-footer">
-              <button
-                className="cf-btn secondary"
-                onClick={() => {
-                  setCancelOpen(false)
-                  setCancelPedido(null)
-                  setCancelReason('')
-                }}
-              >
-                Voltar
-              </button>
-
-              <button
-                className="cf-btn primary"
-                onClick={handleCancelBilling}
-                style={{ background: '#ef4444', borderColor: '#ef4444' }}
-              >
+              {cancelError && <S.FieldError>{cancelError}</S.FieldError>}
+            </S.ModalBody>
+            <S.ModalFooter>
+              <S.Btn onClick={() => { setCancelOpen(false); setCancelPedido(null); setCancelReason(''); }}>Voltar</S.Btn>
+              <S.Btn $variant="primary" onClick={handleCancelBilling} style={{ background: '#ef4444', borderColor: '#ef4444' }}>
                 Confirmar cancelamento
-              </button>
-            </div>
-          </div>
-        </div>
+              </S.Btn>
+            </S.ModalFooter>
+          </S.Modal>
+        </S.Overlay>
       )}
 
-      <ConfirmModal
-        open={statusConfirm.open}
-        title="Confirmar alteração de status"
-        message={`Deseja alterar o pedido ${statusConfirm.pedido?.id || ''} para "${statusLabel[statusConfirm.newStatus] || statusConfirm.newStatus
-          }"?`}
-        onCancel={cancelStatusChange}
-        onConfirm={confirmStatusChange}
-        confirmText="Alterar status"
-        confirmColor="#2563eb"
-        loading={statusChanging}
-      />
+      {/* Confirm Modal Genérico */}
+      {confirm.open && (
+        <S.Overlay onMouseDown={(e) => e.target === e.currentTarget && setConfirm({ open: false, title: '', message: '', onConfirm: null })}>
+          <S.Modal style={{ maxWidth: 400 }}>
+            <S.ModalHeader>
+              <S.ModalTitle>{confirm.title}</S.ModalTitle>
+              <S.ModalClose onClick={() => setConfirm({ open: false, title: '', message: '', onConfirm: null })}>
+                <FiX size={18} />
+              </S.ModalClose>
+            </S.ModalHeader>
+            <S.ModalBody>
+              <S.ConfirmMsg>{confirm.message}</S.ConfirmMsg>
+            </S.ModalBody>
+            <S.ModalFooter>
+              <S.Btn onClick={() => setConfirm({ open: false, title: '', message: '', onConfirm: null })}>Cancelar</S.Btn>
+              <S.Btn $variant="primary" onClick={() => confirm.onConfirm && confirm.onConfirm()} style={{ background: '#ef4444', borderColor: '#ef4444' }}>
+                Remover
+              </S.Btn>
+            </S.ModalFooter>
+          </S.Modal>
+        </S.Overlay>
+      )}
 
-      <ConfirmModal
-        open={confirm.open}
-        title={confirm.title}
-        message={confirm.message}
-        onCancel={() => setConfirm({ open: false, title: '', message: '', onConfirm: null })}
-        onConfirm={() => confirm.onConfirm && confirm.onConfirm()}
-        confirmText="Remover"
-        confirmColor="#ef4444"
-      />
+      {/* Confirm Finalize Modal */}
+      {confirmFinalize.open && (
+        <S.Overlay onMouseDown={(e) => !uploading && e.target === e.currentTarget && setConfirmFinalize({ open: false, title: '', message: '', onConfirm: null })}>
+          <S.Modal style={{ maxWidth: 400 }}>
+            <S.ModalHeader>
+              <S.ModalTitle>{confirmFinalize.title}</S.ModalTitle>
+              <S.ModalClose onClick={() => !uploading && setConfirmFinalize({ open: false, title: '', message: '', onConfirm: null })}>
+                <FiX size={18} />
+              </S.ModalClose>
+            </S.ModalHeader>
+            <S.ModalBody>
+              <S.ConfirmMsg>{confirmFinalize.message}</S.ConfirmMsg>
+            </S.ModalBody>
+            <S.ModalFooter>
+              <S.Btn onClick={() => !uploading && setConfirmFinalize({ open: false, title: '', message: '', onConfirm: null })} disabled={uploading}>
+                Cancelar
+              </S.Btn>
+              <S.Btn $variant="primary" onClick={() => confirmFinalize.onConfirm && confirmFinalize.onConfirm()} disabled={uploading}>
+                {uploading ? 'Processando...' : 'Confirmar envio'}
+              </S.Btn>
+            </S.ModalFooter>
+          </S.Modal>
+        </S.Overlay>
+      )}
 
-      <ConfirmModal
-        open={confirmFinalize.open}
-        title={confirmFinalize.title}
-        message={confirmFinalize.message}
-        onCancel={() =>
-          !uploading && setConfirmFinalize({ open: false, title: '', message: '', onConfirm: null })
-        }
-        onConfirm={() => confirmFinalize.onConfirm && confirmFinalize.onConfirm()}
-        confirmText="Confirmar envio"
-        confirmColor="#2563eb"
-        loading={uploading}
-      />
-    </div>
+      {/* Status Confirm Modal */}
+      {statusConfirm.open && (
+        <S.Overlay onMouseDown={(e) => !statusChanging && e.target === e.currentTarget && cancelStatusChange()}>
+          <S.Modal style={{ maxWidth: 400 }}>
+            <S.ModalHeader>
+              <S.ModalTitle>Confirmar alteração de status</S.ModalTitle>
+              <S.ModalClose onClick={cancelStatusChange} disabled={statusChanging}>
+                <FiX size={18} />
+              </S.ModalClose>
+            </S.ModalHeader>
+            <S.ModalBody>
+              <S.ConfirmMsg>
+                Deseja alterar o pedido {statusConfirm.pedido?.id || ''} para "{statusLabel[statusConfirm.newStatus] || statusConfirm.newStatus}"?
+              </S.ConfirmMsg>
+            </S.ModalBody>
+            <S.ModalFooter>
+              <S.Btn onClick={cancelStatusChange} disabled={statusChanging}>Cancelar</S.Btn>
+              <S.Btn $variant="primary" onClick={confirmStatusChange} disabled={statusChanging}>
+                {statusChanging ? 'Alterando...' : 'Alterar status'}
+              </S.Btn>
+            </S.ModalFooter>
+          </S.Modal>
+        </S.Overlay>
+      )}
     </PageLayout>
-  )
+  );
 }

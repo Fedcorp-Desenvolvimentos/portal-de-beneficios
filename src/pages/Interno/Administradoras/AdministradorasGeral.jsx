@@ -1,242 +1,223 @@
-// pages/Interno/Administradoras/AdministradorasGeral.jsx
-
-import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../../context/AuthContext.jsx'
-import { buscarAdministradoraPorId } from '../../../services/administradoraService.js'
-import { userService } from '../../../services/userService.js'
-import { toast } from 'react-toastify'
-
-import './Administradoras.css'
-import UsuarioTable from '../Usuarios/UsuarioTable.jsx'
-import UsuarioModal from '../Usuarios/UsuarioModal.jsx'
-
-import PageLayout from '../../../Layouts/PageLayout/PageLayout'
-import { useLoading } from '../../../hooks/useLoading.js'
+// pages/Interno/Administradoras/AdministradorasGeral.jsx (atualizado com Styled Components)
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
+import { useAuth } from '../../../context/AuthContext.jsx';
+import { buscarAdministradoraPorId } from '../../../services/administradoraService.js';
+import { userService } from '../../../services/userService.js';
+import PageLayout from '../../../Layouts/PageLayout/PageLayout.jsx';
+import { useLoading } from '../../../hooks/useLoading.js';
+import UsuarioTable from '../Usuarios/UsuarioTable.jsx';
+import UsuarioModal from '../Usuarios/UsuarioModal.jsx';
+import { S } from './AdministradorasStyles.js';
 
 export default function AdministradorasGeral() {
-  const navigate = useNavigate()
-  const { user } = useAuth() // Pega o usuário logado
-  const [administradora, setAdministradora] = useState(null)
-  const [usuarios, setUsuarios] = useState([])
-  const { loading, startLoading, stopLoading, updateProgress } = useLoading();
-  const [modalOpen, setModalOpen] = useState(false)
-  const [usuarioSelecionado, setUsuarioSelecionado] = useState(null)
-  const [loadingUsuarios, setLoadingUsuarios] = useState(false)
-  const [administradoras, setAdministradoras] = useState([])
+  const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuth();
+  const [administradora, setAdministradora] = useState(null);
+  const [usuarios, setUsuarios] = useState([]);
+  const { loading, startLoading, stopLoading } = useLoading();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [usuarioSelecionado, setUsuarioSelecionado] = useState(null);
+  const [administradoras, setAdministradoras] = useState([]);
 
-  // Pega o ID da administradora do usuário logado
-  const administradoraId = user?.administradora_id
+  const administradoraId = user?.administradora_id;
 
   useEffect(() => {
     if (!administradoraId) {
-      toast.error('Usuário não possui administradora vinculada')
-      navigate('/interno/administradoras')
-      return
+      enqueueSnackbar('Usuário não possui administradora vinculada', { variant: 'error' });
+      navigate('/interno/administradoras');
+      return;
     }
-    
-    carregarAdministradora()
-    carregarUsuarios()
-    carregarAdministradoras()
-  }, [administradoraId])
+    carregarAdministradora();
+    carregarUsuarios();
+    carregarAdministradoras();
+  }, [administradoraId]);
 
   const carregarAdministradoras = async () => {
     try {
-      const data = await userService.listarAdministradoras()
-      setAdministradoras(data)
+      const data = await userService.listarAdministradoras();
+      setAdministradoras(data);
     } catch (error) {
-      console.error('❌ Erro ao carregar administradoras:', error)
+      console.error('❌ Erro ao carregar administradoras:', error);
     }
-  }
+  };
 
   const carregarAdministradora = async () => {
     try {
-      startLoading("Carregando administradora...")
-      const data = await buscarAdministradoraPorId(administradoraId)
-      setAdministradora(data)
-      // console.log('🏢 Administradora carregada:', data)
+      startLoading("Carregando administradora...");
+      const data = await buscarAdministradoraPorId(administradoraId);
+      setAdministradora(data);
     } catch (error) {
-      console.error('❌ Erro ao carregar administradora:', error)
-      toast.error('Erro ao carregar administradora')
-      navigate('/interno/administradoras')
+      console.error('❌ Erro ao carregar administradora:', error);
+      enqueueSnackbar('Erro ao carregar administradora', { variant: 'error' });
+      navigate('/interno/administradoras');
     } finally {
-      stopLoading()
+      stopLoading();
     }
-  }
+  };
 
   const carregarUsuarios = async () => {
     try {
-      startLoading("Carregando usuários...")
-
+      startLoading("Carregando usuários...");
       const usuariosFiltrados = await userService.listarUsuarios({
         administradora: administradoraId
-      })
-
-      setUsuarios(Array.isArray(usuariosFiltrados) ? usuariosFiltrados : [])
-
+      });
+      setUsuarios(Array.isArray(usuariosFiltrados) ? usuariosFiltrados : []);
     } catch (error) {
-      console.error('❌ Erro ao carregar usuários:', error)
-      toast.error('Erro ao carregar usuários')
-      setUsuarios([])
+      console.error('❌ Erro ao carregar usuários:', error);
+      enqueueSnackbar('Erro ao carregar usuários', { variant: 'error' });
+      setUsuarios([]);
     } finally {
-      stopLoading()
+      stopLoading();
     }
-  }
+  };
 
+  // 👇 Função para ABRIR MODAL DE EDIÇÃO
   const handleEditarUsuario = (usuario) => {
-    // console.log('✏️ Editando usuário em Detalhes:', usuario)
-    setUsuarioSelecionado(usuario)
-    setModalOpen(true)
-  }
+    setUsuarioSelecionado(usuario); // Passa o usuário existente
+    setModalOpen(true);
+  };
+
+  // 👇 Função para ABRIR MODAL DE CRIAÇÃO
+  const handleNovoUsuario = () => {
+    setUsuarioSelecionado(null); // Passa null para criar novo
+    setModalOpen(true);
+  };
 
   const handleExcluirUsuario = async (usuario) => {
     if (window.confirm(`Tem certeza que deseja excluir o usuário "${usuario.username}"?`)) {
       try {
-        await userService.excluirUsuario(usuario.id)
-        toast.success('Usuário excluído com sucesso')
-        await carregarUsuarios()
+        await userService.excluirUsuario(usuario.id);
+        enqueueSnackbar('Usuário excluído com sucesso', { variant: 'success' });
+        await carregarUsuarios();
       } catch (error) {
-        console.error('❌ Erro ao excluir usuário:', error)
-        toast.error('Erro ao excluir usuário')
+        console.error('❌ Erro ao excluir usuário:', error);
+        enqueueSnackbar('Erro ao excluir usuário', { variant: 'error' });
       }
     }
-  }
+  };
 
   const handleSalvarUsuario = async (dados) => {
     try {
       if (usuarioSelecionado) {
-        // console.log('📝 Atualizando usuário:', usuarioSelecionado.id, dados)
-        await userService.atualizarUsuario(usuarioSelecionado.id, dados)
-        toast.success('Usuário atualizado com sucesso')
+        // EDIÇÃO
+        await userService.atualizarUsuario(usuarioSelecionado.id, dados);
+        enqueueSnackbar('Usuário atualizado com sucesso', { variant: 'success' });
       } else {
-        // console.log('➕ Criando novo usuário:', dados)
-        await userService.criarUsuario(dados)
-        toast.success('Usuário criado com sucesso')
+        // CRIAÇÃO
+        await userService.criarUsuario(dados);
+        enqueueSnackbar('Usuário criado com sucesso', { variant: 'success' });
       }
-      await carregarUsuarios()
-      setModalOpen(false)
-      setUsuarioSelecionado(null)
+      await carregarUsuarios();
+      setModalOpen(false);
+      setUsuarioSelecionado(null);
     } catch (error) {
-      console.error('❌ Erro ao salvar usuário:', error)
-      toast.error(error.response?.data?.detail || 'Erro ao salvar usuário')
-      throw error
+      console.error('❌ Erro ao salvar usuário:', error);
+      const errorMsg = error.response?.data?.detail || error.message || 'Erro ao salvar usuário';
+      enqueueSnackbar(errorMsg, { variant: 'error' });
+      throw error; // Importante: o modal precisa saber que falhou
     }
-  }
-
-  const getLocalRecebimentoLabel = (cartao_admin) => {
-    return cartao_admin ? 'Na Administradora' : 'No Condomínio'
-  }
-
-  const getStatusClass = (ativo) => {
-    return ativo ? 'status-badge ativa' : 'status-badge inativa'
-  }
-
-  const handleNovoUsuario = () => {
-    setUsuarioSelecionado(null)
-    setModalOpen(true)
-  }
+  };
 
   return (
-    <PageLayout title="Minha Administradora" description="Visualize os detalhes da sua administradora e gerencie os usuários vinculados a ela.">
-      <div className="administradoras-page">
-        <div className="administradoras-header">
+    <PageLayout title="Minha Administradora" subtitle="Visualize os detalhes da sua administradora e gerencie os usuários vinculados a ela.">
+      <S.Container>
+        <S.Header>
           <div>
-            {/* <h1>Minha Administradora</h1> */}
+            <h1>Minha Administradora</h1>
             <p>{administradora?.razao_social || '-'}</p>
           </div>
-          <div className="form-actions">
-            <button className="btn-secondary" onClick={() => navigate('/interno/administradoras')}>
+          <S.HeaderActions>
+            <S.Button $variant="secondary" onClick={() => navigate('/interno/administradoras')}>
               Voltar
-            </button>
+            </S.Button>
             {user?.tipo === 'dev' && (
-              <button className="btn-primary" onClick={() => navigate(`/interno/administradoras/editar/${administradora?.id}`)}>
+              <S.Button $variant="primary" onClick={() => navigate(`/interno/administradoras/editar/${administradora?.id}`)}>
                 Editar Administradora
-              </button>
+              </S.Button>
             )}
-          </div>
-        </div>
+          </S.HeaderActions>
+        </S.Header>
 
-        <div className="administradoras-card">
+        <S.Card>
           <h2>Dados Gerais</h2>
-          <div className="details-grid">
-            <div className="details-item">
+          <S.DetailsGrid>
+            <S.DetailItem>
               <span>CNPJ</span>
               <strong>{administradora?.cnpj || '-'}</strong>
-            </div>
-            <div className="details-item">
+            </S.DetailItem>
+            <S.DetailItem>
               <span>Razão Social</span>
               <strong>{administradora?.razao_social || '-'}</strong>
-            </div>
-            <div className="details-item">
+            </S.DetailItem>
+            <S.DetailItem>
               <span>Nome Fantasia</span>
               <strong>{administradora?.nome_fantasia || '-'}</strong>
-            </div>
-            <div className="details-item">
+            </S.DetailItem>
+            <S.DetailItem>
               <span>Email</span>
               <strong>{administradora?.email || '-'}</strong>
-            </div>
-            <div className="details-item">
+            </S.DetailItem>
+            <S.DetailItem>
               <span>Status</span>
-              <strong className={getStatusClass(administradora?.ativo)}>
+              <strong className={administradora?.ativo ? 'status-ativa' : 'status-inativa'}>
                 {administradora?.ativo ? 'Ativa' : 'Inativa'}
               </strong>
-            </div>
-            <div className="details-item">
+            </S.DetailItem>
+            <S.DetailItem>
               <span>Local de Recebimento do Cartão</span>
               <strong>
-                <span className={`cartao-badge ${administradora?.cartao_admin ? 'admin' : 'condominio'}`}>
-                  {getLocalRecebimentoLabel(administradora?.cartao_admin)}
-                </span>
+                <S.CartaoBadge $cartaoAdmin={administradora?.cartao_admin}>
+                  {administradora?.cartao_admin ? 'Na Administradora' : 'No Condomínio'}
+                </S.CartaoBadge>
               </strong>
-            </div>
-            <div className="details-item">
+            </S.DetailItem>
+            <S.DetailItem>
               <span>Data de Criação</span>
               <strong>{administradora?.created_at ? new Date(administradora.created_at).toLocaleDateString('pt-BR') : '-'}</strong>
-            </div>
-            <div className="details-item">
+            </S.DetailItem>
+            <S.DetailItem>
               <span>Última Atualização</span>
               <strong>{administradora?.updated_at ? new Date(administradora.updated_at).toLocaleDateString('pt-BR') : '-'}</strong>
-            </div>
-          </div>
-        </div>
+            </S.DetailItem>
+          </S.DetailsGrid>
+        </S.Card>
 
         {/* Seção de Usuários */}
-        <div className="administradoras-card">
-          <div className="administradoras-header">
+        <S.Card>
+          <S.CardHeader>
             <div>
               <h2>Usuários Vinculados</h2>
               <p>Gerencie os usuários que têm acesso a esta administradora.</p>
             </div>
-            <button className="btn-primary" onClick={handleNovoUsuario}>
+            <S.Button $variant="primary" onClick={handleNovoUsuario}>
               + Novo Usuário
-            </button>
-          </div>
+            </S.Button>
+          </S.CardHeader>
 
-          {loadingUsuarios ? (
-            <div className="loading-message">Carregando usuários...</div>
-          ) : (
-            <UsuarioTable 
-              usuarios={usuarios}
-              onEditar={handleEditarUsuario}
-              onExcluir={handleExcluirUsuario}
-              admNome={administradora?.nome_fantasia || administradora?.razao_social || '-'}
-            />
-          )}
-        </div>
+          <UsuarioTable 
+            usuarios={usuarios}
+            onEditar={handleEditarUsuario}
+            onExcluir={handleExcluirUsuario}
+            admNome={administradora?.nome_fantasia || administradora?.razao_social || '-'}
+          />
+        </S.Card>
 
-        {/* Modal de Usuário */}
+        {/* Modal de Usuário - REAPROVEITADO */}
         <UsuarioModal
           isOpen={modalOpen}
           onClose={() => {
-            setModalOpen(false)
-            setUsuarioSelecionado(null)
+            setModalOpen(false);
+            setUsuarioSelecionado(null);
           }}
           onSave={handleSalvarUsuario}
-          usuario={usuarioSelecionado}
+          usuario={usuarioSelecionado}  // Se null → criação, Se objeto → edição
           administradoraId={administradoraId}
           administradoras={administradoras}
         />
-      </div>
+      </S.Container>
     </PageLayout>
-  )
+  );
 }
