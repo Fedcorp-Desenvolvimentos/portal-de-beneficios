@@ -84,12 +84,12 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       icon: <FaHome />,
       allowed: ["adm", "dev"]
     },
-    // {
-    //   path: "/dashboard",
-    //   label: "Dashboard",
-    //   icon: <FaChartBar />,
-    //   allowed: ["fat", "fin", "dev"]
-    // },
+    {
+      path: "/dashboard",
+      label: "Dashboard",
+      icon: <FaChartBar />,
+      allowed: ["fat", "fin", "dev"]
+    },
     {
       path: "/importacao",
       label: "Upload",
@@ -108,30 +108,30 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       icon: <FaBuilding />,
       allowed: ["fat", "adm", "dev"]
     },
-    // {
-    //   path: "/interno/usuarios",
-    //   label: "Usuários",
-    //   icon: <FaUsers />,
-    //   allowed: ["dev", "fat"]
-    // },
-    // { 
-    //   path: "/colaboradores/acompanhamento", 
-    //   label: "Acompanhamento", 
-    //   icon: <FaChartLine />, 
-    //   allowed: ["adm", "dev"] 
-    // },
+    {
+      path: "/interno/usuarios",
+      label: "Usuários",
+      icon: <FaUsers />,
+      allowed: ["dev", "fat"]
+    },
+    { 
+      path: "/colaboradores/acompanhamento", 
+      label: "Acompanhamento", 
+      icon: <FaChartLine />, 
+      allowed: ["adm", "dev"] 
+    },
     // {
     //   path: "/colaboradores/acompanhamento",
     //   label: "Acompanhamento",
     //   icon: <FaChartLine />,
     //   allowed: ["fat", "dev"]
     // },
-    // {
-    //   path: "/interno/administradoras",
-    //   label: "Administradoras",
-    //   icon: <FaBuilding />,
-    //   allowed: ["dev", "fat"]
-    // },
+    {
+      path: "/interno/administradoras",
+      label: "Administradoras",
+      icon: <FaBuilding />,
+      allowed: ["dev", "fat"]
+    },
     {
       path: "/interno/minha-administradora",
       label: "Minha Administradora",
