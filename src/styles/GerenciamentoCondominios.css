@@ -494,11 +494,12 @@
 
 .modal {
     width: min(520px, 92vw);
-    background: var(--panel);
+    background: #ffffff;
     color: var(--text);
     border: 1px solid var(--border);
     border-radius: 14px;
     box-shadow: 0 20px 60px rgba(2, 6, 23, .25);
+    overflow: hidden;
 }
 
 .modal-head {
@@ -923,6 +924,19 @@
   max-height: 85vh;
   display: flex;
   flex-direction: column;
+
+  background: #ffffff;
+  opacity: 1;
+  backdrop-filter: none;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+
+  box-shadow:
+    0 24px 60px rgba(15, 23, 42, 0.18),
+    0 8px 24px rgba(15, 23, 42, 0.08);
+
+  overflow: hidden;
 }
 
 .cfg-funcionarios-modal .modal-body {
@@ -1346,4 +1360,45 @@
 @keyframes cfg-shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+.cfg-funcionarios-modal .modal-head,
+.cfg-funcionarios-modal .modal-body,
+.cfg-funcionarios-modal .modal-actions {
+  background: #ffffff;
+}
+
+.cfg-funcionarios-modal .modal-body {
+  position: relative;
+  z-index: 2;
+}
+
+/* Correção definitiva do fundo do modal de funcionários */
+.modal.cfg-funcionarios-modal,
+.cfg-funcionarios-modal {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  opacity: 1 !important;
+  isolation: isolate;
+}
+
+.modal.cfg-funcionarios-modal .modal-head,
+.modal.cfg-funcionarios-modal .modal-body,
+.modal.cfg-funcionarios-modal .modal-actions,
+.cfg-funcionarios-modal .modal-head,
+.cfg-funcionarios-modal .modal-body,
+.cfg-funcionarios-modal .modal-actions {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+.modal-backdrop {
+  background: rgba(15, 23, 42, 0.55) !important;
+}
+
+.cfg-funcionarios-modal .modal-body {
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(85vh - 120px);
+  background: #ffffff !important;
 }

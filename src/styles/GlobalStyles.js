@@ -22,6 +22,12 @@ export const GlobalStyles = createGlobalStyle`
     --color-bg-tertiary: #f1f5f9;
     --color-bg-card: #ffffff;
     
+   --panel: #ffffff;
+   --text: #1e293b;
+   --muted: #64748b;
+   --border: #cbd5e1;
+   --bg: #f8fafc;
+
     /* Cores de borda */
     --color-border-light: #e2e8f0;
     --color-border: #cbd5e1;
