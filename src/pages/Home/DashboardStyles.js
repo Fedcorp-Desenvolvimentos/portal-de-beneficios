@@ -1,5 +1,27 @@
 // pages/Dashboard/DashboardStyles.js
-import styled from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
+
+// Animação shimmer para skeleton
+const shimmer = keyframes`
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+`;
+
+const skeletonAnimation = css`
+  animation: ${shimmer} 2s infinite linear;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0%,
+    #e0e0e0 30%,
+    #f0f0f0 60%,
+    #f0f0f0 100%
+  );
+  background-size: 1000px 100%;
+`;
 
 export const S = {
   Root: styled.div`
@@ -10,6 +32,7 @@ export const S = {
   `,
 
   Body: styled.main`
+    max-width: 1240px;
     margin: 0 auto;
     padding: 28px 28px 72px;
 
@@ -17,6 +40,37 @@ export const S = {
       padding: 18px 16px 48px;
     }
   `,
+
+  // ============================================
+  // SKELETON COMPONENTS
+  // ============================================
+  
+  SkeletonLine: styled.div`
+    height: ${props => props.$height || '20px'};
+    width: ${props => props.$width || '100%'};
+    ${skeletonAnimation}
+    border-radius: ${props => props.$borderRadius || '6px'};
+    margin-bottom: ${props => props.$marginBottom || '0'};
+  `,
+
+  SkeletonIcon: styled.div`
+    width: ${props => props.$width || '24px'};
+    height: ${props => props.$height || '24px'};
+    ${skeletonAnimation}
+    border-radius: ${props => props.$borderRadius || '8px'};
+    flex-shrink: 0;
+  `,
+
+  SkeletonButton: styled.div`
+    width: ${props => props.$width || '120px'};
+    height: ${props => props.$height || '42px'};
+    ${skeletonAnimation}
+    border-radius: 12px;
+  `,
+
+  // ============================================
+  // COMPONENTES EXISTENTES
+  // ============================================
 
   Hero: styled.section`
     display: flex;
@@ -87,8 +141,13 @@ export const S = {
     font-weight: 600;
     transition: transform 0.2s ease;
 
-    &:hover {
+    &:hover:not(:disabled) {
       transform: translateY(-1px);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
     ${props => props.variant === 'primary' && `
@@ -98,7 +157,7 @@ export const S = {
     `}
 
     ${props => props.variant === 'secondary' && `
-      &:hover {
+      &:hover:not(:disabled) {
         border-color: var(--color-primary);
         color: var(--color-primary);
       }
@@ -135,10 +194,15 @@ export const S = {
     text-align: left;
     cursor: pointer;
     transition: transform 0.2s ease;
+    width: 100%;
 
-    &:hover {
+    &:hover:not(:disabled) {
       transform: translateY(-2px);
       border-color: var(--color-border);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
     }
   `,
 
@@ -350,6 +414,10 @@ export const S = {
       padding: 14px 10px;
       font: inherit;
       color: var(--color-text-primary);
+
+      &:disabled {
+        opacity: 0.6;
+      }
     }
   `,
 
@@ -455,9 +523,14 @@ export const S = {
     cursor: pointer;
     transition: transform 0.2s ease;
 
-    &:hover {
+    &:hover:not(:disabled) {
       border-color: var(--color-border);
       transform: translateY(-1px);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
     strong {

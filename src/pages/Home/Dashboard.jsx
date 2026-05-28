@@ -44,10 +44,122 @@ const toArray = (value) => {
   return [];
 };
 
+// ============================================
+// SKELETON COMPONENTS
+// ============================================
+
+// Skeleton para os KPIs
+const SkeletonKPIs = () => (
+  <S.KPIs>
+    {[...Array(4)].map((_, i) => (
+      <S.KPICard key={i} as="div">
+        <S.KPITop>
+          <S.SkeletonIcon $width="24px" $height="24px" $borderRadius="8px" />
+          <S.SkeletonLine $width="120px" $height="16px" />
+        </S.KPITop>
+        <S.SkeletonLine $width="100px" $height="36px" $marginBottom="10px" />
+        <S.SkeletonLine $width="150px" $height="14px" />
+      </S.KPICard>
+    ))}
+  </S.KPIs>
+);
+
+// Skeleton para o Hero
+const SkeletonHero = () => (
+  <S.Hero>
+    <div>
+      <S.SkeletonLine $width="150px" $height="14px" $marginBottom="12px" />
+      <S.SkeletonLine $width="200px" $height="40px" $marginBottom="12px" />
+      <S.SkeletonLine $width="400px" $height="16px" />
+    </div>
+    <S.HeroActions>
+      <S.SkeletonButton $width="160px" $height="44px" />
+      <S.SkeletonButton $width="140px" $height="44px" />
+    </S.HeroActions>
+  </S.Hero>
+);
+
+// Skeleton para o Panel da Última Movimentação
+const SkeletonImportPanel = () => (
+  <S.Panel highlight>
+    <S.PanelHead>
+      <div>
+        <S.SkeletonLine $width="80px" $height="14px" $marginBottom="8px" />
+        <S.SkeletonLine $width="180px" $height="24px" />
+      </div>
+    </S.PanelHead>
+
+    <S.ImportMain>
+      <S.SkeletonIcon $width="40px" $height="40px" $borderRadius="12px" />
+      <S.ImportContent>
+        <S.SkeletonLine $width="200px" $height="20px" $marginBottom="8px" />
+        <S.SkeletonLine $width="150px" $height="16px" />
+      </S.ImportContent>
+    </S.ImportMain>
+
+    <S.ImportStats>
+      {[...Array(4)].map((_, i) => (
+        <S.MiniStat key={i} as="div">
+          <S.SkeletonLine $width="80px" $height="12px" $marginBottom="8px" />
+          <S.SkeletonLine $width="100px" $height="20px" />
+        </S.MiniStat>
+      ))}
+    </S.ImportStats>
+
+    <S.PanelActions>
+      <S.SkeletonButton $width="130px" $height="42px" />
+      <S.SkeletonButton $width="140px" $height="42px" />
+    </S.PanelActions>
+  </S.Panel>
+);
+
+// Skeleton para o Panel de Busca
+const SkeletonSearchPanel = () => (
+  <S.Panel>
+    <S.PanelHead>
+      <div>
+        <S.SkeletonLine $width="80px" $height="14px" $marginBottom="8px" />
+        <S.SkeletonLine $width="100px" $height="24px" />
+      </div>
+    </S.PanelHead>
+
+    <S.SearchBox>
+      <S.SkeletonIcon $width="18px" $height="18px" />
+      <S.SkeletonLine $width="100%" $height="44px" />
+    </S.SearchBox>
+
+    <div style={{ marginTop: '12px' }}>
+      {[...Array(3)].map((_, i) => (
+        <S.SkeletonLine key={i} $width="100%" $height="60px" $marginBottom="8px" $borderRadius="14px" />
+      ))}
+    </div>
+  </S.Panel>
+);
+
+// Skeleton para o Panel de Atalhos
+const SkeletonActionsPanel = () => (
+  <S.Panel>
+    <S.PanelHead>
+      <div>
+        <S.SkeletonLine $width="80px" $height="14px" $marginBottom="8px" />
+        <S.SkeletonLine $width="120px" $height="24px" />
+      </div>
+    </S.PanelHead>
+
+    <S.QuickActions>
+      <S.SkeletonButton $width="100%" $height="70px" />
+      <S.SkeletonButton $width="100%" $height="70px" />
+    </S.QuickActions>
+  </S.Panel>
+);
+
+// ============================================
+// COMPONENTE PRINCIPAL
+// ============================================
 export default function Dashboard() {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
-  const { loading, startLoading, stopLoading, updateProgress } = useLoading();
+  const { startLoading, stopLoading } = useLoading();
   
   const [ultimaMovimentacao, setUltimaMovimentacao] = useState(null);
   const [historicoImportacoes, setHistoricoImportacoes] = useState([]);
@@ -55,30 +167,36 @@ export default function Dashboard() {
   const [condoQuery, setCondoQuery] = useState('');
   const [selectedCondo, setSelectedCondo] = useState(null);
   const [condoModalOpen, setCondoModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
-    (async () => {
-      startLoading("");
-      try {
-        const [ultima, historico, acordosData] = await Promise.all([
-          entebenService.getUltimaMovimentacao(),
-          entebenService.getImportacoes(),
-          entebenService.getcondominios(),
-        ]);
-
-        setUltimaMovimentacao(ultima);
-        setHistoricoImportacoes(toArray(historico));
-        setAcordos(toArray(acordosData));
-        
-      } catch (e) {
-        console.error('Erro ao carregar dashboard:', e);
-        enqueueSnackbar('Erro ao carregar dados do dashboard', { variant: 'error' });
-      } finally {
-        stopLoading();
-      }
-    })();
+    carregarDados();
   }, []);
+
+  const carregarDados = async () => {
+    try {
+      setIsLoading(true);
+      startLoading("Carregando dashboard...");
+      
+      const [ultima, historico, acordosData] = await Promise.all([
+        entebenService.getUltimaMovimentacao(),
+        entebenService.getImportacoes(),
+        entebenService.getcondominios(),
+      ]);
+
+      setUltimaMovimentacao(ultima);
+      setHistoricoImportacoes(toArray(historico));
+      setAcordos(toArray(acordosData));
+      
+    } catch (e) {
+      console.error('Erro ao carregar dashboard:', e);
+      enqueueSnackbar('Erro ao carregar dados do dashboard', { variant: 'error' });
+    } finally {
+      setIsLoading(false);
+      stopLoading();
+    }
+  };
 
   const todayStr = useMemo(() => {
     const d = new Date();
@@ -118,10 +236,10 @@ export default function Dashboard() {
 
   const getImportStatus = () => {
     const status = ultimaMovimentacao?.status || 'processado';
-    if (status === 'COMPLETED') return 'sucesso';
-    if (status === 'PENDING') return 'processando';
-    if (status === 'FAILED') return 'erro';
-    return status;
+    if (status === 'COMPLETED') return 'success';
+    if (status === 'PENDING') return 'warning';
+    if (status === 'FAILED') return 'danger';
+    return 'info';
   };
 
   const importacaoId = ultimaMovimentacao?.id || null;
@@ -168,248 +286,266 @@ export default function Dashboard() {
         <PendenciasDoDiaModal items={pendencias} onGoToPendentes={() => navigate('/pendentes')} />
 
         <S.Body>
-          <S.Hero>
-            <div>
-              <S.Eyebrow>Portal de Benefícios</S.Eyebrow>
-              <S.Title>Visão Geral</S.Title>
-              <S.Subtitle>
-                Acompanhe importações, faturamento, pendências e documentos em um só lugar.
-              </S.Subtitle>
-            </div>
-
-            <S.HeroActions>
-              <S.Button variant="primary" onClick={() => navigate('/importacao')}>
-                <BiImport size={18} />
-                Nova importação
-              </S.Button>
-
-              <S.Button variant="secondary" onClick={() => navigate('/faturamento')}>
-                <FiDollarSign size={18} />
-                Ir para faturamento
-              </S.Button>
-            </S.HeroActions>
-          </S.Hero>
-
-          <S.KPIs>
-            <S.KPICard onClick={() => navigate('/faturamento')}>
-              <S.KPITop>
-                <FiDollarSign size={18} />
-                <S.KPILabel>Faturamento total</S.KPILabel>
-              </S.KPITop>
-              <S.KPIValue>{formatCurrency(faturamentoTotal)}</S.KPIValue>
-              <S.KPIFoot>Base da última importação</S.KPIFoot>
-            </S.KPICard>
-
-            <S.KPICard onClick={() => navigate('/gerenciamento')}>
-              <S.KPITop>
-                <FiCalendar size={18} />
-                <S.KPILabel>Gerenciamento de Condomínios</S.KPILabel>
-              </S.KPITop>
-              <S.KPIValue>{totalAberto}</S.KPIValue>
-              <S.KPIFoot>
-                {pendencias.length > 0
-                  ? `${pendencias.length} condominio${pendencias.length > 1 ? 's' : ''} com pendência`
-                  : 'Nenhuma pendência'}
-              </S.KPIFoot>
-            </S.KPICard>
-
-            <S.KPICard onClick={() => navigate('/importacao')}>
-              <S.KPITop>
-                <FiFile size={18} />
-                <S.KPILabel>Importações</S.KPILabel>
-              </S.KPITop>
-              <S.KPIValue>{totalImportacoes}</S.KPIValue>
-              <S.KPIFoot>
-                {ultimaMovimentacao ? `Última: ${getImportName()}` : 'Sem importações'}
-              </S.KPIFoot>
-            </S.KPICard>
-
-            <S.KPICard as="div">
-              <S.KPITop>
-                <FiList size={18} />
-                <S.KPILabel>Condomínios</S.KPILabel>
-              </S.KPITop>
-              <S.KPIValue>{totalCondominios}</S.KPIValue>
-              <S.KPIFoot>Base monitorada</S.KPIFoot>
-            </S.KPICard>
-          </S.KPIs>
-
-          <S.GridMain>
-            <S.Panel highlight>
-              <S.PanelHead>
+          {isLoading ? (
+            <>
+              <SkeletonHero />
+              <SkeletonKPIs />
+              <S.GridMain>
+                <SkeletonImportPanel />
+                <S.SideStack>
+                  <SkeletonSearchPanel />
+                  <SkeletonActionsPanel />
+                </S.SideStack>
+              </S.GridMain>
+            </>
+          ) : (
+            <>
+              <S.Hero>
                 <div>
-                  <S.PanelEyebrow>Importação</S.PanelEyebrow>
-                  <S.PanelTitle>Última movimentação</S.PanelTitle>
+                  <S.Eyebrow>Portal de Benefícios</S.Eyebrow>
+                  <S.Title>Visão Geral</S.Title>
+                  <S.Subtitle>
+                    Acompanhe importações, faturamento, pendências e documentos em um só lugar.
+                  </S.Subtitle>
                 </div>
-              </S.PanelHead>
 
-              {ultimaMovimentacao ? (
-                <>
-                  <S.ImportMain>
-                    <S.ImportIcon>
-                      <FiFile size={18} />
-                    </S.ImportIcon>
-
-                    <S.ImportContent>
-                      <S.ImportName>{getImportName()}</S.ImportName>
-                      <S.ImportMeta>
-                        <span>
-                          {ultimaMovimentacao.data_importacao
-                            ? new Date(ultimaMovimentacao.data_importacao).toLocaleDateString('pt-BR')
-                            : '—'}
-                        </span>
-                        <S.Badge status={getImportStatus()}>
-                          {getImportStatus()}
-                        </S.Badge>
-                      </S.ImportMeta>
-                    </S.ImportContent>
-                  </S.ImportMain>
-
-                  <S.ImportStats>
-                    <S.MiniStat>
-                      <S.MiniLabel>Valor total</S.MiniLabel>
-                      <strong>{formatCurrency(ultimaMovimentacao.valor_total)}</strong>
-                    </S.MiniStat>
-                    <S.MiniStat>
-                      <S.MiniLabel>Colaboradores</S.MiniLabel>
-                      <strong>{ultimaMovimentacao.total_funcionarios}</strong>
-                    </S.MiniStat>
-                    <S.MiniStat>
-                      <S.MiniLabel>Movimentações</S.MiniLabel>
-                      <strong>{ultimaMovimentacao.total_movimentacoes}</strong>
-                    </S.MiniStat>
-                    <S.MiniStat>
-                      <S.MiniLabel>Condomínios</S.MiniLabel>
-                      <strong>{ultimaMovimentacao.total_condominios}</strong>
-                    </S.MiniStat>
-                  </S.ImportStats>
-
-                  <S.PanelActions>
-                    <S.Button variant="success" onClick={handleDownloadExcel}>
-                      <FiDownload size={18} />
-                      Baixar Excel
-                    </S.Button>
-                    <S.Button variant="secondary" onClick={() => navigate('/importacao')}>
-                      <BiImport size={18} />
-                      Nova importação
-                    </S.Button>
-                  </S.PanelActions>
-                </>
-              ) : (
-                <S.EmptyState>
-                  <FiFile size={18} />
-                  <p>Nenhuma importação encontrada.</p>
+                <S.HeroActions>
                   <S.Button variant="primary" onClick={() => navigate('/importacao')}>
                     <BiImport size={18} />
-                    Iniciar primeira importação
+                    Nova importação
                   </S.Button>
-                </S.EmptyState>
-              )}
-            </S.Panel>
 
-            <S.SideStack>
-              <S.Panel>
-                <S.PanelHead>
-                  <div>
-                    <S.PanelEyebrow>Busca rápida</S.PanelEyebrow>
-                    <S.PanelTitle>Condomínio</S.PanelTitle>
-                  </div>
-                </S.PanelHead>
+                  <S.Button variant="secondary" onClick={() => navigate('/faturamento')}>
+                    <FiDollarSign size={18} />
+                    Ir para faturamento
+                  </S.Button>
+                </S.HeroActions>
+              </S.Hero>
 
-                <S.SearchBox>
-                  <S.SearchIcon>
-                    <FiSearch size={18} />
-                  </S.SearchIcon>
-                  <input
-                    value={condoQuery}
-                    onChange={(e) => {
-                      setCondoQuery(e.target.value);
-                      setSelectedCondo(null);
-                    }}
-                    placeholder="Pesquisar por nome ou CNPJ"
-                  />
-                  {condoQuery && (
-                    <S.SearchClear
-                      onClick={() => {
-                        setCondoQuery('');
-                        setSelectedCondo(null);
-                      }}
-                      type="button"
-                      aria-label="Limpar busca"
-                    >
-                      ×
-                    </S.SearchClear>
-                  )}
-                </S.SearchBox>
+              <S.KPIs>
+                <S.KPICard onClick={() => navigate('/faturamento')}>
+                  <S.KPITop>
+                    <FiDollarSign size={18} />
+                    <S.KPILabel>Faturamento total</S.KPILabel>
+                  </S.KPITop>
+                  <S.KPIValue>{formatCurrency(faturamentoTotal)}</S.KPIValue>
+                  <S.KPIFoot>Base da última importação</S.KPIFoot>
+                </S.KPICard>
 
-                {condoQuery && !selectedCondo && condoResults.length > 0 && (
-                  <S.SearchResults>
-                    {condoResults.map((c) => {
-                      const nome = getCondoNome(c);
-                      const cnpj = c.cnpj || c.cnpj_condominio || c.documento || c.cgc || '';
+                <S.KPICard onClick={() => navigate('/gerenciamento')}>
+                  <S.KPITop>
+                    <FiCalendar size={18} />
+                    <S.KPILabel>Gerenciamento de Condomínios</S.KPILabel>
+                  </S.KPITop>
+                  <S.KPIValue>{totalAberto}</S.KPIValue>
+                  <S.KPIFoot>
+                    {pendencias.length > 0
+                      ? `${pendencias.length} condominio${pendencias.length > 1 ? 's' : ''} com pendência`
+                      : 'Nenhuma pendência'}
+                  </S.KPIFoot>
+                </S.KPICard>
 
-                      return (
-                        <S.SearchItem
-                          key={c.id ?? `${nome}-${cnpj}`}
-                          type="button"
-                          onClick={() => {
-                            setSelectedCondo(c);
-                            setCondoQuery(nome);
-                            setCondoModalOpen(true);
-                          }}
-                        >
-                          <strong>{nome}</strong>
-                          <span>{cnpj ? `CNPJ: ${cnpj}` : 'CNPJ não informado'}</span>
-                        </S.SearchItem>
-                      );
-                    })}
-                  </S.SearchResults>
-                )}
-
-                {condoQuery && !selectedCondo && condoResults.length === 0 && (
-                  <S.EmptyInline>Nenhum condomínio encontrado.</S.EmptyInline>
-                )}
-              </S.Panel>
-
-              <S.Panel>
-                <S.PanelHead>
-                  <div>
-                    <S.PanelEyebrow>Ações</S.PanelEyebrow>
-                    <S.PanelTitle>Atalhos rápidos</S.PanelTitle>
-                  </div>
-                </S.PanelHead>
-
-                <S.QuickActions>
-                  <S.QuickBtn onClick={() => navigate('/importacao')}>
-                    <BiImport size={18} />
-                    <div>
-                      <strong>Nova importação</strong>
-                      <span>Importe planilhas e arquivos</span>
-                    </div>
-                  </S.QuickBtn>
-
-                  <S.QuickBtn
-                    onClick={() =>
-                      navigate('/faturamento/repetir', {
-                        state: {
-                          importacaoId,
-                          faturamentoId: importacaoId,
-                          ultimaImportacao: ultimaMovimentacao,
-                        },
-                      })
-                    }
-                    disabled={!importacaoId}
-                  >
+                <S.KPICard onClick={() => navigate('/importacao')}>
+                  <S.KPITop>
                     <FiFile size={18} />
+                    <S.KPILabel>Importações</S.KPILabel>
+                  </S.KPITop>
+                  <S.KPIValue>{totalImportacoes}</S.KPIValue>
+                  <S.KPIFoot>
+                    {ultimaMovimentacao ? `Última: ${getImportName()}` : 'Sem importações'}
+                  </S.KPIFoot>
+                </S.KPICard>
+
+                <S.KPICard as="div">
+                  <S.KPITop>
+                    <FiList size={18} />
+                    <S.KPILabel>Condomínios</S.KPILabel>
+                  </S.KPITop>
+                  <S.KPIValue>{totalCondominios}</S.KPIValue>
+                  <S.KPIFoot>Base monitorada</S.KPIFoot>
+                </S.KPICard>
+              </S.KPIs>
+
+              <S.GridMain>
+                <S.Panel highlight>
+                  <S.PanelHead>
                     <div>
-                      <strong>Repetir faturamento</strong>
-                      <span>{importacaoId ? 'Use a base anterior' : 'Sem base anterior'}</span>
+                      <S.PanelEyebrow>Importação</S.PanelEyebrow>
+                      <S.PanelTitle>Última movimentação</S.PanelTitle>
                     </div>
-                  </S.QuickBtn>
-                </S.QuickActions>
-              </S.Panel>
-            </S.SideStack>
-          </S.GridMain>
+                  </S.PanelHead>
+
+                  {ultimaMovimentacao ? (
+                    <>
+                      <S.ImportMain>
+                        <S.ImportIcon>
+                          <FiFile size={18} />
+                        </S.ImportIcon>
+
+                        <S.ImportContent>
+                          <S.ImportName>{getImportName()}</S.ImportName>
+                          <S.ImportMeta>
+                            <span>
+                              {ultimaMovimentacao.data_importacao
+                                ? new Date(ultimaMovimentacao.data_importacao).toLocaleDateString('pt-BR')
+                                : '—'}
+                            </span>
+                            <S.Badge status={getImportStatus()}>
+                              {getImportStatus() === 'success' ? 'Concluído' : 
+                               getImportStatus() === 'warning' ? 'Processando' :
+                               getImportStatus() === 'danger' ? 'Erro' : 'Processado'}
+                            </S.Badge>
+                          </S.ImportMeta>
+                        </S.ImportContent>
+                      </S.ImportMain>
+
+                      <S.ImportStats>
+                        <S.MiniStat>
+                          <S.MiniLabel>Valor total</S.MiniLabel>
+                          <strong>{formatCurrency(ultimaMovimentacao.valor_total)}</strong>
+                        </S.MiniStat>
+                        <S.MiniStat>
+                          <S.MiniLabel>Colaboradores</S.MiniLabel>
+                          <strong>{ultimaMovimentacao.total_funcionarios}</strong>
+                        </S.MiniStat>
+                        <S.MiniStat>
+                          <S.MiniLabel>Movimentações</S.MiniLabel>
+                          <strong>{ultimaMovimentacao.total_movimentacoes}</strong>
+                        </S.MiniStat>
+                        <S.MiniStat>
+                          <S.MiniLabel>Condomínios</S.MiniLabel>
+                          <strong>{ultimaMovimentacao.total_condominios}</strong>
+                        </S.MiniStat>
+                      </S.ImportStats>
+
+                      <S.PanelActions>
+                        <S.Button variant="success" onClick={handleDownloadExcel}>
+                          <FiDownload size={18} />
+                          Baixar Excel
+                        </S.Button>
+                        <S.Button variant="secondary" onClick={() => navigate('/importacao')}>
+                          <BiImport size={18} />
+                          Nova importação
+                        </S.Button>
+                      </S.PanelActions>
+                    </>
+                  ) : (
+                    <S.EmptyState>
+                      <FiFile size={18} />
+                      <p>Nenhuma importação encontrada.</p>
+                      <S.Button variant="primary" onClick={() => navigate('/importacao')}>
+                        <BiImport size={18} />
+                        Iniciar primeira importação
+                      </S.Button>
+                    </S.EmptyState>
+                  )}
+                </S.Panel>
+
+                <S.SideStack>
+                  <S.Panel>
+                    <S.PanelHead>
+                      <div>
+                        <S.PanelEyebrow>Busca rápida</S.PanelEyebrow>
+                        <S.PanelTitle>Condomínio</S.PanelTitle>
+                      </div>
+                    </S.PanelHead>
+
+                    <S.SearchBox>
+                      <S.SearchIcon>
+                        <FiSearch size={18} />
+                      </S.SearchIcon>
+                      <input
+                        value={condoQuery}
+                        onChange={(e) => {
+                          setCondoQuery(e.target.value);
+                          setSelectedCondo(null);
+                        }}
+                        placeholder="Pesquisar por nome ou CNPJ"
+                      />
+                      {condoQuery && (
+                        <S.SearchClear
+                          onClick={() => {
+                            setCondoQuery('');
+                            setSelectedCondo(null);
+                          }}
+                          type="button"
+                          aria-label="Limpar busca"
+                        >
+                          ×
+                        </S.SearchClear>
+                      )}
+                    </S.SearchBox>
+
+                    {condoQuery && !selectedCondo && condoResults.length > 0 && (
+                      <S.SearchResults>
+                        {condoResults.map((c) => {
+                          const nome = getCondoNome(c);
+                          const cnpj = c.cnpj || c.cnpj_condominio || c.documento || c.cgc || '';
+
+                          return (
+                            <S.SearchItem
+                              key={c.id ?? `${nome}-${cnpj}`}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCondo(c);
+                                setCondoQuery(nome);
+                                setCondoModalOpen(true);
+                              }}
+                            >
+                              <strong>{nome}</strong>
+                              <span>{cnpj ? `CNPJ: ${cnpj}` : 'CNPJ não informado'}</span>
+                            </S.SearchItem>
+                          );
+                        })}
+                      </S.SearchResults>
+                    )}
+
+                    {condoQuery && !selectedCondo && condoResults.length === 0 && (
+                      <S.EmptyInline>Nenhum condomínio encontrado.</S.EmptyInline>
+                    )}
+                  </S.Panel>
+
+                  <S.Panel>
+                    <S.PanelHead>
+                      <div>
+                        <S.PanelEyebrow>Ações</S.PanelEyebrow>
+                        <S.PanelTitle>Atalhos rápidos</S.PanelTitle>
+                      </div>
+                    </S.PanelHead>
+
+                    <S.QuickActions>
+                      <S.QuickBtn onClick={() => navigate('/importacao')}>
+                        <BiImport size={18} />
+                        <div>
+                          <strong>Nova importação</strong>
+                          <span>Importe planilhas e arquivos</span>
+                        </div>
+                      </S.QuickBtn>
+
+                      <S.QuickBtn
+                        onClick={() =>
+                          navigate('/faturamento/repetir', {
+                            state: {
+                              importacaoId,
+                              faturamentoId: importacaoId,
+                              ultimaImportacao: ultimaMovimentacao,
+                            },
+                          })
+                        }
+                        disabled={!importacaoId}
+                      >
+                        <FiFile size={18} />
+                        <div>
+                          <strong>Repetir faturamento</strong>
+                          <span>{importacaoId ? 'Use a base anterior' : 'Sem base anterior'}</span>
+                        </div>
+                      </S.QuickBtn>
+                    </S.QuickActions>
+                  </S.Panel>
+                </S.SideStack>
+              </S.GridMain>
+            </>
+          )}
         </S.Body>
 
         {condoModalOpen && selectedCondo && (
