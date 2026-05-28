@@ -8,6 +8,8 @@ import {
 import { useLoading } from '../hooks/useLoading'
 import '../styles/FileUpload.css'
 
+import { isNovaPlanilhaValeTransporte, parseNovaPlanilhaValeTransporte } from '../utils/parser_nova_planilha'
+
 function Modal({ open, title, onClose, children }) {
   if (!open) return null
 
@@ -43,6 +45,30 @@ export default function FileUpload({ onUpload }) {
 
   const handlePick = () => inputRef.current?.click()
 
+  const detectarFormato = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      
+      reader.onload = (e) => {
+        const arrayBuffer = e.target.result
+        
+        if (isNovaPlanilhaValeTransporte(arrayBuffer)) {
+          try {
+            const parsed = parseNovaPlanilhaValeTransporte(arrayBuffer)
+            resolve({ formato: 'nova_planilha', data: parsed })
+          } catch (error) {
+            reject(error)
+          }
+        } else {
+          resolve({ formato: 'padrao', data: null })
+        }
+      }
+      
+      reader.onerror = reject
+      reader.readAsArrayBuffer(file)
+    })
+  }
+  
   const processUpload = async (file) => {
     setStatus('processando')
     setMessage('Processando arquivo...')
@@ -51,10 +77,32 @@ export default function FileUpload({ onUpload }) {
     try {
       startLoading('Fazendo upload do arquivo...')
 
-      const result = await onUpload?.({
-        status: 'processando',
-        file,
-      })
+ // Primeiro detecta o formato
+    const deteccao = await detectarFormato(file)
+    
+    let result
+    
+    if (deteccao.formato === 'nova_planilha') {
+        // Converte o resultado para o formato esperado pelo backend
+        const dadosConvertidos = {
+          data_to_backend: {
+            movimentacoes_detalhada: deteccao.data.movimentacoes,
+            summary: {
+              total_por_beneficiario: agregarPorBeneficiario(deteccao.data.movimentacoes),
+              total_registros: deteccao.data.total_registros,
+              total_funcionarios: deteccao.data.total_funcionarios,
+            }
+          },
+          detail: 'Arquivo processado com sucesso',
+          success: true,
+          file_upload_id: Date.now(),
+        }
+        
+        result = { success: true, ...dadosConvertidos }
+      } else {
+        // Usa o backend normalmente
+        result = await onUpload?.({ status: 'processando', file })
+      }
 
       if (result?.success) {
         setStatus('sucesso')
@@ -69,6 +117,28 @@ export default function FileUpload({ onUpload }) {
     } finally {
       stopLoading()
     }
+  }
+
+  function agregarPorBeneficiario(movimentacoes) {
+    const mapa = new Map()
+    
+    for (const mov of movimentacoes) {
+      const key = `${mov.cpf_funcionario}`
+      
+      if (!mapa.has(key)) {
+        mapa.set(key, {
+          ...mov,
+          valor_total: 0,
+          quantidade_dias: 0,
+        })
+      }
+      
+      const atual = mapa.get(key)
+      atual.valor_total += mov.valor_beneficio_total
+      atual.quantidade_dias += mov.quantidade_dias || 0
+    }
+    
+    return Array.from(mapa.values())
   }
 
   const validarArquivo = (file) => {
