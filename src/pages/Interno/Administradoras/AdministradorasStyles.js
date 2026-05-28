@@ -1,5 +1,27 @@
 // pages/Interno/Administradoras/AdministradorasStyles.js
-import styled from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
+
+// Animação shimmer para skeleton
+const shimmer = keyframes`
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+`;
+
+const skeletonAnimation = css`
+  animation: ${shimmer} 2s infinite linear;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0%,
+    #e0e0e0 30%,
+    #f0f0f0 60%,
+    #f0f0f0 100%
+  );
+  background-size: 1000px 100%;
+`;
 
 export const S = {
   Container: styled.div`
@@ -40,15 +62,20 @@ export const S = {
     transition: all 0.2s ease;
     border: none;
 
-    &:hover {
+    &:hover:not(:disabled) {
       transform: translateY(-1px);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
     ${props => props.$variant === 'primary' && `
       background: var(--color-primary);
       color: white;
 
-      &:hover {
+      &:hover:not(:disabled) {
         background: var(--color-primary-dark);
       }
     `}
@@ -58,7 +85,7 @@ export const S = {
       color: var(--color-text-secondary);
       border: 1px solid var(--color-border);
 
-      &:hover {
+      &:hover:not(:disabled) {
         background: var(--color-border-light);
       }
     `}
@@ -134,5 +161,52 @@ export const S = {
     font-weight: 500;
     background: ${props => props.$cartaoAdmin ? 'var(--color-success-bg)' : 'var(--color-info-bg)'};
     color: ${props => props.$cartaoAdmin ? 'var(--color-success)' : 'var(--color-info)'};
+  `,
+
+  // Skeleton Components
+  SkeletonLine: styled.div`
+    height: ${props => props.$height || '20px'};
+    width: ${props => props.$width || '100%'};
+    ${skeletonAnimation}
+    border-radius: 6px;
+    margin-bottom: ${props => props.$marginBottom || '0'};
+  `,
+
+  // Tabela para skeleton
+  TableWrapper: styled.div`
+    overflow-x: auto;
+    border-radius: 12px;
+  `,
+
+  Table: styled.table`
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--color-bg-primary);
+    border-radius: 12px;
+    overflow: hidden;
+
+    th, td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--color-border-light);
+    }
+
+    th {
+      background: var(--color-bg-tertiary);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    td {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
   `,
 };

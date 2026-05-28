@@ -39,7 +39,7 @@ import Administradoras from '../pages/Interno/Administradoras/Administradoras'
 import CadastroAdministradora from '../pages/Interno/Administradoras/CadastroAdministradora'
 import EditarAdministradora from '../pages/Interno/Administradoras/EditarAdministradora'
 import DetalhesAdministradora from '../pages/Interno/Administradoras/DetalhesAdministradora'
-import AdministradorasGeral from '../pages/Interno/Administradoras/AdministradorasGeral'
+import MinhaAdministradora from '../pages/Interno/Administradoras/MinhaAdministradora'
 
 import Usuarios from '../pages/Interno/Usuarios/Usuarios'
 
@@ -168,7 +168,7 @@ const AppRouter = () => {
 
             <Route
               path="/interno/minha-administradora"
-              element={<AdministradorasGeral />}
+              element={<MinhaAdministradora />}
             />
 
             {/* Usuários */}
