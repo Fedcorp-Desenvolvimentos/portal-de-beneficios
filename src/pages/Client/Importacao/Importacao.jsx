@@ -193,20 +193,20 @@ function getNomeProduto(item) {
 function getCodigoProduto(item) {
   return String(
     item?.codigo_produto ||
-      item?.produto_codigo ||
-      item?.cod_produto ||
-      item?.codigo ||
-      ''
+    item?.produto_codigo ||
+    item?.cod_produto ||
+    item?.codigo ||
+    ''
   ).trim()
 }
 
 function getValorProduto(item) {
   return Number(
     item?.valor_recarga_bene ||
-      item?.valor_total ||
-      item?.valor ||
-      item?.valor_unitario ||
-      0
+    item?.valor_total ||
+    item?.valor ||
+    item?.valor_unitario ||
+    0
   )
 }
 
@@ -421,6 +421,7 @@ export default function Importacao() {
     competenciaMes: '',
     competenciaAno: String(new Date().getFullYear()),
     vencimento: '',
+    recebimentoBeneficio: '',
   })
 
   async function handleResult({ file }) {
@@ -504,8 +505,8 @@ export default function Importacao() {
             typeof errosImportacao[0] === 'string'
               ? errosImportacao[0]
               : errosImportacao[0]?.message ||
-                errosImportacao[0]?.erro ||
-                JSON.stringify(errosImportacao[0])
+              errosImportacao[0]?.erro ||
+              JSON.stringify(errosImportacao[0])
 
           mensagemErro = `Importação rejeitada. ${primeiroErro}`
         }
@@ -652,6 +653,7 @@ export default function Importacao() {
       competenciaMes: '',
       competenciaAno: String(new Date().getFullYear()),
       vencimento: '',
+      recebimentoBeneficio: '',
     })
 
     setModalOpen(false)
@@ -833,6 +835,7 @@ export default function Importacao() {
       dataToBackendSincronizado.competencia_mes = formEnvio.competenciaMes || reviewData.competenciaMes
       dataToBackendSincronizado.competencia_ano = formEnvio.competenciaAno || reviewData.competenciaAno
       dataToBackendSincronizado.vencimento = vencimentoFormatado
+      dataToBackendSincronizado.recebimento_beneficio = formEnvio.recebimentoBeneficio || ''
       dataToBackendSincronizado.tipo_processamento = lote.tipo || 'compra'
       dataToBackendSincronizado.origem = 'importacao_faturamento'
       dataToBackendSincronizado.file_upload_id = data.file_upload_id || lote.id?.replace('IMP-', '') || 228
@@ -880,8 +883,7 @@ export default function Importacao() {
       dataToBackendSincronizado.linhas_com_erro = errosAtuais.map(erro => ({ mensagem: erro }))
 
       let administradoraId = user?.administradora_id || dataToBackendSincronizado.administradora_id || null
-      
-      // Montar objeto final para envio
+
       const dadosParaEnvio = {
         file_upload_id: data.file_upload_id || Number(lote.id?.replace('IMP-', '')) || 228,
         administradora_id: administradoraId,
@@ -895,6 +897,7 @@ export default function Importacao() {
         competencia_mes: dataToBackendSincronizado.competencia_mes,
         competencia_ano: dataToBackendSincronizado.competencia_ano,
         vencimento: dataToBackendSincronizado.vencimento,
+        recebimento_beneficio: dataToBackendSincronizado.recebimento_beneficio,
         tipo_processamento: dataToBackendSincronizado.tipo_processamento,
         origem: dataToBackendSincronizado.origem,
         status: 'PARSED',
@@ -990,9 +993,8 @@ export default function Importacao() {
 
               <button
                 type="button"
-                className={`kpi kpi-button ${totalBloqueios > 0 ? 'kpi-alert' : ''} ${
-                  mostrarSomenteAcima2500 ? 'kpi-active' : ''
-                }`}
+                className={`kpi kpi-button ${totalBloqueios > 0 ? 'kpi-alert' : ''} ${mostrarSomenteAcima2500 ? 'kpi-active' : ''
+                  }`}
                 onClick={() => {
                   if (totalBloqueios > 0 && !enviandoLote) {
                     setMostrarSomenteAcima2500((prev) => !prev)
@@ -1124,7 +1126,7 @@ export default function Importacao() {
           onClose={() => !enviandoLote && setModalOpen(false)}
           locked={enviandoLote}
         >
-          <form onSubmit={abrirModalRevisao} className="form-grid">
+          <form onSubmit={abrirModalRevisao} className="form-grid importacao-form-envio">
             <div className="form-row two-cols">
               <label>
                 <span>Período de Utilização — Início</span>
@@ -1176,20 +1178,38 @@ export default function Importacao() {
                   ))}
                 </select>
               </label>
+
+              <label>
+                <span>Recebimento do benefício</span>
+                <input
+                  type="date"
+                  value={formEnvio.recebimentoBeneficio || ''}
+                  onChange={(e) =>
+                    setFormEnvio((prev) => ({
+                      ...prev,
+                      recebimentoBeneficio: e.target.value,
+                    }))
+                  }
+                  required
+                  disabled={enviandoLote}
+                />
+              </label>
             </div>
 
-            <label>
-              <span>Vencimento</span>
-              <input
-                type="date"
-                value={formEnvio.vencimento}
-                onChange={(e) =>
-                  setFormEnvio((prev) => ({ ...prev, vencimento: e.target.value }))
-                }
-                required
-                disabled={enviandoLote}
-              />
-            </label>
+            <div className="form-row full-width">
+              <label>
+                <span>Vencimento</span>
+                <input
+                  type="date"
+                  value={formEnvio.vencimento}
+                  onChange={(e) =>
+                    setFormEnvio((prev) => ({ ...prev, vencimento: e.target.value }))
+                  }
+                  required
+                  disabled={enviandoLote}
+                />
+              </label>
+            </div>
 
             <div className="modal-actions">
               <button
