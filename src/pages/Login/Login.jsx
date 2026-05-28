@@ -125,7 +125,7 @@ const Login = () => {
                                 {loading ? 'Entrando...' : 'Entrar'}
                             </S.LoginButton>
 
-                            <S.Divider>
+                            {/* <S.Divider>
                                 <span>ou</span>
                             </S.Divider>
 
@@ -137,7 +137,7 @@ const Login = () => {
                                 size="large"
                                 text="continue_with"
                                 shape="rectangular"
-                            />
+                            /> */}
 
                             <S.ForgotPassword href="/recuperar-senha">
                                 Esqueceu sua senha?
