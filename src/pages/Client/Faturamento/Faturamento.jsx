@@ -23,6 +23,15 @@ const formatMoney = (value) =>
     minimumFractionDigits: 2,
   });
 
+const normalizeStatus = (status) =>
+  String(status || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+const getStatusOptionLabel = (status) => getStatusLabel(status);
+
 const formatDateBR = (value) => {
   if (!value) return '—';
   const onlyDate = String(value).split('T')[0];
@@ -47,21 +56,32 @@ const getStatusLabel = (status) => {
   const normalized = String(status || '')
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
 
-  const map = {
+  const labels = {
     pending: 'Pendente',
     processing: 'Processando',
     completed: 'Concluído',
     failed: 'Falhou',
+
     sucesso: 'Concluído',
     processado: 'Concluído',
     concluido: 'Concluído',
+
     aguardando_faturamento: 'Aguardando faturamento',
+    aguardandofaturamento: 'Aguardando faturamento',
+
     faturado: 'Faturado',
   };
 
-  return map[normalized] || status || '—';
+  if (labels[normalized]) {
+    return labels[normalized];
+  }
+
+  return normalized
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 };
 
 const getStatusVariant = (status) => {
@@ -130,8 +150,8 @@ const getValorTotal = (item) => {
 
   const totalMovimentacoesDiretas = Array.isArray(movimentacoesDiretas)
     ? movimentacoesDiretas.reduce((sum, mov) => {
-        return sum + Number(mov?.valor_recarga_bene || mov?.valor_total || mov?.valor || 0);
-      }, 0)
+      return sum + Number(mov?.valor_recarga_bene || mov?.valor_total || mov?.valor || 0);
+    }, 0)
     : 0;
 
   const totalMovimentacoesAninhadas = getMovimentacoesImportacao(item).reduce(
@@ -141,32 +161,32 @@ const getValorTotal = (item) => {
 
   return Number(
     totalMovimentacoesDiretas ||
-      totalMovimentacoesAninhadas ||
-      item?.valor_total ||
-      item?.total ||
-      item?.valor_total_beneficios ||
-      item?.summary?.valor_total_beneficios ||
-      item?.summary?.valor_total ||
-      item?.dados_requisicao?.summary?.valor_total_beneficios ||
-      item?.dados_requisicao?.summary?.valor_total ||
-      item?.dados_requisicao?.valor_total_beneficios ||
-      item?.dados_requisicao?.valor_total ||
-      item?.dados_requisicao?.total ||
-      item?.dados_requisicao?.total_geral ||
-      item?.dados_requisicao?.resumo?.valor_total_beneficios ||
-      item?.dados_requisicao?.resumo?.valor_total ||
-      item?.dados_requisicao?.resumo?.total ||
-      0
+    totalMovimentacoesAninhadas ||
+    item?.valor_total ||
+    item?.total ||
+    item?.valor_total_beneficios ||
+    item?.summary?.valor_total_beneficios ||
+    item?.summary?.valor_total ||
+    item?.dados_requisicao?.summary?.valor_total_beneficios ||
+    item?.dados_requisicao?.summary?.valor_total ||
+    item?.dados_requisicao?.valor_total_beneficios ||
+    item?.dados_requisicao?.valor_total ||
+    item?.dados_requisicao?.total ||
+    item?.dados_requisicao?.total_geral ||
+    item?.dados_requisicao?.resumo?.valor_total_beneficios ||
+    item?.dados_requisicao?.resumo?.valor_total ||
+    item?.dados_requisicao?.resumo?.total ||
+    0
   );
 };
 
 const getQuantidade = (item) =>
   Number(
     item?.registros_processados ||
-      item?.total_registros ||
-      item?.total_movimentacoes ||
-      item?.summary?.total_movimentacoes ||
-      0
+    item?.total_registros ||
+    item?.total_movimentacoes ||
+    item?.summary?.total_movimentacoes ||
+    0
   );
 
 // ============================================
@@ -313,11 +333,23 @@ export default function Faturamento() {
   }
 
   const opcoesStatus = useMemo(() => {
-    return [
-      ...new Set(
-        importacoes.map((item) => item.faturamento_status || item.status).filter(Boolean)
-      ),
-    ];
+    const map = new Map();
+
+    importacoes.forEach((item) => {
+      const rawStatus = item.faturamento_status || item.status;
+      const normalized = normalizeStatus(rawStatus);
+
+      if (normalized && !map.has(normalized)) {
+        map.set(normalized, {
+          value: normalized,
+          label: getStatusOptionLabel(rawStatus),
+        });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.label.localeCompare(b.label, 'pt-BR')
+    );
   }, [importacoes]);
 
   const opcoesCompetencia = useMemo(() => {
@@ -392,7 +424,7 @@ export default function Faturamento() {
           .toLowerCase();
 
         const matchSearch = !query || textoBusca.includes(query);
-        const matchStatus = !filtroStatus || String(group.status || '').toLowerCase() === String(filtroStatus).toLowerCase();
+        const matchStatus = !filtroStatus || normalizeStatus(group.status) === filtroStatus;
         const matchCompetencia = !filtroCompetencia || group.competencia === filtroCompetencia;
         const matchVigencia = !filtroVigencia || group.dataVigenciaInicio === filtroVigencia;
         const matchVencimento = !filtroVencimento || group.dataVencimento === filtroVencimento;
@@ -425,14 +457,8 @@ export default function Faturamento() {
   const skeletonCount = 3;
 
   return (
-    <PageLayout title="Faturamento" subtitle="Documentos por importação">
+    <PageLayout title="Faturamento" subtitle="Acompanhamento de Faturamentos">
       <S.Page>
-        <S.Hero>
-          <S.Title>Documentos por importação</S.Title>
-          <S.Subtitle>
-            Cada importação reúne os benefícios faturados e seus documentos vinculados.
-          </S.Subtitle>
-        </S.Hero>
 
         <S.Toolbar>
           <S.Search>
@@ -452,8 +478,8 @@ export default function Faturamento() {
               <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)} disabled={loading}>
                 <option value="">Todos</option>
                 {opcoesStatus.map((status) => (
-                  <option key={status} value={status}>
-                    {getStatusLabel(status)}
+                  <option key={status.value} value={status.value}>
+                    {status.label}
                   </option>
                 ))}
               </select>

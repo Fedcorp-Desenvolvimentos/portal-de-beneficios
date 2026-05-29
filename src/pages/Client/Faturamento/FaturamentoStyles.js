@@ -87,31 +87,39 @@ export const S = {
     }
   `,
 
-  Filters: styled.div`
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 1rem;
-    margin-top: 1rem;
+ Filters: styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr)) 180px;
+  gap: 1rem;
+  margin-top: 1rem;
+  align-items: end;
 
-    select {
-      height: 44px;
-      border: 1px solid var(--color-border);
-      border-radius: 12px;
-      padding: 0 0.9rem;
-      font-size: 0.95rem;
-      background: var(--color-bg-primary);
-      color: var(--color-text-primary);
-      transition: all 0.2s ease;
-      cursor: pointer;
+  select {
+    height: 44px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 0 0.9rem;
+    font-size: 0.95rem;
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    transition: all 0.2s ease;
+    cursor: pointer;
 
-      &:focus {
-        outline: none;
-        border-color: var(--color-primary);
-        box-shadow: 0 0 0 3px rgba(15, 61, 93, 0.12);
-      }
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(15, 61, 93, 0.12);
     }
-  `,
+  }
 
+  @media (max-width: 1180px) {
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+`,
   FilterLabel: styled.label`
     display: flex;
     flex-direction: column;
@@ -127,23 +135,29 @@ export const S = {
   `,
 
   ClearButton: styled.button`
-    height: 44px;
-    padding: 0 1.5rem;
-    border-radius: 12px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    background: var(--color-bg-tertiary);
-    border: 1px solid var(--color-border);
-    color: var(--color-text-secondary);
+  height: 44px;
+  padding: 0 1.5rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  align-self: end;
+  white-space: nowrap;
 
-    &:hover {
-      background: var(--color-border-light);
-      color: var(--color-text-primary);
-    }
-  `,
+  &:hover:not(:disabled) {
+    background: var(--color-border-light);
+    color: var(--color-text-primary);
+  }
 
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`,
   List: styled.section`
     display: flex;
     flex-direction: column;
