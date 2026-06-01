@@ -1,3 +1,4 @@
+// FileUpload.jsx - versão corrigida
 import React, { useRef, useState } from 'react'
 import StatusBadge from './StatusBadge'
 import { Upload } from './icons/Upload.jsx'
@@ -87,32 +88,41 @@ export default function FileUpload({ onUpload }) {
         console.log('Tipo de arquivo detectado:', tipoArquivo);
       } catch (detectError) {
         console.error('Erro na detecção automática:', detectError);
-        // Fallback: tenta detectar pelo nome do arquivo
         const isVT = isValeTransporteFile(file);
         tipoArquivo = { tipo: isVT ? 'VT' : 'BENEFICIOS', sheets: [] };
         console.log('Fallback por nome do arquivo:', tipoArquivo);
       }
       
-      let result;
+      let uploadResult;
       
-      // NOVA LÓGICA: Roteia baseado no tipo detectado
       if (tipoArquivo.tipo === 'VT') {
-        // Rota exclusiva para Vale Transporte
         console.log('Processando como Vale Transporte');
         const vtResponse = await vtService.uploadVTFile(file, userAdministradoraId);
         
-        result = {
+        // 🔥 CORREÇÃO: Monta o resultado no formato esperado pelo Importacao
+        uploadResult = {
           success: true,
           ...vtResponse,
-          tipo_processamento: 'VT'
+          tipo_processamento: 'VT',
+          dados_validados: vtResponse.dados_validados || vtResponse.movimentacoes_detalhada || [],
+          summary: {
+            ...vtResponse.summary,
+            total_por_beneficiario: vtResponse.summary?.total_por_beneficiario || [],
+            total_registros: vtResponse.summary?.total_registros || vtResponse.summary?.total_movimentacoes || 0,
+            total_funcionarios: vtResponse.summary?.total_funcionarios || 0,
+            valor_total_vt: vtResponse.summary?.valor_total_beneficios || vtResponse.summary?.valor_total_vt || 0
+          }
         };
+        
+        console.log('Resultado VT processado:', uploadResult);
+        console.log('dados_validados:', uploadResult.dados_validados?.length);
+        console.log('total_por_beneficiario:', uploadResult.summary?.total_por_beneficiario?.length);
+        
       } else if (tipoArquivo.tipo === 'BENEFICIOS') {
-        // Verifica se é o formato novo da planilha VT (compatível com benefícios)
         try {
           const deteccao = await detectarFormato(file);
           
           if (deteccao.formato === 'nova_planilha') {
-            // Converte o resultado para o formato esperado pelo backend de benefícios
             const dadosConvertidos = {
               data_to_backend: {
                 movimentacoes_detalhada: deteccao.data.movimentacoes,
@@ -128,52 +138,61 @@ export default function FileUpload({ onUpload }) {
               tipo_processamento: 'BENEFICIOS'
             };
             
-            result = { success: true, ...dadosConvertidos };
+            uploadResult = { success: true, ...dadosConvertidos };
           } else {
-            // Usa o backend normal de benefícios
-            const beneficioResponse = await onUpload?.({ status: 'processando', file });
-            result = { success: true, ...beneficioResponse, tipo_processamento: 'BENEFICIOS' };
+            // 🔥 CORREÇÃO: Chama o onUpload com o resultado do uploadService, não com a função
+            const uploadResponse = await uploadService.uploadFile(file, userAdministradoraId);
+            uploadResult = { success: true, ...uploadResponse, tipo_processamento: 'BENEFICIOS' };
           }
         } catch (parseError) {
           console.error('Erro no parse do formato:', parseError);
-          // Fallback: tenta como benefícios normal
-          const beneficioResponse = await onUpload?.({ status: 'processando', file });
-          result = { success: true, ...beneficioResponse, tipo_processamento: 'BENEFICIOS' };
+          const uploadResponse = await uploadService.uploadFile(file, userAdministradoraId);
+          uploadResult = { success: true, ...uploadResponse, tipo_processamento: 'BENEFICIOS' };
         }
       } else {
-        // Tipo desconhecido - verifica se tem aba USUARIOS (pode ser VT sem EMPRESA)
         if (tipoArquivo.sheets && tipoArquivo.sheets.includes('USUARIOS')) {
           console.log('Arquivo com aba USUARIOS, tentando como Vale Transporte');
           const vtResponse = await vtService.uploadVTFile(file, userAdministradoraId);
-          result = {
+          uploadResult = {
             success: true,
             ...vtResponse,
-            tipo_processamento: 'VT'
+            tipo_processamento: 'VT',
+            dados_validados: vtResponse.dados_validados || vtResponse.movimentacoes_detalhada || [],
+            summary: {
+              ...vtResponse.summary,
+              total_por_beneficiario: vtResponse.summary?.total_por_beneficiario || [],
+              valor_total_vt: vtResponse.summary?.valor_total_beneficios || 0
+            }
           };
         } else {
-          // Tenta como benefícios
           console.warn('Tipo de arquivo desconhecido, tentando como Benefícios');
-          const beneficioResponse = await onUpload?.({ status: 'processando', file });
-          result = { success: true, ...beneficioResponse, tipo_processamento: 'BENEFICIOS' };
+          const uploadResponse = await uploadService.uploadFile(file, userAdministradoraId);
+          uploadResult = { success: true, ...uploadResponse, tipo_processamento: 'BENEFICIOS' };
         }
       }
 
-      if (result?.success) {
+      // 🔥 CORREÇÃO: Chama o onUpload com o resultado já processado
+      // Isso permite que o componente pai (Importacao) receba os dados corretamente
+      if (onUpload && typeof onUpload === 'function') {
+        await onUpload({ file, result: uploadResult });
+      }
+
+      if (uploadResult?.success) {
         setStatus('sucesso');
-        setMessage(result.detail || result.message || 'Arquivo processado com sucesso.');
+        setMessage(uploadResult.detail || uploadResult.message || 'Arquivo processado com sucesso.');
         
-        // Se for VT, exibe um resumo específico
-        if (result.tipo_processamento === 'VT' && result.summary) {
+        if (uploadResult.tipo_processamento === 'VT') {
           console.log('Resumo do VT:', {
-            total_registros: result.summary.total_registros,
-            total_funcionarios: result.summary.total_funcionarios,
-            valor_total_vt: result.summary.valor_total_vt,
-            valido: result.summary.valido
+            total_registros: uploadResult.summary?.total_registros,
+            total_funcionarios: uploadResult.summary?.total_funcionarios,
+            valor_total: uploadResult.summary?.valor_total_beneficios || uploadResult.summary?.valor_total_vt,
+            total_por_beneficiario: uploadResult.summary?.total_por_beneficiario?.length,
+            dados_validados: uploadResult.dados_validados?.length
           });
         }
       } else {
         setStatus('erro');
-        setMessage(result?.message || 'Não foi possível processar o arquivo.');
+        setMessage(uploadResult?.message || 'Não foi possível processar o arquivo.');
       }
     } catch (error) {
       console.error('Erro no processamento:', error);
@@ -223,7 +242,6 @@ export default function FileUpload({ onUpload }) {
 
     if (!validarArquivo(file)) return
 
-    // Pega o user do contexto (passado como prop ou de onde vier)
     const userAdministradoraId = localStorage.getItem('administradora_id') || '1'
     processUpload(file, userAdministradoraId)
   }

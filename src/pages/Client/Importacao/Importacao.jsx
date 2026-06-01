@@ -424,9 +424,103 @@ export default function Importacao() {
     recebimentoBeneficio: '',
   })
 
-  async function handleResult({ file }) {
+  async function handleResult({ file, result: uploadResult }) {
     try {
-      const response = await uploadService.uploadFile(file, user?.administradora_id)
+      console.log("🔍 Iniciando processamento do arquivo:", file.name);
+      
+      // Se já temos um resultado do upload (caso do VT), usa ele
+      let response = uploadResult;
+      
+      // Se não veio resultado, faz o upload normalmente (caso de Benefícios)
+      if (!response) {
+        console.log("📤 Fazendo upload do arquivo...");
+        response = await uploadService.uploadFile(file, user?.administradora_id);
+        console.log("📦 Resposta do backend:", response);
+      } else {
+        console.log("📦 Usando resultado pré-processado:", response);
+      }
+      
+      // 🔥 CORREÇÃO: Detecta VT pela presença de dados_validados OU pelo tipo_processamento
+      const isVT = (response && response.dados_validados !== undefined) ||
+                    response?.tipo_processamento === 'VT' ||
+                    (response?.summary && response.summary.valor_total_vt !== undefined);
+      
+      console.log("🔍 isVT detectado:", isVT);
+      
+      if (isVT) {
+        console.log("🚌 Processando como Vale Transporte...");
+        
+        // Converte dados_validados para o formato esperado
+        const movimentacoes = response.dados_validados || [];
+        console.log("📊 Movimentações VT:", movimentacoes);
+        
+        // Usa o summary.total_por_beneficiario se existir, senão cria
+        let previewRows = response.summary?.total_por_beneficiario || [];
+        
+        if (previewRows.length === 0 && movimentacoes.length > 0) {
+          previewRows = buildPreviewRowsFromMovimentacoes(movimentacoes);
+        }
+        
+        console.log("📊 Preview rows do VT:", previewRows);
+        
+        const parsed = enrichRowsWithBenefits(previewRows, movimentacoes);
+        console.log("📊 Dados enriquecidos:", parsed);
+        
+        const id = 'VT-' + (response?.file_upload_id || Date.now())
+        const tipo = 'vale_transporte'
+        
+        const semPreview = !Array.isArray(parsed) || parsed.length === 0
+        
+        if (semPreview) {
+          toast.error('Nenhum registro válido foi encontrado no arquivo VT.')
+          return { success: false }
+        }
+        
+        setLote({
+          id,
+          arquivo: file.name,
+          tipo,
+          rows: parsed,
+          excluidosPorColab: new Set(),
+        })
+        
+        setData(response)
+        
+        // Reseta estados
+        setDetailsOpen(false)
+        setDetailsTitle('')
+        setDetailsBenefits([])
+        setDetailsRowKey(null)
+        setEditingBenefitIndex(null)
+        setEditBenefitValue('')
+        setConfirmDeleteOpen(false)
+        setColaboradorParaExcluir(null)
+        setReviewOpen(false)
+        setMostrarSomenteAcima2500(false)
+        
+        toast.success(`Arquivo de Vale Transporte importado com ${parsed.length} registros`)
+        
+        // Atualiza os cards de totais
+        const totalComprasVT = parsed.reduce((total, row) => {
+          const quantidadeBeneficios = row?.beneficios?.length || 0
+          return total + quantidadeBeneficios
+        }, 0)
+        
+        const totalFaturamentoVT = parsed.reduce((total, row) => {
+          return total + getValorRow(row)
+        }, 0)
+        
+        // Opcional: atualizar os totais na UI se necessário
+        
+        return { success: true }
+      }
+      
+      // ============================================
+      // PROCESSAMENTO NORMAL PARA BENEFÍCIOS
+      // ============================================
+      
+      console.log("📊 Preview rows:", response?.summary?.total_por_beneficiario);
+      console.log("📊 Movimentações:", getMovimentacoesBackend(response));
 
       const id = 'IMP-' + (response?.file_upload_id || Date.now())
       const tipo = file.name.toLowerCase().includes('fat') ? 'faturamento' : 'compra'
@@ -441,12 +535,19 @@ export default function Importacao() {
         response?.preview ||
         []
 
-      const previewRows =
+      let previewRows =
         Array.isArray(previewRowsBackend) && previewRowsBackend.length > 0
           ? previewRowsBackend
           : Array.isArray(movimentacoes) && movimentacoes.length > 0
             ? buildPreviewRowsFromMovimentacoes(movimentacoes)
-            : []
+            : [];
+
+      // Fallback manual
+      if (previewRows.length === 0 && movimentacoes.length > 0) {
+        console.warn("⚠️ Nenhum preview encontrado, mas há movimentações. Usando fallback manual.");
+        previewRows = buildPreviewRowsFromMovimentacoes(movimentacoes);
+        console.log("📊 Preview manual construído:", previewRows);
+      }
 
       const parsed = enrichRowsWithBenefits(previewRows, movimentacoes)
 
@@ -470,28 +571,6 @@ export default function Importacao() {
           tipo: null,
           rows: [],
           excluidosPorColab: new Set(),
-        })
-
-        setDetailsOpen(false)
-        setDetailsTitle('')
-        setDetailsBenefits([])
-        setDetailsRowKey(null)
-        setEditingBenefitIndex(null)
-        setEditBenefitValue('')
-        setConfirmDeleteOpen(false)
-        setColaboradorParaExcluir(null)
-        setReviewOpen(false)
-        setMostrarSomenteAcima2500(false)
-
-        setReviewData({
-          totalFuncionarios: 0,
-          totalMovimentacoes: 0,
-          valorTotalBeneficios: 0,
-          periodoInicio: '',
-          periodoFim: '',
-          competenciaMes: '',
-          competenciaAno: '',
-          vencimento: '',
         })
 
         let mensagemErro =
@@ -604,6 +683,27 @@ export default function Importacao() {
 
   const podeEnviar = linhasValidadas.length > 0 && totalBloqueios === 0
 
+  // Adicione esta função auxiliar para converter dados do VT para o formato esperado
+  function converterVTparaBeneficios(dadosVT) {
+    if (!dadosVT || !Array.isArray(dadosVT)) return [];
+    
+    return dadosVT.map(item => ({
+      // Mapeia campos do VT para o formato de benefícios
+      cnpj_condominio: item.cnpj_condominio || '',
+      nome_condominio: item.nome_condominio || '',
+      cpf_funcionario: item.cpf_funcionario || '',
+      nome_funcionario: item.nome_funcionario || '',
+      codigo_produto: item.codigo_produto || '',
+      nome_produto: item.nome_produto || 'Vale Transporte',
+      valor_beneficio_total: item.valor_beneficio_total || 0,
+      quantidade_dias: item.quantidade_dias || 0,
+      data_competencia: item.data_competencia || '',
+      // Mantém dados originais do VT
+      _tipo: 'VT',
+      _dados_originais: item
+    }));
+  }
+  
   const abrirConfirmacaoExclusao = (row) => {
     if (enviandoLote) return
     setColaboradorParaExcluir(row)
