@@ -1,12 +1,24 @@
+// downloadService.js - VERSÃO CORRETA (sem invenção)
 import api from "./api";
 
-// # ROTAS NO BACKEND: http://localhost:8000/api/upload/download-excel-vr/ e http://localhost:8000/api/upload/download-excel-vt/
-
-export const vtService = {
-  async DownloadExcelVR(file, administradoraId) {
+export const downloadService = {
+  async downloadExcelBeneficios() {
     try {
-      const response = await api.get('/api/upload/download-excel-vr/');
-      console.log('Download do template VR concluído:', response.data);
+      const response = await api.get('/api/upload/download-excel-vr/', {
+        responseType: 'blob' // Importante para download de arquivos
+      });
+      
+      // Criar link para download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'modelo_importacao_vr.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      console.log('Download do template VR concluído');
       return response.data;
     } catch (error) {
       console.error('Erro no download do template VR:', error);
@@ -14,10 +26,23 @@ export const vtService = {
     }
   },
 
-  async DownloadExcelVT(payload) {
+  async downloadExcelVT() {
     try {
-      const response = await api.get('/api/upload/download-excel-vt/');
-      console.log('Download do template VT concluído:', response.data);
+      const response = await api.get('/api/upload/download-excel-vt/', {
+        responseType: 'blob'
+      });
+      
+      // Criar link para download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'modelo_importacao_vt.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      console.log('Download do template VT concluído');
       return response.data;
     } catch (error) {
       console.error('Erro no download do template VT:', error);

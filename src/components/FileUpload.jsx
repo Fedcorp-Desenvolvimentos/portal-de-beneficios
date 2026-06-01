@@ -14,6 +14,8 @@ import { detectarTipoArquivo, isValeTransporteFile } from '../utils/detectorTipo
 import { vtService } from '../services/vtService'
 import { uploadService } from '../services/uploadService'
 
+import { downloadService } from '../services/downloadService.js'
+
 function Modal({ open, title, onClose, children }) {
   if (!open) return null
 
@@ -262,15 +264,28 @@ export default function FileUpload({ onUpload }) {
     e.preventDefault()
   }
 
+
   const handleBaixarValeTransporte = () => {
-    baixarModeloValeTransporte()
+    downloadService.downloadExcelVT()
+    // baixarModeloValeTransporte()
     setModelosOpen(false)
   }
 
   const handleBaixarBeneficios = () => {
-    baixarModeloBeneficios()
+    downloadService.downloadExcelBeneficios()
+    // baixarModeloBeneficios()
     setModelosOpen(false)
   }
+
+  // const handleBaixarValeTransporte = () => {
+  //   baixarModeloValeTransporte()
+  //   setModelosOpen(false)
+  // }
+
+  // const handleBaixarBeneficios = () => {
+  //   baixarModeloBeneficios()
+  //   setModelosOpen(false)
+  // }
 
   return (
     <>
