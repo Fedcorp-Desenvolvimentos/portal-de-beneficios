@@ -510,3 +510,37 @@ input:disabled {
   border-radius: 4px;
   margin-bottom: 20px;
 }
+.administradoras-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.btn-nova-administradora {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: #1e40af;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-nova-administradora:hover {
+  background: #667eea;
+}
+
+.action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-button.danger {
+  color: #dc2626;
+}

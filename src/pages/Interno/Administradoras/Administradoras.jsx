@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { listarTodasAdministradoras, excluirAdministradora } from '../../../services/administradoraService.js'
+import { Eye, Pencil, Trash2, Plus } from 'lucide-react'
+
+import {
+  listarTodasAdministradoras,
+  excluirAdministradora,
+} from '../../../services/administradoraService.js'
+
 import './Administradoras.css'
 import { useLoading } from '../../../hooks/useLoading.js'
 import PageLayout from '../../../Layouts/PageLayout/PageLayout.jsx'
@@ -8,7 +14,7 @@ import PageLayout from '../../../Layouts/PageLayout/PageLayout.jsx'
 export default function Administradoras() {
   const navigate = useNavigate()
   const [administradoras, setAdministradoras] = useState([])
-  const { loading, startLoading, stopLoading, updateProgress } = useLoading();
+  const { loading, startLoading, stopLoading } = useLoading()
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -17,13 +23,13 @@ export default function Administradoras() {
 
   const carregarAdministradoras = async () => {
     try {
-      startLoading("Carregando administradoras...")
+      startLoading('Carregando administradoras...')
       const data = await listarTodasAdministradoras()
-      // console.log('📋 Administradoras carregadas:', data)
-      setAdministradoras(data)
+
+      setAdministradoras(Array.isArray(data) ? data : [])
       setError('')
     } catch (error) {
-      console.error('❌ Erro ao carregar administradoras:', error)
+      console.error('Erro ao carregar administradoras:', error)
       setError('Erro ao carregar lista de administradoras')
     } finally {
       stopLoading()
@@ -31,14 +37,14 @@ export default function Administradoras() {
   }
 
   const handleExcluir = async (id) => {
-    if (window.confirm('Tem certeza que deseja excluir esta administradora?')) {
-      try {
-        await excluirAdministradora(id)
-        await carregarAdministradoras()
-      } catch (error) {
-        console.error('❌ Erro ao excluir:', error)
-        alert('Erro ao excluir administradora')
-      }
+    if (!window.confirm('Tem certeza que deseja excluir esta administradora?')) return
+
+    try {
+      await excluirAdministradora(id)
+      await carregarAdministradoras()
+    } catch (error) {
+      console.error('Erro ao excluir:', error)
+      alert('Erro ao excluir administradora')
     }
   }
 
@@ -51,15 +57,29 @@ export default function Administradoras() {
   }
 
   return (
-    <PageLayout title='Administradoras' subtitle='Gerencie as administradoras cadastradas no sistema.'>
+    <PageLayout
+      title="Administradoras"
+      subtitle="Gerencie as administradoras cadastradas no sistema."
+    >
       <div className="administradoras-page">
         <div className="administradoras-card">
-          <h2>Lista de Administradoras</h2>
-          
+          <div className="administradoras-header">
+            <h2>Lista de Administradoras</h2>
+
+            <button
+              type="button"
+              className="btn-nova-administradora"
+              onClick={() => navigate('/interno/cadastrar-administradora')}
+            >
+              <Plus size={18} />
+              Nova Administradora
+            </button>
+          </div>
+
           {loading && <div className="loading-message">Carregando...</div>}
-          
+
           {error && <div className="error-message">{error}</div>}
-          
+
           {!loading && !error && (
             <table className="administradoras-table">
               <thead>
@@ -73,6 +93,7 @@ export default function Administradoras() {
                   <th>Ações</th>
                 </tr>
               </thead>
+
               <tbody>
                 {administradoras.length === 0 ? (
                   <tr>
@@ -87,30 +108,41 @@ export default function Administradoras() {
                       <td>{admin.razao_social}</td>
                       <td>{admin.nome_fantasia || '-'}</td>
                       <td>{admin.email || '-'}</td>
+
                       <td>
                         <span className={getStatusClass(admin.ativo)}>
                           {admin.ativo ? 'Ativa' : 'Inativa'}
                         </span>
                       </td>
+
                       <td>{formatarCartaoAdmin(admin.cartao_admin)}</td>
+
                       <td className="table-actions">
-                        <button 
+                        <button
+                          type="button"
                           onClick={() => navigate(`/interno/administradoras/${admin.id}`)}
                           title="Ver detalhes"
+                          className="action-button"
                         >
-                          👁️
+                          <Eye size={18} />
                         </button>
-                        <button 
+
+                        <button
+                          type="button"
                           onClick={() => navigate(`/interno/administradoras/editar/${admin.id}`)}
                           title="Editar"
+                          className="action-button"
                         >
-                          ✏️
+                          <Pencil size={18} />
                         </button>
-                        <button 
+
+                        <button
+                          type="button"
                           onClick={() => handleExcluir(admin.id)}
                           title="Excluir"
+                          className="action-button danger"
                         >
-                          🗑️
+                          <Trash2 size={18} />
                         </button>
                       </td>
                     </tr>
