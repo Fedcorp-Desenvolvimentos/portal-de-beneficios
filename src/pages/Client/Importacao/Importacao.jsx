@@ -5,7 +5,6 @@ import './Importacao.css'
 import { uploadService } from '../../../services/uploadService'
 import { toast } from 'react-toastify'
 import {
-  aplicarAjusteLimiteBeneficios,
   prepararDadosParaEnvio,
 } from '../../../utils/ajuste_calculo_importacao'
 
@@ -327,12 +326,9 @@ function getRowValidation(row) {
     erros.push('Valor inválido')
   }
 
-  const bloqueadoPorValor = Number(valor) > 2500
-
   return {
     erros,
-    bloqueadoPorValor,
-    bloqueado: erros.length > 0 || bloqueadoPorValor,
+    bloqueado: erros.length > 0,
   }
 }
 
@@ -389,7 +385,7 @@ export default function Importacao() {
   })
 
   const [modalOpen, setModalOpen] = useState(false)
-  const [mostrarSomenteAcima2500, setMostrarSomenteAcima2500] = useState(false)
+  // const [mostrarSomenteAcima2500, setMostrarSomenteAcima2500] = useState(false)
 
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [detailsTitle, setDetailsTitle] = useState('')
@@ -496,7 +492,7 @@ export default function Importacao() {
         setConfirmDeleteOpen(false)
         setColaboradorParaExcluir(null)
         setReviewOpen(false)
-        setMostrarSomenteAcima2500(false)
+        // setMostrarSomenteAcima2500(false)
         
         toast.success(`Arquivo de Vale Transporte importado com ${parsed.length} registros`)
         
@@ -616,7 +612,7 @@ export default function Importacao() {
       setConfirmDeleteOpen(false)
       setColaboradorParaExcluir(null)
       setReviewOpen(false)
-      setMostrarSomenteAcima2500(false)
+      // setMostrarSomenteAcima2500(false)
 
       setReviewData({
         totalFuncionarios: 0,
@@ -662,7 +658,6 @@ export default function Importacao() {
       return {
         ...r,
         bloqueado: validacao.bloqueado,
-        bloqueadoPorValor: validacao.bloqueadoPorValor,
         errosValidacao: validacao.erros,
       }
     })
@@ -673,13 +668,15 @@ export default function Importacao() {
     [linhasValidadas]
   )
 
-  const linhasExibidas = useMemo(() => {
-    if (mostrarSomenteAcima2500) {
-      return linhasValidadas.filter((r) => r.bloqueado)
-    }
+  const linhasExibidas = linhasValidadas
 
-    return linhasValidadas
-  }, [linhasValidadas, mostrarSomenteAcima2500])
+  // const linhasExibidas = useMemo(() => {
+  //   if (mostrarSomenteAcima2500) {
+  //     return linhasValidadas.filter((r) => r.bloqueado)
+  //   }
+
+  //   return linhasValidadas
+  // }, [linhasValidadas, mostrarSomenteAcima2500])
 
   const podeEnviar = linhasValidadas.length > 0 && totalBloqueios === 0
 
@@ -767,7 +764,7 @@ export default function Importacao() {
     setConfirmDeleteOpen(false)
     setColaboradorParaExcluir(null)
     setReviewOpen(false)
-    setMostrarSomenteAcima2500(false)
+    // setMostrarSomenteAcima2500(false)
 
     setReviewData({
       totalFuncionarios: 0,
@@ -874,7 +871,7 @@ export default function Importacao() {
       return
     }
 
-    const dataSincronizada = prepararDadosParaEnvio(lote, data.data_to_backend, 2500)
+    const dataSincronizada = prepararDadosParaEnvio(lote, data.data_to_backend)
 
     let totalMovimentacoes = 0
     let valorTotalBeneficios = 0
@@ -925,8 +922,8 @@ export default function Importacao() {
     try {
       setEnviandoLote(true)
 
-      const loteComAjustes = aplicarAjusteLimiteBeneficios(lote, 2500)
-      const dataToBackendSincronizado = prepararDadosParaEnvio(loteComAjustes, data.data_to_backend, 2500)
+      const loteComAjustes = lote
+      const dataToBackendSincronizado = prepararDadosParaEnvio(loteComAjustes, data.data_to_backend)
 
       const vencimentoFormatado = formEnvio.vencimento || reviewData.vencimento || ''
 
@@ -967,20 +964,20 @@ export default function Importacao() {
       dataToBackendSincronizado.summary.total_movimentacoes = totalMovimentacoes
       dataToBackendSincronizado.summary.valor_total_beneficios = valorTotalBeneficios.toFixed(2)
 
-      const errosAtuais = []
+      // const errosAtuais = []
 
-      loteComAjustes.rows.forEach((func) => {
-        const valor = typeof func.valor_total === 'string' ? parseFloat(func.valor_total) : func.valor_total
+      // loteComAjustes.rows.forEach((func) => {
+      //   const valor = typeof func.valor_total === 'string' ? parseFloat(func.valor_total) : func.valor_total
 
-        if (valor > 2500) {
-          errosAtuais.push(
-            `Valor total do funcionário ${func.nome_funcionario} R$ ${valor.toFixed(2)} excede limite de R$ 2.500,00`
-          )
-        }
-      })
+      //   if (valor > 2500) {
+      //     errosAtuais.push(
+      //       `Valor total do funcionário ${func.nome_funcionario} R$ ${valor.toFixed(2)} excede limite de R$ 2.500,00`
+      //     )
+      //   }
+      // })
 
-      dataToBackendSincronizado.errors = errosAtuais
-      dataToBackendSincronizado.linhas_com_erro = errosAtuais.map(erro => ({ mensagem: erro }))
+      // dataToBackendSincronizado.errors = errosAtuais
+      // dataToBackendSincronizado.linhas_com_erro = errosAtuais.map(erro => ({ mensagem: erro }))
 
       let administradoraId = user?.administradora_id || dataToBackendSincronizado.administradora_id || null
 
@@ -988,8 +985,8 @@ export default function Importacao() {
         file_upload_id: data.file_upload_id || Number(lote.id?.replace('IMP-', '')) || 228,
         administradora_id: administradoraId,
         condominios: dataToBackendSincronizado.condominios || [],
-        errors: errosAtuais,
-        linhas_com_erro: dataToBackendSincronizado.linhas_com_erro || [],
+        // errors: errosAtuais,
+        // linhas_com_erro: dataToBackendSincronizado.linhas_com_erro || [],
         summary: dataToBackendSincronizado.summary,
         movimentacoes_detalhada: dataToBackendSincronizado.movimentacoes_detalhada || [],
         periodo_inicio: dataToBackendSincronizado.periodo_inicio,
@@ -1091,7 +1088,7 @@ export default function Importacao() {
                 </span>
               </div>
 
-              <button
+              {/* <button
                 type="button"
                 className={`kpi kpi-button ${totalBloqueios > 0 ? 'kpi-alert' : ''} ${mostrarSomenteAcima2500 ? 'kpi-active' : ''
                   }`}
@@ -1108,7 +1105,7 @@ export default function Importacao() {
                     : 'Filtrar registros com bloqueio'}
                 </span>
                 <span className="kpi-value">{totalBloqueios}</span>
-              </button>
+              </button> */}
             </div>
 
             <div className="tabela-wrapper">
@@ -1159,11 +1156,7 @@ export default function Importacao() {
                                   <small className="status-detail">
                                     {r.errosValidacao.join(' • ')}
                                   </small>
-                                ) : r.bloqueadoPorValor ? (
-                                  <small className="status-detail">
-                                    Valor acima de R$ 2.500,00
-                                  </small>
-                                ) : null}
+                                )  : null}
                               </div>
                             ) : (
                               <span className="tag tag-ok">OK</span>
