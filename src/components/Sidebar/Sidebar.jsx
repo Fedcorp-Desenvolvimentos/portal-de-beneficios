@@ -132,12 +132,12 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       icon: <FaBuilding />,
       allowed: ["dev"]
     },
-    {
-      path: "/interno/cadastrar-administradora",
-      label: "Criar Administradora",
-      icon: <FaBuilding />,
-      allowed: ["dev"]
-    },
+    // {
+    //   path: "/interno/cadastrar-administradora",
+    //   label: "Criar Administradora",
+    //   icon: <FaBuilding />,
+    //   allowed: ["dev"]
+    // },
     {
       path: "/interno/minha-administradora",
       label: "Minha Administradora",
