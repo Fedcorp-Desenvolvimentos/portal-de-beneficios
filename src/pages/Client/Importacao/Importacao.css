@@ -1161,3 +1161,148 @@ button {
   height: 48px;
   margin: 0;
 }
+
+/* Badge para VT */
+.vt-badge {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  margin-left: 8px;
+}
+
+/* KPI de erro */
+.kpi-error {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border-left: 4px solid #f59f00;
+  position: relative;
+  cursor: help;
+}
+
+.kpi-value.error {
+  color: #e67700;
+  font-weight: bold;
+}
+
+/* Tooltip de erros */
+.error-details-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #f59f00;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
+  z-index: 100;
+  display: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  min-width: 280px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.kpi-error:hover .error-details-tooltip {
+  display: block;
+}
+
+.error-details-header {
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #ffe0a3;
+  color: #e67700;
+}
+
+.error-item {
+  font-size: 12px;
+  padding: 8px;
+  margin-bottom: 6px;
+  background: #fffef7;
+  border-radius: 4px;
+  border-left: 3px solid #f59f00;
+}
+
+.error-linha {
+  font-weight: bold;
+  color: #e67700;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.error-message {
+  display: block;
+  color: #856404;
+  margin: 4px 0;
+}
+
+.error-cpf, .error-nome {
+  display: inline-block;
+  font-size: 11px;
+  color: #666;
+  margin-right: 12px;
+  background: #f8f9fa;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Linhas com erro do backend */
+.row-backend-error {
+  background-color: #fffbf0;
+  border-left: 3px solid #f59f00;
+}
+
+.row-backend-error:hover {
+  background-color: #fff8e0;
+}
+
+/* Tag de warning */
+.tag-warning {
+  background: #fff3cd;
+  color: #e67700;
+  border: 1px solid #ffe0a3;
+}
+
+.tag-ok {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.tag-ok::before {
+  content: "✓ ";
+  font-weight: bold;
+}
+
+/* Estilo para o KPI de erro com cursor pointer */
+.kpi-error {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kpi-error:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.kpi-error.active {
+  background: linear-gradient(135deg, #ffeaa7 0%, #ffd970 100%);
+  border-left: 4px solid #e67700;
+}
+
+.filter-badge {
+  display: inline-block;
+  background: #e67700;
+  color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  margin-left: 8px;
+}
+
+.error-details-header small {
+  display: block;
+  font-size: 10px;
+  color: #999;
+  margin-top: 4px;
+}

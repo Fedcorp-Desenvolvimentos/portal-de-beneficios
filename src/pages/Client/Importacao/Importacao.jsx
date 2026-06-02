@@ -19,6 +19,8 @@ import {
   criarRegraValorAdministradora 
 } from '../../../services/administradoraService.js';
 
+import { vtService } from '../../../services/vtService';
+
 function Modal({ open, title, onClose, children, locked = false }) {
   if (!open) return null
 
@@ -306,7 +308,7 @@ function getQuantidadeDias(row) {
   return Number(row?.quantidade_dias || row?.quantidade || row?.dias || row?.dias_trabalhados || row?.quantidadeDias || 0)
 }
 
-function getRowValidation(row, regraValor = null) {
+function getRowValidation(row, regraValor = null, isVT = false) {
   const erros = []
 
   const nome = getNomeColaborador(row)
@@ -332,15 +334,20 @@ function getRowValidation(row, regraValor = null) {
     erros.push('Valor inválido')
   }
 
-  const limiteAtivo =
-    regraValor?.ativo === true &&
-    regraValor?.bloquear_acima_limite !== false &&
-    Number(regraValor?.valor_limite) > 0
+  let bloqueadoPorValor = false
 
-  const bloqueadoPorValor = limiteAtivo && Number(valor) > Number(regraValor.valor_limite)
+  // SÓ APLICA REGRA DE VALOR SE NÃO FOR VT
+  if (!isVT) {
+    const limiteAtivo =
+      regraValor?.ativo === true &&
+      regraValor?.bloquear_acima_limite !== false &&
+      Number(regraValor?.valor_limite) > 0
 
-  if (bloqueadoPorValor) {
-    erros.push(`Valor acima de ${formatCurrency(regraValor.valor_limite)}`)
+    bloqueadoPorValor = limiteAtivo && Number(valor) > Number(regraValor.valor_limite)
+
+    if (bloqueadoPorValor) {
+      erros.push(`Valor acima de ${formatCurrency(regraValor.valor_limite)}`)
+    }
   }
 
   return {
@@ -387,6 +394,8 @@ function buildPreviewRowsFromMovimentacoes(movimentacoes = []) {
 export default function Importacao() {
   const [data, setData] = useState(null)
   const [dataSincronizada, setDataSincronizada] = useState(null)
+  const [validationVersion, setValidationVersion] = useState(0)
+  const [filterOnlyErrors, setFilterOnlyErrors] = useState(false) // Estado para filtro de erro
 
   const { loading, startLoading, stopLoading, updateProgress } = useLoading();
 
@@ -599,6 +608,7 @@ export default function Importacao() {
         setConfirmDeleteOpen(false)
         setColaboradorParaExcluir(null)
         setReviewOpen(false)
+        setFilterOnlyErrors(false)
 
         toast.success(`Arquivo de Vale Transporte importado com ${parsed.length} registros`)
 
@@ -636,15 +646,6 @@ export default function Importacao() {
 
       const parsed = enrichRowsWithBenefits(previewRows, movimentacoes)
 
-      const errosImportacao =
-        response?.errors ||
-        response?.invalid_rows ||
-        response?.rejeitados ||
-        response?.linhas_com_erro ||
-        response?.summary?.errors ||
-        response?.data_to_backend?.summary?.errors ||
-        []
-
       const semPreview = !Array.isArray(parsed) || parsed.length === 0
 
       if (semPreview) {
@@ -664,17 +665,6 @@ export default function Importacao() {
           response?.error ||
           'Nenhum registro válido foi encontrado no arquivo. Verifique CPF e demais campos obrigatórios.'
 
-        if (Array.isArray(errosImportacao) && errosImportacao.length > 0) {
-          const primeiroErro =
-            typeof errosImportacao[0] === 'string'
-              ? errosImportacao[0]
-              : errosImportacao[0]?.message ||
-              errosImportacao[0]?.erro ||
-              JSON.stringify(errosImportacao[0])
-
-          mensagemErro = `Importação rejeitada. ${primeiroErro}`
-        }
-
         toast.error(mensagemErro)
 
         return {
@@ -691,6 +681,9 @@ export default function Importacao() {
         rows: parsed,
         excluidosPorColab: new Set(),
       })
+
+      setValidationVersion(prev => prev + 1)
+      setFilterOnlyErrors(false)
 
       setDetailsOpen(false)
       setDetailsTitle('')
@@ -739,9 +732,99 @@ export default function Importacao() {
     return lote.rows.filter((r) => !lote.excluidosPorColab.has(getNomeColaborador(r)))
   }, [lote])
 
+  // Verifica se é VT
+  const isValeTransporte = lote?.tipo === 'vale_transporte'
+
+  // Processa linhas_com_erro do backend - apenas para exibição
+  const linhasComErroBackend = useMemo(() => {
+    if (!data?.linhas_com_erro || !Array.isArray(data.linhas_com_erro)) {
+      return []
+    }
+    
+    const limiteAtivo = regraValor?.ativo === true && Number(regraValor?.valor_limite) > 0
+    const valorLimite = Number(regraValor?.valor_limite)
+    
+    return data.linhas_com_erro
+      .filter(erro => {
+        // Se for erro de VALOR_EXCEDIDO, verifica se ainda está acima do limite
+        if (erro.tipo_erro === 'VALOR_EXCEDIDO' && limiteAtivo && erro.dados) {
+          const rowEncontrada = rowsAtivas.find(r => getCpf(r) === erro.dados?.cpf)
+          if (rowEncontrada) {
+            const valorAtual = getValorRow(rowEncontrada)
+            if (valorAtual <= valorLimite) {
+              return false // Erro foi corrigido, não mostra mais
+            }
+          }
+        }
+        return true
+      })
+      .map(erro => ({
+        linha: erro.linha,
+        tipo: erro.tipo_erro,
+        detalhes: erro.dados || {},
+        mensagem: erro.tipo_erro === 'VALOR_EXCEDIDO' 
+          ? `⚠️ Valor excedeu o limite permitido na linha ${erro.linha} (limite: ${formatCurrency(regraValor?.valor_limite)})`
+          : `⚠️ Erro na linha ${erro.linha}: ${erro.tipo_erro}`
+      }))
+  }, [data, rowsAtivas, regraValor])
+
+  // Função para verificar se um registro específico tem erro no backend que AINDA É VÁLIDO
+  const hasBackendError = (row, index) => {
+    if (isValeTransporte) return false
+    
+    const cpf = getCpf(row)
+    const valorAtual = getValorRow(row)
+    const limiteAtivo = regraValor?.ativo === true && Number(regraValor?.valor_limite) > 0
+    
+    // Procura o erro correspondente no backend
+    const erroEncontrado = linhasComErroBackend.find(erro => 
+      erro.detalhes?.cpf === cpf || 
+      erro.detalhes?.nome === getNomeColaborador(row)
+    )
+    
+    if (!erroEncontrado) return false
+    
+    // Se o erro é do tipo VALOR_EXCEDIDO, verifica se o valor atual ainda excede o limite
+    if (erroEncontrado.tipo === 'VALOR_EXCEDIDO' && limiteAtivo) {
+      const valorLimite = Number(regraValor.valor_limite)
+      // Se o valor atual está dentro do limite, o erro NÃO DEVE MAIS SER EXIBIDO
+      if (valorAtual <= valorLimite) {
+        return false
+      }
+    }
+    
+    return true
+  }
+
+  // Função para pegar a mensagem de erro do backend para um registro (apenas se ainda for válido)
+  const getBackendErrorMessage = (row, index) => {
+    const cpf = getCpf(row)
+    const valorAtual = getValorRow(row)
+    const limiteAtivo = regraValor?.ativo === true && Number(regraValor?.valor_limite) > 0
+    
+    const erro = linhasComErroBackend.find(e => 
+      e.detalhes?.cpf === cpf || 
+      e.detalhes?.nome === getNomeColaborador(row)
+    )
+    
+    if (!erro) return ''
+    
+    // Se for erro de valor excedido e o valor atual está OK, não mostra mensagem
+    if (erro.tipo === 'VALOR_EXCEDIDO' && limiteAtivo) {
+      const valorLimite = Number(regraValor.valor_limite)
+      if (valorAtual <= valorLimite) {
+        return ''
+      }
+    }
+    
+    return erro.mensagem
+  }
+
   const linhasValidadas = useMemo(() => {
+    console.log("🔄 Revalidando linhas, versão:", validationVersion)
+    
     return rowsAtivas.map((r) => {
-      const validacao = getRowValidation(r, regraValor)
+      const validacao = getRowValidation(r, regraValor, isValeTransporte)
 
       return {
         ...r,
@@ -750,33 +833,73 @@ export default function Importacao() {
         errosValidacao: validacao.erros,
       }
     })
-  }, [rowsAtivas, regraValor])
+  }, [rowsAtivas, regraValor, isValeTransporte, validationVersion])
 
   const totalBloqueios = useMemo(
     () => linhasValidadas.filter((r) => r.bloqueado).length,
     [linhasValidadas]
   )
 
-  const linhasExibidas = linhasValidadas
+  const totalErrosBackend = useMemo(() => {
+    if (!data?.linhas_com_erro || !Array.isArray(data.linhas_com_erro)) {
+      return 0
+    }
+    
+    const limiteAtivo = regraValor?.ativo === true && Number(regraValor?.valor_limite) > 0
+    const valorLimite = Number(regraValor?.valor_limite)
+    
+    // Filtra apenas erros que ainda são relevantes
+    const errosValidos = data.linhas_com_erro.filter(erro => {
+      if (erro.tipo_erro === 'VALOR_EXCEDIDO' && limiteAtivo && erro.dados) {
+        // Verifica se o CPF ainda está com valor acima do limite
+        const rowEncontrada = rowsAtivas.find(r => getCpf(r) === erro.dados?.cpf)
+        if (rowEncontrada) {
+          const valorAtual = getValorRow(rowEncontrada)
+          if (valorAtual <= valorLimite) {
+            return false // Erro corrigido, não conta mais
+          }
+        }
+      }
+      return true
+    })
+    
+    return errosValidos.length
+  }, [data, rowsAtivas, regraValor])
 
-  const podeEnviar = linhasValidadas.length > 0 && totalBloqueios === 0
+  // Aplica filtro de erro se necessário
+  const linhasExibidas = useMemo(() => {
+    if (!filterOnlyErrors) return linhasValidadas
+    
+    return linhasValidadas.filter(row => hasBackendError(row, 0))
+  }, [linhasValidadas, filterOnlyErrors, hasBackendError])
 
-  function converterVTparaBeneficios(dadosVT) {
-    if (!dadosVT || !Array.isArray(dadosVT)) return [];
+  const podeEnviar = useMemo(() => {
+    if (linhasValidadas.length === 0) return false
+    
+    if (isValeTransporte) {
+      // VT sempre pode enviar (não tem validação de valor)
+      return linhasValidadas.length > 0
+    }
+    
+    return linhasValidadas.length > 0 && totalBloqueios === 0
+  }, [linhasValidadas, totalBloqueios, isValeTransporte])
 
-    return dadosVT.map(item => ({
-      cnpj_condominio: item.cnpj_condominio || '',
-      nome_condominio: item.nome_condominio || '',
-      cpf_funcionario: item.cpf_funcionario || '',
-      nome_funcionario: item.nome_funcionario || '',
-      codigo_produto: item.codigo_produto || '',
-      nome_produto: item.nome_produto || 'Vale Transporte',
-      valor_beneficio_total: item.valor_beneficio_total || 0,
-      quantidade_dias: item.quantidade_dias || 0,
-      data_competencia: item.data_competencia || '',
-      _tipo: 'VT',
-      _dados_originais: item
-    }));
+  useEffect(() => {
+    if (linhasValidadas.length > 0) {
+      console.log("📊 Status das linhas validadas:", linhasValidadas.map(r => ({
+        nome: getNomeColaborador(r),
+        valor: getValorRow(r),
+        bloqueado: r.bloqueado,
+        bloqueadoPorValor: r.bloqueadoPorValor,
+        erros: r.errosValidacao
+      })))
+    }
+  }, [linhasValidadas])
+
+  // Função para alternar o filtro de erro
+  const toggleFilterErrors = () => {
+    if (totalErrosBackend === 0) return
+    setFilterOnlyErrors(!filterOnlyErrors)
   }
 
   const abrirConfirmacaoExclusao = (row) => {
@@ -842,6 +965,7 @@ export default function Importacao() {
     setConfirmDeleteOpen(false)
     setColaboradorParaExcluir(null)
     setReviewOpen(false)
+    setFilterOnlyErrors(false)
 
     setReviewData({
       totalFuncionarios: 0,
@@ -873,6 +997,10 @@ export default function Importacao() {
 
   const iniciarEdicaoBeneficio = (index, valorAtual) => {
     if (enviandoLote) return
+    if (isValeTransporte) {
+      toast.warning('Edição de benefícios não permitida para Vale Transporte.')
+      return
+    }
 
     setEditingBenefitIndex(index)
     setEditBenefitValue(String(valorAtual || '').replace(',', '.'))
@@ -933,8 +1061,16 @@ export default function Importacao() {
     setDetailsBenefits(beneficiosAtualizados)
     setEditingBenefitIndex(null)
     setEditBenefitValue('')
+    
+    // FORÇA A REVALIDAÇÃO
+    setValidationVersion(prev => prev + 1)
 
     toast.success('Benefício atualizado com sucesso.')
+    
+    // Fecha o modal após um pequeno delay
+    setTimeout(() => {
+      setDetailsOpen(false)
+    }, 1000)
   }
 
   const abrirModalRevisao = (e) => {
@@ -942,25 +1078,30 @@ export default function Importacao() {
 
     if (enviandoLote) return
 
-    if (!data || !data.data_to_backend) {
+    if (!data || (!data.data_to_backend && !isValeTransporte)) {
       console.error('Dados de envio não disponíveis')
       toast.error('Erro: dados do arquivo não disponíveis')
       return
     }
 
-    const dataSincronizada = prepararDadosParaEnvio(lote, data.data_to_backend)
-
     let totalMovimentacoes = 0
     let valorTotalBeneficios = 0
 
-    linhasValidadas.forEach((row) => {
-      const valor = getValorRow(row)
-      valorTotalBeneficios += valor
+    if (isValeTransporte) {
+      // Para VT, usa os dados do summary original
+      totalMovimentacoes = data?.summary?.total_movimentacoes || lote.rows.length;
+      valorTotalBeneficios = data?.summary?.valor_total_beneficios || 
+        lote.rows.reduce((total, row) => total + getValorRow(row), 0);
+    } else {
+      linhasValidadas.forEach((row) => {
+        const valor = getValorRow(row)
+        valorTotalBeneficios += valor
 
-      if (row.beneficios && Array.isArray(row.beneficios)) {
-        totalMovimentacoes += row.beneficios.length
-      }
-    })
+        if (row.beneficios && Array.isArray(row.beneficios)) {
+          totalMovimentacoes += row.beneficios.length
+        }
+      })
+    }
 
     const hoje = new Date()
     const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0')
@@ -977,8 +1118,6 @@ export default function Importacao() {
       vencimento: formEnvio.vencimento || `2026-04-30`,
     })
 
-    setDataSincronizada(dataSincronizada)
-
     setModalOpen(false)
     setReviewOpen(true)
   }
@@ -991,98 +1130,94 @@ export default function Importacao() {
       return
     }
 
-    if (!data || !data.data_to_backend) {
-      toast.error('Dados do arquivo não disponíveis')
-      return
-    }
-
     try {
       setEnviandoLote(true)
 
-      const loteComAjustes = lote
-      const dataToBackendSincronizado = prepararDadosParaEnvio(loteComAjustes, data.data_to_backend)
+      let responseEnvio;
 
-      const vencimentoFormatado = formEnvio.vencimento || reviewData.vencimento || ''
+      if (isValeTransporte) {
+        // ========== TRATAMENTO ESPECIAL PARA VT ==========
+        console.log("🚌 Enviando VT para o backend...");
+        
+        const vencimentoFormatado = formEnvio.vencimento || reviewData.vencimento || '';
+        const periodoInicio = formEnvio.periodoInicio || reviewData.periodoInicio;
+        const periodoFim = formEnvio.periodoFim || reviewData.periodoFim;
+        const competenciaMes = formEnvio.competenciaMes || reviewData.competenciaMes;
+        const competenciaAno = formEnvio.competenciaAno || reviewData.competenciaAno;
+        
+        // Pega os dados originais do VT
+        const dadosValidados = data.dados_validados || [];
+        
+        const payloadVT = {
+          file_upload_id: data.file_upload_id || Number(lote.id?.replace('VT-', '')) || 228,
+          administradora_id: user?.administradora_id,
+          tipo_processamento: 'VT',
+          origem: 'importacao_vale_transporte',
+          periodo_inicio: periodoInicio,
+          periodo_fim: periodoFim,
+          competencia_mes: competenciaMes,
+          competencia_ano: competenciaAno,
+          vencimento: vencimentoFormatado,
+          recebimento_beneficio: formEnvio.recebimentoBeneficio || '',
+          dados_validados: dadosValidados,
+          summary: {
+            total_funcionarios: lote.rows.length,
+            total_movimentacoes: dadosValidados.length,
+            valor_total_beneficios: dadosValidados.reduce((total, item) => total + Number(item.valor_beneficio_total || 0), 0).toFixed(2)
+          }
+        };
+        
+        console.log("📦 Payload VT:", payloadVT);
+        
+        // Usa o serviço específico de VT
+        responseEnvio = await vtService.confirmVTUpload(payloadVT);
+        
+      } else {
+        // ========== TRATAMENTO NORMAL PARA BENEFÍCIOS ==========
+        if (!data || !data.data_to_backend) {
+          toast.error('Dados do arquivo não disponíveis')
+          setEnviandoLote(false)
+          return
+        }
+        
+        const loteComAjustes = lote
+        const dataToBackendSincronizado = prepararDadosParaEnvio(loteComAjustes, data.data_to_backend)
 
-      dataToBackendSincronizado.periodo_inicio = formEnvio.periodoInicio || reviewData.periodoInicio
-      dataToBackendSincronizado.periodo_fim = formEnvio.periodoFim || reviewData.periodoFim
-      dataToBackendSincronizado.competencia_mes = formEnvio.competenciaMes || reviewData.competenciaMes
-      dataToBackendSincronizado.competencia_ano = formEnvio.competenciaAno || reviewData.competenciaAno
-      dataToBackendSincronizado.vencimento = vencimentoFormatado
-      dataToBackendSincronizado.recebimento_beneficio = formEnvio.recebimentoBeneficio || ''
-      dataToBackendSincronizado.tipo_processamento = lote.tipo || 'compra'
-      dataToBackendSincronizado.origem = 'importacao_faturamento'
-      dataToBackendSincronizado.file_upload_id = data.file_upload_id || lote.id?.replace('IMP-', '') || 228
+        const vencimentoFormatado = formEnvio.vencimento || reviewData.vencimento || ''
 
-      let totalFuncionarios = 0
-      let totalMovimentacoes = 0
-      let valorTotalBeneficios = 0
-      const funcionariosMap = new Map()
+        dataToBackendSincronizado.periodo_inicio = formEnvio.periodoInicio || reviewData.periodoInicio
+        dataToBackendSincronizado.periodo_fim = formEnvio.periodoFim || reviewData.periodoFim
+        dataToBackendSincronizado.competencia_mes = formEnvio.competenciaMes || reviewData.competenciaMes
+        dataToBackendSincronizado.competencia_ano = formEnvio.competenciaAno || reviewData.competenciaAno
+        dataToBackendSincronizado.vencimento = vencimentoFormatado
+        dataToBackendSincronizado.recebimento_beneficio = formEnvio.recebimentoBeneficio || ''
+        dataToBackendSincronizado.tipo_processamento = lote.tipo || 'compra'
+        dataToBackendSincronizado.origem = 'importacao_faturamento'
+        dataToBackendSincronizado.file_upload_id = data.file_upload_id || lote.id?.replace('IMP-', '') || 228
 
-      loteComAjustes.rows.forEach((func) => {
-        const cpfKey = func.cpf || func.cpf_funcionario || getCpf(func)
+        delete dataToBackendSincronizado.errors
+        delete dataToBackendSincronizado.linhas_com_erro
 
-        if (!funcionariosMap.has(cpfKey)) {
-          funcionariosMap.set(cpfKey, func)
-          totalFuncionarios++
+        const dadosParaEnvio = {
+          file_upload_id: data.file_upload_id || Number(lote.id?.replace('IMP-', '')) || 228,
+          administradora_id: user?.administradora_id || dataToBackendSincronizado.administradora_id,
+          condominios: dataToBackendSincronizado.condominios || [],
+          summary: dataToBackendSincronizado.summary,
+          movimentacoes_detalhada: dataToBackendSincronizado.movimentacoes_detalhada || [],
+          periodo_inicio: dataToBackendSincronizado.periodo_inicio,
+          periodo_fim: dataToBackendSincronizado.periodo_fim,
+          competencia_mes: dataToBackendSincronizado.competencia_mes,
+          competencia_ano: dataToBackendSincronizado.competencia_ano,
+          vencimento: dataToBackendSincronizado.vencimento,
+          recebimento_beneficio: dataToBackendSincronizado.recebimento_beneficio,
+          tipo_processamento: dataToBackendSincronizado.tipo_processamento,
+          origem: dataToBackendSincronizado.origem,
         }
 
-        const valor = getValorRow(func)
-        valorTotalBeneficios += valor
-
-        if (func.beneficios) {
-          totalMovimentacoes += func.beneficios.length
-        }
-      })
-
-      if (!dataToBackendSincronizado.summary) {
-        dataToBackendSincronizado.summary = {}
+        console.log("📦 Enviando Benefícios:", dadosParaEnvio)
+        
+        responseEnvio = await uploadService.confirmUpload(dadosParaEnvio)
       }
-
-      dataToBackendSincronizado.summary.total_funcionarios = totalFuncionarios
-      dataToBackendSincronizado.summary.total_movimentacoes = totalMovimentacoes
-      dataToBackendSincronizado.summary.valor_total_beneficios = valorTotalBeneficios.toFixed(2)
-
-      const errosAtuais = []
-
-      loteComAjustes.rows.forEach((func) => {
-        const validacao = getRowValidation(func, regraValor)
-
-        if (validacao.erros.length > 0) {
-          validacao.erros.forEach((erro) => {
-            errosAtuais.push(`${getNomeColaborador(func)}: ${erro}`)
-          })
-        }
-      })
-
-      dataToBackendSincronizado.errors = errosAtuais
-      dataToBackendSincronizado.linhas_com_erro = errosAtuais.map((erro) => ({
-        mensagem: erro,
-      }))
-
-      let administradoraId = user?.administradora_id || dataToBackendSincronizado.administradora_id || null
-
-      const dadosParaEnvio = {
-        file_upload_id: data.file_upload_id || Number(lote.id?.replace('IMP-', '')) || 228,
-        administradora_id: administradoraId,
-        condominios: dataToBackendSincronizado.condominios || [],
-        errors: errosAtuais,
-        linhas_com_erro: dataToBackendSincronizado.linhas_com_erro || [],
-        summary: dataToBackendSincronizado.summary,
-        movimentacoes_detalhada: dataToBackendSincronizado.movimentacoes_detalhada || [],
-        periodo_inicio: dataToBackendSincronizado.periodo_inicio,
-        periodo_fim: dataToBackendSincronizado.periodo_fim,
-        competencia_mes: dataToBackendSincronizado.competencia_mes,
-        competencia_ano: dataToBackendSincronizado.competencia_ano,
-        vencimento: dataToBackendSincronizado.vencimento,
-        recebimento_beneficio: dataToBackendSincronizado.recebimento_beneficio,
-        tipo_processamento: dataToBackendSincronizado.tipo_processamento,
-        origem: dataToBackendSincronizado.origem,
-        status: 'PARSED',
-        detail: 'Arquivo processado. Confirme os dados para gravação.',
-      }
-
-      const responseEnvio = await uploadService.confirmUpload(dadosParaEnvio)
 
       toast.success(responseEnvio?.detail || responseEnvio?.message || 'Lote enviado com sucesso!')
 
@@ -1092,9 +1227,11 @@ export default function Importacao() {
       setTimeout(() => {
         window.location.href = '/'
       }, 1500)
+      
     } catch (error) {
       console.error('Erro no envio:', error)
-      toast.error(`Erro: ${error.message}`)
+      const errorDetail = error.response?.data?.detail || error.response?.data?.message || error.message;
+      toast.error(`Erro: ${errorDetail}`)
     } finally {
       setEnviandoLote(false)
     }
@@ -1141,9 +1278,11 @@ export default function Importacao() {
               <small>
                 {loadingRegraValor
                   ? 'Carregando regra...'
-                  : regraValor?.ativo && regraValor?.valor_limite
-                    ? `Bloqueio ativo para valores acima de ${formatCurrency(regraValor.valor_limite)}`
-                    : 'Nenhuma trava de valor ativa para esta administradora.'}
+                  : isValeTransporte
+                    ? '🔸 Regra de valor não se aplica para Vale Transporte'
+                    : regraValor?.ativo && regraValor?.valor_limite
+                      ? `Bloqueio ativo para valores acima de ${formatCurrency(regraValor.valor_limite)}`
+                      : 'Nenhuma trava de valor ativa para esta administradora.'}
               </small>
             </div>
 
@@ -1151,7 +1290,7 @@ export default function Importacao() {
               className="btn-ghost"
               type="button"
               onClick={abrirModalRegraValor}
-              disabled={enviandoLote || loadingRegraValor}
+              disabled={enviandoLote || loadingRegraValor || isValeTransporte}
             >
               {regraValor?.id ? 'Editar regra' : 'Cadastrar regra'}
             </button>
@@ -1164,7 +1303,8 @@ export default function Importacao() {
               <div>
                 <h3>Pré-validação do Lote</h3>
                 <small>
-                  Arquivo: <strong>{lote.arquivo}</strong> • Tipo: <strong>{lote.tipo}</strong>
+                  Arquivo: <strong>{lote.arquivo}</strong> • Tipo: <strong>{lote.tipo === 'vale_transporte' ? 'Vale Transporte' : lote.tipo}</strong>
+                  {isValeTransporte && <span className="vt-badge"> 🚌 VT - Sem bloqueio de valor</span>}
                 </small>
               </div>
 
@@ -1192,6 +1332,17 @@ export default function Importacao() {
                   {data?.summary?.novos_registros?.['Total de condomínios novos'] || 0}
                 </span>
               </div>
+
+              {totalErrosBackend > 0 && (
+                <div 
+                  className={`kpi kpi-error ${filterOnlyErrors ? 'active' : ''}`} 
+                  onClick={toggleFilterErrors}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <span className="kpi-label">⚠️ Linhas com erro no processamento</span>
+                  <span className="kpi-value error">{totalErrosBackend}</span>
+                </div>
+              )}
             </div>
 
             <div className="tabela-wrapper">
@@ -1210,18 +1361,20 @@ export default function Importacao() {
                   {linhasExibidas.length === 0 ? (
                     <tr>
                       <td colSpan={5} style={{ textAlign: 'center', padding: '24px' }}>
-                        Nenhum registro encontrado para pré-visualização.
+                        {filterOnlyErrors ? 'Nenhuma linha com erro encontrada.' : 'Nenhum registro encontrado para pré-visualização.'}
                       </td>
                     </tr>
                   ) : (
                     linhasExibidas.map((r, idx) => {
                       const valorExibicao = getValorRow(r)
                       const nomeColaborador = getNomeColaborador(r)
+                      const temErroBackend = hasBackendError(r, idx)
+                      const erroBackendMsg = getBackendErrorMessage(r, idx)
 
                       return (
                         <tr
                           key={`${getRowKey(r)}-${idx}`}
-                          className={r.bloqueado ? 'row-bloqueado' : ''}
+                          className={`${r.bloqueado ? 'row-bloqueado' : ''} ${temErroBackend ? 'row-backend-error' : ''}`}
                         >
                           <td>{getCondominio(r)}</td>
                           <td>{nomeColaborador}</td>
@@ -1231,21 +1384,27 @@ export default function Importacao() {
                             {Number(valorExibicao).toLocaleString('pt-BR', {
                               minimumFractionDigits: 2,
                             })}
-                          </td>
+                           </td>
 
                           <td className="col-status">
                             {r.bloqueado ? (
                               <div className="status-stack">
                                 <span className="tag tag-danger">Bloqueado</span>
-
                                 {r.errosValidacao?.length > 0 ? (
                                   <small className="status-detail">
                                     {r.errosValidacao.join(' • ')}
                                   </small>
                                 ) : null}
                               </div>
+                            ) : temErroBackend ? (
+                              <div className="status-stack">
+                                <span className="tag tag-warning">⚠️ Erro no processamento</span>
+                                <small className="status-detail">
+                                  {erroBackendMsg}
+                                </small>
+                              </div>
                             ) : (
-                              <span className="tag tag-ok">OK</span>
+                              <span className="tag tag-ok">✓ OK</span>
                             )}
                           </td>
 
@@ -1292,13 +1451,15 @@ export default function Importacao() {
                 Enviar para importação
               </button>
 
-              {!podeEnviar && (
+              {!podeEnviar && !isValeTransporte && (
                 <span className="hint">Resolva os bloqueios para habilitar o envio.</span>
               )}
             </div>
           </div>
         )}
 
+        {/* Modals... */}
+        
         <Modal
           open={modalRegraValorOpen}
           title="Regra de Valor"
@@ -1643,16 +1804,18 @@ export default function Importacao() {
                         <>
                           <span>{formatCurrency(beneficio.valor)}</span>
 
-                          <button
-                            type="button"
-                            className="btn-sm btn-outline btn-icon"
-                            onClick={() => iniciarEdicaoBeneficio(index, beneficio.valor)}
-                            title="Editar benefício"
-                            disabled={enviandoLote}
-                          >
-                            <PencilLine size={15} />
-                            <span className="btn-text">Editar</span>
-                          </button>
+                          {!isValeTransporte && (
+                            <button
+                              type="button"
+                              className="btn-sm btn-outline btn-icon"
+                              onClick={() => iniciarEdicaoBeneficio(index, beneficio.valor)}
+                              title="Editar benefício"
+                              disabled={enviandoLote}
+                            >
+                              <PencilLine size={15} />
+                              <span className="btn-text">Editar</span>
+                            </button>
+                          )}
                         </>
                       ) : (
                         <div className="edit-inline">
