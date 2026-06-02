@@ -152,7 +152,7 @@ const AppRouter = () => {
             />
 
             <Route
-              path="/interno/administradoras/cadastro"
+              path="/interno/cadastrar-administradora"
               element={<CadastroAdministradora />}
             />
 

@@ -521,6 +521,8 @@ export default function MinhaAdministradora() {
 
   const isLoading = loadingAdm || loadingUsuarios;
 
+  console.log("user", user);
+
   return (
     <PageLayout
       title="Minha Administradora"
@@ -561,6 +563,15 @@ export default function MinhaAdministradora() {
                       }
                     >
                       Editar Administradora
+                    </S.Button>
+
+                    <S.Button
+                      $variant="primary"
+                      onClick={() =>
+                        navigate(`/interno/cadastrar-administradora`)
+                      }
+                    >
+                      Criar Administradora
                     </S.Button>
                   </>
                 )}
