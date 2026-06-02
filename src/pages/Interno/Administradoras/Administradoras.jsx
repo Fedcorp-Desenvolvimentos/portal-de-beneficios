@@ -13,9 +13,13 @@ import PageLayout from '../../../Layouts/PageLayout/PageLayout.jsx'
 
 export default function Administradoras() {
   const navigate = useNavigate()
+
   const [administradoras, setAdministradoras] = useState([])
-  const { loading, startLoading, stopLoading } = useLoading()
   const [error, setError] = useState('')
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [adminToDelete, setAdminToDelete] = useState(null)
+
+  const { loading, startLoading, stopLoading } = useLoading()
 
   useEffect(() => {
     carregarAdministradoras()
@@ -24,8 +28,8 @@ export default function Administradoras() {
   const carregarAdministradoras = async () => {
     try {
       startLoading('Carregando administradoras...')
-      const data = await listarTodasAdministradoras()
 
+      const data = await listarTodasAdministradoras()
       setAdministradoras(Array.isArray(data) ? data : [])
       setError('')
     } catch (error) {
@@ -36,11 +40,22 @@ export default function Administradoras() {
     }
   }
 
-  const handleExcluir = async (id) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta administradora?')) return
+  const abrirModalExclusao = (admin) => {
+    setAdminToDelete(admin)
+    setShowDeleteModal(true)
+  }
+
+  const fecharModalExclusao = () => {
+    setAdminToDelete(null)
+    setShowDeleteModal(false)
+  }
+
+  const confirmarExclusao = async () => {
+    if (!adminToDelete?.id) return
 
     try {
-      await excluirAdministradora(id)
+      await excluirAdministradora(adminToDelete.id)
+      fecharModalExclusao()
       await carregarAdministradoras()
     } catch (error) {
       console.error('Erro ao excluir:', error)
@@ -69,7 +84,7 @@ export default function Administradoras() {
             <button
               type="button"
               className="btn-nova-administradora"
-              onClick={() => navigate('/interno/cadastrar-administradora')}
+              onClick={() => navigate('/interno/administradoras/nova')}
             >
               <Plus size={18} />
               Nova Administradora
@@ -120,7 +135,9 @@ export default function Administradoras() {
                       <td className="table-actions">
                         <button
                           type="button"
-                          onClick={() => navigate(`/interno/administradoras/${admin.id}`)}
+                          onClick={() =>
+                            navigate(`/interno/administradoras/${admin.id}`)
+                          }
                           title="Ver detalhes"
                           className="action-button"
                         >
@@ -129,7 +146,9 @@ export default function Administradoras() {
 
                         <button
                           type="button"
-                          onClick={() => navigate(`/interno/administradoras/editar/${admin.id}`)}
+                          onClick={() =>
+                            navigate(`/interno/administradoras/editar/${admin.id}`)
+                          }
                           title="Editar"
                           className="action-button"
                         >
@@ -138,7 +157,7 @@ export default function Administradoras() {
 
                         <button
                           type="button"
-                          onClick={() => handleExcluir(admin.id)}
+                          onClick={() => abrirModalExclusao(admin)}
                           title="Excluir"
                           className="action-button danger"
                         >
@@ -153,6 +172,40 @@ export default function Administradoras() {
           )}
         </div>
       </div>
+
+      {showDeleteModal && (
+        <div className="modal-overlay">
+          <div className="modal-content modal-confirmacao">
+            <h3>Confirmar exclusão</h3>
+
+            <p className='p-exclusão'>Deseja realmente excluir a administradora?</p>
+
+            <strong>
+              {adminToDelete?.nome_fantasia ||
+                adminToDelete?.razao_social ||
+                'Administradora selecionada'}
+            </strong>
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={fecharModalExclusao}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={confirmarExclusao}
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageLayout>
   )
 }
