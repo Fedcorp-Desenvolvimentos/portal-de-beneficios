@@ -11,79 +11,11 @@ import UsuarioTable from '../Usuarios/UsuarioTable.jsx';
 import UsuarioModal from '../Usuarios/UsuarioModal.jsx';
 import { S } from './AdministradorasStyles.js';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  import.meta.env.VITE_API_BASE_URL ||
-  'http://localhost:8000';
-
-function getAuthToken() {
-  try {
-    const rawAuth = localStorage.getItem('auth') || sessionStorage.getItem('auth');
-
-    if (rawAuth) {
-      const parsed = JSON.parse(rawAuth);
-      if (parsed?.access) return parsed.access;
-      if (parsed?.token) return parsed.token;
-    }
-
-    const token =
-      localStorage.getItem('access') ||
-      localStorage.getItem('token') ||
-      sessionStorage.getItem('access') ||
-      sessionStorage.getItem('token');
-
-    return token || null;
-  } catch {
-    return null;
-  }
-}
-
-async function requestRegraValor(path, options = {}) {
-  const token = getAuthToken();
-
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    },
-  });
-
-  if (response.status === 204) return null;
-
-  const data = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    const message =
-      data?.detail ||
-      data?.message ||
-      data?.error ||
-      'Erro na comunicação com o servidor';
-
-    throw new Error(message);
-  }
-
-  return data;
-}
-
-async function buscarRegraValorAdministradora(administradoraId) {
-  return requestRegraValor(`/api/administradoras/${administradoraId}/regra-valor/`);
-}
-
-async function criarRegraValorAdministradora(administradoraId, payload) {
-  return requestRegraValor(`/api/administradoras/${administradoraId}/regra-valor/`, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-}
-
-async function atualizarRegraValorAdministradora(administradoraId, regraId, payload) {
-  return requestRegraValor(`/api/administradoras/${administradoraId}/regra-valor/${regraId}/`, {
-    method: 'PUT',
-    body: JSON.stringify(payload),
-  });
-}
+import { 
+  buscarRegraValorAdministradora, 
+  atualizarRegraValorAdministradora, 
+  criarRegraValorAdministradora 
+} from '../../../services/administradoraService.js';
 
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString('pt-BR', {
@@ -417,6 +349,7 @@ export default function MinhaAdministradora() {
       startLoading('Carregando administradora...');
 
       const data = await buscarAdministradoraPorId(administradoraId);
+      // console.log('Administradora carregada:', data);
       setAdministradora(data);
     } catch (error) {
       console.error('❌ Erro ao carregar administradora:', error);

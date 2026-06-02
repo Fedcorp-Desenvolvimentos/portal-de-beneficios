@@ -13,6 +13,12 @@ import { useAuth } from '../../../context/AuthContext'
 import { useLoading } from "../../../hooks/useLoading";
 import PageLayout from '../../../Layouts/PageLayout/PageLayout'
 
+import { 
+  buscarRegraValorAdministradora, 
+  atualizarRegraValorAdministradora, 
+  criarRegraValorAdministradora 
+} from '../../../services/administradoraService.js';
+
 function Modal({ open, title, onClose, children, locked = false }) {
   if (!open) return null
 
@@ -52,74 +58,6 @@ const MESES = [
   { label: 'Novembro', value: '11' },
   { label: 'Dezembro', value: '12' },
 ]
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  import.meta.env.VITE_API_BASE_URL ||
-  'http://localhost:8000'
-
-function getAuthToken() {
-  try {
-    const rawAuth = localStorage.getItem('auth') || sessionStorage.getItem('auth')
-
-    if (rawAuth) {
-      const parsed = JSON.parse(rawAuth)
-      if (parsed?.access) return parsed.access
-      if (parsed?.token) return parsed.token
-    }
-
-    return (
-      localStorage.getItem('access') ||
-      localStorage.getItem('token') ||
-      sessionStorage.getItem('access') ||
-      sessionStorage.getItem('token') ||
-      null
-    )
-  } catch {
-    return null
-  }
-}
-
-async function requestRegraValor(path, options = {}) {
-  const token = getAuthToken()
-
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    },
-  })
-
-  if (response.status === 204 || response.status === 404) return null
-
-  const data = await response.json().catch(() => null)
-
-  if (!response.ok) {
-    throw new Error(data?.detail || data?.message || 'Erro ao consultar regra de valor')
-  }
-
-  return data
-}
-
-async function buscarRegraValorAdministradora(administradoraId) {
-  return requestRegraValor(`/api/administradoras/${administradoraId}/regra-valor/`)
-}
-
-async function criarRegraValorAdministradora(administradoraId, payload) {
-  return requestRegraValor(`/api/administradoras/${administradoraId}/regra-valor/`, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
-}
-
-async function atualizarRegraValorAdministradora(administradoraId, regraId, payload) {
-  return requestRegraValor(`/api/administradoras/${administradoraId}/regra-valor/${regraId}/`, {
-    method: 'PUT',
-    body: JSON.stringify(payload),
-  })
-}
 
 function getNomeColaborador(row) {
   return row?.nome_funcionario || row?.nome_func || row?.colaborador || row?.nome || row?.funcionario || row?.nome_funcionário || ''
