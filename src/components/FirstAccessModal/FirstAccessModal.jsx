@@ -1,28 +1,44 @@
-// src/components/ChangePasswordModal/ChangePasswordModal.jsx
+// src/components/FirstAccessModal/FirstAccessModal.jsx
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
-import { FaTimes, FaLock, FaEye, FaEyeSlash, FaKey, FaCheckCircle } from 'react-icons/fa';
-import * as S from './ChangePasswordModalStyles';
-import api from '../../services/api';
+import { 
+  FaLock, 
+  FaEye, 
+  FaEyeSlash, 
+  FaCheckCircle,
+  FaUserCheck 
+} from 'react-icons/fa';
+import * as S from './FirstAccessModalStyles';
+import { userService } from '../../services/userService';
 
-const ChangePasswordModalContent = ({ onClose, onSuccess, userName }) => {
+const FirstAccessModalContent = ({ onSuccess, user }) => {
   const [formData, setFormData] = useState({
+    oldPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
-  const [showPassword, setShowPassword] = useState(false);
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const userName = user?.nome || user?.username || user?.email?.split('@')[0] || 'Usuário';
+
   const validateForm = () => {
     const newErrors = {};
+    
+    if (!formData.oldPassword) {
+      newErrors.oldPassword = 'A senha antiga é obrigatória';
+    }
     
     if (!formData.newPassword) {
       newErrors.newPassword = 'A nova senha é obrigatória';
     } else if (formData.newPassword.length < 6) {
       newErrors.newPassword = 'A senha deve ter pelo menos 6 caracteres';
+    } else if (formData.newPassword.length > 128) {
+      newErrors.newPassword = 'A senha deve ter no máximo 128 caracteres';
     }
     
     if (!formData.confirmPassword) {
@@ -44,24 +60,25 @@ const ChangePasswordModalContent = ({ onClose, onSuccess, userName }) => {
     setErrors({});
     
     try {
-      const payload = {
-        old_password: null, // Para primeiro acesso, não tem senha antiga
-        new_password: formData.newPassword
-      };
+      // Envia old_password e new_password
+      const result = await userService.changePassword(formData.newPassword, formData.oldPassword);
       
-      await api.post('/api/users/password/', payload);
-      
-      setSuccess(true);
-      
-      // Aguarda 2 segundos para mostrar o sucesso, depois fecha e desloga
-      setTimeout(() => {
-        onSuccess();
-      }, 2000);
-      
+      if (result.success) {
+        setSuccess(true);
+        
+        // Aguarda 2 segundos e chama o onSuccess
+        setTimeout(() => {
+          onSuccess();
+        }, 2000);
+      } else {
+        setErrors({
+          submit: result.error
+        });
+      }
     } catch (error) {
       console.error('Erro ao alterar senha:', error);
       setErrors({
-        submit: error.response?.data?.detail || 'Erro ao alterar senha. Tente novamente.'
+        submit: 'Erro ao alterar senha. Tente novamente.'
       });
     } finally {
       setIsSubmitting(false);
@@ -100,21 +117,48 @@ const ChangePasswordModalContent = ({ onClose, onSuccess, userName }) => {
       <S.ModalContent onClick={(e) => e.stopPropagation()}>
         <S.ModalHeader>
           <S.ModalTitleWrapper>
-            <FaKey />
-            <S.ModalTitle>Primeiro Acesso - Definir Senha</S.ModalTitle>
+            <FaUserCheck />
+            <S.ModalTitle>Primeiro Acesso - Alterar Senha</S.ModalTitle>
           </S.ModalTitleWrapper>
-          <S.ModalClose onClick={onClose}>
-            <FaTimes />
-          </S.ModalClose>
         </S.ModalHeader>
         
         <S.ModalBody>
           <S.WelcomeMessage>
-            <p>Olá, <strong>{userName}</strong>!</p>
-            <p>Este é seu primeiro acesso. Por favor, defina uma senha segura para continuar.</p>
+            <S.WelcomeText>
+              Olá, <strong>{userName}</strong>!
+            </S.WelcomeText>
+            <S.InfoText>
+              Este é seu primeiro acesso. <strong>Você precisa alterar sua senha para continuar.</strong>
+            </S.InfoText>
           </S.WelcomeMessage>
           
           <S.Form onSubmit={handleSubmit}>
+            <S.FormGroup>
+              <S.Label htmlFor="oldPassword">
+                <FaLock />
+                Senha Antiga
+              </S.Label>
+              <S.InputWrapper>
+                <S.Input
+                  type={showOldPassword ? 'text' : 'password'}
+                  id="oldPassword"
+                  name="oldPassword"
+                  value={formData.oldPassword}
+                  onChange={handleChange}
+                  placeholder="Digite sua senha atual"
+                  $hasError={!!errors.oldPassword}
+                  autoFocus
+                />
+                <S.TogglePassword
+                  type="button"
+                  onClick={() => setShowOldPassword(!showOldPassword)}
+                >
+                  {showOldPassword ? <FaEyeSlash /> : <FaEye />}
+                </S.TogglePassword>
+              </S.InputWrapper>
+              {errors.oldPassword && <S.ErrorMessage>{errors.oldPassword}</S.ErrorMessage>}
+            </S.FormGroup>
+
             <S.FormGroup>
               <S.Label htmlFor="newPassword">
                 <FaLock />
@@ -122,7 +166,7 @@ const ChangePasswordModalContent = ({ onClose, onSuccess, userName }) => {
               </S.Label>
               <S.InputWrapper>
                 <S.Input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showNewPassword ? 'text' : 'password'}
                   id="newPassword"
                   name="newPassword"
                   value={formData.newPassword}
@@ -132,9 +176,9 @@ const ChangePasswordModalContent = ({ onClose, onSuccess, userName }) => {
                 />
                 <S.TogglePassword
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowNewPassword(!showNewPassword)}
                 >
-                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  {showNewPassword ? <FaEyeSlash /> : <FaEye />}
                 </S.TogglePassword>
               </S.InputWrapper>
               {errors.newPassword && <S.ErrorMessage>{errors.newPassword}</S.ErrorMessage>}
@@ -144,7 +188,7 @@ const ChangePasswordModalContent = ({ onClose, onSuccess, userName }) => {
             <S.FormGroup>
               <S.Label htmlFor="confirmPassword">
                 <FaLock />
-                Confirmar Senha
+                Confirmar Nova Senha
               </S.Label>
               <S.InputWrapper>
                 <S.Input
@@ -170,7 +214,7 @@ const ChangePasswordModalContent = ({ onClose, onSuccess, userName }) => {
             
             <S.ModalFooter>
               <S.ModalButton type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Alterando...' : 'Definir Senha'}
+                {isSubmitting ? 'Alterando senha...' : 'Alterar Senha e Acessar'}
               </S.ModalButton>
             </S.ModalFooter>
           </S.Form>
@@ -180,17 +224,16 @@ const ChangePasswordModalContent = ({ onClose, onSuccess, userName }) => {
   );
 };
 
-const ChangePasswordModal = ({ isOpen, onClose, onSuccess, userName }) => {
+const FirstAccessModal = ({ isOpen, onClose, onSuccess, user }) => {
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
-    <ChangePasswordModalContent
-      onClose={onClose}
+    <FirstAccessModalContent
       onSuccess={onSuccess}
-      userName={userName}
+      user={user}
     />,
     document.body
   );
 };
 
-export default ChangePasswordModal;
+export default FirstAccessModal;

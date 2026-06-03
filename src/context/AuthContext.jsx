@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
     const { loading, setLoading, setLoadingMessage } = useGlobal();
     const navigate = useNavigate();
 
-    // console.log("user - context", user)
+    console.log("user - context", user)
 
     const login = useCallback(async (credentials) => {
         setLoadingMessage("Fazendo login...");

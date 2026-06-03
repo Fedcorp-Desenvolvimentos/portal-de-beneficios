@@ -252,6 +252,35 @@ export const userService = {
             throw error;
         }
     },
+
+    /**
+     * Altera a senha do usuário logado
+     * Para primeiro acesso, não precisa enviar old_password
+     */
+    changePassword: async (newPassword, oldPassword = null) => {
+        try {
+            const payload = {
+                new_password: newPassword
+            };
+            
+            // Só envia a senha antiga se for fornecida
+            if (oldPassword !== null) {
+                payload.old_password = oldPassword;
+            }
+            
+            const response = await api.post('/api/users/password/', payload);
+            return {
+                success: true,
+                data: response.data
+            };
+        } catch (error) {
+            console.error('Erro ao alterar senha:', error);
+            return {
+                success: false,
+                error: error.response?.data?.detail || 'Erro ao alterar senha. Tente novamente.'
+            };
+        }
+    },
 };
 
 // Exportações únicas (sem duplicação)
@@ -263,3 +292,4 @@ export const deleteUsuario = userService.excluirUsuario;
 export const desvincularAdministradora = userService.desvincularAdministradora;
 export const listarAdministradoras = userService.listarAdministradoras;
 export const vincularAdministradora = userService.vincularAdministradora;
+export const changePassword = userService.changePassword;

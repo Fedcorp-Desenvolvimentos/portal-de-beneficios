@@ -1,4 +1,4 @@
-// src/components/ChangePasswordModal/ChangePasswordModalStyles.js
+// src/components/FirstAccessModal/FirstAccessModalStyles.js
 import styled, { keyframes, css } from 'styled-components';
 
 const fadeIn = keyframes`
@@ -29,7 +29,7 @@ export const ModalOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
   z-index: 99999;
   display: flex;
@@ -48,13 +48,16 @@ export const ModalContent = styled.div`
   display: flex;
   flex-direction: column;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  animation: ${slideIn} 0.2s ease;
+  animation: ${slideIn} 0.3s ease;
 
   @media (max-width: 640px) {
     max-width: 95%;
     border-radius: 20px;
   }
 `;
+
+// src/components/FirstAccessModal/FirstAccessModalStyles.js
+// Remove ou comenta a parte do ModalClose
 
 export const ModalHeader = styled.div`
   display: flex;
@@ -68,6 +71,7 @@ export const ModalTitleWrapper = styled.div`
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  width: 100%;
 
   svg {
     color: #FFD700;
@@ -75,6 +79,7 @@ export const ModalTitleWrapper = styled.div`
   }
 `;
 
+// Remove ou comenta o styled component ModalClose
 export const ModalTitle = styled.h3`
   margin: 0;
   font-size: 1.125rem;
@@ -106,24 +111,29 @@ export const ModalBody = styled.div`
 `;
 
 export const WelcomeMessage = styled.div`
-  background: #f0f9ff;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
   border-left: 4px solid #0F3D5D;
   padding: 1rem;
   border-radius: 12px;
   margin-bottom: 1.5rem;
+`;
+
+export const WelcomeText = styled.p`
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0F3D5D;
   
-  p {
-    margin: 0 0 0.5rem 0;
-    color: #475569;
-    
-    &:last-child {
-      margin-bottom: 0;
-    }
-    
-    strong {
-      color: #0F3D5D;
-    }
+  strong {
+    color: #0F3D5D;
   }
+`;
+
+export const InfoText = styled.p`
+  margin: 0;
+  font-size: 0.875rem;
+  color: #475569;
+  line-height: 1.5;
 `;
 
 export const Form = styled.form`
