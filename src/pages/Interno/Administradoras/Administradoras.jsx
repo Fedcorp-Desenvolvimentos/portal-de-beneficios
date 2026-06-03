@@ -84,7 +84,7 @@ export default function Administradoras() {
             <button
               type="button"
               className="btn-nova-administradora"
-              onClick={() => navigate('/interno/administradoras/nova')}
+              onClick={() => navigate('/interno/cadastrar-administradora')}
             >
               <Plus size={18} />
               Nova Administradora

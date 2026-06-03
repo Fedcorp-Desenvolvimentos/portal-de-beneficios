@@ -349,7 +349,7 @@ export default function MinhaAdministradora() {
       startLoading('Carregando administradora...');
 
       const data = await buscarAdministradoraPorId(administradoraId);
-      // console.log('Administradora carregada:', data);
+      console.log('Administradora carregada:', data);
       setAdministradora(data);
     } catch (error) {
       console.error('❌ Erro ao carregar administradora:', error);

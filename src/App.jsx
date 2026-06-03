@@ -19,9 +19,7 @@ function App() {
     await logout();
   };
 
-  // Não permite fechar - função vazia
   const handleClose = () => {
-    // Não faz nada - força o usuário a trocar a senha
     return;
   };
 

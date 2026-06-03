@@ -395,7 +395,7 @@ export default function Importacao() {
   const [data, setData] = useState(null)
   const [validationVersion, setValidationVersion] = useState(0)
   const [filterOnlyErrors, setFilterOnlyErrors] = useState(false)
-  const [filterOnlyBlocked, setFilterOnlyBlocked] = useState(false) // 🔥 NOVO FILTRO DE BLOQUEIO
+  const [filterOnlyBlocked, setFilterOnlyBlocked] = useState(false)
   const [errosModalOpen, setErrosModalOpen] = useState(false)
 
   const { loading, startLoading, stopLoading, updateProgress } = useLoading();
@@ -1485,7 +1485,7 @@ export default function Importacao() {
                                 </small>
                               </div>
                             ) : (
-                              <span className="tag tag-ok">✓ OK</span>
+                              <span className="tag tag-ok">OK</span>
                             )}
                           </td>
 
