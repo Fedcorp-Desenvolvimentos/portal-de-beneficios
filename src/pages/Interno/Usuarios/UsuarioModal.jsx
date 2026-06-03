@@ -385,11 +385,9 @@ export default function UsuarioModal({
               onChange={handleChange}
               required
             >
-              <option value="dev">Desenvolvedor</option>
-              <option value="fin">Financeiro</option>
-              <option value="fat">Faturista</option>
+            
               <option value="adm">Usuário da Administradora</option>
-              <option value="cli">Cliente (Condomínio)</option>
+             
             </select>
           </FormGroup>
 
