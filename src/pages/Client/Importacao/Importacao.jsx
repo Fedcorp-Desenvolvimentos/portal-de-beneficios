@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import FileUpload from '../../../components/FileUpload.jsx'
+import FileUpload from '../../../components/FileUpload/FileUpload.jsx'
 import { PencilLine, Trash2, Check, X as XIcon, Eye } from 'lucide-react'
 import './Importacao.css'
 import { uploadService } from '../../../services/uploadService.js'
@@ -559,7 +559,7 @@ export default function Importacao() {
 
   async function handleResult({ file, result: uploadResult }) {
     try {
-      console.log("🔍 Iniciando processamento do arquivo:", file.name);
+      // console.log("🔍 Iniciando processamento do arquivo:", file.name);
 
       await carregarRegraValor()
 
@@ -570,30 +570,30 @@ export default function Importacao() {
                                 file.name.toLowerCase().includes('vale transporte') ||
                                 file.name.toLowerCase().includes('vale_transporte');
         
-        console.log("📤 Fazendo upload do arquivo...");
+        // console.log("📤 Fazendo upload do arquivo...");
         
         if (isVTByFilename) {
-          console.log("🚌 Detectado VT pelo nome, usando vtService.uploadVTFile");
+          // console.log("🚌 Detectado VT pelo nome, usando vtService.uploadVTFile");
           response = await vtService.uploadVTFile(file, user?.administradora_id);
         } else {
-          console.log("📦 Detectado Benefícios, usando uploadService.uploadFile");
+          // console.log("📦 Detectado Benefícios, usando uploadService.uploadFile");
           response = await uploadService.uploadFile(file, user?.administradora_id);
         }
         
-        console.log("📦 Resposta do backend:", response);
+        // console.log("📦 Resposta do backend:", response);
       } else {
-        console.log("📦 Usando resultado pré-processado:", response);
+        // console.log("📦 Usando resultado pré-processado:", response);
       }
 
       const isVT = isVTResponse(response);
-      console.log("🔍 isVT detectado:", isVT);
+      // console.log("🔍 isVT detectado:", isVT);
       
       const tipoFinal = isVT ? 'vale_transporte' : (file.name.toLowerCase().includes('fat') ? 'faturamento' : 'compra');
       
-      console.log("📌 Tipo final detectado:", tipoFinal);
+      // console.log("📌 Tipo final detectado:", tipoFinal);
 
       if (tipoFinal === 'vale_transporte') {
-        console.log("🚌 Processando como Vale Transporte...");
+        // console.log("🚌 Processando como Vale Transporte...");
 
         let vtData = response;
         
@@ -609,7 +609,7 @@ export default function Importacao() {
         }
 
         const movimentacoes = vtData?.dados_validados || [];
-        console.log("📊 Movimentações VT:", movimentacoes);
+        // console.log("📊 Movimentações VT:", movimentacoes);
 
         let previewRows = vtData?.summary?.total_por_beneficiario || [];
 
@@ -617,7 +617,7 @@ export default function Importacao() {
           previewRows = buildPreviewRowsFromMovimentacoes(movimentacoes);
         }
 
-        console.log("📊 Preview rows do VT:", previewRows);
+        // console.log("📊 Preview rows do VT:", previewRows);
 
         const parsed = previewRows.map(row => ({
           ...row,
@@ -629,7 +629,7 @@ export default function Importacao() {
               valor: m.valor_beneficio_total || getValorRow(m)
             }))
         }))
-        console.log("📊 Dados enriquecidos:", parsed);
+        // console.log("📊 Dados enriquecidos:", parsed);
 
         const semPreview = !Array.isArray(parsed) || parsed.length === 0
 
@@ -665,9 +665,9 @@ export default function Importacao() {
         return { success: true }
       }
 
-      console.log("📊 Processando como Benefícios...");
-      console.log("📊 Preview rows:", response?.summary?.total_por_beneficiario);
-      console.log("📊 Movimentações:", getMovimentacoesBackend(response));
+      // console.log("📊 Processando como Benefícios...");
+      // console.log("📊 Preview rows:", response?.summary?.total_por_beneficiario);
+      // console.log("📊 Movimentações:", getMovimentacoesBackend(response));
 
       const id = 'IMP-' + (response?.file_upload_id || Date.now())
       const tipo = tipoFinal
@@ -690,9 +690,9 @@ export default function Importacao() {
             : [];
 
       if (previewRows.length === 0 && movimentacoes.length > 0) {
-        console.warn("⚠️ Nenhum preview encontrado, mas há movimentações. Usando fallback manual.");
+        // console.warn("⚠️ Nenhum preview encontrado, mas há movimentações. Usando fallback manual.");
         previewRows = buildPreviewRowsFromMovimentacoes(movimentacoes);
-        console.log("📊 Preview manual construído:", previewRows);
+        // console.log("📊 Preview manual construído:", previewRows);
       }
 
       const parsed = enrichRowsWithBenefits(previewRows, movimentacoes)
@@ -735,7 +735,7 @@ export default function Importacao() {
 
       setValidationVersion(prev => prev + 1)
       setFilterOnlyErrors(false)
-      setFilterOnlyBlocked(false) // 🔥 RESETA FILTRO DE BLOQUEIO
+      setFilterOnlyBlocked(false)
 
       setDetailsOpen(false)
       setDetailsTitle('')
@@ -862,7 +862,7 @@ export default function Importacao() {
   }
 
   const linhasValidadas = useMemo(() => {
-    console.log("🔄 Revalidando linhas, versão:", validationVersion)
+    // console.log("🔄 Revalidando linhas, versão:", validationVersion)
     
     return rowsAtivas.map((r) => {
       const validacao = getRowValidation(r, regraValor, isValeTransporte)
@@ -933,13 +933,13 @@ export default function Importacao() {
 
   useEffect(() => {
     if (linhasValidadas.length > 0) {
-      console.log("📊 Status das linhas validadas:", linhasValidadas.map(r => ({
-        nome: getNomeColaborador(r),
-        valor: getValorRow(r),
-        bloqueado: r.bloqueado,
-        bloqueadoPorValor: r.bloqueadoPorValor,
-        erros: r.errosValidacao
-      })))
+      // console.log("📊 Status das linhas validadas:", linhasValidadas.map(r => ({
+      //   nome: getNomeColaborador(r),
+      //   valor: getValorRow(r),
+      //   bloqueado: r.bloqueado,
+      //   bloqueadoPorValor: r.bloqueadoPorValor,
+      //   erros: r.errosValidacao
+      // })))
     }
   }, [linhasValidadas])
 
@@ -1189,7 +1189,7 @@ export default function Importacao() {
       let responseEnvio;
 
       if (isValeTransporte) {
-        console.log("🚌 Enviando VT para o endpoint /api/upload/vt/confirm/ ...");
+        // console.log("🚌 Enviando VT para o endpoint /api/upload/vt/confirm/ ...");
         
         const vencimentoFormatado = formEnvio.vencimento || reviewData.vencimento || '';
         const periodoInicio = formEnvio.periodoInicio || reviewData.periodoInicio;
@@ -1234,12 +1234,12 @@ export default function Importacao() {
           }
         };
         
-        console.log("📦 Payload VT:", payloadVT);
+        // console.log("📦 Payload VT:", payloadVT);
         
         responseEnvio = await vtService.confirmVTUpload(payloadVT);
         
       } else {
-        console.log("📦 Enviando Benefícios para o endpoint /api/upload/confirm/ ...");
+        // console.log("📦 Enviando Benefícios para o endpoint /api/upload/confirm/ ...");
         
         if (!data || !data.data_to_backend) {
           toast.error('Dados do arquivo não disponíveis')
@@ -1282,7 +1282,7 @@ export default function Importacao() {
           modelo_importacao: "VR-BENEFICIOS",
         }
 
-        console.log("📦 Payload Benefícios:", dadosParaEnvio)
+        // console.log("📦 Payload Benefícios:", dadosParaEnvio)
         
         responseEnvio = await uploadService.confirmUpload(dadosParaEnvio)
       }

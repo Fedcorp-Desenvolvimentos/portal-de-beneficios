@@ -26,7 +26,7 @@ const Login = () => {
 
             // console.log("result em login: ", result)
 
-            console.log("Tipo do usuário:", result.user?.tipo);
+            // console.log("Tipo do usuário:", result.user?.tipo);
 
             if (result.success && result.user?.tipo === "fat") {
                 navigate('/dashboard');
@@ -45,7 +45,7 @@ const Login = () => {
         setError(null);
         
         try {
-            console.log('Google credential received');
+            // console.log('Google credential received');
             
             const result = await loginGoogle(credentialResponse.credential);
 

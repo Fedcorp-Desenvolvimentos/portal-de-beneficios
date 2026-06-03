@@ -13,7 +13,7 @@ export function detectarTipoArquivo(file) {
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
         
         const sheets = workbook.SheetNames;
-        console.log('Abas encontradas:', sheets);
+        // console.log('Abas encontradas:', sheets);
         
         // Verifica se é planilha de Vale Transporte
         // Pode ter: 'EMPRESA' e 'USUARIOS' ou apenas 'USUARIOS'
@@ -37,7 +37,7 @@ export function detectarTipoArquivo(file) {
           }
           
           if (isVT) {
-            console.log('Detectado: Planilha de Vale Transporte (encontrado cabeçalho CNPJ*)');
+            // console.log('Detectado: Planilha de Vale Transporte (encontrado cabeçalho CNPJ*)');
             resolve({ tipo: 'VT', sheets: sheets });
             return;
           }
@@ -51,7 +51,7 @@ export function detectarTipoArquivo(file) {
         
         if (data && data.length > 0) {
           const headers = (data[0] || []).map(h => String(h || '').toLowerCase());
-          console.log('Cabeçalhos encontrados:', headers);
+          // console.log('Cabeçalhos encontrados:', headers);
           
           // Verifica colunas de benefícios
           const hasBeneficioCols = headers.some(h => 
@@ -63,7 +63,7 @@ export function detectarTipoArquivo(file) {
           );
           
           if (hasBeneficioCols) {
-            console.log('Detectado: Planilha de Benefícios');
+            // console.log('Detectado: Planilha de Benefícios');
             resolve({ tipo: 'BENEFICIOS', sheets: sheets });
             return;
           }
@@ -71,12 +71,12 @@ export function detectarTipoArquivo(file) {
         
         // Se chegou aqui, tenta identificar pelo nome da aba
         if (temAbaUsuarios) {
-          console.log('Detectado: Planilha de Vale Transporte (apenas pela aba USUARIOS)');
+          // console.log('Detectado: Planilha de Vale Transporte (apenas pela aba USUARIOS)');
           resolve({ tipo: 'VT', sheets: sheets });
           return;
         }
         
-        console.log('Detectado: Tipo desconhecido');
+        // console.log('Detectado: Tipo desconhecido');
         resolve({ tipo: 'DESCONHECIDO', sheets: sheets });
         
       } catch (error) {

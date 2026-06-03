@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import FileUpload from '../../components/FileUpload'
+import FileUpload from '../../components/FileUpload/FileUpload'
 import { PencilLine, Trash2, Check, X as XIcon, Eye } from 'lucide-react'
 import '../../styles/Importacao.css'
 import { uploadService } from '../../services/uploadService'

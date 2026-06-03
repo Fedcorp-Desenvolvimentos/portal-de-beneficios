@@ -86,7 +86,7 @@ const MinhaConta = () => {
   // Função de save para senha
   const handleSaveSenha = useCallback(async (data) => {
     try {
-      console.log("data", data)
+      // console.log("data", data)
       const success = await withLoading(
         async () => {
           return await changePassword(

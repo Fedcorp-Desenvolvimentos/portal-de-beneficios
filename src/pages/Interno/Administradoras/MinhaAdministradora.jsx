@@ -521,7 +521,7 @@ export default function MinhaAdministradora() {
 
   const isLoading = loadingAdm || loadingUsuarios;
 
-  console.log("user", user);
+  // console.log("user", user);
 
   return (
     <PageLayout

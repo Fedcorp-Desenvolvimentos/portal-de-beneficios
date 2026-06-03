@@ -363,7 +363,7 @@ export default function ColaboradorDashboard() {
 
       const pedidosFormatados = lista.map(extrairResumoPedido)
 
-      console.log('Pedidos formatados:', pedidosFormatados)
+      // console.log('Pedidos formatados:', pedidosFormatados)
 
       setPedidos(pedidosFormatados)
     } catch (error) {

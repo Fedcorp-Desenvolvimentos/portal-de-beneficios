@@ -77,7 +77,7 @@ export default function Dashboard() {
           entebenService.getcondominios(),
         ])
 
-        console.log('Dados do dashboard:', { ultima, historico, acordosData })
+        // console.log('Dados do dashboard:', { ultima, historico, acordosData })
 
         setUltimaMovimentacao(ultima)
         setHistoricoImportacoes(toArray(historico))

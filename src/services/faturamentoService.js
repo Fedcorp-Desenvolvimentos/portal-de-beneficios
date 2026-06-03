@@ -187,7 +187,7 @@ export const faturamentoService = {
     const url = this.getExportFaturamentoUrl(params)
     const token = getAuthToken()
 
-    console.log('📥 Baixando de:', url)
+    // console.log('📥 Baixando de:', url)
 
     const response = await fetch(url, {
       method: 'GET',
@@ -211,9 +211,9 @@ export const faturamentoService = {
     const contentType = response.headers.get('content-type') || ''
     const blob = await response.blob()
     
-    console.log('📄 Content-Type:', contentType)
-    console.log('📎 Content-Disposition:', contentDisposition)
-    console.log('📦 Tamanho do blob:', blob.size, 'bytes')
+    // console.log('📄 Content-Type:', contentType)
+    // console.log('📎 Content-Disposition:', contentDisposition)
+    // console.log('📦 Tamanho do blob:', blob.size, 'bytes')
     
     // Extrair filename do header
     let filename = null
@@ -231,7 +231,7 @@ export const faturamentoService = {
       filename = filename.replace(/\.(bin|txt|dat|unknown)$/i, '') + '.xlsx'
     }
 
-    console.log('💾 Salvando como:', filename)
+    // console.log('💾 Salvando como:', filename)
 
     const blobUrl = window.URL.createObjectURL(blob)
     const link = document.createElement('a')

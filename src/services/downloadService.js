@@ -18,7 +18,7 @@ export const downloadService = {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
-      console.log('Download do template VR concluído');
+      // console.log('Download do template VR concluído');
       return response.data;
     } catch (error) {
       console.error('Erro no download do template VR:', error);

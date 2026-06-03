@@ -89,7 +89,7 @@ export const userService = {
         try {
             const response = await api.get('/api/users/list/', { params });
             const data = response.data;
-            console.log('✅ Usuários carregados:', data?.length || 0);
+            // console.log('✅ Usuários carregados:', data?.length || 0);
             return Array.isArray(data) ? data : [];
         } catch (error) {
             console.error('❌ Erro ao listar usuários:', error);
