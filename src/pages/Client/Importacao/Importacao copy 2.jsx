@@ -1310,6 +1310,7 @@ export default function Importacao() {
                 <h3>Pré-validação do Lote</h3>
                 <small>
                   Arquivo: <strong>{lote.arquivo}</strong> • Tipo: <strong>{lote.tipo === 'vale_transporte' ? 'Vale Transporte' : lote.tipo}</strong>
+                  {isValeTransporte && <span className="vt-badge"> 🚌 VT - Edição flexível permitida</span>}
                 </small>
               </div>
 

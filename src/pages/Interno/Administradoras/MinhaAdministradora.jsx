@@ -563,13 +563,8 @@ export default function MinhaAdministradora() {
                       }
                     >
                       Editar Administradora
-                    </S.Button>
-<<<<<<< HEAD
-=======
-
-                  
->>>>>>> 1da87fdd48b711be1f92e178f65a74886dcb74be
-                  </>
+                    </S.Button>    
+                </>
                 )}
               </S.HeaderActions>
             </S.Header>
