@@ -395,7 +395,6 @@ export default function Importacao() {
   const [data, setData] = useState(null)
   const [validationVersion, setValidationVersion] = useState(0)
   const [filterOnlyErrors, setFilterOnlyErrors] = useState(false)
-  const [filterOnlyBlocked, setFilterOnlyBlocked] = useState(false) // 🔥 NOVO FILTRO DE BLOQUEIO
   const [errosModalOpen, setErrosModalOpen] = useState(false)
 
   const { loading, startLoading, stopLoading, updateProgress } = useLoading();
@@ -533,9 +532,6 @@ export default function Importacao() {
 
       setModalRegraValorOpen(false)
       toast.success('Regra de valor salva com sucesso.')
-      
-      // 🔥 FORÇA REVALIDAÇÃO APÓS SALVAR REGRA
-      setValidationVersion(prev => prev + 1)
     } catch (error) {
       console.error('Erro ao salvar regra de valor:', error)
       toast.error(error.message || 'Erro ao salvar regra de valor.')
@@ -544,14 +540,19 @@ export default function Importacao() {
     }
   }
 
+  // 🔥 FUNÇÃO PARA DETECTAR VT DE FORMA ROBUSTA
   const isVTResponse = (response) => {
+    // Verifica se a resposta tem características de VT
     if (!response) return false;
     
+    // Detecção por campos específicos do VT
     if (response.dados_validados !== undefined && response.tipo_processamento === 'VT') return true;
     if (response.tipo_processamento === 'VT') return true;
     if (response.summary && response.summary.valor_total_vt !== undefined) return true;
     if (response.summary && response.summary.total_dias_trabalhados !== undefined) return true;
     if (response.vt_validation !== undefined) return true;
+    
+    // Verifica se veio do endpoint /api/upload/vt/
     if (response.source === 'vt_upload') return true;
     
     return false;
@@ -566,6 +567,7 @@ export default function Importacao() {
       let response = uploadResult;
 
       if (!response) {
+        // 🔥 DETECTA O TIPO PELO NOME DO ARQUIVO ANTES DO UPLOAD
         const isVTByFilename = file.name.toLowerCase().includes('vt') || 
                                 file.name.toLowerCase().includes('vale transporte') ||
                                 file.name.toLowerCase().includes('vale_transporte');
@@ -585,6 +587,7 @@ export default function Importacao() {
         console.log("📦 Usando resultado pré-processado:", response);
       }
 
+      // 🔥 DETECÇÃO CORRETA DE VT (agora mais confiável)
       const isVT = isVTResponse(response);
       console.log("🔍 isVT detectado:", isVT);
       
@@ -592,12 +595,16 @@ export default function Importacao() {
       
       console.log("📌 Tipo final detectado:", tipoFinal);
 
+      // ========== PROCESSAMENTO VT ==========
       if (tipoFinal === 'vale_transporte') {
         console.log("🚌 Processando como Vale Transporte...");
 
+        // Se a resposta já tem a estrutura do vtService
         let vtData = response;
         
+        // Se veio do uploadService comum, pode precisar de adaptação
         if (vtData && !vtData.dados_validados && vtData.summary) {
+          // Tenta extrair dados_validados de movimentacoes_detalhada
           const movimentacoes = getMovimentacoesBackend(vtData);
           if (movimentacoes.length > 0) {
             vtData = {
@@ -611,6 +618,7 @@ export default function Importacao() {
         const movimentacoes = vtData?.dados_validados || [];
         console.log("📊 Movimentações VT:", movimentacoes);
 
+        // Construir preview rows
         let previewRows = vtData?.summary?.total_por_beneficiario || [];
 
         if (previewRows.length === 0 && movimentacoes.length > 0) {
@@ -658,13 +666,13 @@ export default function Importacao() {
         setColaboradorParaExcluir(null)
         setReviewOpen(false)
         setFilterOnlyErrors(false)
-        setFilterOnlyBlocked(false) // 🔥 RESETA FILTRO DE BLOQUEIO
 
         toast.success(`Arquivo de Vale Transporte importado com ${parsed.length} registros`)
 
         return { success: true }
       }
 
+      // ========== PROCESSAMENTO BENEFÍCIOS ==========
       console.log("📊 Processando como Benefícios...");
       console.log("📊 Preview rows:", response?.summary?.total_por_beneficiario);
       console.log("📊 Movimentações:", getMovimentacoesBackend(response));
@@ -735,7 +743,6 @@ export default function Importacao() {
 
       setValidationVersion(prev => prev + 1)
       setFilterOnlyErrors(false)
-      setFilterOnlyBlocked(false) // 🔥 RESETA FILTRO DE BLOQUEIO
 
       setDetailsOpen(false)
       setDetailsTitle('')
@@ -905,21 +912,11 @@ export default function Importacao() {
     return errosValidos.length
   }, [data, rowsAtivas, regraValor, isValeTransporte])
 
-  // 🔥 NOVO: LINHAS EXIBIDAS COM FILTRO DE BLOQUEIO
   const linhasExibidas = useMemo(() => {
-    let resultado = linhasValidadas
+    if (!filterOnlyErrors) return linhasValidadas
     
-    if (filterOnlyErrors) {
-      resultado = resultado.filter(row => hasBackendError(row, 0))
-    }
-    
-    // 🔥 APLICA FILTRO DE BLOQUEIO (NÃO PARA VT)
-    if (filterOnlyBlocked && !isValeTransporte) {
-      resultado = resultado.filter(row => row.bloqueado === true)
-    }
-    
-    return resultado
-  }, [linhasValidadas, filterOnlyErrors, filterOnlyBlocked, isValeTransporte])
+    return linhasValidadas.filter(row => hasBackendError(row, 0))
+  }, [linhasValidadas, filterOnlyErrors])
 
   const podeEnviar = useMemo(() => {
     if (linhasValidadas.length === 0) return false
@@ -943,23 +940,9 @@ export default function Importacao() {
     }
   }, [linhasValidadas])
 
-  // 🔥 TOGGLE PARA FILTRO DE BLOQUEIO
-  const toggleFilterBlocked = () => {
-    if (totalBloqueios === 0) return
-    setFilterOnlyBlocked(!filterOnlyBlocked)
-    // Se ativar filtro de bloqueio, desativa filtro de erro (opcional)
-    if (!filterOnlyBlocked) {
-      setFilterOnlyErrors(false)
-    }
-  }
-
   const toggleFilterErrors = () => {
     if (totalErrosBackend === 0) return
     setFilterOnlyErrors(!filterOnlyErrors)
-    // Se ativar filtro de erro, desativa filtro de bloqueio (opcional)
-    if (!filterOnlyErrors) {
-      setFilterOnlyBlocked(false)
-    }
   }
 
   const abrirConfirmacaoExclusao = (row) => {
@@ -1026,7 +1009,6 @@ export default function Importacao() {
     setColaboradorParaExcluir(null)
     setReviewOpen(false)
     setFilterOnlyErrors(false)
-    setFilterOnlyBlocked(false)
 
     setReviewData({
       totalFuncionarios: 0,
@@ -1188,6 +1170,7 @@ export default function Importacao() {
 
       let responseEnvio;
 
+      // 🔥 ROTEAMENTO CORRETO: VT usa vtService, Benefícios usa uploadService
       if (isValeTransporte) {
         console.log("🚌 Enviando VT para o endpoint /api/upload/vt/confirm/ ...");
         
@@ -1197,6 +1180,7 @@ export default function Importacao() {
         const competenciaMes = formEnvio.competenciaMes || reviewData.competenciaMes;
         const competenciaAno = formEnvio.competenciaAno || reviewData.competenciaAno;
         
+        // Atualiza os dados_validados com os valores editados
         const dadosValidadosAtualizados = (data.dados_validados || []).map(item => {
           const rowCorrespondente = linhasValidadas.find(row => 
             getCpf(row) === item.cpf_funcionario && 
@@ -1236,9 +1220,11 @@ export default function Importacao() {
         
         console.log("📦 Payload VT:", payloadVT);
         
+        // 🔥 USA O vtService PARA VT
         responseEnvio = await vtService.confirmVTUpload(payloadVT);
         
       } else {
+        // ========== BENEFÍCIOS ==========
         console.log("📦 Enviando Benefícios para o endpoint /api/upload/confirm/ ...");
         
         if (!data || !data.data_to_backend) {
@@ -1284,6 +1270,7 @@ export default function Importacao() {
 
         console.log("📦 Payload Benefícios:", dadosParaEnvio)
         
+        // 🔥 USA uploadService PARA BENEFÍCIOS
         responseEnvio = await uploadService.confirmUpload(dadosParaEnvio)
       }
 
@@ -1400,28 +1387,16 @@ export default function Importacao() {
                 </span>
               </div>
 
-              {/* 🔥 KPI DE BLOQUEIOS (NOVO) */}
-              {totalBloqueios > 0 && !isValeTransporte && (
-                <div 
-                  className={`kpi kpi-blocked ${filterOnlyBlocked ? 'active' : ''}`} 
-                  onClick={toggleFilterBlocked}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <span className="kpi-label">🔒 Linhas bloqueadas por regra</span>
-                  <span className="kpi-value error">{totalBloqueios}</span>
-                </div>
-              )}
-
-              {/* {totalErrosBackend > 0 && (
-                <div 
-                  className={`kpi kpi-error ${filterOnlyErrors ? 'active' : ''}`} 
-                  onClick={() => setErrosModalOpen(true)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <span className="kpi-label">⚠️ Linhas com erro no processamento</span>
-                  <span className="kpi-value error">{totalErrosBackend}</span>
-                </div>
-              )} */}
+              {totalErrosBackend > 0 && (
+                  <div 
+                    className={`kpi kpi-error ${filterOnlyErrors ? 'active' : ''}`} 
+                    onClick={() => setErrosModalOpen(true)}  // Abre modal com detalhes
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <span className="kpi-label">⚠️ Linhas com erro no processamento</span>
+                    <span className="kpi-value error">{totalErrosBackend}</span>
+                  </div>
+                )}
             </div>
 
             <div className="tabela-wrapper">
@@ -1440,10 +1415,8 @@ export default function Importacao() {
                   {linhasExibidas.length === 0 ? (
                     <tr>
                       <td colSpan={5} style={{ textAlign: 'center', padding: '24px' }}>
-                        {filterOnlyErrors ? 'Nenhuma linha com erro encontrada.' : 
-                         filterOnlyBlocked ? 'Nenhuma linha bloqueada encontrada.' :
-                         'Nenhum registro encontrado para pré-visualização.'}
-                      </td>
+                        {filterOnlyErrors ? 'Nenhuma linha com erro encontrada.' : 'Nenhum registro encontrado para pré-visualização.'}
+                       </td>
                     </tr>
                   ) : (
                     linhasExibidas.map((r, idx) => {
@@ -1470,7 +1443,7 @@ export default function Importacao() {
                           <td className="col-status">
                             {r.bloqueado ? (
                               <div className="status-stack">
-                                <span className="tag tag-danger">🔒 Bloqueado</span>
+                                <span className="tag tag-danger">Bloqueado</span>
                                 {r.errosValidacao?.length > 0 ? (
                                   <small className="status-detail">
                                     {r.errosValidacao.join(' • ')}
@@ -1485,7 +1458,7 @@ export default function Importacao() {
                                 </small>
                               </div>
                             ) : (
-                              <span className="tag tag-ok">✓ OK</span>
+                              <span className="tag tag-ok">OK</span>
                             )}
                           </td>
 
