@@ -151,6 +151,22 @@ const getTimelineItems = (pedido) => {
   return items;
 };
 
+const getTipoBeneficioPedido = (pedidoApi) => {
+  const modelo = String(
+    pedidoApi?.modelo_importacao || ''
+  ).toUpperCase();
+
+  if (modelo.includes('VT')) {
+    return 'Vale Transporte';
+  }
+
+  if (modelo.includes('VR')) {
+    return 'Alimentação/Refeição';
+  }
+
+  return '-';
+};
+
 const extrairResumoPedido = (pedidoApi) => ({
   id: pedidoApi.id,
   nomeAdministradora: pedidoApi.nome_administradora || '-',
@@ -160,6 +176,7 @@ const extrairResumoPedido = (pedidoApi) => ({
   mesUtilizacao: fmtMonthYear(pedidoApi.vigencia_inicio || pedidoApi.competencia),
   quantidadeDias: pedidoApi.quantidade_dias || '-',
   dataImportacao: pedidoApi.data_importacao,
+  tipoBeneficio: getTipoBeneficioPedido(pedidoApi),
   valorTotal: parseFloat(pedidoApi.valor_total || 0),
   totalFuncionarios: pedidoApi.total_funcionarios || pedidoApi.registros_processados || 0,
   nomeCondominio: pedidoApi.nome_condominio || `Pedido ${pedidoApi.id}`,
@@ -373,30 +390,56 @@ export default function ColaboradorDashboard() {
     setImportOpen(true);
   }
 
-  async function handleCompra(pedido) {
-    if (pedido.status !== 'faturado') {
-      showToast('A compra só fica disponível para pedidos faturados.', { variant: 'warning' });
-      return;
+ async function handleCompra(pedido) {
+  if (pedido.status !== 'faturado') {
+    showToast('A compra só fica disponível para pedidos faturados.', { variant: 'warning' });
+    return;
+  }
+
+  const isVT = pedido.tipoBeneficio?.includes('Transporte');
+
+  try {
+    setDownloadingId(pedido.id);
+
+    if (isVT) {
+      await faturamentoService.baixarExcelCompraVT(
+        { importacao_id: pedido.id },
+        `compra-vt-${pedido.id}`
+      );
+    } else {
+      await faturamentoService.baixarTxtCompra(
+        { importacao_id: pedido.id },
+        `compra-${pedido.id}`
+      );
     }
 
-    try {
-      setDownloadingId(pedido.id);
-      await faturamentoService.baixarTxtCompra({ importacao_id: pedido.id }, `compra-${pedido.id}`);
-      setPedidos((prev) =>
-        prev.map((item) =>
-          item.id === pedido.id
-            ? { ...item, status: 'comprado', compradoEm: new Date().toLocaleDateString('pt-BR') }
-            : item
-        )
-      );
-      showToast(`TXT do pedido ${pedido.id} baixado com sucesso.`, { variant: 'success' });
-    } catch (error) {
-      console.error('Erro ao baixar TXT de compra:', error);
-      showToast(error?.message || 'Não foi possível baixar o TXT de compra.', { variant: 'error' });
-    } finally {
-      setDownloadingId(null);
-    }
+    setPedidos((prev) =>
+      prev.map((item) =>
+        item.id === pedido.id
+          ? {
+              ...item,
+              status: 'comprado',
+              compradoEm: new Date().toLocaleDateString('pt-BR'),
+            }
+          : item
+      )
+    );
+
+    showToast(
+      isVT
+        ? `Excel de compra VT do pedido ${pedido.id} baixado com sucesso.`
+        : `TXT do pedido ${pedido.id} baixado com sucesso.`,
+      { variant: 'success' }
+    );
+  } catch (error) {
+    console.error('Erro ao baixar arquivo de compra:', error);
+    showToast(error?.message || 'Não foi possível baixar o arquivo de compra.', {
+      variant: 'error',
+    });
+  } finally {
+    setDownloadingId(null);
   }
+}
 
   function closeImport() {
     if (uploading) return;
@@ -610,7 +653,7 @@ export default function ColaboradorDashboard() {
                   <tr key={p.id}>
                     <td>
                       <S.IdMain>Pedido #{p.id}</S.IdMain>
-                      {p.importadoEm && <S.IdSub>{fmtDate(p.importadoEm)}</S.IdSub>}
+                     <S.IdSub>{p.tipoBeneficio}</S.IdSub>
                       {p.status === 'cancelado' && p.motivoCancelamento && (
                         <S.IdSub style={{ color: '#b91c1c' }}>Motivo: {p.motivoCancelamento}</S.IdSub>
                       )}

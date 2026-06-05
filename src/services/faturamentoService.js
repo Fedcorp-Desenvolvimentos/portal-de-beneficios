@@ -127,17 +127,17 @@ export const faturamentoService = {
         .sort((a, b) =>
           String(
             b.data_importacao ||
-              b.processed_at ||
-              b.created_at ||
-              b.updated_at ||
-              ''
+            b.processed_at ||
+            b.created_at ||
+            b.updated_at ||
+            ''
           ).localeCompare(
             String(
               a.data_importacao ||
-                a.processed_at ||
-                a.created_at ||
-                a.updated_at ||
-                ''
+              a.processed_at ||
+              a.created_at ||
+              a.updated_at ||
+              ''
             )
           )
         )[0] || null
@@ -178,9 +178,8 @@ export const faturamentoService = {
     const API_BASE =
       import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
-    return `${API_BASE}/api/upload/export/faturamento/${
-      queryString ? `?${queryString}` : ''
-    }`
+    return `${API_BASE}/api/upload/export/faturamento/${queryString ? `?${queryString}` : ''
+      }`
   },
 
   async baixarExportFaturamento(params = {}, nomeBase = 'faturamento') {
@@ -210,18 +209,18 @@ export const faturamentoService = {
     const contentDisposition = response.headers.get('content-disposition') || ''
     const contentType = response.headers.get('content-type') || ''
     const blob = await response.blob()
-    
+
     // console.log('📄 Content-Type:', contentType)
     // console.log('📎 Content-Disposition:', contentDisposition)
     // console.log('📦 Tamanho do blob:', blob.size, 'bytes')
-    
+
     // Extrair filename do header
     let filename = null
     const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
     if (filenameMatch && filenameMatch[1]) {
       filename = filenameMatch[1].replace(/['"]/g, '')
     }
-    
+
     if (!filename) {
       filename = `${nomeBase}_${Date.now()}.xlsx`
     }
@@ -239,7 +238,7 @@ export const faturamentoService = {
     link.download = filename
     document.body.appendChild(link)
     link.click()
-    
+
     setTimeout(() => {
       document.body.removeChild(link)
       window.URL.revokeObjectURL(blobUrl)
@@ -258,15 +257,75 @@ export const faturamentoService = {
     return response.data
   },
 
-  async baixarTxtCompra(params, filename = 'compra') {
+  async baixarExcelCompraVT(params = {}, filename = 'compra-vt') {
     const query = new URLSearchParams(params).toString()
+    const token = getAuthToken()
+
+    const API_BASE =
+      import.meta.env.VITE_API_URL ||
+      'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app'
 
     const response = await fetch(
-      `https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app/api/upload/export/txt-compra/?${query}`,
+      `${API_BASE}/api/upload/export/vt-compra/${query ? `?${query}` : ''}`,
       {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      }
+    )
+
+    if (!response.ok) {
+      const text = await response.text()
+      throw new Error(text || 'Não foi possível baixar o Excel de compra VT.')
+    }
+
+    const contentDisposition = response.headers.get('content-disposition') || ''
+    const contentType = response.headers.get('content-type') || ''
+    const blob = await response.blob()
+
+    let finalFilename = extractFilenameFromDisposition(contentDisposition)
+
+    if (!finalFilename) {
+      finalFilename = `${filename}.xlsx`
+    }
+
+    if (!finalFilename.endsWith('.xlsx') && !finalFilename.endsWith('.xls')) {
+      finalFilename = `${finalFilename}.xlsx`
+    }
+
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+
+    link.href = url
+    link.download = finalFilename
+
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+
+    window.URL.revokeObjectURL(url)
+
+    return {
+      filename: finalFilename,
+      contentType,
+      size: blob.size,
+    }
+  },
+  async baixarTxtCompra(params, filename = 'compra') {
+    const query = new URLSearchParams(params).toString()
+    const token = getAuthToken()
+
+    const API_BASE =
+      import.meta.env.VITE_API_URL ||
+      'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app'
+
+    const response = await fetch(
+      `${API_BASE}/api/upload/export/txt-compra/${query ? `?${query}` : ''}`,
+      {
+        method: 'GET',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       }
     )
@@ -292,5 +351,5 @@ export const faturamentoService = {
     link.remove()
 
     window.URL.revokeObjectURL(url)
-  }
+  },
 }
