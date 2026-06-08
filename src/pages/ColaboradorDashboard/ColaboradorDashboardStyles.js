@@ -724,4 +724,123 @@ export const S = {
     line-height: 1.6;
     margin: 0;
   `,
+
+
+  SkeletonLine : styled.div`
+    width: ${({ $width }) => $width || '100%'};
+    height: ${({ $height }) => $height || '16px'};
+    margin-bottom: ${({ $marginBottom }) => $marginBottom || '0'};
+    border-radius: ${({ $borderRadius }) => $borderRadius || '4px'};
+    background: linear-gradient(
+      90deg,
+      #f0f0f0 25%,
+      #e0e0e0 50%,
+      #f0f0f0 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0;
+      }
+      100% {
+        background-position: -200% 0;
+      }
+    }
+  `,
+
+  SkeletonIcon : styled.div`
+    width: ${({ $width }) => $width || '18px'};
+    height: ${({ $height }) => $height || '18px'};
+    border-radius: ${({ $borderRadius }) => $borderRadius || '4px'};
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  `,
+
+  // E atualize o StatMini para aceitar $color como transient prop:
+  StatMini : styled.div`
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 16px;
+    padding: 16px 20px;
+    min-width: 100px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+    .value {
+      font-size: 28px;
+      font-weight: 700;
+      color: ${({ $color }) => $color || '#2563eb'};
+    }
+
+    .label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+  `,
 };
+
+// ============================================
+// SKELETON COMPONENTS STYLES
+// ============================================
+
+export const SkeletonLine = styled.div`
+  width: ${({ $width }) => $width || '100%'};
+  height: ${({ $height }) => $height || '16px'};
+  margin-bottom: ${({ $marginBottom }) => $marginBottom || '0'};
+  border-radius: ${({ $borderRadius }) => $borderRadius || '4px'};
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+`;
+
+export const SkeletonIcon = styled.div`
+  width: ${({ $width }) => $width || '18px'};
+  height: ${({ $height }) => $height || '18px'};
+  border-radius: ${({ $borderRadius }) => $borderRadius || '4px'};
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+`;
+
+// E atualize o StatMini para aceitar $color como transient prop:
+export const StatMini = styled.div`
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: 16px;
+  padding: 16px 20px;
+  min-width: 100px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  .value {
+    font-size: 28px;
+    font-weight: 700;
+    color: ${({ $color }) => $color || '#2563eb'};
+  }
+
+  .label {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+  }
+`;

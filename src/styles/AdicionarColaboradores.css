@@ -1,4 +1,4 @@
-.import-options {
+/* .import-options {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 22px;
@@ -31,4 +31,4 @@
 .import-card p {
   font-size: 13px;
   color: var(--text-muted);
-}
+} */

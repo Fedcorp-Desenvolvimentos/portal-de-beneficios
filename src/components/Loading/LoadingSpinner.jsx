@@ -1,11 +1,11 @@
-import "../../styles/LoadingSpinner.css";
+// import "../../styles/LoadingSpinner.css";
 
-const LoadingSpinner = () => {
-  return (
-    <div className="spinner-overlay">
-      <div className="spinner" />
-    </div>
-  );
-};
+// const LoadingSpinner = () => {
+//   return (
+//     <div className="spinner-overlay">
+//       <div className="spinner" />
+//     </div>
+//   );
+// };
 
-export default LoadingSpinner;
+// export default LoadingSpinner;

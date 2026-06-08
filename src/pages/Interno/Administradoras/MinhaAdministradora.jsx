@@ -230,9 +230,9 @@ const SkeletonUsuariosCard = () => (
         <h2>
           <S.SkeletonLine $width="200px" $height="24px" $marginBottom="8px" />
         </h2>
-        <p>
+        <div>
           <S.SkeletonLine $width="300px" $height="16px" />
-        </p>
+        </div>
       </div>
 
       <S.Button $variant="primary" disabled>
@@ -280,9 +280,9 @@ const SkeletonHeader = () => (
       <h1>
         <S.SkeletonLine $width="250px" $height="32px" $marginBottom="8px" />
       </h1>
-      <p>
+      <div>
         <S.SkeletonLine $width="200px" $height="16px" />
-      </p>
+      </div>
     </div>
 
     <S.HeaderActions>
@@ -349,7 +349,7 @@ export default function MinhaAdministradora() {
       startLoading('Carregando administradora...');
 
       const data = await buscarAdministradoraPorId(administradoraId);
-      console.log('Administradora carregada:', data);
+      // console.log('Administradora carregada:', data);
       setAdministradora(data);
     } catch (error) {
       console.error('❌ Erro ao carregar administradora:', error);

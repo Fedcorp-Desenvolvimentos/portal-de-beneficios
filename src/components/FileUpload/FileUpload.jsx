@@ -91,7 +91,7 @@ export default function FileUpload({ onUpload }) {
       let uploadResult;
       
       if (tipoArquivo.tipo === 'VT') {
-        console.log('Processando como Vale Transporte');
+        // console.log('Processando como Vale Transporte');
         const vtResponse = await vtService.uploadVTFile(file, userAdministradoraId);
         
         uploadResult = {

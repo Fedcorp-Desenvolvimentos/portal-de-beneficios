@@ -81,7 +81,7 @@ const SkeletonHero = () => (
 
 // Skeleton para o Panel da Última Movimentação
 const SkeletonImportPanel = () => (
-  <S.Panel highlight>
+  <S.Panel highlight="true">
     <S.PanelHead>
       <div>
         <S.SkeletonLine $width="80px" $height="14px" $marginBottom="8px" />
@@ -277,9 +277,17 @@ export default function Dashboard() {
     enqueueSnackbar('Download do Excel iniciado', { variant: 'info' });
   };
 
+  const getSaudacao = () => {
+    const hora = new Date().getHours();
+    
+    if (hora >= 6 && hora < 12) return "Bom dia,";
+    if (hora >= 12 && hora < 18) return "Boa tarde,";
+    return "Boa noite,";
+  };
+
   return (
     <PageLayout 
-      title={`Bem vindo, ${user?.nome || user?.username || user?.email || 'Usuário'}!`} 
+      title={`${getSaudacao()} ${user?.nome || user?.username || user?.email || 'Usuário'}!`} 
       subtitle="Acompanhe importações, faturamento, pendências e documentos em um só lugar."
     >
       <S.Root>
@@ -367,7 +375,7 @@ export default function Dashboard() {
               </S.KPIs>
 
               <S.GridMain>
-                <S.Panel highlight>
+                <S.Panel highlight="true">
                   <S.PanelHead>
                     <div>
                       <S.PanelEyebrow>Importação</S.PanelEyebrow>

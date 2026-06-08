@@ -192,6 +192,112 @@ const extrairResumoPedido = (pedidoApi) => ({
   compradoEm: pedidoApi.data_compra || pedidoApi.data_comprado || null,
 });
 
+
+// ============================================
+// SKELETON COMPONENTS
+// ============================================
+
+// Skeleton para os stats cards
+const SkeletonStats = () => (
+  <S.PageHeader>
+    <S.StatsMini>
+      {[...Array(3)].map((_, i) => (
+        <S.StatMini key={i} $color="#94a3b8">
+          <S.SkeletonLine $width="40px" $height="28px" $marginBottom="4px" />
+          <S.SkeletonLine $width="80px" $height="12px" />
+        </S.StatMini>
+      ))}
+    </S.StatsMini>
+  </S.PageHeader>
+);
+
+// Skeleton para os filtros
+const SkeletonFilters = () => (
+  <S.Filters>
+    <S.Search style={{ position: 'relative' }}>
+      <S.SkeletonIcon $width="15px" $height="15px" />
+      <S.SkeletonLine $width="100%" $height="40px" $borderRadius="12px" />
+    </S.Search>
+    <S.SkeletonLine $width="180px" $height="40px" $borderRadius="12px" />
+  </S.Filters>
+);
+
+// Skeleton para linhas da tabela
+const SkeletonTableRow = () => (
+  <tr>
+    <td>
+      <S.SkeletonLine $width="80px" $height="18px" $marginBottom="6px" />
+      <S.SkeletonLine $width="100px" $height="12px" />
+    </td>
+    <td>
+      <S.SkeletonLine $width="140px" $height="16px" />
+    </td>
+    <td>
+      <S.SkeletonLine $width="90px" $height="14px" />
+    </td>
+    <td>
+      <S.SkeletonLine $width="70px" $height="14px" />
+    </td>
+    <td>
+      <S.SkeletonLine $width="80px" $height="18px" />
+    </td>
+    <td>
+      <S.SkeletonLine $width="120px" $height="32px" $borderRadius="8px" />
+    </td>
+    <td>
+      <S.SkeletonLine $width="50px" $height="28px" $borderRadius="6px" />
+    </td>
+    <td>
+      <S.SkeletonLine $width="70px" $height="28px" $borderRadius="6px" />
+    </td>
+    <td>
+      <S.SkeletonLine $width="70px" $height="28px" $borderRadius="6px" />
+    </td>
+    <td>
+      <S.SkeletonLine $width="60px" $height="28px" $borderRadius="6px" />
+    </td>
+  </tr>
+);
+
+// Skeleton para a tabela completa
+const SkeletonTable = () => (
+  <S.TableWrap>
+    <S.Table>
+      <thead>
+        <tr>
+          <th>Pedido</th>
+          <th>Administradora</th>
+          <th>Vencimento</th>
+          <th>Competência</th>
+          <th>Valor</th>
+          <th>Status</th>
+          <th>Timeline</th>
+          <th>Excel</th>
+          <th>Docs</th>
+          <th>Compra</th>
+        </tr>
+      </thead>
+      <tbody>
+        {[...Array(5)].map((_, i) => (
+          <SkeletonTableRow key={i} />
+        ))}
+      </tbody>
+    </S.Table>
+  </S.TableWrap>
+);
+
+// Skeleton para a paginação
+const SkeletonPagination = () => (
+  <S.Pagination>
+    <S.SkeletonLine $width="250px" $height="16px" />
+    <S.PaginationActions className="actions">
+      <S.SkeletonLine $width="80px" $height="34px" $borderRadius="8px" />
+      <S.SkeletonLine $width="100px" $height="16px" />
+      <S.SkeletonLine $width="80px" $height="34px" $borderRadius="8px" />
+    </S.PaginationActions>
+  </S.Pagination>
+);
+
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
@@ -580,168 +686,176 @@ export default function ColaboradorDashboard() {
       subtitle="Gerencie seus pedidos de faturamento, acompanhe o status e importe documentos."
     >
       <S.Root>
-        <S.PageHeader>
-          <S.StatsMini>
-            <S.StatMini $color="#16a34a">
-              <span className="value">{stats.aprovados}</span>
-              <span className="label">Aprovados</span>
-            </S.StatMini>
-            <S.StatMini $color="#d97706">
-              <span className="value">{stats.emFat}</span>
-              <span className="label">Em Faturamento</span>
-            </S.StatMini>
-            <S.StatMini $color="#2563eb">
-              <span className="value">{stats.faturados}</span>
-              <span className="label">Faturados</span>
-            </S.StatMini>
-          </S.StatsMini>
-        </S.PageHeader>
+        {loading ? (
+          // SKELETONS - TUDO FORA DA TABELA
+          <>
+            <SkeletonStats />
+            <SkeletonFilters />
+            <SkeletonTable />
+            <SkeletonPagination />
+          </>
+        ) : (
+          // CONTEÚDO REAL
+          <>
+            <S.PageHeader>
+              <S.StatsMini>
+                <S.StatMini $color="#16a34a">
+                  <span className="value">{stats.aprovados}</span>
+                  <span className="label">Aprovados</span>
+                </S.StatMini>
+                <S.StatMini $color="#d97706">
+                  <span className="value">{stats.emFat}</span>
+                  <span className="label">Em Faturamento</span>
+                </S.StatMini>
+                <S.StatMini $color="#2563eb">
+                  <span className="value">{stats.faturados}</span>
+                  <span className="label">Faturados</span>
+                </S.StatMini>
+              </S.StatsMini>
+            </S.PageHeader>
 
-        <S.Filters>
-          <S.Search>
-            <FiSearch size={15} />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por pedido, administradora, CNPJ..."
-            />
-            {search && (
-              <S.SearchClear onClick={() => setSearch('')}>
-                <FiX size={14} />
-              </S.SearchClear>
-            )}
-          </S.Search>
+            <S.Filters>
+              <S.Search>
+                <FiSearch size={15} />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por pedido, administradora, CNPJ..."
+                />
+                {search && (
+                  <S.SearchClear onClick={() => setSearch('')}>
+                    <FiX size={14} />
+                  </S.SearchClear>
+                )}
+              </S.Search>
 
-          <S.Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="todos">Todos os status</option>
-            <option value="aprovado">Aprovados</option>
-            <option value="em_faturamento">Em faturamento</option>
-            <option value="faturado">Faturados</option>
-            <option value="comprado">Comprado</option>
-            <option value="cancelado">Cancelados</option>
-          </S.Select>
-        </S.Filters>
+              <S.Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                <option value="todos">Todos os status</option>
+                <option value="aprovado">Aprovados</option>
+                <option value="em_faturamento">Em faturamento</option>
+                <option value="faturado">Faturados</option>
+                <option value="comprado">Comprado</option>
+                <option value="cancelado">Cancelados</option>
+              </S.Select>
+            </S.Filters>
 
-        <S.TableWrap>
-          <S.Table>
-            <thead>
-              <tr>
-                <th>Pedido</th>
-                <th>Administradora</th>
-                <th>Vencimento</th>
-                <th>Competência</th>
-                {/* <th>Func.</th> */}
-                <th>Valor</th>
-                <th>Status</th>
-                <th>Timeline</th>
-                <th>Excel</th>
-                <th>Docs</th>
-                <th>Compra</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <S.Empty colSpan={11}>Carregando pedidos...</S.Empty>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <S.Empty colSpan={11}>Nenhum pedido encontrado.</S.Empty>
-                </tr>
-              ) : (
-                paginatedPedidos.map((p) => (
-                  <tr key={p.id}>
-                    <td>
-                      <S.IdMain>Pedido #{p.id}</S.IdMain>
-                     <S.IdSub>{p.tipoBeneficio}</S.IdSub>
-                      {p.status === 'cancelado' && p.motivoCancelamento && (
-                        <S.IdSub style={{ color: '#b91c1c' }}>Motivo: {p.motivoCancelamento}</S.IdSub>
-                      )}
-                    </td>
-                    <S.AdminCell>
-                      <S.AdminName>{p.nomeAdministradora}</S.AdminName>
-                    </S.AdminCell>
-                    <td>
-                      <S.Inline>
-                        <FiCalendar size={14} />
-                        {fmtDate(p.dataVencimento)}
-                      </S.Inline>
-                    </td>
-                    <td style={{ fontSize: 13 }}>{p.mesUtilizacao}</td>
-                    {/* <td style={{ fontFamily: 'var(--mono)', fontSize: 12, textAlign: 'center' }}>{p.totalFuncionarios || 0}</td> */}
-                    <td style={{ fontWeight: 600, color: '#16a34a' }}>{fmtMoney(p.valorTotal)}</td>
-                    <td>
-                      <S.StatusSelect $status={p.status}>
-                        <select
-                          value={p.status}
-                          disabled={statusChanging}
-                          onChange={(e) => requestStatusChange(p, e.target.value)}
-                        >
-                          <option value="aprovado">Aprovado</option>
-                          <option value="em_faturamento">Em faturamento</option>
-                          <option value="faturado">Faturado</option>
-                          <option value="comprado">Comprado</option>
-                          <option value="cancelado">Cancelar</option>
-                        </select>
-                      </S.StatusSelect>
-                    </td>
-                    <td>
-                      <S.Btn $size="sm" onClick={() => { setDetailsPedido(p); setDetailsOpen(true); }} title="Ver timeline">
-                        <FiInfo size={14} />
-                        Ver
-                      </S.Btn>
-                    </td>
-                    <td>
-                      <S.Btn onClick={() => handleDownload(p)} disabled={downloadingId === p.id || p.status === 'cancelado'}>
-                        <FiDownload size={14} />
-                        {downloadingId === p.id ? 'Baixando…' : 'Baixar'}
-                      </S.Btn>
-                    </td>
-                    <td>
-                      <S.Btn
-                        onClick={() => openImport(p)}
-                        disabled={p.status === 'cancelado' || p.status === 'faturado' || p.status === 'comprado'}
-                      >
-                        <BiSpreadsheet size={14} />
-                        Importar
-                      </S.Btn>
-                    </td>
-                    <td>
-                      {p.status === 'faturado' ? (
-                        <S.Btn $variant="primary" onClick={() => handleCompra(p)} disabled={downloadingId === p.id}>
-                          <FiDownload size={14} />
-                          {downloadingId === p.id ? 'Baixando…' : 'Compra'}
-                        </S.Btn>
-                      ) : (
-                        <span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>
-                      )}
-                    </td>
+            <S.TableWrap>
+              <S.Table>
+                <thead>
+                  <tr>
+                    <th>Pedido</th>
+                    <th>Administradora</th>
+                    <th>Vencimento</th>
+                    <th>Competência</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                    <th>Timeline</th>
+                    <th>Excel</th>
+                    <th>Docs</th>
+                    <th>Compra</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </S.Table>
-        </S.TableWrap>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <S.Empty colSpan={11}>Nenhum pedido encontrado.</S.Empty>
+                    </tr>
+                  ) : (
+                    paginatedPedidos.map((p) => (
+                      <tr key={p.id}>
+                        <td>
+                          <S.IdMain>Pedido #{p.id}</S.IdMain>
+                          <S.IdSub>{p.tipoBeneficio}</S.IdSub>
+                          {p.status === 'cancelado' && p.motivoCancelamento && (
+                            <S.IdSub style={{ color: '#b91c1c' }}>Motivo: {p.motivoCancelamento}</S.IdSub>
+                          )}
+                        </td>
+                        <S.AdminCell>
+                          <S.AdminName>{p.nomeAdministradora}</S.AdminName>
+                        </S.AdminCell>
+                        <td>
+                          <S.Inline>
+                            <FiCalendar size={14} />
+                            {fmtDate(p.dataVencimento)}
+                          </S.Inline>
+                        </td>
+                        <td style={{ fontSize: 13 }}>{p.mesUtilizacao}</td>
+                        <td style={{ fontWeight: 600, color: '#16a34a' }}>{fmtMoney(p.valorTotal)}</td>
+                        <td>
+                          <S.StatusSelect $status={p.status}>
+                            <select
+                              value={p.status}
+                              disabled={statusChanging}
+                              onChange={(e) => requestStatusChange(p, e.target.value)}
+                            >
+                              <option value="aprovado">Aprovado</option>
+                              <option value="em_faturamento">Em faturamento</option>
+                              <option value="faturado">Faturado</option>
+                              <option value="comprado">Comprado</option>
+                              <option value="cancelado">Cancelar</option>
+                            </select>
+                          </S.StatusSelect>
+                        </td>
+                        <td>
+                          <S.Btn $size="sm" onClick={() => { setDetailsPedido(p); setDetailsOpen(true); }} title="Ver timeline">
+                            <FiInfo size={14} />
+                            Ver
+                          </S.Btn>
+                        </td>
+                        <td>
+                          <S.Btn onClick={() => handleDownload(p)} disabled={downloadingId === p.id || p.status === 'cancelado'}>
+                            <FiDownload size={14} />
+                            {downloadingId === p.id ? 'Baixando…' : 'Baixar'}
+                          </S.Btn>
+                        </td>
+                        <td>
+                          <S.Btn
+                            onClick={() => openImport(p)}
+                            disabled={p.status === 'cancelado' || p.status === 'faturado' || p.status === 'comprado'}
+                          >
+                            <BiSpreadsheet size={14} />
+                            Importar
+                          </S.Btn>
+                        </td>
+                        <td>
+                          {p.status === 'faturado' ? (
+                            <S.Btn $variant="primary" onClick={() => handleCompra(p)} disabled={downloadingId === p.id}>
+                              <FiDownload size={14} />
+                              {downloadingId === p.id ? 'Baixando…' : 'Compra'}
+                            </S.Btn>
+                          ) : (
+                            <span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </S.Table>
+            </S.TableWrap>
 
-        {!loading && filtered.length > 0 && (
-          <S.Pagination>
-            <S.PaginationInfo>
-              Mostrando {(currentPage - 1) * itemsPerPage + 1}–
-              {Math.min(currentPage * itemsPerPage, filtered.length)} de {filtered.length} pedidos
-            </S.PaginationInfo>
-            <S.PaginationActions className="actions">
-              <S.Btn onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))} disabled={currentPage === 1}>
-                Anterior
-              </S.Btn>
-              <S.PaginationPage>Página {currentPage} de {totalPages}</S.PaginationPage>
-              <S.Btn onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))} disabled={currentPage === totalPages}>
-                Próxima
-              </S.Btn>
-            </S.PaginationActions>
-          </S.Pagination>
+            {filtered.length > 0 && (
+              <S.Pagination>
+                <S.PaginationInfo>
+                  Mostrando {(currentPage - 1) * itemsPerPage + 1}–
+                  {Math.min(currentPage * itemsPerPage, filtered.length)} de {filtered.length} pedidos
+                </S.PaginationInfo>
+                <S.PaginationActions className="actions">
+                  <S.Btn onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))} disabled={currentPage === 1}>
+                    Anterior
+                  </S.Btn>
+                  <S.PaginationPage>Página {currentPage} de {totalPages}</S.PaginationPage>
+                  <S.Btn onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))} disabled={currentPage === totalPages}>
+                    Próxima
+                  </S.Btn>
+                </S.PaginationActions>
+              </S.Pagination>
+            )}
+          </>
         )}
       </S.Root>
 
+      {/* Modais - fora do loading */}
       {/* Modal de Timeline */}
       {detailsOpen && detailsPedido && (
         <S.Overlay onMouseDown={(e) => e.target === e.currentTarget && (setDetailsOpen(false), setDetailsPedido(null))}>

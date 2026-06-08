@@ -15,7 +15,6 @@ export const Main = styled.div`
   width: 100%;
 `;
 
-// Removemos o wrapper que interfere no sticky
 export const Content = styled.div`
   flex: 1;
   padding: 0 1.5rem 1.5rem;
