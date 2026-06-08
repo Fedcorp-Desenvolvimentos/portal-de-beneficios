@@ -12,7 +12,6 @@ import {
 
 import { entebenService } from '../../../services/entebenService';
 import PageLayout from '../../../Layouts/PageLayout/PageLayout';
-import { useLoading } from '../../../hooks/useLoading';
 import { S } from './FaturamentoStyles';
 
 // ============================================
@@ -237,7 +236,7 @@ const SkeletonCard = () => (
 export default function Faturamento() {
   const { enqueueSnackbar } = useSnackbar();
   const [search, setSearch] = useState('');
-  const { loading, startLoading, stopLoading } = useLoading();
+  const [isLoading, setIsLoading] = useState(true);
   const [filtroStatus, setFiltroStatus] = useState('');
   const [filtroCompetencia, setFiltroCompetencia] = useState('');
   const [filtroVigencia, setFiltroVigencia] = useState('');
@@ -265,7 +264,7 @@ export default function Faturamento() {
 
   async function carregarFaturamentos() {
     try {
-      startLoading('Carregando faturamentos...');
+      setIsLoading(true);
       setError('');
 
       const [ultimaImportacao, historicoData] = await Promise.all([
@@ -297,13 +296,12 @@ export default function Faturamento() {
       }));
 
       setImportacoes(comStatus);
-      // showToast('Faturamentos carregados com sucesso!', { variant: 'success' });
     } catch (err) {
       console.error('Erro ao carregar faturamentos:', err);
       setError('Não foi possível carregar os faturamentos.');
       showToast('Não foi possível carregar os faturamentos.', { variant: 'error' });
     } finally {
-      stopLoading();
+      setIsLoading(false);
     }
   }
 
@@ -449,10 +447,6 @@ export default function Faturamento() {
     showToast('Filtros limpos', { variant: 'info' });
   };
 
-  const totalGeral = useMemo(() => {
-    return gruposFiltrados.reduce((sum, item) => sum + (item.total || 0), 0);
-  }, [gruposFiltrados]);
-
   // Número de skeletons para mostrar durante o loading
   const skeletonCount = 3;
 
@@ -468,14 +462,14 @@ export default function Faturamento() {
               placeholder="Buscar por importação, competência ou status..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              disabled={loading}
+              disabled={isLoading}
             />
           </S.Search>
 
           <S.Filters>
             <S.FilterLabel>
               <span>Status</span>
-              <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)} disabled={loading}>
+              <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)} disabled={isLoading}>
                 <option value="">Todos</option>
                 {opcoesStatus.map((status) => (
                   <option key={status.value} value={status.value}>
@@ -487,7 +481,7 @@ export default function Faturamento() {
 
             <S.FilterLabel>
               <span>Competência</span>
-              <select value={filtroCompetencia} onChange={(e) => setFiltroCompetencia(e.target.value)} disabled={loading}>
+              <select value={filtroCompetencia} onChange={(e) => setFiltroCompetencia(e.target.value)} disabled={isLoading}>
                 <option value="">Todas</option>
                 {opcoesCompetencia.map((comp) => (
                   <option key={comp} value={comp}>
@@ -499,7 +493,7 @@ export default function Faturamento() {
 
             <S.FilterLabel>
               <span>Vigência</span>
-              <select value={filtroVigencia} onChange={(e) => setFiltroVigencia(e.target.value)} disabled={loading}>
+              <select value={filtroVigencia} onChange={(e) => setFiltroVigencia(e.target.value)} disabled={isLoading}>
                 <option value="">Todas</option>
                 {opcoesVigencia.map((data) => (
                   <option key={data} value={data}>
@@ -511,7 +505,7 @@ export default function Faturamento() {
 
             <S.FilterLabel>
               <span>Vencimento</span>
-              <select value={filtroVencimento} onChange={(e) => setFiltroVencimento(e.target.value)} disabled={loading}>
+              <select value={filtroVencimento} onChange={(e) => setFiltroVencimento(e.target.value)} disabled={isLoading}>
                 <option value="">Todos</option>
                 {opcoesVencimento.map((data) => (
                   <option key={data} value={data}>
@@ -521,22 +515,15 @@ export default function Faturamento() {
               </select>
             </S.FilterLabel>
 
-            <S.ClearButton type="button" onClick={limparFiltros} disabled={loading}>
+            <S.ClearButton type="button" onClick={limparFiltros} disabled={isLoading}>
               Limpar filtros
             </S.ClearButton>
           </S.Filters>
         </S.Toolbar>
 
-        {/* {!loading && totalGeral > 0 && (
-          <S.TotalCard>
-            <span>Total acumulado</span>
-            <strong>R$ {formatMoney(totalGeral)}</strong>
-          </S.TotalCard>
-        )} */}
+        {error && !isLoading && <S.Empty>{error}</S.Empty>}
 
-        {error && <S.Empty>{error}</S.Empty>}
-
-        {loading ? (
+        {isLoading ? (
           <S.List>
             {[...Array(skeletonCount)].map((_, i) => (
               <SkeletonCard key={i} />
