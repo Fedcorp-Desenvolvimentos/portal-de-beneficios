@@ -164,6 +164,11 @@ export const faturamentoService = {
     return response.data
   },
 
+  async criarFaturamentoIndividual(payload) {
+    const response = await api.post('/api/upload/faturamento/individual/', payload)
+    return response.data
+  },
+
   getExportFaturamentoUrl(params = {}) {
     const query = new URLSearchParams()
 

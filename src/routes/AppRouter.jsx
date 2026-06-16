@@ -21,6 +21,7 @@ import ColaboradorDashboard from '../pages/ColaboradorDashboard/ColaboradorDashb
 
 
 import Faturamento from '../pages/Client/Faturamento/Faturamento'
+import FaturamentoIndividual from '../pages/Client/FaturamentoIndividual/FaturamentoIndividual'
 import FaturamentoFormulario from '../pages/Client/FaturamentoFormulario'
 import RelatoriosBeneficios from '../pages/Client/RelatoriosBeneficios'
 
@@ -107,6 +108,8 @@ const AppRouter = () => {
             <Route path="/importacao" element={<Importacao />} />
 
             <Route path="/faturamento" element={<Faturamento />} />
+
+            <Route path="/faturamento/individual" element={<FaturamentoIndividual />} />
 
             <Route
               path="/faturamento/repetir"

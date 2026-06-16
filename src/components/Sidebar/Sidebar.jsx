@@ -16,6 +16,7 @@ import {
   FaBuilding,
   FaFileUpload,
   FaFileInvoiceDollar,
+  FaReceipt,
   FaUserPlus,
   FaExchangeAlt,
   FaDatabase,
@@ -96,6 +97,12 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       icon: <FaFileUpload />,
       allowed: ["adm", "dev"]
     },
+    // {
+    //   path: "/faturamento/individual",
+    //   label: "Faturamento Individual",
+    //   icon: <FaReceipt />,
+    //   allowed: ["fat", "dev", "adm"]
+    // },
     {
       path: "/faturamento",
       label: "Faturamento",
@@ -210,7 +217,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
           <ul>
             {filteredNavItems.map((item) => {
               const isActive = location.pathname === item.path ||
-                location.pathname.startsWith(item.path + "/");
+                (item.path !== "/faturamento" && location.pathname.startsWith(item.path + "/"));
 
               return (
                 <li key={item.path} className={isActive ? "active" : ""}>
