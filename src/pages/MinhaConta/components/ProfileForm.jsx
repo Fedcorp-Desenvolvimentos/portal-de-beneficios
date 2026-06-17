@@ -1,16 +1,16 @@
 import React from 'react';
-import { FaPencilAlt, FaTimes, FaCheck, FaUser, FaIdCard, FaEnvelope } from 'react-icons/fa';
+import { FaPencilAlt, FaTimes, FaCheck, FaUser, FaEnvelope } from 'react-icons/fa';
 import * as S from '../MinhaContaStyles';
 
-const ProfileForm = ({ 
-  nome, 
-  setNome, 
-  email, 
-  setEmail, 
+const ProfileForm = ({
+  nome,
+  setNome,
+  email,
+  setEmail,
   editandoPerfil,
   onEditClick,
   onCancelClick,
-  onSubmit 
+  onSubmit,
 }) => {
   return (
     <S.Form onSubmit={onSubmit}>
@@ -18,10 +18,11 @@ const ProfileForm = ({
         <S.Label>
           <FaUser size={14} /> Nome Completo
         </S.Label>
+
         <S.Input
           type="text"
           value={nome || ''}
-          onChange={(e) => setNomeCompleto(e.target.value)}
+          onChange={(e) => setNome(e.target.value)}
           disabled={!editandoPerfil}
           $isEditing={editandoPerfil}
           placeholder="Seu nome completo"
@@ -32,6 +33,7 @@ const ProfileForm = ({
         <S.Label>
           <FaEnvelope size={14} /> E-mail
         </S.Label>
+
         <S.Input
           type="email"
           value={email || ''}
@@ -52,6 +54,7 @@ const ProfileForm = ({
             <S.Button type="button" className="danger" onClick={onCancelClick}>
               <FaTimes /> Cancelar
             </S.Button>
+
             <S.Button type="submit" className="primary">
               <FaCheck /> Salvar Alterações
             </S.Button>

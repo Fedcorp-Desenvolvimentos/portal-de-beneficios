@@ -17,26 +17,25 @@ const MinhaConta = () => {
   const { enqueueSnackbar } = useSnackbar();
   const { withLoading } = useLoading();
   const [activeTab, setActiveTab] = useState('perfil');
-  
+
   // Use o contexto de autenticação
   const { user, updateUser } = useAuth();
-  
+
   // Dados do usuário a partir do contexto
   const userData = {
     userId: user?.id,
     username: user?.username || '',
     email: user?.email || '',
-    nome: user?.nome || '', 
+    nome: user?.nome || user?.username || '',
     tipo: user?.tipo || '',
     administradora_nome: user?.administradora_nome || ''
   };
-  
   // console.log("userData do contexto:", userData);
 
-  const { 
-    passwordData, 
-    updatePasswordField, 
-    changePassword, 
+  const {
+    passwordData,
+    updatePasswordField,
+    changePassword,
     loading: passwordLoading,
     error: passwordError,
     setError: setPasswordError
@@ -51,37 +50,42 @@ const MinhaConta = () => {
   }, [updatePasswordField, setPasswordError]);
 
   // Função de save para perfil
-  const handleSavePerfil = useCallback(async (data) => {
-    try {
-      await withLoading(
-        async () => {
-          const updateData = {
-            username: data.username,
-            email: data.email,
-            nome: data.nome
-          };
-          
-          await userService.updateUser(userData.userId, updateData);
-        },
-        'Atualizando perfil...'
-      );
-      
-      enqueueSnackbar('Perfil atualizado com sucesso!', { variant: 'success' });
-      
-      // Atualiza os dados do usuário no contexto se a função existir
-      if (updateUser) {
-        await updateUser();
-      } else {
-        // Fallback: recarregar a página
-        window.location.reload();
-      }
-      
-      return true;
-    } catch (err) {
-      enqueueSnackbar(err.response?.data?.detail || 'Erro ao atualizar perfil', { variant: 'error' });
-      return false;
+ const handleSavePerfil = useCallback(async (data) => {
+  try {
+    await withLoading(
+      async () => {
+        const nomeAtualizado = data.nome?.trim();
+
+        const updateData = {
+          username: nomeAtualizado,
+          nome: nomeAtualizado,
+          email: data.email,
+        };
+
+        await userService.atualizarUsuario(userData.userId, updateData);
+      },
+      'Atualizando perfil...'
+    );
+
+    enqueueSnackbar('Perfil atualizado com sucesso!', { variant: 'success' });
+
+    if (updateUser) {
+      await updateUser();
+    } else {
+      window.location.reload();
     }
-  }, [userData.userId, updateUser, enqueueSnackbar, withLoading]);
+
+    return true;
+  } catch (err) {
+    enqueueSnackbar(
+      err.response?.data?.detail ||
+        err.response?.data?.message ||
+        'Erro ao atualizar perfil',
+      { variant: 'error' }
+    );
+    return false;
+  }
+}, [userData.userId, updateUser, enqueueSnackbar, withLoading]);
 
   // Função de save para senha
   const handleSaveSenha = useCallback(async (data) => {
@@ -97,7 +101,7 @@ const MinhaConta = () => {
         },
         'Alterando senha...'
       );
-      
+
       if (success) {
         enqueueSnackbar('Senha alterada com sucesso!', { variant: 'success' });
         resetPasswordFields();
