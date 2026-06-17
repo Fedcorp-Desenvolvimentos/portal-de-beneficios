@@ -3,19 +3,18 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import { useAuth } from '../../../context/AuthContext.jsx';
-import { buscarAdministradoraPorId } from '../../../services/administradoraService.js';
+import {
+  buscarAdministradoraPorId,
+  buscarRegraValorAdministradora,
+  atualizarRegraValorAdministradora,
+  criarRegraValorAdministradora,
+} from '../../../services/administradoraService.js';
 import { userService } from '../../../services/userService.js';
 import PageLayout from '../../../Layouts/PageLayout/PageLayout.jsx';
 import { useLoading } from '../../../hooks/useLoading.js';
 import UsuarioTable from '../Usuarios/UsuarioTable.jsx';
 import UsuarioModal from '../Usuarios/UsuarioModal.jsx';
 import { S } from './AdministradorasStyles.js';
-
-import { 
-  buscarRegraValorAdministradora, 
-  atualizarRegraValorAdministradora, 
-  criarRegraValorAdministradora 
-} from '../../../services/administradoraService.js';
 
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString('pt-BR', {
@@ -32,6 +31,37 @@ function normalizarValorDecimal(value) {
     .replace(/\./g, '')
     .replace(',', '.')
     .trim();
+}
+
+function getAdministradoraIdFromUser(user) {
+  return (
+    user?.administradora_id ||
+    user?.administradora?.id ||
+    user?.administradora ||
+    user?.id_administradora ||
+    null
+  );
+}
+
+function getAdministradoraNomeFromUser(user) {
+  return (
+    user?.administradora_nome ||
+    user?.nome_administradora ||
+    user?.administradora?.nome ||
+    user?.administradora?.razao_social ||
+    user?.administradora?.nome_fantasia ||
+    ''
+  );
+}
+
+function getAdministradoraNome(administradora, user) {
+  return (
+    administradora?.nome ||
+    administradora?.nome_fantasia ||
+    administradora?.razao_social ||
+    getAdministradoraNomeFromUser(user) ||
+    '-'
+  );
 }
 
 const RegraValorModal = ({
@@ -112,7 +142,9 @@ const RegraValorModal = ({
               marginBottom: 18,
             }}
           >
-            <strong style={{ display: 'block', marginBottom: 6 }}>Regra cadastrada</strong>
+            <strong style={{ display: 'block', marginBottom: 6 }}>
+              Regra cadastrada
+            </strong>
             <span style={{ color: '#475569', fontSize: 14 }}>
               Status: {regraValor?.ativo ? 'Ativa' : 'Inativa'} • Limite:{' '}
               {formatCurrency(regraValor?.valor_limite)}
@@ -200,10 +232,6 @@ const RegraValorModal = ({
     </div>
   );
 };
-
-// ============================================
-// SKELETON COMPONENTS
-// ============================================
 
 const SkeletonDadosCard = () => (
   <S.Card>
@@ -293,10 +321,6 @@ const SkeletonHeader = () => (
   </S.Header>
 );
 
-// ============================================
-// COMPONENTE PRINCIPAL
-// ============================================
-
 export default function MinhaAdministradora() {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
@@ -317,9 +341,10 @@ export default function MinhaAdministradora() {
   const [loadingRegraValor, setLoadingRegraValor] = useState(false);
   const [salvandoRegraValor, setSalvandoRegraValor] = useState(false);
 
-  const { loading, startLoading, stopLoading } = useLoading();
+  const { startLoading, stopLoading } = useLoading();
 
-  const administradoraId = user?.administradora_id;
+  const administradoraId = getAdministradoraIdFromUser(user);
+  const administradoraNome = getAdministradoraNome(administradora, user);
 
   useEffect(() => {
     if (!administradoraId) {
@@ -337,9 +362,10 @@ export default function MinhaAdministradora() {
   const carregarAdministradoras = async () => {
     try {
       const data = await userService.listarAdministradoras();
-      setAdministradoras(data);
+      setAdministradoras(Array.isArray(data) ? data : data?.results || []);
     } catch (error) {
       console.error('❌ Erro ao carregar administradoras:', error);
+      setAdministradoras([]);
     }
   };
 
@@ -349,7 +375,6 @@ export default function MinhaAdministradora() {
       startLoading('Carregando administradora...');
 
       const data = await buscarAdministradoraPorId(administradoraId);
-      // console.log('Administradora carregada:', data);
       setAdministradora(data);
     } catch (error) {
       console.error('❌ Erro ao carregar administradora:', error);
@@ -370,7 +395,23 @@ export default function MinhaAdministradora() {
         administradora: administradoraId,
       });
 
-      setUsuarios(Array.isArray(usuariosFiltrados) ? usuariosFiltrados : []);
+      const lista = Array.isArray(usuariosFiltrados)
+        ? usuariosFiltrados
+        : usuariosFiltrados?.results || [];
+
+      setUsuarios(
+        lista.map((usuario) => ({
+          ...usuario,
+          administradora_nome:
+            usuario.administradora_nome ||
+            usuario.nome_administradora ||
+            usuario.administradora?.nome ||
+            usuario.administradora?.razao_social ||
+            usuario.administradora?.nome_fantasia ||
+            administradoraNome ||
+            '-',
+        }))
+      );
     } catch (error) {
       console.error('❌ Erro ao carregar usuários:', error);
       enqueueSnackbar('Erro ao carregar usuários', { variant: 'error' });
@@ -386,7 +427,6 @@ export default function MinhaAdministradora() {
       setLoadingRegraValor(true);
 
       const data = await buscarRegraValorAdministradora(administradoraId);
-
       const regraEncontrada = Array.isArray(data) ? data[0] || null : data || null;
 
       setRegraValor(regraEncontrada);
@@ -400,7 +440,6 @@ export default function MinhaAdministradora() {
       }
     } catch (error) {
       console.error('❌ Erro ao carregar regra de valor:', error);
-
       setRegraValor(null);
       setRegraAtiva(true);
       setValorLimite('');
@@ -416,7 +455,6 @@ export default function MinhaAdministradora() {
 
   const fecharModalRegraValor = () => {
     if (salvandoRegraValor) return;
-
     setModalRegraValorOpen(false);
   };
 
@@ -494,11 +532,17 @@ export default function MinhaAdministradora() {
 
   const handleSalvarUsuario = async (dados) => {
     try {
+      const payload = {
+        ...dados,
+        administradora: dados.administradora || administradoraId,
+        administradora_id: dados.administradora_id || administradoraId,
+      };
+
       if (usuarioSelecionado) {
-        await userService.atualizarUsuario(usuarioSelecionado.id, dados);
+        await userService.atualizarUsuario(usuarioSelecionado.id, payload);
         enqueueSnackbar('Usuário atualizado com sucesso', { variant: 'success' });
       } else {
-        await userService.criarUsuario(dados);
+        await userService.criarUsuario(payload);
         enqueueSnackbar('Usuário criado com sucesso', { variant: 'success' });
       }
 
@@ -511,6 +555,7 @@ export default function MinhaAdministradora() {
 
       const errorMsg =
         error.response?.data?.detail ||
+        error.response?.data?.message ||
         error.message ||
         'Erro ao salvar usuário';
 
@@ -520,8 +565,6 @@ export default function MinhaAdministradora() {
   };
 
   const isLoading = loadingAdm || loadingUsuarios;
-
-  // console.log("user", user);
 
   return (
     <PageLayout
@@ -563,8 +606,8 @@ export default function MinhaAdministradora() {
                       }
                     >
                       Editar Administradora
-                    </S.Button>    
-                </>
+                    </S.Button>
+                  </>
                 )}
               </S.HeaderActions>
             </S.Header>
@@ -580,12 +623,12 @@ export default function MinhaAdministradora() {
 
                 <S.DetailItem>
                   <span>Razão Social</span>
-                  <strong>{administradora?.razao_social || '-'}</strong>
+                  <strong>{administradora?.razao_social || administradoraNome}</strong>
                 </S.DetailItem>
 
                 <S.DetailItem>
                   <span>Nome Fantasia</span>
-                  <strong>{administradora?.nome_fantasia || '-'}</strong>
+                  <strong>{administradora?.nome_fantasia || administradora?.nome || '-'}</strong>
                 </S.DetailItem>
 
                 <S.DetailItem>
@@ -654,7 +697,7 @@ export default function MinhaAdministradora() {
                 usuarios={usuarios}
                 onEditar={handleEditarUsuario}
                 onExcluir={handleExcluirUsuario}
-                admNome={administradora?.nome_fantasia || administradora?.razao_social || '-'}
+                admNome={administradoraNome}
               />
             </S.Card>
           </>
