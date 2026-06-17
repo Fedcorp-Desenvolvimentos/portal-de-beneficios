@@ -1,15 +1,11 @@
-// ConfiguracaoCondominios.jsx - Versão atualizada com relacionamento correto
-
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Building2,
   Plus,
-  Download,
   Save,
   X,
   CheckCircle,
   AlertCircle,
-  FileSpreadsheet,
   Users,
   UserPlus,
   MapPin,
@@ -20,11 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  Briefcase,
   User,
-  Phone,
-  Mail,
-  CreditCard,
   Link,
   Unlink,
 } from 'lucide-react'
@@ -32,19 +24,7 @@ import {
 import './GerenciamentoCondominios.css'
 import { entebenService } from '../../services/entebenService'
 import PageLayout from '../../Layouts/PageLayout/PageLayout'
-
-
-async function ensureXLSX() {
-  if (window.XLSX) return window.XLSX
-  await new Promise((resolve, reject) => {
-    const s = document.createElement('script')
-    s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
-    s.onload = resolve
-    s.onerror = reject
-    document.head.appendChild(s)
-  })
-  return window.XLSX
-}
+import { useAuth } from '../../context/AuthContext'
 
 const toArray = (value) => {
   if (Array.isArray(value)) return value
@@ -65,34 +45,104 @@ const normalizarTexto = (value) =>
 const formatarCNPJ = (cnpj) => {
   if (!cnpj) return '—'
   const digits = somenteDigitos(cnpj)
+
   if (digits.length === 14) {
-    return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+    return digits.replace(
+      /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+      '$1.$2.$3/$4-$5'
+    )
   }
+
   return cnpj
 }
 
 const formatarCPF = (cpf) => {
   if (!cpf) return '—'
   const digits = somenteDigitos(cpf)
+
   if (digits.length === 11) {
-    return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+    return digits.replace(
+      /(\d{3})(\d{3})(\d{3})(\d{2})/,
+      '$1.$2.$3-$4'
+    )
   }
+
   return cpf
 }
 
-// Modal para visualizar funcionários do condomínio
-function ModalFuncionarios({ open, condominio, funcionarios, loading, onClose, onUnlink, onOpenVincular }) {
+const getAdministradoraIdFromUser = (user) => {
+  return (
+    user?.administradora?.id ||
+    user?.administradora_id ||
+    user?.id_administradora ||
+    user?.administradora ||
+    null
+  )
+}
+
+const getAdministradoraIdFromCondominio = (condominio) => {
+  if (Array.isArray(condominio?.administradoras)) {
+    return condominio.administradoras.map((adm) => adm.id)
+  }
+
+  return (
+    condominio?.administradora?.id ||
+    condominio?.administradora_id ||
+    condominio?.id_administradora ||
+    condominio?.administradora ||
+    null
+  )
+}
+
+const getAdministradoraNome = (condominio) => {
+  if (
+    Array.isArray(condominio?.administradoras) &&
+    condominio.administradoras.length > 0
+  ) {
+    return condominio.administradoras
+      .map((adm) => adm.nome || adm.razao_social)
+      .filter(Boolean)
+      .join(', ')
+  }
+
+  return (
+    condominio?.administradora?.nome ||
+    condominio?.administradora?.razao_social ||
+    condominio?.nome_administradora ||
+    condominio?.administradora_nome ||
+    condominio?.razao_social_administradora ||
+    '—'
+  )
+}
+
+function ModalFuncionarios({
+  open,
+  condominio,
+  funcionarios,
+  loading,
+  onClose,
+  onUnlink,
+  onOpenVincular,
+}) {
   const [busca, setBusca] = useState('')
 
   const funcionariosFiltrados = useMemo(() => {
     if (!busca.trim()) return funcionarios || []
+
     const term = normalizarTexto(busca)
+
     return (funcionarios || []).filter((f) => {
       const nome = normalizarTexto(f.nome || '')
       const cpf = somenteDigitos(f.cpf || '')
       const funcao = normalizarTexto(f.funcao || '')
       const matricula = normalizarTexto(f.matricula || '')
-      return nome.includes(term) || cpf.includes(term) || funcao.includes(term) || matricula.includes(term)
+
+      return (
+        nome.includes(term) ||
+        cpf.includes(term) ||
+        funcao.includes(term) ||
+        matricula.includes(term)
+      )
     })
   }, [funcionarios, busca])
 
@@ -104,6 +154,7 @@ function ModalFuncionarios({ open, condominio, funcionarios, loading, onClose, o
       SINICO: 'Síndico',
       ADMIN: 'Administrador',
     }
+
     return labels[funcao] || funcao || '—'
   }
 
@@ -111,12 +162,16 @@ function ModalFuncionarios({ open, condominio, funcionarios, loading, onClose, o
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal cfg-funcionarios-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal cfg-funcionarios-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="modal-head">
           <div className="modal-title">
             <Users className="ico brand" />
             <h3>Funcionários de {condominio?.nome}</h3>
           </div>
+
           <button className="icon-btn" onClick={onClose} title="Fechar">
             <X className="ico" />
           </button>
@@ -128,6 +183,7 @@ function ModalFuncionarios({ open, condominio, funcionarios, loading, onClose, o
               <Users className="ico sm" />
               Total: {(funcionarios || []).length} funcionário(s)
             </span>
+
             <button className="btn btn-sm btn-primary" onClick={onOpenVincular}>
               <Link className="ico" />
               Vincular existentes
@@ -136,14 +192,19 @@ function ModalFuncionarios({ open, condominio, funcionarios, loading, onClose, o
 
           <div className="cfg-funcionarios-search">
             <Search className="ico" />
+
             <input
               type="text"
               placeholder="Buscar por nome, CPF, função ou matrícula"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
+
             {busca && (
-              <button className="cfg-clear-search" onClick={() => setBusca('')}>
+              <button
+                className="cfg-clear-search"
+                onClick={() => setBusca('')}
+              >
                 <X className="ico" />
               </button>
             )}
@@ -157,7 +218,11 @@ function ModalFuncionarios({ open, condominio, funcionarios, loading, onClose, o
           ) : funcionariosFiltrados.length === 0 ? (
             <div className="empty-funcionarios">
               <Users className="ico xl muted" />
-              <p>{busca ? 'Nenhum funcionário encontrado para esta busca' : 'Nenhum funcionário vinculado'}</p>
+              <p>
+                {busca
+                  ? 'Nenhum funcionário encontrado para esta busca'
+                  : 'Nenhum funcionário vinculado'}
+              </p>
             </div>
           ) : (
             <div className="cfg-funcionarios-list">
@@ -167,13 +232,27 @@ function ModalFuncionarios({ open, condominio, funcionarios, loading, onClose, o
                     <div className="cfg-funcionario-avatar">
                       <User className="ico" />
                     </div>
+
                     <div className="cfg-funcionario-info">
-                      <div className="cfg-funcionario-nome">{func.nome || '—'}</div>
+                      <div className="cfg-funcionario-nome">
+                        {func.nome || '—'}
+                      </div>
+
                       <div className="cfg-funcionario-detalhes">
-                        {func.funcao && <span className="cfg-badge-funcao">{getFuncaoLabel(func.funcao)}</span>}
-                        {func.matricula && <span className="cfg-badge-matricula">Matr: {func.matricula}</span>}
+                        {func.funcao && (
+                          <span className="cfg-badge-funcao">
+                            {getFuncaoLabel(func.funcao)}
+                          </span>
+                        )}
+
+                        {func.matricula && (
+                          <span className="cfg-badge-matricula">
+                            Matr: {func.matricula}
+                          </span>
+                        )}
                       </div>
                     </div>
+
                     <button
                       className="icon-btn danger"
                       onClick={() => onUnlink(func)}
@@ -186,20 +265,28 @@ function ModalFuncionarios({ open, condominio, funcionarios, loading, onClose, o
                   <div className="cfg-funcionario-body">
                     <div className="cfg-field-row">
                       <span className="cfg-field-label">CPF:</span>
-                      <span className="cfg-field-value">{formatarCPF(func.cpf)}</span>
+                      <span className="cfg-field-value">
+                        {formatarCPF(func.cpf)}
+                      </span>
                     </div>
+
                     {func.data_nascimento && (
                       <div className="cfg-field-row">
                         <span className="cfg-field-label">Nascimento:</span>
                         <span className="cfg-field-value">
-                          {new Date(func.data_nascimento).toLocaleDateString('pt-BR')}
+                          {new Date(func.data_nascimento).toLocaleDateString(
+                            'pt-BR'
+                          )}
                         </span>
                       </div>
                     )}
+
                     {func.departamento && (
                       <div className="cfg-field-row">
                         <span className="cfg-field-label">Departamento:</span>
-                        <span className="cfg-field-value">{func.departamento}</span>
+                        <span className="cfg-field-value">
+                          {func.departamento}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -219,25 +306,34 @@ function ModalFuncionarios({ open, condominio, funcionarios, loading, onClose, o
   )
 }
 
-// Modal para vincular funcionários existentes
-function ModalVincularFuncionarios({ open, condominio, funcionariosDisponiveis, loading, onVincular, onClose }) {
+function ModalVincularFuncionarios({
+  open,
+  condominio,
+  funcionariosDisponiveis,
+  loading,
+  onVincular,
+  onClose,
+}) {
   const [selecionados, setSelecionados] = useState([])
   const [busca, setBusca] = useState('')
 
   const funcionariosFiltrados = useMemo(() => {
     if (!busca.trim()) return funcionariosDisponiveis || []
+
     const term = normalizarTexto(busca)
+
     return (funcionariosDisponiveis || []).filter((f) => {
       const nome = normalizarTexto(f.nome || '')
       const cpf = somenteDigitos(f.cpf || '')
+
       return nome.includes(term) || cpf.includes(term)
     })
   }, [funcionariosDisponiveis, busca])
 
   const toggleSelecionado = (funcionario) => {
-    setSelecionados(prev =>
-      prev.find(f => f.cpf === funcionario.cpf)
-        ? prev.filter(f => f.cpf !== funcionario.cpf)
+    setSelecionados((prev) =>
+      prev.find((f) => f.cpf === funcionario.cpf)
+        ? prev.filter((f) => f.cpf !== funcionario.cpf)
         : [...prev, funcionario]
     )
   }
@@ -251,12 +347,16 @@ function ModalVincularFuncionarios({ open, condominio, funcionariosDisponiveis, 
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal cfg-funcionarios-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal cfg-funcionarios-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="modal-head">
           <div className="modal-title">
             <Link className="ico brand" />
             <h3>Vincular Funcionários a {condominio?.nome}</h3>
           </div>
+
           <button className="icon-btn" onClick={onClose}>
             <X className="ico" />
           </button>
@@ -266,20 +366,26 @@ function ModalVincularFuncionarios({ open, condominio, funcionariosDisponiveis, 
           <div className="cfg-funcionarios-stats">
             <span className="cfg-stat">
               <Users className="ico sm" />
-              Disponíveis: {funcionariosDisponiveis?.length || 0} funcionário(s) sem vínculo
+              Disponíveis: {funcionariosDisponiveis?.length || 0} funcionário(s)
+              sem vínculo
             </span>
           </div>
 
           <div className="cfg-funcionarios-search">
             <Search className="ico" />
+
             <input
               type="text"
               placeholder="Buscar funcionário por nome ou CPF"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
+
             {busca && (
-              <button className="cfg-clear-search" onClick={() => setBusca('')}>
+              <button
+                className="cfg-clear-search"
+                onClick={() => setBusca('')}
+              >
                 <X className="ico" />
               </button>
             )}
@@ -293,23 +399,29 @@ function ModalVincularFuncionarios({ open, condominio, funcionariosDisponiveis, 
           ) : funcionariosFiltrados.length === 0 ? (
             <div className="empty-funcionarios">
               <Users className="ico xl muted" />
-              <p>{busca ? 'Nenhum funcionário encontrado' : 'Todos os funcionários já estão vinculados a algum condomínio'}</p>
+              <p>
+                {busca
+                  ? 'Nenhum funcionário encontrado'
+                  : 'Todos os funcionários já estão vinculados a algum condomínio'}
+              </p>
             </div>
           ) : (
             <div className="cfg-funcionarios-list">
-              {funcionariosFiltrados.map(func => (
+              {funcionariosFiltrados.map((func) => (
                 <label key={func.cpf} className="cfg-vinculo-item">
                   <input
                     type="checkbox"
-                    checked={selecionados.some(f => f.cpf === func.cpf)}
+                    checked={selecionados.some((f) => f.cpf === func.cpf)}
                     onChange={() => toggleSelecionado(func)}
                   />
+
                   <div className="cfg-vinculo-info">
                     <strong>{func.nome}</strong>
+
                     <small>
-                      CPF: {formatarCPF(func.cpf)} | 
-                      Função: {func.funcao || '—'} | 
-                      Matrícula: {func.matricula || '—'}
+                      CPF: {formatarCPF(func.cpf)} | Função:{' '}
+                      {func.funcao || '—'} | Matrícula:{' '}
+                      {func.matricula || '—'}
                     </small>
                   </div>
                 </label>
@@ -319,7 +431,10 @@ function ModalVincularFuncionarios({ open, condominio, funcionariosDisponiveis, 
         </div>
 
         <div className="modal-actions">
-          <button className="btn btn-light" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-light" onClick={onClose}>
+            Cancelar
+          </button>
+
           <button
             className="btn btn-primary"
             onClick={handleVincular}
@@ -339,12 +454,16 @@ function ModalColaborador({ open, condominio, form, onChange, onSave, onCancel }
 
   return (
     <div className="modal-backdrop" onClick={onCancel}>
-      <div className="modal cfg-colaborador-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal cfg-colaborador-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="modal-head">
           <div className="modal-title">
             <UserPlus className="ico brand" />
             <h3>Adicionar colaborador</h3>
           </div>
+
           <button className="icon-btn" onClick={onCancel}>
             <X className="ico" />
           </button>
@@ -358,37 +477,83 @@ function ModalColaborador({ open, condominio, form, onChange, onSave, onCancel }
           <div className="grid cfg-colaborador-grid">
             <div className="field grid-full">
               <label>Nome do colaborador *</label>
-              <input name="nome" value={form.nome} onChange={onChange} placeholder="Digite o nome completo" />
+              <input
+                name="nome"
+                value={form.nome}
+                onChange={onChange}
+                placeholder="Digite o nome completo"
+              />
             </div>
+
             <div className="field">
               <label>CPF *</label>
-              <input name="cpf" value={form.cpf} onChange={onChange} placeholder="000.000.000-00" maxLength={14} />
+              <input
+                name="cpf"
+                value={form.cpf}
+                onChange={onChange}
+                placeholder="000.000.000-00"
+                maxLength={14}
+              />
             </div>
+
             <div className="field">
               <label>Matrícula</label>
-              <input name="matricula" value={form.matricula} onChange={onChange} placeholder="Número da matrícula" />
+              <input
+                name="matricula"
+                value={form.matricula}
+                onChange={onChange}
+                placeholder="Número da matrícula"
+              />
             </div>
+
             <div className="field">
               <label>Cargo / Função</label>
-              <input name="funcao" value={form.funcao} onChange={onChange} placeholder="Ex: Porteiro" />
+              <input
+                name="funcao"
+                value={form.funcao}
+                onChange={onChange}
+                placeholder="Ex: Porteiro"
+              />
             </div>
+
             <div className="field">
               <label>Data de Nascimento</label>
-              <input type="date" name="data_nascimento" value={form.data_nascimento} onChange={onChange} />
+              <input
+                type="date"
+                name="data_nascimento"
+                value={form.data_nascimento}
+                onChange={onChange}
+              />
             </div>
+
             <div className="field">
               <label>Telefone</label>
-              <input name="telefone" value={form.telefone} onChange={onChange} placeholder="(00) 00000-0000" />
+              <input
+                name="telefone"
+                value={form.telefone}
+                onChange={onChange}
+                placeholder="(00) 00000-0000"
+              />
             </div>
+
             <div className="field">
               <label>E-mail</label>
-              <input type="email" name="email" value={form.email} onChange={onChange} placeholder="email@exemplo.com" />
+              <input
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={onChange}
+                placeholder="email@exemplo.com"
+              />
             </div>
           </div>
         </div>
 
         <div className="modal-actions">
-          <button className="btn btn-light" onClick={onCancel}>Cancelar</button>
+          <button className="btn btn-light" onClick={onCancel}>
+            Cancelar
+          </button>
+
           <button className="btn btn-primary" onClick={onSave}>
             <Save className="ico" />
             Salvar colaborador
@@ -410,16 +575,25 @@ function ModalConfirm({ open, nome, onConfirm, onCancel }) {
             <Trash2 className="ico danger" />
             <h3>Excluir condomínio</h3>
           </div>
+
           <button className="icon-btn" onClick={onCancel}>
             <X className="ico" />
           </button>
         </div>
+
         <div className="modal-body">
-          Tem certeza que deseja excluir <strong>{nome}</strong>? Esta ação não pode ser desfeita.
+          Tem certeza que deseja excluir <strong>{nome}</strong>? Esta ação não
+          pode ser desfeita.
         </div>
+
         <div className="modal-actions">
-          <button className="btn btn-light" onClick={onCancel}>Cancelar</button>
-          <button className="btn btn-danger" onClick={onConfirm}>Excluir</button>
+          <button className="btn btn-light" onClick={onCancel}>
+            Cancelar
+          </button>
+
+          <button className="btn btn-danger" onClick={onConfirm}>
+            Excluir
+          </button>
         </div>
       </div>
     </div>
@@ -431,14 +605,37 @@ function FiltroCondominios({ value, onChange, onClear }) {
     <div className="cfg-filter-bar">
       <div className="cfg-filter-search">
         <Search className="ico" />
-        <input type="text" placeholder="Buscar condomínio por nome ou CNPJ" value={value} onChange={(e) => onChange(e.target.value)} />
-        {value && (<button type="button" className="cfg-filter-clear" onClick={onClear}><X className="ico" /></button>)}
+
+        <input
+          type="text"
+          placeholder="Buscar condomínio por nome ou CNPJ"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+
+        {value && (
+          <button
+            type="button"
+            className="cfg-filter-clear"
+            onClick={onClear}
+          >
+            <X className="ico" />
+          </button>
+        )}
       </div>
     </div>
   )
 }
 
 export default function ConfiguracaoCondominios() {
+  const { user } = useAuth()
+
+  const userTipo = String(
+    user?.tipo || user?.tipo_usuario || user?.role || ''
+  ).toLowerCase()
+
+  const isUsuarioGlobal = userTipo === 'dev' || userTipo === 'fat'
+
   const [modoAtivo, setModoAtivo] = useState('lista')
   const [condominios, setCondominios] = useState([])
   const [totalCondominios, setTotalCondominios] = useState(0)
@@ -461,21 +658,40 @@ export default function ConfiguracaoCondominios() {
   })
 
   const [editandoCnpj, setEditandoCnpj] = useState(null)
-  const [uploadStatus, setUploadStatus] = useState(null)
-  const [uploadedFile, setUploadedFile] = useState(null)
-  const [errosUpload, setErrosUpload] = useState([])
   const [confirm, setConfirm] = useState({ open: false, id: null, nome: '' })
-  const [toast, setToast] = useState({ open: false, message: '', type: 'success' })
+  const [toast, setToast] = useState({
+    open: false,
+    message: '',
+    type: 'success',
+  })
   const [busca, setBusca] = useState('')
   const [paginaAtual, setPaginaAtual] = useState(1)
   const itensPorPagina = 10
 
-  const [funcionariosModal, setFuncionariosModal] = useState({ open: false, condominio: null, funcionarios: [] })
-  const [vincularModal, setVincularModal] = useState({ open: false, condominio: null })
-  const [colaboradorModal, setColaboradorModal] = useState({ open: false, condominio: null })
+  const [funcionariosModal, setFuncionariosModal] = useState({
+    open: false,
+    condominio: null,
+    funcionarios: [],
+  })
+
+  const [vincularModal, setVincularModal] = useState({
+    open: false,
+    condominio: null,
+  })
+
+  const [colaboradorModal, setColaboradorModal] = useState({
+    open: false,
+    condominio: null,
+  })
 
   const [colaboradorForm, setColaboradorForm] = useState({
-    nome: '', cpf: '', matricula: '', funcao: '', data_nascimento: '', telefone: '', email: ''
+    nome: '',
+    cpf: '',
+    matricula: '',
+    funcao: '',
+    data_nascimento: '',
+    telefone: '',
+    email: '',
   })
 
   const toastTimer = useRef(null)
@@ -487,7 +703,7 @@ export default function ConfiguracaoCondominios() {
 
   useEffect(() => {
     carregarCondominios(busca, paginaAtual)
-  }, [busca, paginaAtual])
+  }, [busca, paginaAtual, user])
 
   const carregarCondominios = async (cnpj, page) => {
     try {
@@ -495,10 +711,25 @@ export default function ConfiguracaoCondominios() {
 
       const response = await entebenService.getCondominios(cnpj, page)
       const results = toArray(response)
-      const total = response?.count || results.length
+      const administradoraId = getAdministradoraIdFromUser(user)
 
-      setCondominios(results)
-      setTotalCondominios(total)
+      const condominiosFiltrados =
+        isUsuarioGlobal || !administradoraId
+          ? results
+          : results.filter((condominio) => {
+            const admCondominio = getAdministradoraIdFromCondominio(condominio)
+
+            if (Array.isArray(admCondominio)) {
+              return admCondominio.some(
+                (id) => String(id) === String(administradoraId)
+              )
+            }
+
+            return String(admCondominio) === String(administradoraId)
+          })
+
+      setCondominios(condominiosFiltrados)
+      setTotalCondominios(condominiosFiltrados.length)
       setErroCondominios('')
     } catch (err) {
       console.error('Erro ao carregar condomínios:', err)
@@ -512,6 +743,7 @@ export default function ConfiguracaoCondominios() {
     try {
       const response = await entebenService.getFuncionarios()
       const list = toArray(response)
+
       setTodosFuncionarios(list)
     } catch (err) {
       console.error('Erro ao carregar funcionários:', err)
@@ -532,12 +764,18 @@ export default function ConfiguracaoCondominios() {
 
   const showToast = (message, type = 'success') => {
     setToast({ open: true, message, type })
+
     if (toastTimer.current) clearTimeout(toastTimer.current)
-    toastTimer.current = setTimeout(() => setToast({ open: false, message: '', type: 'success' }), 2500)
+
+    toastTimer.current = setTimeout(
+      () => setToast({ open: false, message: '', type: 'success' }),
+      2500
+    )
   }
 
   const vincularFuncionarios = async (condominio, funcionariosParaVincular) => {
     setLoadingAction(true)
+
     try {
       for (const func of funcionariosParaVincular) {
         const payload = {
@@ -554,8 +792,11 @@ export default function ConfiguracaoCondominios() {
 
         await entebenService.updateFuncionario(func.cpf, payload)
       }
+
       await carregarDados()
-      showToast(`${funcionariosParaVincular.length} funcionário(s) vinculado(s) com sucesso!`)
+      showToast(
+        `${funcionariosParaVincular.length} funcionário(s) vinculado(s) com sucesso!`
+      )
       setVincularModal({ open: false, condominio: null })
     } catch (err) {
       console.error('Erro ao vincular:', err)
@@ -567,6 +808,7 @@ export default function ConfiguracaoCondominios() {
 
   const desvincularFuncionario = async (condominio, funcionario) => {
     setLoadingAction(true)
+
     try {
       const payload = {
         cpf: funcionario.cpf,
@@ -582,8 +824,9 @@ export default function ConfiguracaoCondominios() {
 
       await entebenService.updateFuncionario(funcionario.cpf, payload)
       await carregarDados()
+
       showToast(`Funcionário ${funcionario.nome} desvinculado com sucesso!`)
-      setFuncionariosModal(prev => ({ ...prev, open: false }))
+      setFuncionariosModal((prev) => ({ ...prev, open: false }))
     } catch (err) {
       console.error('Erro ao desvincular:', err)
       showToast('Erro ao desvincular funcionário', 'danger')
@@ -597,12 +840,14 @@ export default function ConfiguracaoCondominios() {
       showToast('Informe o nome do colaborador', 'danger')
       return
     }
+
     if (!colaboradorForm.cpf.trim()) {
       showToast('Informe o CPF do colaborador', 'danger')
       return
     }
 
     setLoadingAction(true)
+
     try {
       const novoFuncionario = {
         cpf: somenteDigitos(colaboradorForm.cpf),
@@ -610,15 +855,26 @@ export default function ConfiguracaoCondominios() {
         matricula: colaboradorForm.matricula,
         funcao: colaboradorForm.funcao,
         data_nascimento: colaboradorForm.data_nascimento || null,
+        telefone: colaboradorForm.telefone,
+        email: colaboradorForm.email,
         condominio: colaboradorModal.condominio?.cnpj,
         departamento: colaboradorModal.condominio?.nome,
       }
 
       await entebenService.createFuncionario(novoFuncionario)
       await carregarDados()
+
       showToast('Colaborador adicionado com sucesso!')
       setColaboradorModal({ open: false, condominio: null })
-      setColaboradorForm({ nome: '', cpf: '', matricula: '', funcao: '', data_nascimento: '', telefone: '', email: '' })
+      setColaboradorForm({
+        nome: '',
+        cpf: '',
+        matricula: '',
+        funcao: '',
+        data_nascimento: '',
+        telefone: '',
+        email: '',
+      })
     } catch (err) {
       console.error('Erro ao adicionar:', err)
       showToast('Erro ao adicionar colaborador', 'danger')
@@ -632,20 +888,30 @@ export default function ConfiguracaoCondominios() {
       showToast('CNPJ é obrigatório', 'danger')
       return
     }
+
     if (!formData.nome) {
       showToast('Nome é obrigatório', 'danger')
       return
     }
 
     setLoadingAction(true)
+
     try {
+      const administradoraId = getAdministradoraIdFromUser(user)
+
+      const payload = {
+        ...formData,
+        ...(administradoraId ? { administradora: administradoraId } : {}),
+      }
+
       if (editandoCnpj) {
-        await entebenService.updateCondominio(editandoCnpj, formData)
+        await entebenService.updateCondominio(editandoCnpj, payload)
         showToast('Condomínio atualizado com sucesso!')
       } else {
-        await entebenService.createCondominio(formData)
+        await entebenService.createCondominio(payload)
         showToast('Condomínio cadastrado com sucesso!')
       }
+
       await carregarDados()
       resetForm()
       setModoAtivo('lista')
@@ -659,9 +925,11 @@ export default function ConfiguracaoCondominios() {
 
   const handleExcluir = async () => {
     setLoadingAction(true)
+
     try {
       await entebenService.deleteCondominio(confirm.id)
       await carregarDados()
+
       showToast('Condomínio excluído com sucesso', 'danger')
       setConfirm({ open: false, id: null, nome: '' })
     } catch (err) {
@@ -674,9 +942,18 @@ export default function ConfiguracaoCondominios() {
 
   const resetForm = () => {
     setFormData({
-      cnpj: '', nome: '', tipo_local: 'CONDOMINIO',
-      endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', cep: ''
+      cnpj: '',
+      nome: '',
+      tipo_local: 'CONDOMINIO',
+      endereco: '',
+      numero: '',
+      complemento: '',
+      bairro: '',
+      cidade: '',
+      estado: '',
+      cep: '',
     })
+
     setEditandoCnpj(null)
   }
 
@@ -693,24 +970,28 @@ export default function ConfiguracaoCondominios() {
       estado: condominio.estado || '',
       cep: condominio.cep || '',
     })
+
     setEditandoCnpj(condominio.cnpj)
     setModoAtivo('form')
   }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+
+    setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleColaboradorChange = (e) => {
     const { name, value } = e.target
-    setColaboradorForm(prev => ({ ...prev, [name]: value }))
+
+    setColaboradorForm((prev) => ({ ...prev, [name]: value }))
   }
 
   const funcionariosDisponiveis = useMemo(() => {
-    return todosFuncionarios.filter(func => {
+    return todosFuncionarios.filter((func) => {
       if (!func.condominio) return true
       if (typeof func.condominio === 'object' && !func.condominio.cnpj) return true
+
       return false
     })
   }, [todosFuncionarios])
@@ -718,8 +999,10 @@ export default function ConfiguracaoCondominios() {
   const totalPaginas = Math.max(1, Math.ceil(totalCondominios / itensPorPagina))
 
   const getFuncionariosPorCNPJ = (cnpj) => {
-    return todosFuncionarios.filter(f => {
-      const cnpjCond = typeof f.condominio === 'object' ? f.condominio?.cnpj : f.condominio
+    return todosFuncionarios.filter((f) => {
+      const cnpjCond =
+        typeof f.condominio === 'object' ? f.condominio?.cnpj : f.condominio
+
       return cnpjCond === cnpj
     })
   }
@@ -730,50 +1013,144 @@ export default function ConfiguracaoCondominios() {
         <div className="cfg-shimmer-table">
           <div className="cfg-shimmer-header">
             <div className="cfg-shimmer-row">
-              <div className="cfg-shimmer-cell w-40"><div className="cfg-shimmer-line" /></div>
-              <div className="cfg-shimmer-cell w-25"><div className="cfg-shimmer-line" /></div>
-              <div className="cfg-shimmer-cell w-20"><div className="cfg-shimmer-line" /></div>
-              <div className="cfg-shimmer-cell w-15"><div className="cfg-shimmer-line" /></div>
+              <div className="cfg-shimmer-cell w-40">
+                <div className="cfg-shimmer-line" />
+              </div>
+              <div className="cfg-shimmer-cell w-25">
+                <div className="cfg-shimmer-line" />
+              </div>
+              <div className="cfg-shimmer-cell w-20">
+                <div className="cfg-shimmer-line" />
+              </div>
+              <div className="cfg-shimmer-cell w-15">
+                <div className="cfg-shimmer-line" />
+              </div>
             </div>
           </div>
+
           <div className="cfg-shimmer-body">
             {Array.from({ length: itensPorPagina }).map((_, i) => (
               <div key={i} className="cfg-shimmer-row">
-                <div className="cfg-shimmer-cell w-40"><div className="cfg-shimmer-line" /></div>
-                <div className="cfg-shimmer-cell w-25"><div className="cfg-shimmer-line" /></div>
-                <div className="cfg-shimmer-cell w-20"><div className="cfg-shimmer-line" /></div>
-                <div className="cfg-shimmer-cell w-15"><div className="cfg-shimmer-line" /></div>
+                <div className="cfg-shimmer-cell w-40">
+                  <div className="cfg-shimmer-line" />
+                </div>
+                <div className="cfg-shimmer-cell w-25">
+                  <div className="cfg-shimmer-line" />
+                </div>
+                <div className="cfg-shimmer-cell w-20">
+                  <div className="cfg-shimmer-line" />
+                </div>
+                <div className="cfg-shimmer-cell w-15">
+                  <div className="cfg-shimmer-line" />
+                </div>
               </div>
             ))}
           </div>
         </div>
       ) : erroCondominios ? (
-        <div className="empty"><AlertCircle className="ico xl muted" /><p>{erroCondominios}</p></div>
+        <div className="empty">
+          <AlertCircle className="ico xl muted" />
+          <p>{erroCondominios}</p>
+        </div>
       ) : (
         <>
           <div className="table-wrap">
             <table className="table">
               <thead>
-                <tr><th>Condomínio</th><th>CNPJ</th><th>Funcionários</th><th className="text-right">Ações</th></tr>
+                <tr>
+                  <th>Condomínio</th>
+                  <th>Administradora</th>
+                  <th>CNPJ</th>
+                  <th>Funcionários</th>
+                  <th className="text-right">Ações</th>
+                </tr>
               </thead>
+
               <tbody>
                 {condominios.map((cond) => {
                   const funcionariosCond = getFuncionariosPorCNPJ(cond.cnpj)
+
                   return (
                     <tr key={cond.cnpj}>
-                      <td><div className="cell-flex"><Building2 className="ico brand" /><div><div className="cell-title">{cond.nome}</div></div></div></td>
-                      <td className="muted">{formatarCNPJ(cond.cnpj)}</td>
                       <td>
-                        <button className="cfg-func-count-btn" onClick={() => setFuncionariosModal({ open: true, condominio: cond, funcionarios: funcionariosCond })}>
-                          <Users className="ico" /><span className="cfg-func-count">{funcionariosCond.length}</span><Eye className="ico sm" />
+                        <div className="cell-flex">
+                          <Building2 className="ico brand" />
+
+                          <div>
+                            <div className="cell-title">{cond.nome}</div>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="muted">{getAdministradoraNome(cond)}</td>
+
+                      <td className="muted">{formatarCNPJ(cond.cnpj)}</td>
+
+                      <td>
+                        <button
+                          className="cfg-func-count-btn"
+                          onClick={() =>
+                            setFuncionariosModal({
+                              open: true,
+                              condominio: cond,
+                              funcionarios: funcionariosCond,
+                            })
+                          }
+                        >
+                          <Users className="ico" />
+                          <span className="cfg-func-count">
+                            {funcionariosCond.length}
+                          </span>
+                          <Eye className="ico sm" />
                         </button>
                       </td>
+
                       <td className="text-right">
                         <div className="cfg-row-actions">
-                          <button className="icon-btn cfg-table-action green" onClick={() => setVincularModal({ open: true, condominio: cond })} title="Vincular funcionários"><Link className="ico" /></button>
-                          <button className="icon-btn cfg-table-action blue" onClick={() => handleEditar(cond)} title="Editar"><Pencil className="ico" /></button>
-                          <button className="icon-btn cfg-table-action red" onClick={() => setColaboradorModal({ open: true, condominio: cond })} title="Novo colaborador"><UserPlus className="ico" /></button>
-                          <button className="icon-btn cfg-table-action red" onClick={() => setConfirm({ open: true, id: cond.cnpj, nome: cond.nome })} title="Excluir"><Trash2 className="ico" /></button>
+                          <button
+                            className="icon-btn cfg-table-action green"
+                            onClick={() =>
+                              setVincularModal({ open: true, condominio: cond })
+                            }
+                            title="Vincular funcionários"
+                          >
+                            <Link className="ico" />
+                          </button>
+
+                          <button
+                            className="icon-btn cfg-table-action blue"
+                            onClick={() => handleEditar(cond)}
+                            title="Editar"
+                          >
+                            <Pencil className="ico" />
+                          </button>
+
+                          <button
+                            className="icon-btn cfg-table-action red"
+                            onClick={() =>
+                              setColaboradorModal({
+                                open: true,
+                                condominio: cond,
+                              })
+                            }
+                            title="Novo colaborador"
+                          >
+                            <UserPlus className="ico" />
+                          </button>
+
+                          <button
+                            className="icon-btn cfg-table-action red"
+                            onClick={() =>
+                              setConfirm({
+                                open: true,
+                                id: cond.cnpj,
+                                nome: cond.nome,
+                              })
+                            }
+                            title="Excluir"
+                          >
+                            <Trash2 className="ico" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -782,14 +1159,48 @@ export default function ConfiguracaoCondominios() {
               </tbody>
             </table>
           </div>
-          {condominios.length === 0 && !loadingCondominios && <div className="empty"><Building2 className="ico xl muted" /><p>Nenhum condomínio cadastrado</p></div>}
+
+          {condominios.length === 0 && !loadingCondominios && (
+            <div className="empty">
+              <Building2 className="ico xl muted" />
+              <p>
+                {isUsuarioGlobal
+                  ? 'Nenhum condomínio cadastrado'
+                  : 'Nenhum condomínio cadastrado para esta administradora'}
+              </p>
+            </div>
+          )}
+
           {totalCondominios > itensPorPagina && (
             <div className="cfg-pagination">
-              <div className="cfg-pagination-info">Exibindo {(paginaAtual-1)*itensPorPagina+1}–{Math.min(paginaAtual*itensPorPagina, totalCondominios)} de {totalCondominios}</div>
+              <div className="cfg-pagination-info">
+                Exibindo {(paginaAtual - 1) * itensPorPagina + 1}–
+                {Math.min(paginaAtual * itensPorPagina, totalCondominios)} de{' '}
+                {totalCondominios}
+              </div>
+
               <div className="cfg-pagination-actions">
-                <button className="cfg-page-btn" onClick={() => setPaginaAtual(p => Math.max(1, p-1))} disabled={paginaAtual === 1}><ChevronLeft className="ico" /></button>
-                <span className="cfg-page-current">Página {paginaAtual} de {totalPaginas}</span>
-                <button className="cfg-page-btn" onClick={() => setPaginaAtual(p => Math.min(totalPaginas, p+1))} disabled={paginaAtual === totalPaginas}><ChevronRight className="ico" /></button>
+                <button
+                  className="cfg-page-btn"
+                  onClick={() => setPaginaAtual((p) => Math.max(1, p - 1))}
+                  disabled={paginaAtual === 1}
+                >
+                  <ChevronLeft className="ico" />
+                </button>
+
+                <span className="cfg-page-current">
+                  Página {paginaAtual} de {totalPaginas}
+                </span>
+
+                <button
+                  className="cfg-page-btn"
+                  onClick={() =>
+                    setPaginaAtual((p) => Math.min(totalPaginas, p + 1))
+                  }
+                  disabled={paginaAtual === totalPaginas}
+                >
+                  <ChevronRight className="ico" />
+                </button>
               </div>
             </div>
           )}
@@ -800,42 +1211,177 @@ export default function ConfiguracaoCondominios() {
 
   const Formulario = () => (
     <div className="card pad">
-      <div className="card-head"><h2 className="card-title">{editandoCnpj ? 'Editar Condomínio' : 'Novo Condomínio'}</h2>
-        <button className="icon-btn" onClick={() => { resetForm(); setModoAtivo('lista') }}><X className="ico" /></button>
+      <div className="card-head">
+        <h2 className="card-title">
+          {editandoCnpj ? 'Editar Condomínio' : 'Novo Condomínio'}
+        </h2>
+
+        <button
+          className="icon-btn"
+          onClick={() => {
+            resetForm()
+            setModoAtivo('lista')
+          }}
+        >
+          <X className="ico" />
+        </button>
       </div>
+
       <div className="grid">
-        <div className="grid-full section-title"><Building2 className="ico" /><span>Dados Básicos</span></div>
-        <div className="field"><label>CNPJ *</label><input name="cnpj" value={formData.cnpj} onChange={handleInputChange} placeholder="00.000.000/0000-00" disabled={!!editandoCnpj} /></div>
-        <div className="field"><label>Nome do Condomínio *</label><input name="nome" value={formData.nome} onChange={handleInputChange} /></div>
-        <div className="grid-full section-title mt"><MapPin className="ico" /><span>Endereço</span></div>
-        <div className="field"><label>Endereço</label><input name="endereco" value={formData.endereco} onChange={handleInputChange} /></div>
-        <div className="field"><label>Número</label><input name="numero" value={formData.numero} onChange={handleInputChange} /></div>
-        <div className="field"><label>Complemento</label><input name="complemento" value={formData.complemento} onChange={handleInputChange} /></div>
-        <div className="field"><label>Bairro</label><input name="bairro" value={formData.bairro} onChange={handleInputChange} /></div>
-        <div className="field"><label>Cidade</label><input name="cidade" value={formData.cidade} onChange={handleInputChange} /></div>
-        <div className="field"><label>Estado (UF)</label><input name="estado" value={formData.estado} onChange={handleInputChange} maxLength={2} /></div>
-        <div className="field"><label>CEP</label><input name="cep" value={formData.cep} onChange={handleInputChange} /></div>
+        <div className="grid-full section-title">
+          <Building2 className="ico" />
+          <span>Dados Básicos</span>
+        </div>
+
+        <div className="field">
+          <label>CNPJ *</label>
+          <input
+            name="cnpj"
+            value={formData.cnpj}
+            onChange={handleInputChange}
+            placeholder="00.000.000/0000-00"
+            disabled={!!editandoCnpj}
+          />
+        </div>
+
+        <div className="field">
+          <label>Nome do Condomínio *</label>
+          <input
+            name="nome"
+            value={formData.nome}
+            onChange={handleInputChange}
+          />
+        </div>
+
+        <div className="grid-full section-title mt">
+          <MapPin className="ico" />
+          <span>Endereço</span>
+        </div>
+
+        <div className="field">
+          <label>Endereço</label>
+          <input
+            name="endereco"
+            value={formData.endereco}
+            onChange={handleInputChange}
+          />
+        </div>
+
+        <div className="field">
+          <label>Número</label>
+          <input
+            name="numero"
+            value={formData.numero}
+            onChange={handleInputChange}
+          />
+        </div>
+
+        <div className="field">
+          <label>Complemento</label>
+          <input
+            name="complemento"
+            value={formData.complemento}
+            onChange={handleInputChange}
+          />
+        </div>
+
+        <div className="field">
+          <label>Bairro</label>
+          <input
+            name="bairro"
+            value={formData.bairro}
+            onChange={handleInputChange}
+          />
+        </div>
+
+        <div className="field">
+          <label>Cidade</label>
+          <input
+            name="cidade"
+            value={formData.cidade}
+            onChange={handleInputChange}
+          />
+        </div>
+
+        <div className="field">
+          <label>Estado (UF)</label>
+          <input
+            name="estado"
+            value={formData.estado}
+            onChange={handleInputChange}
+            maxLength={2}
+          />
+        </div>
+
+        <div className="field">
+          <label>CEP</label>
+          <input
+            name="cep"
+            value={formData.cep}
+            onChange={handleInputChange}
+          />
+        </div>
       </div>
+
       <div className="actions">
-        <button className="btn btn-primary lg" onClick={handleSubmit} disabled={loadingAction}><Save className="ico" /><span>{editandoCnpj ? 'Atualizar' : 'Cadastrar'}</span></button>
-        <button className="btn btn-light lg" onClick={() => { resetForm(); setModoAtivo('lista') }}>Cancelar</button>
+        <button
+          className="btn btn-primary lg"
+          onClick={handleSubmit}
+          disabled={loadingAction}
+        >
+          <Save className="ico" />
+          <span>{editandoCnpj ? 'Atualizar' : 'Cadastrar'}</span>
+        </button>
+
+        <button
+          className="btn btn-light lg"
+          onClick={() => {
+            resetForm()
+            setModoAtivo('lista')
+          }}
+        >
+          Cancelar
+        </button>
       </div>
     </div>
   )
 
   return (
-    <PageLayout title='Gerenciamento de Condomínios' subtitle='Gerencie os condomínios cadastrados na plataforma'>
+    <PageLayout
+      title="Gerenciamento de Condomínios"
+      subtitle="Gerencie os condomínios cadastrados na plataforma"
+    >
       <div className="cfg-page">
         {modoAtivo === 'lista' && (
           <>
-            <FiltroCondominios value={busca} onChange={handleBuscaChange} onClear={() => { setBusca(''); setPaginaAtual(1) }} />
+            <FiltroCondominios
+              value={busca}
+              onChange={handleBuscaChange}
+              onClear={() => {
+                setBusca('')
+                setPaginaAtual(1)
+              }}
+            />
+
             <div className="cfg-actions">
-              <button onClick={() => setModoAtivo('form')} className="btn btn-primary"><Plus className="ico" /><span>Novo Condomínio</span></button>
-              <button onClick={carregarDados} className="btn btn-light"><RefreshCw className="ico" /><span>Atualizar</span></button>
+              <button
+                onClick={() => setModoAtivo('form')}
+                className="btn btn-primary"
+              >
+                <Plus className="ico" />
+                <span>Novo Condomínio</span>
+              </button>
+
+              <button onClick={carregarDados} className="btn btn-light">
+                <RefreshCw className="ico" />
+                <span>Atualizar</span>
+              </button>
             </div>
+
             <Tabela />
           </>
         )}
+
         {modoAtivo === 'form' && <Formulario />}
 
         <ModalFuncionarios
@@ -843,9 +1389,22 @@ export default function ConfiguracaoCondominios() {
           condominio={funcionariosModal.condominio}
           funcionarios={funcionariosModal.funcionarios}
           loading={loadingAction}
-          onClose={() => setFuncionariosModal({ open: false, condominio: null, funcionarios: [] })}
-          onUnlink={(func) => desvincularFuncionario(funcionariosModal.condominio, func)}
-          onOpenVincular={() => setVincularModal({ open: true, condominio: funcionariosModal.condominio })}
+          onClose={() =>
+            setFuncionariosModal({
+              open: false,
+              condominio: null,
+              funcionarios: [],
+            })
+          }
+          onUnlink={(func) =>
+            desvincularFuncionario(funcionariosModal.condominio, func)
+          }
+          onOpenVincular={() =>
+            setVincularModal({
+              open: true,
+              condominio: funcionariosModal.condominio,
+            })
+          }
         />
 
         <ModalVincularFuncionarios
@@ -853,7 +1412,9 @@ export default function ConfiguracaoCondominios() {
           condominio={vincularModal.condominio}
           funcionariosDisponiveis={funcionariosDisponiveis}
           loading={loadingAction}
-          onVincular={(funcs) => vincularFuncionarios(vincularModal.condominio, funcs)}
+          onVincular={(funcs) =>
+            vincularFuncionarios(vincularModal.condominio, funcs)
+          }
           onClose={() => setVincularModal({ open: false, condominio: null })}
         />
 
@@ -863,14 +1424,31 @@ export default function ConfiguracaoCondominios() {
           form={colaboradorForm}
           onChange={handleColaboradorChange}
           onSave={adicionarColaborador}
-          onCancel={() => setColaboradorModal({ open: false, condominio: null })}
+          onCancel={() =>
+            setColaboradorModal({ open: false, condominio: null })
+          }
         />
 
-        <ModalConfirm open={confirm.open} nome={confirm.nome} onConfirm={handleExcluir} onCancel={() => setConfirm({ open: false, id: null, nome: '' })} />
+        <ModalConfirm
+          open={confirm.open}
+          nome={confirm.nome}
+          onConfirm={handleExcluir}
+          onCancel={() => setConfirm({ open: false, id: null, nome: '' })}
+        />
 
         <div className={`cfg-toast-wrap ${toast.open ? 'show' : ''}`}>
-          <div className={`cfg-toast ${toast.type === 'danger' ? 'cfg-toast-danger' : 'cfg-toast-success'}`}>
-            {toast.type === 'danger' ? <Trash2 className="cfg-toast-ico" /> : <CheckCircle className="cfg-toast-ico" />}
+          <div
+            className={`cfg-toast ${toast.type === 'danger'
+                ? 'cfg-toast-danger'
+                : 'cfg-toast-success'
+              }`}
+          >
+            {toast.type === 'danger' ? (
+              <Trash2 className="cfg-toast-ico" />
+            ) : (
+              <CheckCircle className="cfg-toast-ico" />
+            )}
+
             <span>{toast.message}</span>
           </div>
         </div>
