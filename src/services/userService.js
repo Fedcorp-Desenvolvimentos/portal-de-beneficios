@@ -135,33 +135,31 @@ export const userService = {
     /**
      * Atualizar usuário
      */
-    atualizarUsuario: async (id, dados) => {
-        try {
-            // Primeiro, buscar os dados atuais do usuário
-            const usuarioAtual = await userService.buscarUsuarioPorId(id);
-            
-            // Mesclar os dados atuais com as alterações
-            const payload = {
-                username: dados.username !== undefined ? dados.username : usuarioAtual.username,
-                email: dados.email !== undefined ? dados.email : usuarioAtual.email,
-                tipo: dados.tipo !== undefined ? dados.tipo : usuarioAtual.tipo,
-                administradora: dados.administradora !== undefined ? dados.administradora : usuarioAtual.administradora_id,
-            };
-            
-            // Só incluir senha se foi fornecida
-            if (dados.password && dados.password.trim() !== '') {
-                payload.password = dados.password;
-            }
-            
-            // console.log(`✏️ Atualizando usuário ${id} com payload:`, payload);
-            const response = await api.put(`/api/users/${id}/`, payload);
-            // console.log('✅ Usuário atualizado:', response.data);
-            return response.data;
-        } catch (error) {
-            console.error(`❌ Erro ao atualizar usuário ${id}:`, error);
-            throw error;
+   atualizarUsuario: async (id, dados) => {
+    try {
+        const usuarioAtual = await userService.buscarUsuarioPorId(id);
+
+        const payload = {
+            username: dados.username !== undefined ? dados.username : usuarioAtual.username,
+            nome: dados.nome !== undefined ? dados.nome : usuarioAtual.nome,
+            email: dados.email !== undefined ? dados.email : usuarioAtual.email,
+            tipo: dados.tipo !== undefined ? dados.tipo : usuarioAtual.tipo,
+            administradora: dados.administradora !== undefined
+                ? dados.administradora
+                : usuarioAtual.administradora_id,
+        };
+
+        if (dados.password && dados.password.trim() !== '') {
+            payload.password = dados.password;
         }
-    },
+
+        const response = await api.put(`/api/users/${id}/`, payload);
+        return response.data;
+    } catch (error) {
+        console.error(`❌ Erro ao atualizar usuário ${id}:`, error);
+        throw error;
+    }
+},
 
     /**
      * Excluir usuário
