@@ -1,7 +1,7 @@
 // pages/Interno/Usuarios/UsuarioTable.jsx
 import React from 'react';
 import styled from 'styled-components';
-import { FiEdit, FiTrash2, FiUser, FiMail, FiTag } from 'react-icons/fi';
+import { FiEdit, FiTrash2, FiUser, FiMail, FiTag, FiBriefcase } from 'react-icons/fi';
 
 const TableWrapper = styled.div`
   overflow-x: auto;
@@ -16,7 +16,8 @@ const Table = styled.table`
   border-radius: 12px;
   overflow: hidden;
 
-  th, td {
+  th,
+  td {
     padding: 14px 16px;
     text-align: left;
     border-bottom: 1px solid var(--color-border-light);
@@ -71,7 +72,9 @@ const Button = styled.button`
     transform: translateY(0);
   }
 
-  ${props => props.$variant === 'edit' && `
+  ${(props) =>
+    props.$variant === 'edit' &&
+    `
     background: var(--color-primary);
     color: white;
 
@@ -80,7 +83,9 @@ const Button = styled.button`
     }
   `}
 
-  ${props => props.$variant === 'delete' && `
+  ${(props) =>
+    props.$variant === 'delete' &&
+    `
     background: var(--color-danger);
     color: white;
 
@@ -118,7 +123,7 @@ const TipoBadge = styled.span`
   font-size: 12px;
   font-weight: 500;
 
-  ${props => {
+  ${(props) => {
     switch (props.$tipo) {
       case 'dev':
         return `
@@ -154,16 +159,40 @@ const TipoBadge = styled.span`
   }}
 `;
 
+const AdministradoraText = styled.div`
+  max-width: 260px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  line-height: 1.4;
+`;
+
+const AdministradoraFallback = styled.span`
+  color: var(--color-text-tertiary);
+`;
+
 export default function UsuarioTable({ usuarios, onEditar, onExcluir, admNome }) {
   const getTipoLabel = (tipo) => {
     const tipos = {
       dev: 'Desenvolvedor',
       fin: 'Financeiro Fedcorp',
       fat: 'Faturista Fedcorp',
-      adm: `Usuário de ${admNome || 'Administradora'}`.trim(),
-      cli: 'Cliente (Condomínio)'
+      adm: 'Usuário Administradora',
+      cli: 'Cliente (Condomínio)',
     };
-    return tipos[tipo] || tipo;
+
+    return tipos[tipo] || tipo || '—';
+  };
+
+  const getAdministradoraNome = (usuario) => {
+    return (
+      usuario?.administradora_nome ||
+      usuario?.nome_administradora ||
+      usuario?.administradora?.nome ||
+      usuario?.administradora?.razao_social ||
+      usuario?.administradora?.nome_fantasia ||
+      admNome ||
+      ''
+    );
   };
 
   if (!usuarios || usuarios.length === 0) {
@@ -192,41 +221,64 @@ export default function UsuarioTable({ usuarios, onEditar, onExcluir, admNome })
               <FiTag size={12} style={{ marginRight: 6 }} />
               Tipo
             </th>
+            <th>
+              <FiBriefcase size={12} style={{ marginRight: 6 }} />
+              Administradora
+            </th>
             <th>Ações</th>
           </tr>
         </thead>
+
         <tbody>
-          {usuarios.map(usuario => (
-            <tr key={usuario.id}>
-              <td style={{ fontWeight: 500 }}>{usuario.username}</td>
-              <td>{usuario.email}</td>
-              <td>
-                <TipoBadge $tipo={usuario.tipo}>
-                  {getTipoLabel(usuario.tipo)}
-                </TipoBadge>
-              </td>
-              <td>
-                <Actions>
-                  <Button 
-                    $variant="edit"
-                    onClick={() => onEditar(usuario)}
-                    title="Editar usuário"
-                  >
-                    <FiEdit size={14} />
-                    Editar
-                  </Button>
-                  <Button 
-                    $variant="delete"
-                    onClick={() => onExcluir(usuario)}
-                    title="Excluir usuário"
-                  >
-                    <FiTrash2 size={14} />
-                    Excluir
-                  </Button>
-                </Actions>
-              </td>
-            </tr>
-          ))}
+          {usuarios.map((usuario) => {
+            const administradoraNome = getAdministradoraNome(usuario);
+
+            return (
+              <tr key={usuario.id}>
+                <td style={{ fontWeight: 500 }}>
+                  {usuario.username || usuario.nome || '—'}
+                </td>
+
+                <td>{usuario.email || '—'}</td>
+
+                <td>
+                  <TipoBadge $tipo={usuario.tipo}>
+                    {getTipoLabel(usuario.tipo)}
+                  </TipoBadge>
+                </td>
+
+                <td>
+                  {administradoraNome ? (
+                    <AdministradoraText>{administradoraNome}</AdministradoraText>
+                  ) : (
+                    <AdministradoraFallback>—</AdministradoraFallback>
+                  )}
+                </td>
+
+                <td>
+                  <Actions>
+                    <Button
+                      $variant="edit"
+                      onClick={() => onEditar(usuario)}
+                      title="Editar usuário"
+                    >
+                      <FiEdit size={14} />
+                      Editar
+                    </Button>
+
+                    <Button
+                      $variant="delete"
+                      onClick={() => onExcluir(usuario)}
+                      title="Excluir usuário"
+                    >
+                      <FiTrash2 size={14} />
+                      Excluir
+                    </Button>
+                  </Actions>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </Table>
     </TableWrapper>

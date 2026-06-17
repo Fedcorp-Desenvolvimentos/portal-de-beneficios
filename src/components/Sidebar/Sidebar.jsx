@@ -97,12 +97,12 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       icon: <FaFileUpload />,
       allowed: ["adm", "dev"]
     },
-    // {
-    //   path: "/faturamento/individual",
-    //   label: "Faturamento Individual",
-    //   icon: <FaReceipt />,
-    //   allowed: ["fat", "dev", "adm"]
-    // },
+    {
+      path: "/faturamento/individual",
+      label: "Faturamento Individual",
+      icon: <FaReceipt />,
+      allowed: ["fat", "dev", "adm"]
+    },
     {
       path: "/faturamento",
       label: "Faturamento",
