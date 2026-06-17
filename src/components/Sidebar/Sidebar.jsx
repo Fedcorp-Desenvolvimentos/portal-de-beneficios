@@ -137,7 +137,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       path: "/interno/administradoras",
       label: "Administradoras",
       icon: <FaBuilding />,
-      allowed: ["dev"]
+      allowed: ["dev", "fat"]
     },
     // {
     //   path: "/interno/cadastrar-administradora",
@@ -149,7 +149,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       path: "/interno/minha-administradora",
       label: "Minha Administradora",
       icon: <FaBuilding />,
-      allowed: ["adm", "fat", "dev"]
+      allowed: ["adm", "dev"]
     },
     
     // {

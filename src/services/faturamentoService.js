@@ -181,7 +181,8 @@ export const faturamentoService = {
     const queryString = query.toString()
 
     const API_BASE =
-      import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      import.meta.env.VITE_API_URL 
+      // || 'http://localhost:8000'
 
     return `${API_BASE}/api/upload/export/faturamento/${queryString ? `?${queryString}` : ''
       }`
