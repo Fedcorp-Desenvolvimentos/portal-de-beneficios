@@ -109,12 +109,12 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       icon: <FaFileInvoiceDollar />,
       allowed: ["fat", "dev", "adm"]
     },
-    // {
-    //   path: "/gerenciamento",
-    //   label: "Condomínios",
-    //   icon: <FaBuilding />,
-    //   allowed: ["fat", "adm", "dev"]
-    // },
+    {
+      path: "/gerenciamento",
+      label: "Condomínios",
+      icon: <FaBuilding />,
+      allowed: ["fat", "adm", "dev"]
+    },
     {
       path: "/interno/usuarios",
       label: "Usuários",
