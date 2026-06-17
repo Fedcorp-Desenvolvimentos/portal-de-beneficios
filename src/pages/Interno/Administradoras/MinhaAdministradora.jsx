@@ -282,18 +282,10 @@ const SkeletonUsuariosCard = () => (
         <tbody>
           {[...Array(3)].map((_, i) => (
             <tr key={i}>
-              <td>
-                <S.SkeletonLine $width="150px" $height="16px" />
-              </td>
-              <td>
-                <S.SkeletonLine $width="200px" $height="16px" />
-              </td>
-              <td>
-                <S.SkeletonLine $width="100px" $height="16px" />
-              </td>
-              <td>
-                <S.SkeletonLine $width="80px" $height="16px" />
-              </td>
+              <td><S.SkeletonLine $width="150px" $height="16px" /></td>
+              <td><S.SkeletonLine $width="200px" $height="16px" /></td>
+              <td><S.SkeletonLine $width="100px" $height="16px" /></td>
+              <td><S.SkeletonLine $width="80px" $height="16px" /></td>
             </tr>
           ))}
         </tbody>
@@ -345,6 +337,7 @@ export default function MinhaAdministradora() {
 
   const administradoraId = getAdministradoraIdFromUser(user);
   const administradoraNome = getAdministradoraNome(administradora, user);
+  const podeGerenciarRegraValor = ['dev', 'adm', 'fat'].includes(user?.tipo);
 
   useEffect(() => {
     if (!administradoraId) {
@@ -494,6 +487,8 @@ export default function MinhaAdministradora() {
       setRegraAtiva(Boolean((regraSalva || payload)?.ativo));
       setValorLimite(normalizarValorDecimal((regraSalva || payload)?.valor_limite));
 
+      await carregarRegraValor();
+
       enqueueSnackbar('Regra de valor salva com sucesso', { variant: 'success' });
       setModalRegraValorOpen(false);
     } catch (error) {
@@ -589,25 +584,25 @@ export default function MinhaAdministradora() {
                   Voltar
                 </S.Button>
 
-                {user?.tipo === 'dev' && (
-                  <>
-                    <S.Button
-                      $variant="secondary"
-                      onClick={abrirModalRegraValor}
-                      disabled={loadingRegraValor}
-                    >
-                      Regra de Valor
-                    </S.Button>
+                {podeGerenciarRegraValor && (
+                  <S.Button
+                    $variant="secondary"
+                    onClick={abrirModalRegraValor}
+                    disabled={loadingRegraValor}
+                  >
+                    {regraValor ? 'Editar Regra de Valor' : 'Cadastrar Regra de Valor'}
+                  </S.Button>
+                )}
 
-                    <S.Button
-                      $variant="primary"
-                      onClick={() =>
-                        navigate(`/interno/administradoras/editar/${administradora?.id}`)
-                      }
-                    >
-                      Editar Administradora
-                    </S.Button>
-                  </>
+                {user?.tipo === 'dev' && (
+                  <S.Button
+                    $variant="primary"
+                    onClick={() =>
+                      navigate(`/interno/administradoras/editar/${administradora?.id}`)
+                    }
+                  >
+                    Editar Administradora
+                  </S.Button>
                 )}
               </S.HeaderActions>
             </S.Header>
@@ -659,6 +654,16 @@ export default function MinhaAdministradora() {
                       ? `Bloqueia acima de ${formatCurrency(regraValor.valor_limite)}`
                       : 'Sem bloqueio cadastrado'}
                   </strong>
+
+                  {podeGerenciarRegraValor && (
+                    <S.RegraValorAction
+                      type="button"
+                      onClick={abrirModalRegraValor}
+                      disabled={loadingRegraValor}
+                    >
+                      {regraValor ? 'Editar regra' : '+ Cadastrar regra'}
+                    </S.RegraValorAction>
+                  )}
                 </S.DetailItem>
 
                 <S.DetailItem>
