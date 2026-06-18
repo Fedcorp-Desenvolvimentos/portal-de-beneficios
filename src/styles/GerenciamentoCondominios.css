@@ -435,7 +435,7 @@
     animation: spin 1s linear infinite;
 
     /* border: 2px solid red */
-}
+/* } */
 
 @keyframes spin {
     from {
@@ -1401,4 +1401,4 @@
   overflow-y: auto;
   max-height: calc(85vh - 120px);
   background: #ffffff !important;
-} */
+} 
