@@ -2,23 +2,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
-import { 
-  FiDollarSign, 
-  FiCalendar, 
-  FiFile, 
-  FiList, 
-  FiDownload, 
-  FiSearch, 
-  FiCheck,
-  FiPlus,
-  FiArrowRight
+import {
+  FiDollarSign,
+  FiCalendar,
+  FiFile,
+  FiList,
+  FiDownload,
+  FiSearch,
 } from 'react-icons/fi';
 import { BiImport } from 'react-icons/bi';
 
 import PendenciasDoDiaModal from '../../components/PendenciasDoDiaModal';
 import { entebenService } from '../../services/entebenService';
 import { API_BASE_URL } from '../../services/api';
-import { useLoading } from "../../hooks/useLoading";
+import { useLoading } from '../../hooks/useLoading';
 import PageLayout from '../../Layouts/PageLayout/PageLayout';
 import { useAuth } from '../../context/AuthContext.jsx';
 
@@ -44,11 +41,38 @@ const toArray = (value) => {
   return [];
 };
 
+const getAdministradoraIdFromUser = (user) =>
+  user?.administradora_id ||
+  user?.administradora?.id ||
+  user?.administradora ||
+  user?.id_administradora ||
+  null;
+
+const getAdministradoraIdsFromCondominio = (condominio) => {
+  if (Array.isArray(condominio?.administradoras)) {
+    return condominio.administradoras
+      .map((adm) => adm?.id)
+      .filter(Boolean);
+  }
+
+  return [
+    condominio?.administradora?.id ||
+      condominio?.administradora_id ||
+      condominio?.id_administradora ||
+      condominio?.administradora ||
+      null,
+  ].filter(Boolean);
+};
+
+const isUsuarioGlobal = (user) => {
+  const tipo = String(user?.tipo || '').toLowerCase();
+  return tipo === 'dev' || tipo === 'fat';
+};
+
 // ============================================
 // SKELETON COMPONENTS
 // ============================================
 
-// Skeleton para os KPIs
 const SkeletonKPIs = () => (
   <S.KPIs>
     {[...Array(4)].map((_, i) => (
@@ -64,7 +88,6 @@ const SkeletonKPIs = () => (
   </S.KPIs>
 );
 
-// Skeleton para o Hero
 const SkeletonHero = () => (
   <S.Hero>
     <div>
@@ -79,7 +102,6 @@ const SkeletonHero = () => (
   </S.Hero>
 );
 
-// Skeleton para o Panel da Última Movimentação
 const SkeletonImportPanel = () => (
   <S.Panel highlight="true">
     <S.PanelHead>
@@ -113,7 +135,6 @@ const SkeletonImportPanel = () => (
   </S.Panel>
 );
 
-// Skeleton para o Panel de Busca
 const SkeletonSearchPanel = () => (
   <S.Panel>
     <S.PanelHead>
@@ -130,13 +151,18 @@ const SkeletonSearchPanel = () => (
 
     <div style={{ marginTop: '12px' }}>
       {[...Array(3)].map((_, i) => (
-        <S.SkeletonLine key={i} $width="100%" $height="60px" $marginBottom="8px" $borderRadius="14px" />
+        <S.SkeletonLine
+          key={i}
+          $width="100%"
+          $height="60px"
+          $marginBottom="8px"
+          $borderRadius="14px"
+        />
       ))}
     </div>
   </S.Panel>
 );
 
-// Skeleton para o Panel de Atalhos
 const SkeletonActionsPanel = () => (
   <S.Panel>
     <S.PanelHead>
@@ -156,11 +182,13 @@ const SkeletonActionsPanel = () => (
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { startLoading, stopLoading } = useLoading();
-  
+  const { user } = useAuth();
+
   const [ultimaMovimentacao, setUltimaMovimentacao] = useState(null);
   const [historicoImportacoes, setHistoricoImportacoes] = useState([]);
   const [acordos, setAcordos] = useState([]);
@@ -168,27 +196,39 @@ export default function Dashboard() {
   const [selectedCondo, setSelectedCondo] = useState(null);
   const [condoModalOpen, setCondoModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
 
   useEffect(() => {
     carregarDados();
-  }, []);
+  }, [user]);
 
   const carregarDados = async () => {
     try {
       setIsLoading(true);
-      startLoading("Carregando dashboard...");
-      
+      startLoading('Carregando dashboard...');
+
       const [ultima, historico, acordosData] = await Promise.all([
         entebenService.getUltimaMovimentacao(),
         entebenService.getImportacoes(),
         entebenService.getcondominios(),
       ]);
 
+      const condominiosRecebidos = toArray(acordosData);
+      const administradoraId = getAdministradoraIdFromUser(user);
+
+      const condominiosFiltrados =
+        isUsuarioGlobal(user) || !administradoraId
+          ? condominiosRecebidos
+          : condominiosRecebidos.filter((condominio) => {
+              const ids = getAdministradoraIdsFromCondominio(condominio);
+
+              return ids.some(
+                (id) => String(id) === String(administradoraId)
+              );
+            });
+
       setUltimaMovimentacao(ultima);
       setHistoricoImportacoes(toArray(historico));
-      setAcordos(toArray(acordosData));
-      
+      setAcordos(condominiosFiltrados);
     } catch (e) {
       console.error('Erro ao carregar dashboard:', e);
       enqueueSnackbar('Erro ao carregar dados do dashboard', { variant: 'error' });
@@ -200,13 +240,18 @@ export default function Dashboard() {
 
   const todayStr = useMemo(() => {
     const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-      d.getDate()
-    ).padStart(2, '0')}`;
+
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+      2,
+      '0'
+    )}-${String(d.getDate()).padStart(2, '0')}`;
   }, []);
 
   const pendencias = useMemo(
-    () => acordos.filter((a) => a.status !== 'Fechado' && a.vencimento <= todayStr),
+    () =>
+      acordos.filter(
+        (a) => a.status !== 'Fechado' && a.vencimento <= todayStr
+      ),
     [acordos, todayStr]
   );
 
@@ -218,27 +263,46 @@ export default function Dashboard() {
 
     return acordos
       .filter((c) => {
-        const nome = c.nome || c.condominio || c.razao_social || c.fantasia || c.nome_condominio || '';
-        const cnpj = c.cnpj || c.cnpj_condominio || c.documento || c.cgc || '';
+        const nome =
+          c.nome ||
+          c.condominio ||
+          c.razao_social ||
+          c.fantasia ||
+          c.nome_condominio ||
+          '';
 
-        return normTxt(nome).includes(qTxt) || (qDigits && onlyDigits(cnpj).includes(qDigits));
+        const cnpj =
+          c.cnpj || c.cnpj_condominio || c.documento || c.cgc || '';
+
+        return (
+          normTxt(nome).includes(qTxt) ||
+          (qDigits && onlyDigits(cnpj).includes(qDigits))
+        );
       })
       .slice(0, 8);
   }, [acordos, condoQuery]);
 
   const totalImportacoes = historicoImportacoes.length;
-  const faturamentoTotal = ultimaMovimentacao?.valor_total || 
-    acordos.reduce((s, a) => s + Number(a.valor || 0), 0);
-  const totalAberto = acordos.filter((a) => a.status !== 'Fechado').length;
-  const totalCondominios = ultimaMovimentacao?.total_condominios || acordos.length;
 
-  const getImportName = () => ultimaMovimentacao?.importacao_nome || `IMP-${ultimaMovimentacao?.id || 'última'}`;
+  const faturamentoTotal =
+    ultimaMovimentacao?.valor_total ||
+    acordos.reduce((s, a) => s + Number(a.valor || 0), 0);
+
+  const totalAberto = acordos.filter((a) => a.status !== 'Fechado').length;
+
+  const totalCondominios = acordos.length;
+
+  const getImportName = () =>
+    ultimaMovimentacao?.importacao_nome ||
+    `IMP-${ultimaMovimentacao?.id || 'última'}`;
 
   const getImportStatus = () => {
     const status = ultimaMovimentacao?.status || 'processado';
+
     if (status === 'COMPLETED') return 'success';
     if (status === 'PENDING') return 'warning';
     if (status === 'FAILED') return 'danger';
+
     return 'info';
   };
 
@@ -246,25 +310,43 @@ export default function Dashboard() {
   const excelUrl = `${API_BASE_URL}/upload/export/faturamento/`;
 
   const getCondoNome = (c) =>
-    c?.nome || c?.condominio || c?.razao_social || c?.fantasia || c?.nome_condominio || `Condomínio #${c?.id}`;
+    c?.nome ||
+    c?.condominio ||
+    c?.razao_social ||
+    c?.fantasia ||
+    c?.nome_condominio ||
+    `Condomínio #${c?.id}`;
 
-  const getCondoCnpj = (c) => c?.cnpj || c?.cnpj_condominio || c?.documento || c?.cgc || '—';
-  
+  const getCondoCnpj = (c) =>
+    c?.cnpj || c?.cnpj_condominio || c?.documento || c?.cgc || '—';
+
   const getCondoEndereco = (c) =>
-    c?.endereco || c?.logradouro || c?.endereco_completo || 
-    [c?.rua, c?.numero, c?.bairro].filter(Boolean).join(', ') || '—';
+    c?.endereco ||
+    c?.logradouro ||
+    c?.endereco_completo ||
+    [c?.rua, c?.numero, c?.bairro].filter(Boolean).join(', ') ||
+    '—';
 
   const getCondoContato = (c) => c?.telefone || c?.contato || c?.email || '—';
-  
+
   const getQtdFuncionarios = (c) =>
-    c?.quantidade_funcionarios || c?.total_funcionarios || c?.qtd_funcionarios || 
-    c?.funcionarios_count || c?.funcionarios?.length || '—';
+    c?.quantidade_funcionarios ||
+    c?.total_funcionarios ||
+    c?.qtd_funcionarios ||
+    c?.funcionarios_count ||
+    c?.funcionarios?.length ||
+    '—';
 
   const getUltimoFaturamento = (c) =>
-    c?.ultimo_faturamento || c?.valor_ultimo_faturamento || 
-    c?.ultimo_valor_faturado || c?.faturamento || c?.valor || null;
+    c?.ultimo_faturamento ||
+    c?.valor_ultimo_faturamento ||
+    c?.ultimo_valor_faturado ||
+    c?.faturamento ||
+    c?.valor ||
+    null;
 
-  const getVencimento = (c) => c?.vencimento || c?.data_vencimento || c?.proximo_vencimento || '—';
+  const getVencimento = (c) =>
+    c?.vencimento || c?.data_vencimento || c?.proximo_vencimento || '—';
 
   const closeCondoModal = () => {
     setCondoModalOpen(false);
@@ -279,27 +361,33 @@ export default function Dashboard() {
 
   const getSaudacao = () => {
     const hora = new Date().getHours();
-    
-    if (hora >= 6 && hora < 12) return "Bom dia,";
-    if (hora >= 12 && hora < 18) return "Boa tarde,";
-    return "Boa noite,";
+
+    if (hora >= 6 && hora < 12) return 'Bom dia,';
+    if (hora >= 12 && hora < 18) return 'Boa tarde,';
+
+    return 'Boa noite,';
   };
 
   return (
-    <PageLayout 
-      title={`${getSaudacao()} ${user?.nome || user?.username || user?.email || 'Usuário'}!`} 
+    <PageLayout
+      title={`${getSaudacao()} ${user?.nome || user?.username || user?.email || 'Usuário'}!`}
       subtitle="Acompanhe importações, faturamento, pendências e documentos em um só lugar."
     >
       <S.Root>
-        <PendenciasDoDiaModal items={pendencias} onGoToPendentes={() => navigate('/pendentes')} />
+        <PendenciasDoDiaModal
+          items={pendencias}
+          onGoToPendentes={() => navigate('/pendentes')}
+        />
 
         <S.Body>
           {isLoading ? (
             <>
               <SkeletonHero />
               <SkeletonKPIs />
+
               <S.GridMain>
                 <SkeletonImportPanel />
+
                 <S.SideStack>
                   <SkeletonSearchPanel />
                   <SkeletonActionsPanel />
@@ -313,17 +401,24 @@ export default function Dashboard() {
                   <S.Eyebrow>Portal de Benefícios</S.Eyebrow>
                   <S.Title>Visão Geral</S.Title>
                   <S.Subtitle>
-                    Acompanhe importações, faturamento, pendências e documentos em um só lugar.
+                    Acompanhe importações, faturamento, pendências e documentos
+                    em um só lugar.
                   </S.Subtitle>
                 </div>
 
                 <S.HeroActions>
-                  <S.Button variant="primary" onClick={() => navigate('/importacao')}>
+                  <S.Button
+                    variant="primary"
+                    onClick={() => navigate('/importacao')}
+                  >
                     <BiImport size={18} />
                     Nova importação
                   </S.Button>
 
-                  <S.Button variant="secondary" onClick={() => navigate('/faturamento')}>
+                  <S.Button
+                    variant="secondary"
+                    onClick={() => navigate('/faturamento')}
+                  >
                     <FiDollarSign size={18} />
                     Ir para faturamento
                   </S.Button>
@@ -336,6 +431,7 @@ export default function Dashboard() {
                     <FiDollarSign size={18} />
                     <S.KPILabel>Faturamento total</S.KPILabel>
                   </S.KPITop>
+
                   <S.KPIValue>{formatCurrency(faturamentoTotal)}</S.KPIValue>
                   <S.KPIFoot>Base da última importação</S.KPIFoot>
                 </S.KPICard>
@@ -345,10 +441,14 @@ export default function Dashboard() {
                     <FiCalendar size={18} />
                     <S.KPILabel>Gerenciamento de Condomínios</S.KPILabel>
                   </S.KPITop>
+
                   <S.KPIValue>{totalAberto}</S.KPIValue>
+
                   <S.KPIFoot>
                     {pendencias.length > 0
-                      ? `${pendencias.length} condominio${pendencias.length > 1 ? 's' : ''} com pendência`
+                      ? `${pendencias.length} condomínio${
+                          pendencias.length > 1 ? 's' : ''
+                        } com pendência`
                       : 'Nenhuma pendência'}
                   </S.KPIFoot>
                 </S.KPICard>
@@ -358,9 +458,13 @@ export default function Dashboard() {
                     <FiFile size={18} />
                     <S.KPILabel>Importações</S.KPILabel>
                   </S.KPITop>
+
                   <S.KPIValue>{totalImportacoes}</S.KPIValue>
+
                   <S.KPIFoot>
-                    {ultimaMovimentacao ? `Última: ${getImportName()}` : 'Sem importações'}
+                    {ultimaMovimentacao
+                      ? `Última: ${getImportName()}`
+                      : 'Sem importações'}
                   </S.KPIFoot>
                 </S.KPICard>
 
@@ -369,6 +473,7 @@ export default function Dashboard() {
                     <FiList size={18} />
                     <S.KPILabel>Condomínios</S.KPILabel>
                   </S.KPITop>
+
                   <S.KPIValue>{totalCondominios}</S.KPIValue>
                   <S.KPIFoot>Base monitorada</S.KPIFoot>
                 </S.KPICard>
@@ -392,16 +497,24 @@ export default function Dashboard() {
 
                         <S.ImportContent>
                           <S.ImportName>{getImportName()}</S.ImportName>
+
                           <S.ImportMeta>
                             <span>
                               {ultimaMovimentacao.data_importacao
-                                ? new Date(ultimaMovimentacao.data_importacao).toLocaleDateString('pt-BR')
+                                ? new Date(
+                                    ultimaMovimentacao.data_importacao
+                                  ).toLocaleDateString('pt-BR')
                                 : '—'}
                             </span>
+
                             <S.Badge status={getImportStatus()}>
-                              {getImportStatus() === 'success' ? 'Concluído' : 
-                               getImportStatus() === 'warning' ? 'Processando' :
-                               getImportStatus() === 'danger' ? 'Erro' : 'Processado'}
+                              {getImportStatus() === 'success'
+                                ? 'Concluído'
+                                : getImportStatus() === 'warning'
+                                ? 'Processando'
+                                : getImportStatus() === 'danger'
+                                ? 'Erro'
+                                : 'Processado'}
                             </S.Badge>
                           </S.ImportMeta>
                         </S.ImportContent>
@@ -410,19 +523,26 @@ export default function Dashboard() {
                       <S.ImportStats>
                         <S.MiniStat>
                           <S.MiniLabel>Valor total</S.MiniLabel>
-                          <strong>{formatCurrency(ultimaMovimentacao.valor_total)}</strong>
+                          <strong>
+                            {formatCurrency(ultimaMovimentacao.valor_total)}
+                          </strong>
                         </S.MiniStat>
+
                         <S.MiniStat>
                           <S.MiniLabel>Colaboradores</S.MiniLabel>
                           <strong>{ultimaMovimentacao.total_funcionarios}</strong>
                         </S.MiniStat>
+
                         <S.MiniStat>
                           <S.MiniLabel>Movimentações</S.MiniLabel>
-                          <strong>{ultimaMovimentacao.total_movimentacoes}</strong>
+                          <strong>
+                            {ultimaMovimentacao.total_movimentacoes}
+                          </strong>
                         </S.MiniStat>
+
                         <S.MiniStat>
                           <S.MiniLabel>Condomínios</S.MiniLabel>
-                          <strong>{ultimaMovimentacao.total_condominios}</strong>
+                          <strong>{totalCondominios}</strong>
                         </S.MiniStat>
                       </S.ImportStats>
 
@@ -431,7 +551,11 @@ export default function Dashboard() {
                           <FiDownload size={18} />
                           Baixar Excel
                         </S.Button>
-                        <S.Button variant="secondary" onClick={() => navigate('/importacao')}>
+
+                        <S.Button
+                          variant="secondary"
+                          onClick={() => navigate('/importacao')}
+                        >
                           <BiImport size={18} />
                           Nova importação
                         </S.Button>
@@ -441,7 +565,11 @@ export default function Dashboard() {
                     <S.EmptyState>
                       <FiFile size={18} />
                       <p>Nenhuma importação encontrada.</p>
-                      <S.Button variant="primary" onClick={() => navigate('/importacao')}>
+
+                      <S.Button
+                        variant="primary"
+                        onClick={() => navigate('/importacao')}
+                      >
                         <BiImport size={18} />
                         Iniciar primeira importação
                       </S.Button>
@@ -462,6 +590,7 @@ export default function Dashboard() {
                       <S.SearchIcon>
                         <FiSearch size={18} />
                       </S.SearchIcon>
+
                       <input
                         value={condoQuery}
                         onChange={(e) => {
@@ -470,6 +599,7 @@ export default function Dashboard() {
                         }}
                         placeholder="Pesquisar por nome ou CNPJ"
                       />
+
                       {condoQuery && (
                         <S.SearchClear
                           onClick={() => {
@@ -484,33 +614,48 @@ export default function Dashboard() {
                       )}
                     </S.SearchBox>
 
-                    {condoQuery && !selectedCondo && condoResults.length > 0 && (
-                      <S.SearchResults>
-                        {condoResults.map((c) => {
-                          const nome = getCondoNome(c);
-                          const cnpj = c.cnpj || c.cnpj_condominio || c.documento || c.cgc || '';
+                    {condoQuery &&
+                      !selectedCondo &&
+                      condoResults.length > 0 && (
+                        <S.SearchResults>
+                          {condoResults.map((c) => {
+                            const nome = getCondoNome(c);
+                            const cnpj =
+                              c.cnpj ||
+                              c.cnpj_condominio ||
+                              c.documento ||
+                              c.cgc ||
+                              '';
 
-                          return (
-                            <S.SearchItem
-                              key={c.id ?? `${nome}-${cnpj}`}
-                              type="button"
-                              onClick={() => {
-                                setSelectedCondo(c);
-                                setCondoQuery(nome);
-                                setCondoModalOpen(true);
-                              }}
-                            >
-                              <strong>{nome}</strong>
-                              <span>{cnpj ? `CNPJ: ${cnpj}` : 'CNPJ não informado'}</span>
-                            </S.SearchItem>
-                          );
-                        })}
-                      </S.SearchResults>
-                    )}
+                            return (
+                              <S.SearchItem
+                                key={c.id ?? `${nome}-${cnpj}`}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCondo(c);
+                                  setCondoQuery(nome);
+                                  setCondoModalOpen(true);
+                                }}
+                              >
+                                <strong>{nome}</strong>
+                                <span>
+                                  {cnpj
+                                    ? `CNPJ: ${cnpj}`
+                                    : 'CNPJ não informado'}
+                                </span>
+                              </S.SearchItem>
+                            );
+                          })}
+                        </S.SearchResults>
+                      )}
 
-                    {condoQuery && !selectedCondo && condoResults.length === 0 && (
-                      <S.EmptyInline>Nenhum condomínio encontrado.</S.EmptyInline>
-                    )}
+                    {condoQuery &&
+                      !selectedCondo &&
+                      condoResults.length === 0 && (
+                        <S.EmptyInline>
+                          Nenhum condomínio encontrado.
+                        </S.EmptyInline>
+                      )}
                   </S.Panel>
 
                   <S.Panel>
@@ -545,7 +690,11 @@ export default function Dashboard() {
                         <FiFile size={18} />
                         <div>
                           <strong>Repetir faturamento</strong>
-                          <span>{importacaoId ? 'Use a base anterior' : 'Sem base anterior'}</span>
+                          <span>
+                            {importacaoId
+                              ? 'Use a base anterior'
+                              : 'Sem base anterior'}
+                          </span>
                         </div>
                       </S.QuickBtn>
                     </S.QuickActions>
@@ -570,12 +719,19 @@ export default function Dashboard() {
                   <S.PanelEyebrow>Condomínio</S.PanelEyebrow>
                   <S.ModalTitle>{getCondoNome(selectedCondo)}</S.ModalTitle>
                 </div>
+
                 <S.ModalClose onClick={closeCondoModal}>×</S.ModalClose>
               </S.ModalHeader>
 
               <S.ModalBody>
                 <S.ModalStatusRow>
-                  <S.Badge status={selectedCondo.status === 'Fechado' ? 'success' : 'warning'}>
+                  <S.Badge
+                    status={
+                      selectedCondo.status === 'Fechado'
+                        ? 'success'
+                        : 'warning'
+                    }
+                  >
                     {selectedCondo.status || 'Ativo'}
                   </S.Badge>
                 </S.ModalStatusRow>
@@ -646,9 +802,13 @@ export default function Dashboard() {
                 </S.ModalGrid>
 
                 <S.ModalActions>
-                  <S.Button variant="secondary" onClick={() => navigate('/faturamento')}>
+                  <S.Button
+                    variant="secondary"
+                    onClick={() => navigate('/faturamento')}
+                  >
                     Ver faturamento
                   </S.Button>
+
                   <S.Button variant="primary" onClick={closeCondoModal}>
                     Fechar
                   </S.Button>
