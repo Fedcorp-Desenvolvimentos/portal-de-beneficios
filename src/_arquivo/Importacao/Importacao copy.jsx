@@ -1,22 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FiEye, FiEdit2, FiTrash2, FiCheck, FiX, FiDownload, FiSearch, FiAlertCircle } from 'react-icons/fi';
 import { useSnackbar } from 'notistack';
-import FileUpload from '../../../components/FileUpload/FileUpload.jsx';
-import { uploadService } from '../../../services/uploadService.js';
+import FileUpload from '../../components/FileUpload/FileUpload.jsx';
+import { uploadService } from '../../services/uploadService.js';
 import {
   prepararDadosParaEnvio,
-} from '../../../utils/ajuste_calculo_importacao.js';
-import { useAuth } from '../../../context/AuthContext.jsx';
-import { useLoading } from "../../../hooks/useLoading.js";
-import PageLayout from '../../../Layouts/PageLayout/PageLayout.jsx';
+} from '../../utils/ajuste_calculo_importacao.js';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { useLoading } from "../../hooks/useLoading.js";
+import PageLayout from '../../Layouts/PageLayout/PageLayout.jsx';
 import { 
   buscarRegraValorAdministradora, 
   atualizarRegraValorAdministradora, 
   criarRegraValorAdministradora 
-} from '../../../services/administradoraService.js';
-import { vtService } from '../../../services/vtService.js';
+} from '../../services/administradoraService.js';
+import { vtService } from '../../services/vtService.js';
 
-import * as S from './ImportacaoStyles';
+import * as S from '../../pages/Client/Importacao/ImportacaoStyles.js';
 
 const MESES = [
   { label: 'Janeiro', value: '01' },
