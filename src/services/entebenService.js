@@ -1,29 +1,52 @@
 import api from "./api"
 
-export const entebenService = {
-  getCondominios: async (cnpj = '', page = 1) => {
-    try {
-      const params = {}
-      if (cnpj) params.cnpj = cnpj
-      if (page > 1) params.page = page
-      const response = await api.get('/api/entidades/condominios/', { params })
-      return response.data
-    } catch (error) {
-      console.error('Erro ao buscar condomínios:', error)
-      throw error
-    }
-  },
+const limparParams = (params = {}) =>
+  Object.fromEntries(
+    Object.entries(params).filter(
+      ([, value]) =>
+        value !== null &&
+        value !== undefined &&
+        String(value).trim() !== ''
+    )
+  )
 
-  createCondominio: async (data) => {
-    try {
-      // console.log("Criando condomínio com dados:", data)
-      const response = await api.post('/api/entidades/condominios/', data)
-      return response.data
-    } catch (error) {
-      console.error('Erro ao criar condomínio:', error)
-      throw error
+const buscarCondominios = async (params = {}) => {
+  const response = await api.get('/api/entidades/condominios/', {
+    params: limparParams(params),
+  })
+
+  return response.data
+}
+
+export const entebenService = {
+  getCondominios: async (cnpjOuParams = '', page = 1) => {
+  try {
+    let params = {}
+
+    if (typeof cnpjOuParams === 'object' && cnpjOuParams !== null) {
+      params = { ...cnpjOuParams }
+    } else {
+      if (cnpjOuParams) params.cnpj = cnpjOuParams
+      if (page > 1) params.page = page
     }
-  },
+
+    return await buscarCondominios(params)
+  } catch (error) {
+    console.error('Erro ao buscar condomínios:', error)
+    throw error
+  }
+},
+
+  // createCondominio: async (data) => {
+  //   try {
+  //     // console.log("Criando condomínio com dados:", data)
+  //     const response = await api.post('/api/entidades/condominios/', data)
+  //     return response.data
+  //   } catch (error) {
+  //     console.error('Erro ao criar condomínio:', error)
+  //     throw error
+  //   }
+  // },
 
   updateCondominio: async (cnpj, data) => {
     try {
