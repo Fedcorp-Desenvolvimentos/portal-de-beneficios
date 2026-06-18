@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { UploadCloud, FileText, FileSpreadsheet, Trash2, CheckCircle, TriangleAlert } from 'lucide-react'
-import '../../styles/ImportarFaturamento.css'
+
 
 const pedidosMock = [
   { id: 'FAT-2025-001', status: 'em_faturamento' },
