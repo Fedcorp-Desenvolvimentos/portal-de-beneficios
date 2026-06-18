@@ -41,32 +41,73 @@ const toArray = (value) => {
   return [];
 };
 
-const getAdministradoraIdFromUser = (user) =>
-  user?.administradora_id ||
-  user?.administradora?.id ||
-  user?.administradora ||
-  user?.id_administradora ||
-  null;
+const isValidId = (value) =>
+  value !== null && value !== undefined && String(value).trim() !== '';
 
-const getAdministradoraIdsFromCondominio = (condominio) => {
-  if (Array.isArray(condominio?.administradoras)) {
-    return condominio.administradoras
-      .map((adm) => adm?.id)
-      .filter(Boolean);
+const getIdValue = (value) => {
+  if (!isValidId(value)) return null;
+
+  if (typeof value === 'object') {
+    return (
+      [
+        value.id,
+        value.administradora_id,
+        value.id_administradora,
+        value.value,
+      ].find(isValidId) || null
+    );
   }
 
-  return [
-    condominio?.administradora?.id ||
-      condominio?.administradora_id ||
-      condominio?.id_administradora ||
-      condominio?.administradora ||
-      null,
-  ].filter(Boolean);
+  return value;
 };
 
-const isUsuarioGlobal = (user) => {
-  const tipo = String(user?.tipo || '').toLowerCase();
-  return tipo === 'dev' || tipo === 'fat';
+const firstValidId = (...values) => {
+  for (const value of values) {
+    const id = getIdValue(value);
+
+    if (isValidId(id)) {
+      return id;
+    }
+  }
+
+  return null;
+};
+
+const getAdministradoraIdFromUser = (user) =>
+  firstValidId(
+    user?.administradora_id,
+    user?.administradora,
+    user?.id_administradora
+  );
+
+const getAdministradoraIdsFromCondominio = (condominio) => {
+  const ids = [];
+
+  if (Array.isArray(condominio?.administradoras)) {
+    ids.push(
+      ...condominio.administradoras
+        .map(getIdValue)
+        .filter(isValidId)
+    );
+  }
+
+  ids.push(
+    getIdValue(condominio?.administradora),
+    getIdValue(condominio?.administradora_id),
+    getIdValue(condominio?.id_administradora)
+  );
+
+  return [...new Set(ids.filter(isValidId).map((id) => String(id).trim()))];
+};
+
+const pertenceAAdministradora = (condominio, administradoraId) => {
+  const admId = getIdValue(administradoraId);
+
+  if (!isValidId(admId)) return false;
+
+  return getAdministradoraIdsFromCondominio(condominio).some(
+    (id) => String(id).trim() === String(admId).trim()
+  );
 };
 
 // ============================================
@@ -202,41 +243,69 @@ export default function Dashboard() {
   }, [user]);
 
   const carregarDados = async () => {
-    try {
-      setIsLoading(true);
-      startLoading('Carregando dashboard...');
+  try {
+    setIsLoading(true);
+    startLoading('Carregando dashboard...');
 
-      const [ultima, historico, acordosData] = await Promise.all([
-        entebenService.getUltimaMovimentacao(),
-        entebenService.getImportacoes(),
-        entebenService.getcondominios(),
-      ]);
+    const administradoraId = getAdministradoraIdFromUser(user);
 
-      const condominiosRecebidos = toArray(acordosData);
-      const administradoraId = getAdministradoraIdFromUser(user);
+    if (!administradoraId) {
+      console.warn('Usuário sem administradora vinculada:', user);
 
-      const condominiosFiltrados =
-        isUsuarioGlobal(user) || !administradoraId
-          ? condominiosRecebidos
-          : condominiosRecebidos.filter((condominio) => {
-              const ids = getAdministradoraIdsFromCondominio(condominio);
+      setUltimaMovimentacao(null);
+      setHistoricoImportacoes([]);
+      setAcordos([]);
 
-              return ids.some(
-                (id) => String(id) === String(administradoraId)
-              );
-            });
+      enqueueSnackbar('Usuário sem administradora vinculada', {
+        variant: 'warning',
+      });
 
-      setUltimaMovimentacao(ultima);
-      setHistoricoImportacoes(toArray(historico));
-      setAcordos(condominiosFiltrados);
-    } catch (e) {
-      console.error('Erro ao carregar dashboard:', e);
-      enqueueSnackbar('Erro ao carregar dados do dashboard', { variant: 'error' });
-    } finally {
-      setIsLoading(false);
-      stopLoading();
+      return;
     }
-  };
+
+    const [ultima, historico, acordosData] = await Promise.all([
+      entebenService.getUltimaMovimentacao(),
+      entebenService.getImportacoes(),
+      entebenService.getcondominios({
+        administradora_id: administradoraId,
+      }),
+    ]);
+
+    const condominiosRecebidos = toArray(acordosData);
+
+    const condominiosFiltrados = condominiosRecebidos.filter((condominio) =>
+      pertenceAAdministradora(condominio, administradoraId)
+    );
+
+    console.log('USER LOGADO:', user);
+    console.log('ADMINISTRADORA DO USER:', administradoraId);
+    console.log('TOTAL RECEBIDO DA API:', condominiosRecebidos.length);
+    console.log('TOTAL FILTRADO NO FRONT:', condominiosFiltrados.length);
+    console.log(
+      'AMOSTRA CONDOMÍNIOS:',
+      condominiosRecebidos.slice(0, 5).map((condominio) => ({
+        id: condominio.id,
+        nome:
+          condominio.nome ||
+          condominio.condominio ||
+          condominio.razao_social ||
+          condominio.fantasia,
+        administradorasEncontradas:
+          getAdministradoraIdsFromCondominio(condominio),
+      }))
+    );
+
+    setUltimaMovimentacao(ultima);
+    setHistoricoImportacoes(toArray(historico));
+    setAcordos(condominiosFiltrados);
+  } catch (e) {
+    console.error('Erro ao carregar dashboard:', e);
+    enqueueSnackbar('Erro ao carregar dados do dashboard', { variant: 'error' });
+  } finally {
+    setIsLoading(false);
+    stopLoading();
+  }
+};
 
   const todayStr = useMemo(() => {
     const d = new Date();
@@ -284,9 +353,10 @@ export default function Dashboard() {
 
   const totalImportacoes = historicoImportacoes.length;
 
-  const faturamentoTotal =
-    ultimaMovimentacao?.valor_total ||
-    acordos.reduce((s, a) => s + Number(a.valor || 0), 0);
+  const faturamentoTotal = acordos.reduce(
+    (s, a) => s + Number(a.valor || 0),
+    0
+  );
 
   const totalAberto = acordos.filter((a) => a.status !== 'Fechado').length;
 
@@ -433,7 +503,7 @@ export default function Dashboard() {
                   </S.KPITop>
 
                   <S.KPIValue>{formatCurrency(faturamentoTotal)}</S.KPIValue>
-                  <S.KPIFoot>Base da última importação</S.KPIFoot>
+                  <S.KPIFoot>Base filtrada da administradora</S.KPIFoot>
                 </S.KPICard>
 
                 <S.KPICard onClick={() => navigate('/gerenciamento')}>
@@ -475,7 +545,7 @@ export default function Dashboard() {
                   </S.KPITop>
 
                   <S.KPIValue>{totalCondominios}</S.KPIValue>
-                  <S.KPIFoot>Base monitorada</S.KPIFoot>
+                  <S.KPIFoot>Base monitorada da administradora</S.KPIFoot>
                 </S.KPICard>
               </S.KPIs>
 
@@ -523,9 +593,7 @@ export default function Dashboard() {
                       <S.ImportStats>
                         <S.MiniStat>
                           <S.MiniLabel>Valor total</S.MiniLabel>
-                          <strong>
-                            {formatCurrency(ultimaMovimentacao.valor_total)}
-                          </strong>
+                          <strong>{formatCurrency(faturamentoTotal)}</strong>
                         </S.MiniStat>
 
                         <S.MiniStat>
