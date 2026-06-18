@@ -22,6 +22,8 @@ const skeletonAnimation = css`
   background-size: 1000px 100%;
 `;
 
+const notebookSmall = '1440px';
+
 export const S = {
   Page: styled.div`
     width: 100%;
@@ -87,7 +89,7 @@ export const S = {
     }
   `,
 
- Filters: styled.div`
+  Filters: styled.div`
   display: grid;
   grid-template-columns: repeat(4, minmax(160px, 1fr)) 180px;
   gap: 1rem;
@@ -112,14 +114,16 @@ export const S = {
     }
   }
 
-  @media (max-width: 1180px) {
-    grid-template-columns: repeat(2, minmax(160px, 1fr));
+  @media (max-width: ${notebookSmall}) {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+    gap: 0.85rem;
   }
 
   @media (max-width: 640px) {
     grid-template-columns: 1fr;
   }
 `,
+
   FilterLabel: styled.label`
     display: flex;
     flex-direction: column;
@@ -133,7 +137,6 @@ export const S = {
       letter-spacing: 0.05em;
     }
   `,
-
   ClearButton: styled.button`
   height: 44px;
   padding: 0 1.5rem;
@@ -156,6 +159,12 @@ export const S = {
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+
+  @media (max-width: ${notebookSmall}) {
+    width: 100%;
+    height: 42px;
+    padding: 0 1rem;
   }
 `,
   List: styled.section`
@@ -283,10 +292,10 @@ export const S = {
     gap: 20px;
     border-bottom: 1px solid var(--color-border-light);
 
-    @media (max-width: 980px) {
-      flex-direction: column;
-      align-items: flex-start;
-    }
+   @media (max-width: ${notebookSmall}) {
+  flex-direction: column;
+  align-items: flex-start;
+}
   `,
 
   CardMain: styled.div`
@@ -326,40 +335,47 @@ export const S = {
       color: var(--color-text-tertiary);
     }
   `,
+Summary: styled.div`
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 
-  Summary: styled.div`
-    display: flex;
-    align-items: stretch;
-    gap: 12px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
+  @media (max-width: ${notebookSmall}) {
+    width: 100%;
+    justify-content: flex-start;
+  }
+`,
+SummaryItem: styled.div`
+  min-width: 125px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 
-    @media (max-width: 980px) {
-      justify-content: flex-start;
-    }
-  `,
-
-  SummaryItem: styled.div`
-    min-width: 125px;
-    display: flex;
-    flex-direction: column;
+  span {
+    display: inline-flex;
+    align-items: center;
     gap: 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-tertiary);
+  }
 
-    span {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--color-text-tertiary);
-    }
+  strong {
+    font-size: 15px;
+    color: var(--color-text-primary);
+  }
 
-    strong {
-      font-size: 15px;
-      color: var(--color-text-primary);
-    }
-  `,
+  @media (max-width: ${notebookSmall}) {
+    min-width: 150px;
+  }
+
+  @media (max-width: 640px) {
+    min-width: 100%;
+  }
+`,
 
   CardBody: styled.div`
     padding: 20px 22px 22px;
@@ -494,26 +510,43 @@ export const S = {
       color: var(--color-primary);
     }
   `,
+TotalCard: styled.div`
+  margin: 1rem 0;
+  padding: 1.25rem 1.5rem;
+  border-radius: 16px;
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 10px 24px rgba(15, 61, 93, 0.18);
 
-  TotalCard: styled.div`
-    margin: 1rem 0;
-    padding: 1.25rem 1.5rem;
-    border-radius: 16px;
-    background: var(--color-primary);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 10px 24px rgba(15, 61, 93, 0.18);
+  span {
+    font-size: 0.95rem;
+    opacity: 0.9;
+  }
 
-    span {
-      font-size: 0.95rem;
-      opacity: 0.9;
-    }
+  strong {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  @media (max-width: ${notebookSmall}) {
+    padding: 1rem 1.25rem;
 
     strong {
-      font-size: 1.5rem;
-      font-weight: 700;
+      font-size: 1.35rem;
     }
-  `,
+  }
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+
+    strong {
+      font-size: 1.25rem;
+    }
+  }
+`,
 };
