@@ -138,26 +138,27 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  table-layout: fixed; 
 }
 
 .administradoras-table th {
   text-align: left;
-  padding: 8px 12px;
+  padding: 12px 16px; 
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #94a3b8;
-  border-bottom: 0.5px solid #f1f5f9;
+  color: #64748b; 
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .administradoras-table td {
-  padding: 13px 12px;
-  border-bottom: 0.5px solid #f1f5f9;
-  color: #1e293b;
-  vertical-align: middle;
+  padding: 16px 16px; 
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  vertical-align: middle; 
+  line-height: 1.5; 
 }
-
 .administradoras-table tr:last-child td {
   border-bottom: none;
 }
@@ -170,6 +171,7 @@
 
 .table-actions {
   display: flex;
+  align-items: center;
   gap: 4px;
 }
 
@@ -194,7 +196,6 @@
   border-color: #cbd5e1;
 }
 
-/* Status badges */
 .status-badge {
   display: inline-flex;
   align-items: center;
@@ -340,8 +341,6 @@
   color: #cbd5e1;
 }
 
-/* Adicione ao seu Administradoras.css */
-
 .helper-text {
   display: block;
   font-size: 0.75rem;
@@ -376,7 +375,6 @@ input:disabled {
   cursor: not-allowed;
 }
 
-/* Adicione ao seu Administradoras.css */
 .checkbox-label {
   display: flex !important;
   flex-direction: row !important;
@@ -393,7 +391,6 @@ input:disabled {
   cursor: pointer;
 }
 
-/* No arquivo Administradoras.css */
 .form-group {
   margin-bottom: 1.5rem;
 }
@@ -468,7 +465,6 @@ input:disabled {
   display: block;
 }
 
-/* Estilos para o modal */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -526,11 +522,14 @@ input:disabled {
   gap: 8px;
   border: none;
   border-radius: 8px;
-  padding: 10px 14px;
+  padding: 0 16px; 
+  height: 40px; 
   background: #1e40af;
   color: #fff;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
 .btn-nova-administradora:hover {
@@ -609,4 +608,85 @@ input:disabled {
 
 .p-exclusão {
   color: #333 !important;
+}
+
+@media (max-width: 768px) {
+  .administradoras-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .btn-nova-administradora {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .form-grid,
+  .details-grid,
+  .details-cards {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  .radio-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .form-actions,
+  .modal-actions {
+    flex-direction: column-reverse;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .form-actions button,
+  .modal-actions button,
+  .btn-secondary,
+  .btn-primary,
+  .btn-danger {
+    width: 100%; 
+    justify-content: center;
+  }
+
+.administradoras-card {
+  background: #ffffff;
+  border: 0.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px 24px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: auto; 
+}
+
+  .administradoras-table {
+    min-width: 600px;
+  }
+
+  .modal-overlay {
+    padding: 16px; 
+  }
+
+  .modal-content {
+    width: 100%;
+    max-width: 100%;
+    padding: 16px;
+    max-height: 85vh; 
+  }
+}
+
+@media (max-width: 480px) {
+  .administradoras-header h1 {
+    font-size: 18px;
+  }
+
+  .details-summary-card strong {
+    font-size: 22px;
+  }
+
+  .administradoras-card,
+  .administradora-form {
+    padding: 16px 12px; 
+  }
 }
