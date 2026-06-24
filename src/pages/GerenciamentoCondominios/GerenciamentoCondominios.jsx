@@ -71,10 +71,26 @@ const formatarCPF = (cpf) => {
 }
 
 const getAdministradoraIdFromUser = (user) => {
+  if (!user) return null
+
+  if (Array.isArray(user?.administradoras) && user.administradoras.length > 0) {
+    return user.administradoras
+      .map((adm) => adm?.id || adm?.administradora_id || adm)
+      .filter(Boolean)
+  }
+
+  if (Array.isArray(user?.administradora) && user.administradora.length > 0) {
+    return user.administradora
+      .map((adm) => adm?.id || adm?.administradora_id || adm)
+      .filter(Boolean)
+  }
+
   return (
     user?.administradora?.id ||
     user?.administradora_id ||
     user?.id_administradora ||
+    user?.administradoraId ||
+    user?.administradora_id_id ||
     user?.administradora ||
     null
   )
@@ -82,13 +98,17 @@ const getAdministradoraIdFromUser = (user) => {
 
 const getAdministradoraIdFromCondominio = (condominio) => {
   if (Array.isArray(condominio?.administradoras)) {
-    return condominio.administradoras.map((adm) => adm.id)
+    return condominio.administradoras
+      .map((adm) => adm?.id || adm?.administradora_id || adm)
+      .filter(Boolean)
   }
 
   return (
     condominio?.administradora?.id ||
     condominio?.administradora_id ||
     condominio?.id_administradora ||
+    condominio?.administradoraId ||
+    condominio?.administradora_id_id ||
     condominio?.administradora ||
     null
   )
@@ -630,11 +650,14 @@ function FiltroCondominios({ value, onChange, onClear }) {
 export default function ConfiguracaoCondominios() {
   const { user } = useAuth()
 
-  const userTipo = String(
-    user?.tipo || user?.tipo_usuario || user?.role || ''
-  ).toLowerCase()
+  const userTipo = String(user?.tipo || user?.tipo_usuario || user?.role || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
 
-  const isUsuarioGlobal = userTipo === 'dev' || userTipo === 'fat'
+  const isUsuarioGlobal = ['dev', 'fat'].includes(userTipo)
+  const podeVerAdministradora = isUsuarioGlobal
 
   const [modoAtivo, setModoAtivo] = useState('lista')
   const [condominios, setCondominios] = useState([])
@@ -713,19 +736,22 @@ export default function ConfiguracaoCondominios() {
       const results = toArray(response)
       const administradoraId = getAdministradoraIdFromUser(user)
 
-      const condominiosFiltrados =
-        isUsuarioGlobal || !administradoraId
-          ? results
-          : results.filter((condominio) => {
+      const condominiosFiltrados = isUsuarioGlobal
+        ? results
+        : results.filter((condominio) => {
+            if (!administradoraId) return false
+
             const admCondominio = getAdministradoraIdFromCondominio(condominio)
 
+            const idsUsuario = Array.isArray(administradoraId)
+              ? administradoraId.map(String)
+              : [String(administradoraId)]
+
             if (Array.isArray(admCondominio)) {
-              return admCondominio.some(
-                (id) => String(id) === String(administradoraId)
-              )
+              return admCondominio.some((id) => idsUsuario.includes(String(id)))
             }
 
-            return String(admCondominio) === String(administradoraId)
+            return idsUsuario.includes(String(admCondominio))
           })
 
       setCondominios(condominiosFiltrados)
@@ -901,7 +927,9 @@ export default function ConfiguracaoCondominios() {
 
       const payload = {
         ...formData,
-        ...(administradoraId ? { administradora: administradoraId } : {}),
+        ...(administradoraId && !Array.isArray(administradoraId)
+          ? { administradora: administradoraId }
+          : {}),
       }
 
       if (editandoCnpj) {
@@ -990,7 +1018,9 @@ export default function ConfiguracaoCondominios() {
   const funcionariosDisponiveis = useMemo(() => {
     return todosFuncionarios.filter((func) => {
       if (!func.condominio) return true
-      if (typeof func.condominio === 'object' && !func.condominio.cnpj) return true
+      if (typeof func.condominio === 'object' && !func.condominio.cnpj) {
+        return true
+      }
 
       return false
     })
@@ -1059,7 +1089,9 @@ export default function ConfiguracaoCondominios() {
               <thead>
                 <tr>
                   <th>Condomínio</th>
-                  <th>Administradora</th>
+
+                  {podeVerAdministradora && <th>Administradora</th>}
+
                   <th>CNPJ</th>
                   <th>Funcionários</th>
                   <th className="text-right">Ações</th>
@@ -1082,7 +1114,9 @@ export default function ConfiguracaoCondominios() {
                         </div>
                       </td>
 
-                      <td className="muted">{getAdministradoraNome(cond)}</td>
+                      {podeVerAdministradora && (
+                        <td className="muted">{getAdministradoraNome(cond)}</td>
+                      )}
 
                       <td className="muted">{formatarCNPJ(cond.cnpj)}</td>
 
@@ -1438,10 +1472,11 @@ export default function ConfiguracaoCondominios() {
 
         <div className={`cfg-toast-wrap ${toast.open ? 'show' : ''}`}>
           <div
-            className={`cfg-toast ${toast.type === 'danger'
+            className={`cfg-toast ${
+              toast.type === 'danger'
                 ? 'cfg-toast-danger'
                 : 'cfg-toast-success'
-              }`}
+            }`}
           >
             {toast.type === 'danger' ? (
               <Trash2 className="cfg-toast-ico" />
