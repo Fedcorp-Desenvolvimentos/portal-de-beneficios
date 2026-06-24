@@ -393,28 +393,44 @@ export default function ColaboradorDashboard() {
     setCurrentPage(1);
   }, [search, statusFilter]);
 
-  async function handleDownload(pedido) {
-    if (pedido.status === 'cancelado') {
-      showToast('Não é possível baixar o faturamento de um pedido cancelado.', { variant: 'warning' });
-      return;
-    }
-
-    try {
-      setDownloadingId(pedido.id);
-      setPedidos((prev) =>
-        prev.map((item) => (item.id === pedido.id ? { ...item, status: 'em_faturamento' } : item))
-      );
-
-      await faturamentoService.baixarExportFaturamento({ importacao_id: pedido.id }, `pedido-${pedido.id}`);
-      showToast(`O pedido ${pedido.id} foi movido para "Em faturamento".`, { variant: 'success' });
-    } catch (error) {
-      console.error('Erro no download:', error);
-      showToast('Não foi possível baixar a planilha deste pedido.', { variant: 'error' });
-    } finally {
-      setDownloadingId(null);
-    }
+async function handleDownload(pedido) {
+  if (pedido.status === 'cancelado') {
+    showToast('Não é possível baixar o faturamento de um pedido cancelado.', {
+      variant: 'warning',
+    })
+    return
   }
 
+  try {
+    setDownloadingId(pedido.id)
+
+    await faturamentoService.baixarExportFaturamento(
+      { importacao_id: pedido.id },
+      `pedido-${pedido.id}.xlsx`
+    )
+
+    setPedidos((prev) =>
+      prev.map((item) =>
+        item.id === pedido.id
+          ? { ...item, status: 'em_faturamento' }
+          : item
+      )
+    )
+
+    showToast(`O pedido ${pedido.id} foi movido para "Em faturamento".`, {
+      variant: 'success',
+    })
+  } catch (error) {
+    console.error('Erro no download:', error)
+
+    showToast(
+      error?.message || 'Não foi possível baixar a planilha deste pedido.',
+      { variant: 'error' }
+    )
+  } finally {
+    setDownloadingId(null)
+  }
+}
   async function handleChangeStatus(pedido, newStatus) {
     if (newStatus === 'cancelado') {
       setCancelPedido(pedido);
