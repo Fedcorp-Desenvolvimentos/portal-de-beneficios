@@ -43,17 +43,91 @@ function extractFilenameFromDisposition(contentDisposition) {
   return basicMatch?.[1] || null
 }
 
-function inferExtension(contentType) {
-  const type = (contentType || '').toLowerCase()
+function getApiBaseUrl() {
+  return (
+    import.meta.env.VITE_API_URL ||
+    api.defaults.baseURL ||
+    'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app'
+  ).replace(/\/$/, '')
+}
 
-  if (type.includes('spreadsheetml')) return 'xlsx'
-  if (type.includes('ms-excel')) return 'xls'
-  if (type.includes('csv')) return 'csv'
-  if (type.includes('json')) return 'json'
-  if (type.includes('pdf')) return 'pdf'
-  if (type.includes('zip')) return 'zip'
+function getExportFaturamentoUrl(params = {}) {
+  const query = new URLSearchParams()
 
-  return 'bin'
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      query.append(key, value)
+    }
+  })
+
+  const queryString = query.toString()
+  const API_BASE = getApiBaseUrl()
+
+  return `${API_BASE}/api/upload/export/faturamento/${
+    queryString ? `?${queryString}` : ''
+  }`
+}
+
+function getCompraVTUrl(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  const API_BASE = getApiBaseUrl()
+
+  return `${API_BASE}/api/upload/export/vt-compra/${
+    query ? `?${query}` : ''
+  }`
+}
+
+function getCompraTxtUrl(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  const API_BASE = getApiBaseUrl()
+
+  return `${API_BASE}/api/upload/export/txt-compra/${
+    query ? `?${query}` : ''
+  }`
+}
+
+async function readErrorMessageFromResponse(response, fallbackMessage) {
+  try {
+    const text = await response.text()
+
+    try {
+      const json = JSON.parse(text)
+      return json?.detail || json?.message || fallbackMessage
+    } catch {
+      return text || fallbackMessage
+    }
+  } catch {
+    return fallbackMessage
+  }
+}
+
+async function readErrorMessageFromBlob(blob, fallbackMessage) {
+  try {
+    const text = await blob.text()
+
+    try {
+      const json = JSON.parse(text)
+      return json?.detail || json?.message || fallbackMessage
+    } catch {
+      return text || fallbackMessage
+    }
+  } catch {
+    return fallbackMessage
+  }
+}
+
+function downloadBlob(blob, filename) {
+  const blobUrl = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+
+  link.href = blobUrl
+  link.download = filename
+
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+
+  window.URL.revokeObjectURL(blobUrl)
 }
 
 export const faturamentoService = {
@@ -86,11 +160,12 @@ export const faturamentoService = {
         'Content-Type': 'multipart/form-data',
       },
     })
+
     return response.data
   },
 
   async uploadDocumentos(payload) {
-    return this.importarDocumentos(payload)
+    return faturamentoService.importarDocumentos(payload)
   },
 
   async listarPedidosFuncionario() {
@@ -99,15 +174,15 @@ export const faturamentoService = {
   },
 
   async listarPedidos() {
-    return this.listarPedidosFuncionario()
+    return faturamentoService.listarPedidosFuncionario()
   },
 
   async listarDocumentos() {
-    return this.listarPedidosFuncionario()
+    return faturamentoService.listarPedidosFuncionario()
   },
 
   async listarDocumentosPorPedido(pedidoId) {
-    const response = await this.listarPedidosFuncionario()
+    const response = await faturamentoService.listarPedidosFuncionario()
     const pedidos = normalizeArray(response)
 
     return pedidos.find((pedido) => String(pedido.id) === String(pedidoId)) || null
@@ -119,7 +194,7 @@ export const faturamentoService = {
   },
 
   async buscarUltimaImportacao() {
-    const importacoes = await this.listarImportacoes()
+    const importacoes = await faturamentoService.listarImportacoes()
 
     return (
       importacoes
@@ -127,17 +202,17 @@ export const faturamentoService = {
         .sort((a, b) =>
           String(
             b.data_importacao ||
-            b.processed_at ||
-            b.created_at ||
-            b.updated_at ||
-            ''
+              b.processed_at ||
+              b.created_at ||
+              b.updated_at ||
+              ''
           ).localeCompare(
             String(
               a.data_importacao ||
-              a.processed_at ||
-              a.created_at ||
-              a.updated_at ||
-              ''
+                a.processed_at ||
+                a.created_at ||
+                a.updated_at ||
+                ''
             )
           )
         )[0] || null
@@ -147,7 +222,7 @@ export const faturamentoService = {
   async buscarImportacaoPorId(importacaoId) {
     if (!importacaoId) return null
 
-    const importacoes = await this.listarImportacoes()
+    const importacoes = await faturamentoService.listarImportacoes()
 
     return (
       importacoes.find(
@@ -170,87 +245,81 @@ export const faturamentoService = {
   },
 
   getExportFaturamentoUrl(params = {}) {
-    const query = new URLSearchParams()
-
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        query.append(key, value)
-      }
-    })
-
-    const queryString = query.toString()
-
-    const API_BASE =
-      import.meta.env.VITE_API_URL 
-      // || 'http://localhost:8000'
-
-    return `${API_BASE}/api/upload/export/faturamento/${queryString ? `?${queryString}` : ''
-      }`
+    return getExportFaturamentoUrl(params)
   },
 
   async baixarExportFaturamento(params = {}, nomeBase = 'faturamento') {
-    const url = this.getExportFaturamentoUrl(params)
+    const url = getExportFaturamentoUrl(params)
     const token = getAuthToken()
-
-    // console.log('📥 Baixando de:', url)
 
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        // Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       },
     })
 
+    const contentDisposition = response.headers.get('content-disposition') || ''
+    const contentType = response.headers.get('content-type') || ''
+
     if (!response.ok) {
-      let errorMessage = 'Não foi possível baixar o arquivo de faturamento.'
-      try {
-        const errorData = await response.json()
-        if (errorData?.detail) errorMessage = errorData.detail
-      } catch {
-        // ignora
-      }
+      const errorMessage = await readErrorMessageFromResponse(
+        response,
+        'Não foi possível baixar o arquivo de faturamento.'
+      )
+
       throw new Error(errorMessage)
     }
 
-    const contentDisposition = response.headers.get('content-disposition') || ''
-    const contentType = response.headers.get('content-type') || ''
     const blob = await response.blob()
 
-    // console.log('📄 Content-Type:', contentType)
-    // console.log('📎 Content-Disposition:', contentDisposition)
-    // console.log('📦 Tamanho do blob:', blob.size, 'bytes')
+    const isInvalidResponse =
+      contentType.includes('application/json') ||
+      contentType.includes('text/html') ||
+      contentType.includes('text/plain')
 
-    // Extrair filename do header
-    let filename = null
-    const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
-    if (filenameMatch && filenameMatch[1]) {
-      filename = filenameMatch[1].replace(/['"]/g, '')
+    if (isInvalidResponse) {
+      const errorMessage = await readErrorMessageFromBlob(
+        blob,
+        'O backend não retornou um Excel válido.'
+      )
+
+      console.error('Resposta inválida ao baixar Excel:', {
+        url,
+        contentType,
+        contentDisposition,
+        size: blob.size,
+        errorMessage,
+      })
+
+      throw new Error(errorMessage)
     }
+
+    if (!blob.size) {
+      throw new Error('O backend retornou um arquivo vazio.')
+    }
+
+    let filename = extractFilenameFromDisposition(contentDisposition)
 
     if (!filename) {
-      filename = `${nomeBase}_${Date.now()}.xlsx`
+      filename =
+        nomeBase.endsWith('.xlsx') || nomeBase.endsWith('.xls')
+          ? nomeBase
+          : `${nomeBase}.xlsx`
     }
 
-    // Garantir extensão .xlsx
     if (!filename.endsWith('.xlsx') && !filename.endsWith('.xls')) {
-      filename = filename.replace(/\.(bin|txt|dat|unknown)$/i, '') + '.xlsx'
+      filename = `${filename}.xlsx`
     }
 
-    // console.log('💾 Salvando como:', filename)
+    downloadBlob(blob, filename)
 
-    const blobUrl = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = blobUrl
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-
-    setTimeout(() => {
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(blobUrl)
-    }, 100)
-
-    return { filename, contentType, size: blob.size }
+    return {
+      filename,
+      contentType,
+      size: blob.size,
+    }
   },
 
   async alterarStatusPedido(pedidoId, novoStatus, motivo = '') {
@@ -259,58 +328,79 @@ export const faturamentoService = {
       ...(motivo && { motivo }),
     }
 
-    const response = await api.patch(`/api/beneficios/importacoes/${pedidoId}/status/`, payload)
+    const response = await api.patch(
+      `/api/beneficios/importacoes/${pedidoId}/status/`,
+      payload
+    )
+
     return response.data
   },
 
   async baixarExcelCompraVT(params = {}, filename = 'compra-vt') {
-    const query = new URLSearchParams(params).toString()
+    const url = getCompraVTUrl(params)
     const token = getAuthToken()
 
-    const API_BASE =
-      import.meta.env.VITE_API_URL ||
-      'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app'
-
-    const response = await fetch(
-      `${API_BASE}/api/upload/export/vt-compra/${query ? `?${query}` : ''}`,
-      {
-        method: 'GET',
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      }
-    )
-
-    if (!response.ok) {
-      const text = await response.text()
-      throw new Error(text || 'Não foi possível baixar o Excel de compra VT.')
-    }
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      },
+    })
 
     const contentDisposition = response.headers.get('content-disposition') || ''
     const contentType = response.headers.get('content-type') || ''
+
+    if (!response.ok) {
+      const errorMessage = await readErrorMessageFromResponse(
+        response,
+        'Não foi possível baixar o Excel de compra VT.'
+      )
+
+      throw new Error(errorMessage)
+    }
+
     const blob = await response.blob()
+
+    const isInvalidResponse =
+      contentType.includes('application/json') ||
+      contentType.includes('text/html') ||
+      contentType.includes('text/plain')
+
+    if (isInvalidResponse) {
+      const errorMessage = await readErrorMessageFromBlob(
+        blob,
+        'O backend não retornou um Excel de compra VT válido.'
+      )
+
+      console.error('Resposta inválida ao baixar Excel VT:', {
+        url,
+        contentType,
+        contentDisposition,
+        size: blob.size,
+        errorMessage,
+      })
+
+      throw new Error(errorMessage)
+    }
+
+    if (!blob.size) {
+      throw new Error('O backend retornou um arquivo vazio.')
+    }
 
     let finalFilename = extractFilenameFromDisposition(contentDisposition)
 
     if (!finalFilename) {
-      finalFilename = `${filename}.xlsx`
+      finalFilename = filename.endsWith('.xlsx') || filename.endsWith('.xls')
+        ? filename
+        : `${filename}.xlsx`
     }
 
     if (!finalFilename.endsWith('.xlsx') && !finalFilename.endsWith('.xls')) {
       finalFilename = `${finalFilename}.xlsx`
     }
 
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-
-    link.href = url
-    link.download = finalFilename
-
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-
-    window.URL.revokeObjectURL(url)
+    downloadBlob(blob, finalFilename)
 
     return {
       filename: finalFilename,
@@ -318,44 +408,48 @@ export const faturamentoService = {
       size: blob.size,
     }
   },
-  async baixarTxtCompra(params, filename = 'compra') {
-    const query = new URLSearchParams(params).toString()
+
+  async baixarTxtCompra(params = {}, filename = 'compra') {
+    const url = getCompraTxtUrl(params)
     const token = getAuthToken()
 
-    const API_BASE =
-      import.meta.env.VITE_API_URL ||
-      'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app'
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        Accept: 'text/plain',
+      },
+    })
 
-    const response = await fetch(
-      `${API_BASE}/api/upload/export/txt-compra/${query ? `?${query}` : ''}`,
-      {
-        method: 'GET',
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      }
-    )
+    const contentType = response.headers.get('content-type') || ''
 
     if (!response.ok) {
-      const text = await response.text()
-      throw new Error(text || 'Não foi possível baixar o TXT de compra.')
+      const errorMessage = await readErrorMessageFromResponse(
+        response,
+        'Não foi possível baixar o TXT de compra.'
+      )
+
+      throw new Error(errorMessage)
     }
 
     const text = await response.text()
+
+    if (!text) {
+      throw new Error('O backend retornou um TXT vazio.')
+    }
+
     const blob = new Blob([text], {
-      type: 'text/plain;charset=utf-8',
+      type: contentType || 'text/plain;charset=utf-8',
     })
 
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
+    const finalFilename = filename.endsWith('.txt') ? filename : `${filename}.txt`
 
-    link.href = url
-    link.download = `${filename}.txt`
+    downloadBlob(blob, finalFilename)
 
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-
-    window.URL.revokeObjectURL(url)
+    return {
+      filename: finalFilename,
+      contentType,
+      size: blob.size,
+    }
   },
 }
