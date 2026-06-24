@@ -263,32 +263,32 @@ export const S = {
       font-weight: 600;
       font-family: var(--font);
       background: ${props => {
-        switch (props.$status) {
-          case 'faturado': return '#eff6ff';
-          case 'cancelado': return '#fef2f2';
-          case 'em_faturamento': return '#fffbeb';
-          case 'comprado': return '#f0fdf4';
-          default: return '#f0fdf4';
-        }
-      }};
+      switch (props.$status) {
+        case 'faturado': return '#eff6ff';
+        case 'cancelado': return '#fef2f2';
+        case 'em_faturamento': return '#fffbeb';
+        case 'comprado': return '#f0fdf4';
+        default: return '#f0fdf4';
+      }
+    }};
       border: 1px solid ${props => {
-        switch (props.$status) {
-          case 'faturado': return '#bfdbfe';
-          case 'cancelado': return '#fee2e2';
-          case 'em_faturamento': return '#fde68a';
-          case 'comprado': return '#bbf7d0';
-          default: return '#bbf7d0';
-        }
-      }};
+      switch (props.$status) {
+        case 'faturado': return '#bfdbfe';
+        case 'cancelado': return '#fee2e2';
+        case 'em_faturamento': return '#fde68a';
+        case 'comprado': return '#bbf7d0';
+        default: return '#bbf7d0';
+      }
+    }};
       color: ${props => {
-        switch (props.$status) {
-          case 'faturado': return '#2563eb';
-          case 'cancelado': return '#dc2626';
-          case 'em_faturamento': return '#d97706';
-          case 'comprado': return '#16a34a';
-          default: return '#16a34a';
-        }
-      }};
+      switch (props.$status) {
+        case 'faturado': return '#2563eb';
+        case 'cancelado': return '#dc2626';
+        case 'em_faturamento': return '#d97706';
+        case 'comprado': return '#16a34a';
+        default: return '#16a34a';
+      }
+    }};
       cursor: pointer;
       transition: all 0.15s;
 
@@ -324,16 +324,21 @@ export const S = {
       cursor: not-allowed;
     }
 
-    ${props => props.$variant === 'primary' && css`
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
+  ${props => props.$variant === 'primary' && css`
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
 
-      &:hover:not(:disabled) {
-        background: #1d4ed8;
-        border-color: #1d4ed8;
-      }
-    `}
+  &:hover:not(:disabled) {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.25);
+    outline-offset: 2px;
+  }
+`}
 
     ${props => props.$variant === 'secondary' && css`
       color: var(--sub);
@@ -726,7 +731,7 @@ export const S = {
   `,
 
 
-  SkeletonLine : styled.div`
+  SkeletonLine: styled.div`
     width: ${({ $width }) => $width || '100%'};
     height: ${({ $height }) => $height || '16px'};
     margin-bottom: ${({ $marginBottom }) => $marginBottom || '0'};
@@ -750,7 +755,7 @@ export const S = {
     }
   `,
 
-  SkeletonIcon : styled.div`
+  SkeletonIcon: styled.div`
     width: ${({ $width }) => $width || '18px'};
     height: ${({ $height }) => $height || '18px'};
     border-radius: ${({ $borderRadius }) => $borderRadius || '4px'};
@@ -760,7 +765,7 @@ export const S = {
   `,
 
   // E atualize o StatMini para aceitar $color como transient prop:
-  StatMini : styled.div`
+  StatMini: styled.div`
     display: flex;
     flex-direction: column;
     background: white;
