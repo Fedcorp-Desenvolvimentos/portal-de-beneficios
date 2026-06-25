@@ -1,4 +1,3 @@
-// pages/ColaboradorDashboard/ColaboradorDashboard.jsx
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useSnackbar } from 'notistack';
 import {
@@ -151,13 +150,173 @@ const getTimelineItems = (pedido) => {
   return items;
 };
 
+const BENEFICIOS_POR_CODIGO = {
+  204: 'Alimentação',
+  207: 'Multibenefícios',
+  27: 'Alimentação',
+  28: 'Vale Combustível',
+  201: 'Cesta',
+  202: 'Boas Festas',
+};
+
+const BENEFICIOS_POR_SIGLA = {
+  AXA: 'Alimentação',
+  MBF: 'Multibenefícios',
+  VBA: 'Alimentação',
+  VBV: 'Vale Combustível',
+  VCA: 'Cesta',
+  NAT: 'Boas Festas',
+  VT: 'Vale Transporte',
+};
+
+const normalizeBeneficioText = (value) =>
+  String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .trim();
+
+const firstValueFromObject = (obj, keys = []) => {
+  if (!obj || typeof obj !== 'object') return '';
+
+  for (const key of keys) {
+    const value = obj?.[key];
+
+    if (value !== null && value !== undefined && String(value).trim() !== '') {
+      return value;
+    }
+  }
+
+  return '';
+};
+
+const getPrimeiraMovimentacaoPedido = (pedidoApi) => {
+  const listasPossiveis = [
+    pedidoApi?.movimentacoes_detalhada,
+    pedidoApi?.movimentacoes,
+    pedidoApi?.data_to_backend?.movimentacoes_detalhada,
+    pedidoApi?.data_to_backend?.movimentacoes,
+    pedidoApi?.summary?.movimentacoes_detalhada,
+  ];
+
+  for (const lista of listasPossiveis) {
+    if (Array.isArray(lista) && lista.length > 0) {
+      return lista[0];
+    }
+  }
+
+  return null;
+};
+
 const getTipoBeneficioPedido = (pedidoApi) => {
-  const modelo = String(
-    pedidoApi?.modelo_importacao || ''
-  ).toUpperCase();
+  const primeiraMovimentacao = getPrimeiraMovimentacaoPedido(pedidoApi);
+
+  const codigoRaw = firstValueFromObject(pedidoApi, [
+    'beneficio_alterado_para_codigo',
+    'codigo_produto',
+    'produto_codigo',
+    'cod_produto',
+    'codigo',
+    'codigo_beneficio',
+    'tipo_beneficio_codigo',
+  ]) || firstValueFromObject(primeiraMovimentacao, [
+    'beneficio_alterado_para_codigo',
+    'codigo_produto',
+    'produto_codigo',
+    'cod_produto',
+    'codigo',
+    'codigo_beneficio',
+    'tipo_beneficio_codigo',
+  ]);
+
+  const codigo = Number(codigoRaw);
+
+  if (!Number.isNaN(codigo) && BENEFICIOS_POR_CODIGO[codigo]) {
+    return BENEFICIOS_POR_CODIGO[codigo];
+  }
+
+  const sigla = normalizeBeneficioText(
+    firstValueFromObject(pedidoApi, [
+      'beneficio_alterado_para_sigla',
+      'sigla_produto',
+      'sigla',
+      'tipo_beneficio_sigla',
+    ]) || firstValueFromObject(primeiraMovimentacao, [
+      'beneficio_alterado_para_sigla',
+      'sigla_produto',
+      'sigla',
+      'tipo_beneficio_sigla',
+    ])
+  );
+
+  if (sigla && BENEFICIOS_POR_SIGLA[sigla]) {
+    return BENEFICIOS_POR_SIGLA[sigla];
+  }
+
+  const descricao = normalizeBeneficioText(
+    firstValueFromObject(pedidoApi, [
+      'beneficio_alterado_para',
+      'beneficio_alterado_para_descricao',
+      'tipo_beneficio',
+      'nome_beneficio',
+      'beneficio_nome',
+      'beneficio',
+      'nome_produto',
+      'produto_nome',
+      'produto',
+      'descricao_produto',
+      'descricao',
+    ]) || firstValueFromObject(primeiraMovimentacao, [
+      'beneficio_alterado_para',
+      'beneficio_alterado_para_descricao',
+      'tipo_beneficio',
+      'nome_beneficio',
+      'beneficio_nome',
+      'beneficio',
+      'nome_produto',
+      'produto_nome',
+      'produto',
+      'descricao_produto',
+      'descricao',
+    ])
+  );
+
+  if (
+    descricao.includes('COMBUSTIVEL') ||
+    descricao.includes('COMBUSTÍVEL') ||
+    descricao === 'AUTO'
+  ) {
+    return 'Vale Combustível';
+  }
+
+  if (descricao.includes('TRANSPORTE')) {
+    return 'Vale Transporte';
+  }
+
+  if (descricao.includes('MULTIBENEFICIO') || descricao.includes('MULTIBENEFICIOS')) {
+    return 'Multibenefícios';
+  }
+
+  if (descricao.includes('CESTA')) {
+    return 'Cesta';
+  }
+
+  if (descricao.includes('BOAS FESTAS') || descricao.includes('NATAL')) {
+    return 'Boas Festas';
+  }
+
+  if (descricao.includes('ALIMENTACAO') || descricao.includes('REFEICAO')) {
+    return 'Alimentação/Refeição';
+  }
+
+  const modelo = normalizeBeneficioText(pedidoApi?.modelo_importacao);
 
   if (modelo.includes('VT')) {
     return 'Vale Transporte';
+  }
+
+  if (modelo.includes('AUTO') || modelo.includes('COMBUSTIVEL')) {
+    return 'Vale Combustível';
   }
 
   if (modelo.includes('VR')) {
@@ -377,7 +536,7 @@ export default function ColaboradorDashboard() {
     const q = norm(search);
     return pedidos.filter((p) => {
       const hay = norm(
-        [p.id, p.nomeAdministradora, p.mesUtilizacao, p.dataVencimento, p.nomeCondominio, p.cnpj, p.cidade, p.uf].join(' ')
+        [p.id, p.nomeAdministradora, p.tipoBeneficio, p.mesUtilizacao, p.dataVencimento, p.nomeCondominio, p.cnpj, p.cidade, p.uf].join(' ')
       );
       return (!q || hay.includes(q)) && (statusFilter === 'todos' || p.status === statusFilter);
     });
