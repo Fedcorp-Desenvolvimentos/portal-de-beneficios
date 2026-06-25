@@ -1,4 +1,3 @@
-// pages/Dashboard/Dashboard.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
@@ -273,9 +272,13 @@ export default function Dashboard() {
 
     const condominiosRecebidos = toArray(acordosData);
 
-    const condominiosFiltrados = condominiosRecebidos.filter((condominio) =>
-      pertenceAAdministradora(condominio, administradoraId)
-    );
+    const condominiosFiltrados = condominiosRecebidos.filter((condominio) => {
+      const idsAdministradora = getAdministradoraIdsFromCondominio(condominio);
+
+      if (idsAdministradora.length === 0) return true;
+
+      return pertenceAAdministradora(condominio, administradoraId);
+    });
 
     console.log('USER LOGADO:', user);
     console.log('ADMINISTRADORA DO USER:', administradoraId);
@@ -296,6 +299,10 @@ export default function Dashboard() {
     );
 
     setUltimaMovimentacao(ultima);
+    console.log('ÚLTIMA MOVIMENTAÇÃO DASHBOARD:', ultima);
+    console.log('HISTÓRICO IMPORTAÇÕES DASHBOARD:', historico);
+    console.log('CONDOMÍNIOS DASHBOARD:', acordosData);
+
     setHistoricoImportacoes(toArray(historico));
     setAcordos(condominiosFiltrados);
   } catch (e) {
@@ -418,6 +425,74 @@ export default function Dashboard() {
   const getVencimento = (c) =>
     c?.vencimento || c?.data_vencimento || c?.proximo_vencimento || '—';
 
+  const getNumberFrom = (...values) => {
+    for (const value of values) {
+      if (value === null || value === undefined || value === '') continue;
+
+      if (typeof value === 'number' && !Number.isNaN(value)) {
+        return value;
+      }
+
+      const parsed = Number(
+        String(value)
+          .replace(/\./g, '')
+          .replace(',', '.')
+      );
+
+      if (!Number.isNaN(parsed)) return parsed;
+    }
+
+    return 0;
+  };
+
+  const ultimaSummary =
+    ultimaMovimentacao?.summary ||
+    ultimaMovimentacao?.resumo ||
+    ultimaMovimentacao?.data_to_backend?.summary ||
+    {};
+
+  const valorTotalUltimaImportacao = getNumberFrom(
+    ultimaMovimentacao?.valor_total_beneficios,
+    ultimaMovimentacao?.valor_total,
+    ultimaMovimentacao?.total_valor,
+    ultimaMovimentacao?.valor,
+    ultimaSummary?.valor_total_beneficios,
+    ultimaSummary?.valor_total,
+    ultimaSummary?.total_valor,
+    ultimaSummary?.valor_total_importacao,
+    ultimaSummary?.valor_total_faturamento,
+    faturamentoTotal
+  );
+
+  const totalFuncionariosUltimaImportacao = getNumberFrom(
+    ultimaMovimentacao?.total_funcionarios,
+    ultimaMovimentacao?.total_colaboradores,
+    ultimaMovimentacao?.quantidade_funcionarios,
+    ultimaSummary?.total_funcionarios,
+    ultimaSummary?.total_colaboradores,
+    ultimaSummary?.quantidade_funcionarios
+  );
+
+  const totalMovimentacoesUltimaImportacao = getNumberFrom(
+    ultimaMovimentacao?.total_movimentacoes,
+    ultimaMovimentacao?.quantidade_movimentacoes,
+    ultimaMovimentacao?.movimentacoes_count,
+    ultimaSummary?.total_movimentacoes,
+    ultimaSummary?.quantidade_movimentacoes,
+    ultimaMovimentacao?.movimentacoes_detalhada?.length,
+    ultimaMovimentacao?.data_to_backend?.movimentacoes_detalhada?.length
+  );
+
+  const totalCondominiosUltimaImportacao = getNumberFrom(
+    ultimaMovimentacao?.total_condominios,
+    ultimaMovimentacao?.quantidade_condominios,
+    ultimaSummary?.total_condominios,
+    ultimaSummary?.quantidade_condominios,
+    ultimaMovimentacao?.condominios?.length,
+    ultimaMovimentacao?.data_to_backend?.condominios?.length,
+    totalCondominios
+  );
+
   const closeCondoModal = () => {
     setCondoModalOpen(false);
     setSelectedCondo(null);
@@ -502,7 +577,7 @@ export default function Dashboard() {
                     <S.KPILabel>Faturamento total</S.KPILabel>
                   </S.KPITop>
 
-                  <S.KPIValue>{formatCurrency(faturamentoTotal)}</S.KPIValue>
+                  <S.KPIValue>{formatCurrency(faturamentoTotal || valorTotalUltimaImportacao)}</S.KPIValue>
                   <S.KPIFoot>Base filtrada da administradora</S.KPIFoot>
                 </S.KPICard>
 
@@ -593,24 +668,22 @@ export default function Dashboard() {
                       <S.ImportStats>
                         <S.MiniStat>
                           <S.MiniLabel>Valor total</S.MiniLabel>
-                          <strong>{formatCurrency(faturamentoTotal)}</strong>
+                          <strong>{formatCurrency(valorTotalUltimaImportacao)}</strong>
                         </S.MiniStat>
 
                         <S.MiniStat>
                           <S.MiniLabel>Colaboradores</S.MiniLabel>
-                          <strong>{ultimaMovimentacao.total_funcionarios}</strong>
+                          <strong>{totalFuncionariosUltimaImportacao}</strong>
                         </S.MiniStat>
 
                         <S.MiniStat>
                           <S.MiniLabel>Movimentações</S.MiniLabel>
-                          <strong>
-                            {ultimaMovimentacao.total_movimentacoes}
-                          </strong>
+                          <strong>{totalMovimentacoesUltimaImportacao}</strong>
                         </S.MiniStat>
 
                         <S.MiniStat>
                           <S.MiniLabel>Condomínios</S.MiniLabel>
-                          <strong>{totalCondominios}</strong>
+                          <strong>{totalCondominiosUltimaImportacao}</strong>
                         </S.MiniStat>
                       </S.ImportStats>
 
