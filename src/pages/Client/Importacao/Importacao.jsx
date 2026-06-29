@@ -13,10 +13,10 @@ import { useAuth } from '../../../context/AuthContext.jsx'
 import { useLoading } from "../../../hooks/useLoading.js";
 import PageLayout from '../../../Layouts/PageLayout/PageLayout.jsx'
 
-import { 
-  buscarRegraValorAdministradora, 
-  atualizarRegraValorAdministradora, 
-  criarRegraValorAdministradora 
+import {
+  buscarRegraValorAdministradora,
+  atualizarRegraValorAdministradora,
+  criarRegraValorAdministradora
 } from '../../../services/administradoraService.js';
 
 import { vtService } from '../../../services/vtService.js';
@@ -153,6 +153,170 @@ function normalizeText(value) {
     .toUpperCase()
 }
 
+
+const ADMINISTRADORA_BENEDETTI_NOME = 'M BENEDETTI ASSESSORIA CONDOMINIAL LTDA'
+
+const SIGLA_VALE_COMBUSTIVEL = 'VBV'
+const CODIGO_VALE_COMBUSTIVEL = 28
+const DESCRICAO_VALE_COMBUSTIVEL = 'Auto'
+const NOME_VALE_COMBUSTIVEL = 'Vale Combustível'
+
+function compactText(value) {
+  return normalizeText(value).replace(/[^A-Z0-9]/g, '')
+}
+
+function isAdministradoraBenedetti(user = {}, payload = {}, data = {}, lote = {}) {
+  const textosPossiveis = [
+    user?.nome_administradora,
+    user?.administradora_nome,
+    user?.razao_social,
+    user?.nome_fantasia,
+    user?.administradora?.nome,
+    user?.administradora?.razao_social,
+    user?.administradora?.nome_fantasia,
+
+    payload?.nome_administradora,
+    payload?.administradora_nome,
+    payload?.razao_social,
+    payload?.nome_fantasia,
+    payload?.administradora?.nome,
+    payload?.administradora?.razao_social,
+    payload?.administradora?.nome_fantasia,
+
+    data?.nome_administradora,
+    data?.administradora_nome,
+    data?.razao_social,
+    data?.nome_fantasia,
+    data?.administradora?.nome,
+    data?.administradora?.razao_social,
+    data?.administradora?.nome_fantasia,
+
+    data?.file_name,
+    data?.filename,
+    data?.nome_arquivo,
+    data?.arquivo,
+    data?.original_filename,
+
+    lote?.arquivo,
+  ]
+
+  const matchExato = textosPossiveis.some(
+    (texto) =>
+      normalizeText(texto) === normalizeText(ADMINISTRADORA_BENEDETTI_NOME)
+  )
+
+  const matchParcial = textosPossiveis.some((texto) => {
+    const compactado = compactText(texto)
+
+    return (
+      compactado.includes('MBENEDETTI') ||
+      compactado.includes('BENEDETTI')
+    )
+  })
+
+  return matchExato || matchParcial
+}
+
+function adaptarMovimentacoesParaValeCombustivel(movimentacoes = []) {
+  return movimentacoes.map((item) => ({
+    ...item,
+
+    sigla: SIGLA_VALE_COMBUSTIVEL,
+    sigla_produto: SIGLA_VALE_COMBUSTIVEL,
+    codigo_produto: CODIGO_VALE_COMBUSTIVEL,
+    produto_codigo: CODIGO_VALE_COMBUSTIVEL,
+    cod_produto: CODIGO_VALE_COMBUSTIVEL,
+    codigo: CODIGO_VALE_COMBUSTIVEL,
+
+    nome_produto: NOME_VALE_COMBUSTIVEL,
+    produto_nome: NOME_VALE_COMBUSTIVEL,
+    produto: NOME_VALE_COMBUSTIVEL,
+    nome_beneficio: NOME_VALE_COMBUSTIVEL,
+    beneficio_nome: NOME_VALE_COMBUSTIVEL,
+    beneficio: NOME_VALE_COMBUSTIVEL,
+    descricao_produto: DESCRICAO_VALE_COMBUSTIVEL,
+    descricao: DESCRICAO_VALE_COMBUSTIVEL,
+
+    beneficio_alterado_frontend: true,
+    beneficio_alterado_de: getNomeProduto(item) || 'Alimentação',
+    beneficio_alterado_para: NOME_VALE_COMBUSTIVEL,
+    beneficio_alterado_para_sigla: SIGLA_VALE_COMBUSTIVEL,
+    beneficio_alterado_para_codigo: CODIGO_VALE_COMBUSTIVEL,
+    beneficio_alterado_para_descricao: DESCRICAO_VALE_COMBUSTIVEL,
+  }))
+}
+
+function adaptarPayloadBenedettiParaValeCombustivel(payload = {}) {
+  return {
+    ...payload,
+    regra_especial_benedetti: true,
+    beneficio_alterado_para: NOME_VALE_COMBUSTIVEL,
+    beneficio_alterado_para_sigla: SIGLA_VALE_COMBUSTIVEL,
+    beneficio_alterado_para_codigo: CODIGO_VALE_COMBUSTIVEL,
+    beneficio_alterado_para_descricao: DESCRICAO_VALE_COMBUSTIVEL,
+    movimentacoes_detalhada: adaptarMovimentacoesParaValeCombustivel(
+      payload.movimentacoes_detalhada || []
+    ),
+  }
+}
+
+function adaptarRowsParaValeCombustivel(rows = []) {
+  return rows.map((row) => ({
+    ...row,
+    beneficios: Array.isArray(row?.beneficios)
+      ? row.beneficios.map((beneficio) => ({
+        ...beneficio,
+        sigla: SIGLA_VALE_COMBUSTIVEL,
+        sigla_produto: SIGLA_VALE_COMBUSTIVEL,
+        codigo: CODIGO_VALE_COMBUSTIVEL,
+        codigo_produto: CODIGO_VALE_COMBUSTIVEL,
+        produto_codigo: CODIGO_VALE_COMBUSTIVEL,
+        cod_produto: CODIGO_VALE_COMBUSTIVEL,
+        nome: NOME_VALE_COMBUSTIVEL,
+        nome_produto: NOME_VALE_COMBUSTIVEL,
+        produto_nome: NOME_VALE_COMBUSTIVEL,
+        produto: NOME_VALE_COMBUSTIVEL,
+        nome_beneficio: NOME_VALE_COMBUSTIVEL,
+        beneficio_nome: NOME_VALE_COMBUSTIVEL,
+        beneficio: NOME_VALE_COMBUSTIVEL,
+        descricao_produto: DESCRICAO_VALE_COMBUSTIVEL,
+        descricao: DESCRICAO_VALE_COMBUSTIVEL,
+        beneficio_alterado_frontend: true,
+        beneficio_alterado_para_sigla: SIGLA_VALE_COMBUSTIVEL,
+        beneficio_alterado_para_codigo: CODIGO_VALE_COMBUSTIVEL,
+        beneficio_alterado_para_descricao: DESCRICAO_VALE_COMBUSTIVEL,
+      }))
+      : row?.beneficios,
+  }))
+}
+
+function adaptarDataParaValeCombustivel(dataAtual = {}) {
+  return {
+    ...dataAtual,
+    regra_especial_benedetti: true,
+    beneficio_alterado_para: NOME_VALE_COMBUSTIVEL,
+    beneficio_alterado_para_sigla: SIGLA_VALE_COMBUSTIVEL,
+    beneficio_alterado_para_codigo: CODIGO_VALE_COMBUSTIVEL,
+    beneficio_alterado_para_descricao: DESCRICAO_VALE_COMBUSTIVEL,
+    movimentacoes_detalhada: adaptarMovimentacoesParaValeCombustivel(
+      dataAtual?.movimentacoes_detalhada || []
+    ),
+    data_to_backend: dataAtual?.data_to_backend
+      ? {
+        ...dataAtual.data_to_backend,
+        regra_especial_benedetti: true,
+        beneficio_alterado_para: NOME_VALE_COMBUSTIVEL,
+        beneficio_alterado_para_sigla: SIGLA_VALE_COMBUSTIVEL,
+        beneficio_alterado_para_codigo: CODIGO_VALE_COMBUSTIVEL,
+        beneficio_alterado_para_descricao: DESCRICAO_VALE_COMBUSTIVEL,
+        movimentacoes_detalhada: adaptarMovimentacoesParaValeCombustivel(
+          dataAtual.data_to_backend?.movimentacoes_detalhada || []
+        ),
+      }
+      : dataAtual?.data_to_backend,
+  }
+}
+
 function onlyDigits(value) {
   return String(value || '').replace(/\D/g, '')
 }
@@ -200,20 +364,20 @@ function getNomeProduto(item) {
 function getCodigoProduto(item) {
   return String(
     item?.codigo_produto ||
-      item?.produto_codigo ||
-      item?.cod_produto ||
-      item?.codigo ||
-      ''
+    item?.produto_codigo ||
+    item?.cod_produto ||
+    item?.codigo ||
+    ''
   ).trim()
 }
 
 function getValorProduto(item) {
   return Number(
     item?.valor_recarga_bene ||
-      item?.valor_total ||
-      item?.valor ||
-      item?.valor_unitario ||
-      0
+    item?.valor_total ||
+    item?.valor ||
+    item?.valor_unitario ||
+    0
   )
 }
 
@@ -424,6 +588,9 @@ export default function Importacao() {
 
   const [reviewOpen, setReviewOpen] = useState(false)
   const [enviandoLote, setEnviandoLote] = useState(false)
+  const [modalBenedettiOpen, setModalBenedettiOpen] = useState(false)
+  const [benedettiPendente, setBenedettiPendente] = useState(null)
+  const [benedettiConvertido, setBenedettiConvertido] = useState(false)
 
   const [regraValor, setRegraValor] = useState(null)
   const [loadingRegraValor, setLoadingRegraValor] = useState(false)
@@ -533,8 +700,6 @@ export default function Importacao() {
 
       setModalRegraValorOpen(false)
       toast.success('Regra de valor salva com sucesso.')
-      
-      // 🔥 FORÇA REVALIDAÇÃO APÓS SALVAR REGRA
       setValidationVersion(prev => prev + 1)
     } catch (error) {
       console.error('Erro ao salvar regra de valor:', error)
@@ -546,57 +711,51 @@ export default function Importacao() {
 
   const isVTResponse = (response) => {
     if (!response) return false;
-    
+
     if (response.dados_validados !== undefined && response.tipo_processamento === 'VT') return true;
     if (response.tipo_processamento === 'VT') return true;
     if (response.summary && response.summary.valor_total_vt !== undefined) return true;
     if (response.summary && response.summary.total_dias_trabalhados !== undefined) return true;
     if (response.vt_validation !== undefined) return true;
     if (response.source === 'vt_upload') return true;
-    
+
     return false;
   }
 
   async function handleResult({ file, result: uploadResult }) {
     try {
-      // console.log("🔍 Iniciando processamento do arquivo:", file.name);
 
       await carregarRegraValor()
 
       let response = uploadResult;
 
       if (!response) {
-        const isVTByFilename = file.name.toLowerCase().includes('vt') || 
-                                file.name.toLowerCase().includes('vale transporte') ||
-                                file.name.toLowerCase().includes('vale_transporte');
-        
-        // console.log("📤 Fazendo upload do arquivo...");
-        
+        const isVTByFilename = file.name.toLowerCase().includes('vt') ||
+          file.name.toLowerCase().includes('vale transporte') ||
+          file.name.toLowerCase().includes('vale_transporte');
+
         if (isVTByFilename) {
-          // console.log("🚌 Detectado VT pelo nome, usando vtService.uploadVTFile");
           response = await vtService.uploadVTFile(file, user?.administradora_id);
         } else {
-          // console.log("📦 Detectado Benefícios, usando uploadService.uploadFile");
           response = await uploadService.uploadFile(file, user?.administradora_id);
         }
-        
-        // console.log("📦 Resposta do backend:", response);
+
       } else {
-        // console.log("📦 Usando resultado pré-processado:", response);
+        // console.log("Usando resultado pré-processado:", response);
       }
 
       const isVT = isVTResponse(response);
-      // console.log("🔍 isVT detectado:", isVT);
-      
+      // console.log("isVT detectado:", isVT);
+
       const tipoFinal = isVT ? 'vale_transporte' : (file.name.toLowerCase().includes('fat') ? 'faturamento' : 'compra');
-      
-      // console.log("📌 Tipo final detectado:", tipoFinal);
+
+      // console.log("Tipo final detectado:", tipoFinal);
 
       if (tipoFinal === 'vale_transporte') {
-        // console.log("🚌 Processando como Vale Transporte...");
+        // console.log("Processando como Vale Transporte...");
 
         let vtData = response;
-        
+
         if (vtData && !vtData.dados_validados && vtData.summary) {
           const movimentacoes = getMovimentacoesBackend(vtData);
           if (movimentacoes.length > 0) {
@@ -609,7 +768,7 @@ export default function Importacao() {
         }
 
         const movimentacoes = vtData?.dados_validados || [];
-        // console.log("📊 Movimentações VT:", movimentacoes);
+        // console.log("Movimentações VT:", movimentacoes);
 
         let previewRows = vtData?.summary?.total_por_beneficiario || [];
 
@@ -617,7 +776,7 @@ export default function Importacao() {
           previewRows = buildPreviewRowsFromMovimentacoes(movimentacoes);
         }
 
-        // console.log("📊 Preview rows do VT:", previewRows);
+        // console.log("Preview rows do VT:", previewRows);
 
         const parsed = previewRows.map(row => ({
           ...row,
@@ -629,7 +788,7 @@ export default function Importacao() {
               valor: m.valor_beneficio_total || getValorRow(m)
             }))
         }))
-        // console.log("📊 Dados enriquecidos:", parsed);
+        // console.log("Dados enriquecidos:", parsed);
 
         const semPreview = !Array.isArray(parsed) || parsed.length === 0
 
@@ -658,16 +817,16 @@ export default function Importacao() {
         setColaboradorParaExcluir(null)
         setReviewOpen(false)
         setFilterOnlyErrors(false)
-        setFilterOnlyBlocked(false) // 🔥 RESETA FILTRO DE BLOQUEIO
+        setFilterOnlyBlocked(false) // RESETA FILTRO DE BLOQUEIO
 
         toast.success(`Arquivo de Vale Transporte importado com ${parsed.length} registros`)
 
         return { success: true }
       }
 
-      // console.log("📊 Processando como Benefícios...");
-      // console.log("📊 Preview rows:", response?.summary?.total_por_beneficiario);
-      // console.log("📊 Movimentações:", getMovimentacoesBackend(response));
+      // console.log("Processando como Benefícios...");
+      // console.log("Preview rows:", response?.summary?.total_por_beneficiario);
+      // console.log("Movimentações:", getMovimentacoesBackend(response));
 
       const id = 'IMP-' + (response?.file_upload_id || Date.now())
       const tipo = tipoFinal
@@ -690,9 +849,9 @@ export default function Importacao() {
             : [];
 
       if (previewRows.length === 0 && movimentacoes.length > 0) {
-        // console.warn("⚠️ Nenhum preview encontrado, mas há movimentações. Usando fallback manual.");
+        // console.warn("Nenhum preview encontrado, mas há movimentações. Usando fallback manual.");
         previewRows = buildPreviewRowsFromMovimentacoes(movimentacoes);
-        // console.log("📊 Preview manual construído:", previewRows);
+        // console.log("Preview manual construído:", previewRows);
       }
 
       const parsed = enrichRowsWithBenefits(previewRows, movimentacoes)
@@ -725,13 +884,38 @@ export default function Importacao() {
 
       setData(response)
 
-      setLote({
+      const novoLote = {
         id,
         arquivo: file.name,
         tipo,
         rows: parsed,
         excluidosPorColab: new Set(),
+      }
+
+      setLote(novoLote)
+
+      const devePerguntarBenedetti = isAdministradoraBenedetti(
+        user,
+        response?.data_to_backend || response,
+        response,
+        novoLote
+      )
+
+      console.log('Checagem Benedetti após importação:', {
+        devePerguntarBenedetti,
+        arquivo: file.name,
+        user,
+        response,
       })
+
+      if (devePerguntarBenedetti && tipo !== 'vale_transporte') {
+        setBenedettiPendente({
+          data: response,
+          lote: novoLote,
+        })
+        setBenedettiConvertido(false)
+        setModalBenedettiOpen(true)
+      }
 
       setValidationVersion(prev => prev + 1)
       setFilterOnlyErrors(false)
@@ -790,10 +974,10 @@ export default function Importacao() {
     if (!data?.linhas_com_erro || !Array.isArray(data.linhas_com_erro)) {
       return []
     }
-    
+
     const limiteAtivo = regraValor?.ativo === true && Number(regraValor?.valor_limite) > 0
     const valorLimite = Number(regraValor?.valor_limite)
-    
+
     return data.linhas_com_erro
       .filter(erro => {
         if (!isValeTransporte && erro.tipo_erro === 'VALOR_EXCEDIDO' && limiteAtivo && erro.dados) {
@@ -811,9 +995,10 @@ export default function Importacao() {
         linha: erro.linha,
         tipo: erro.tipo_erro,
         detalhes: erro.dados || {},
-        mensagem: erro.tipo_erro === 'VALOR_EXCEDIDO' 
-          ? `⚠️ Valor excedeu o limite permitido na linha ${erro.linha} (limite: ${formatCurrency(regraValor?.valor_limite)})`
-          : `⚠️ Erro na linha ${erro.linha}: ${erro.tipo_erro || 'Dado inválido'}`
+        mensagem: erro.tipo_erro === 'VALOR_EXCEDIDO'
+          ? `Valor excedeu o limite permitido na linha ${erro.linha} 
+          (limite: ${formatCurrency(regraValor?.valor_limite)})`
+          : `Erro na linha ${erro.linha}: ${erro.tipo_erro || 'Dado inválido'}`
       }))
   }, [data, rowsAtivas, regraValor, isValeTransporte])
 
@@ -821,21 +1006,21 @@ export default function Importacao() {
     const cpf = getCpf(row)
     const valorAtual = getValorRow(row)
     const limiteAtivo = regraValor?.ativo === true && Number(regraValor?.valor_limite) > 0
-    
-    const erroEncontrado = linhasComErroBackend.find(erro => 
-      erro.detalhes?.cpf === cpf || 
+
+    const erroEncontrado = linhasComErroBackend.find(erro =>
+      erro.detalhes?.cpf === cpf ||
       erro.detalhes?.nome === getNomeColaborador(row)
     )
-    
+
     if (!erroEncontrado) return false
-    
+
     if (!isValeTransporte && erroEncontrado.tipo === 'VALOR_EXCEDIDO' && limiteAtivo) {
       const valorLimite = Number(regraValor.valor_limite)
       if (valorAtual <= valorLimite) {
         return false
       }
     }
-    
+
     return true
   }
 
@@ -843,27 +1028,27 @@ export default function Importacao() {
     const cpf = getCpf(row)
     const valorAtual = getValorRow(row)
     const limiteAtivo = regraValor?.ativo === true && Number(regraValor?.valor_limite) > 0
-    
-    const erro = linhasComErroBackend.find(e => 
-      e.detalhes?.cpf === cpf || 
+
+    const erro = linhasComErroBackend.find(e =>
+      e.detalhes?.cpf === cpf ||
       e.detalhes?.nome === getNomeColaborador(row)
     )
-    
+
     if (!erro) return ''
-    
+
     if (!isValeTransporte && erro.tipo === 'VALOR_EXCEDIDO' && limiteAtivo) {
       const valorLimite = Number(regraValor.valor_limite)
       if (valorAtual <= valorLimite) {
         return ''
       }
     }
-    
+
     return erro.mensagem
   }
 
   const linhasValidadas = useMemo(() => {
-    // console.log("🔄 Revalidando linhas, versão:", validationVersion)
-    
+    // console.log("Revalidando linhas, versão:", validationVersion)
+
     return rowsAtivas.map((r) => {
       const validacao = getRowValidation(r, regraValor, isValeTransporte)
 
@@ -885,10 +1070,10 @@ export default function Importacao() {
     if (!data?.linhas_com_erro || !Array.isArray(data.linhas_com_erro)) {
       return 0
     }
-    
+
     const limiteAtivo = regraValor?.ativo === true && Number(regraValor?.valor_limite) > 0
     const valorLimite = Number(regraValor?.valor_limite)
-    
+
     const errosValidos = data.linhas_com_erro.filter(erro => {
       if (!isValeTransporte && erro.tipo_erro === 'VALOR_EXCEDIDO' && limiteAtivo && erro.dados) {
         const rowEncontrada = rowsAtivas.find(r => getCpf(r) === erro.dados?.cpf)
@@ -901,39 +1086,37 @@ export default function Importacao() {
       }
       return true
     })
-    
+
     return errosValidos.length
   }, [data, rowsAtivas, regraValor, isValeTransporte])
 
-  // 🔥 NOVO: LINHAS EXIBIDAS COM FILTRO DE BLOQUEIO
   const linhasExibidas = useMemo(() => {
     let resultado = linhasValidadas
-    
+
     if (filterOnlyErrors) {
       resultado = resultado.filter(row => hasBackendError(row, 0))
     }
-    
-    // 🔥 APLICA FILTRO DE BLOQUEIO (NÃO PARA VT)
+
     if (filterOnlyBlocked && !isValeTransporte) {
       resultado = resultado.filter(row => row.bloqueado === true)
     }
-    
+
     return resultado
   }, [linhasValidadas, filterOnlyErrors, filterOnlyBlocked, isValeTransporte])
 
   const podeEnviar = useMemo(() => {
     if (linhasValidadas.length === 0) return false
-    
+
     if (isValeTransporte) {
       return linhasValidadas.length > 0
     }
-    
+
     return linhasValidadas.length > 0 && totalBloqueios === 0
   }, [linhasValidadas, totalBloqueios, isValeTransporte])
 
   useEffect(() => {
     if (linhasValidadas.length > 0) {
-      // console.log("📊 Status das linhas validadas:", linhasValidadas.map(r => ({
+      // console.log("Status das linhas validadas:", linhasValidadas.map(r => ({
       //   nome: getNomeColaborador(r),
       //   valor: getValorRow(r),
       //   bloqueado: r.bloqueado,
@@ -943,11 +1126,9 @@ export default function Importacao() {
     }
   }, [linhasValidadas])
 
-  // 🔥 TOGGLE PARA FILTRO DE BLOQUEIO
   const toggleFilterBlocked = () => {
     if (totalBloqueios === 0) return
     setFilterOnlyBlocked(!filterOnlyBlocked)
-    // Se ativar filtro de bloqueio, desativa filtro de erro (opcional)
     if (!filterOnlyBlocked) {
       setFilterOnlyErrors(false)
     }
@@ -956,7 +1137,6 @@ export default function Importacao() {
   const toggleFilterErrors = () => {
     if (totalErrosBackend === 0) return
     setFilterOnlyErrors(!filterOnlyErrors)
-    // Se ativar filtro de erro, desativa filtro de bloqueio (opcional)
     if (!filterOnlyErrors) {
       setFilterOnlyBlocked(false)
     }
@@ -1025,6 +1205,9 @@ export default function Importacao() {
     setConfirmDeleteOpen(false)
     setColaboradorParaExcluir(null)
     setReviewOpen(false)
+    setModalBenedettiOpen(false)
+    setBenedettiPendente(null)
+    setBenedettiConvertido(false)
     setFilterOnlyErrors(false)
     setFilterOnlyBlocked(false)
 
@@ -1117,11 +1300,11 @@ export default function Importacao() {
     setDetailsBenefits(beneficiosAtualizados)
     setEditingBenefitIndex(null)
     setEditBenefitValue('')
-    
+
     setValidationVersion(prev => prev + 1)
 
     toast.success('Benefício atualizado com sucesso.')
-    
+
     setTimeout(() => {
       setDetailsOpen(false)
     }, 1000)
@@ -1143,7 +1326,7 @@ export default function Importacao() {
 
     if (isValeTransporte) {
       totalMovimentacoes = data?.summary?.total_movimentacoes || lote.rows.length;
-      valorTotalBeneficios = data?.summary?.valor_total_beneficios || 
+      valorTotalBeneficios = data?.summary?.valor_total_beneficios ||
         lote.rows.reduce((total, row) => total + getValorRow(row), 0);
     } else {
       linhasValidadas.forEach((row) => {
@@ -1175,6 +1358,48 @@ export default function Importacao() {
     setReviewOpen(true)
   }
 
+  const enviarPayloadBeneficios = async (payload) => {
+    const responseEnvio = await uploadService.confirmUpload(payload)
+
+    toast.success(responseEnvio?.detail || responseEnvio?.message || 'Lote enviado com sucesso!')
+
+    setReviewOpen(false)
+    setModalOpen(false)
+
+    setTimeout(() => {
+      window.location.href = '/'
+    }, 1500)
+  }
+
+  const confirmarBenedettiSim = () => {
+    if (!benedettiPendente || enviandoLote) return
+
+    const dataAdaptada = adaptarDataParaValeCombustivel(benedettiPendente.data)
+    const loteAdaptado = {
+      ...benedettiPendente.lote,
+      rows: adaptarRowsParaValeCombustivel(benedettiPendente.lote?.rows || []),
+    }
+
+    setData(dataAdaptada)
+    setLote(loteAdaptado)
+    setBenedettiConvertido(true)
+    setModalBenedettiOpen(false)
+    setBenedettiPendente(null)
+    setValidationVersion((prev) => prev + 1)
+
+    toast.success('Benefícios alterados para Vale Combustível.')
+  }
+
+  const confirmarBenedettiNao = () => {
+    if (enviandoLote) return
+
+    setBenedettiConvertido(false)
+    setModalBenedettiOpen(false)
+    setBenedettiPendente(null)
+
+    toast.info('Importação mantida com os benefícios originais.')
+  }
+
   const confirmarEnvio = async () => {
     if (enviandoLote) return
 
@@ -1189,20 +1414,20 @@ export default function Importacao() {
       let responseEnvio;
 
       if (isValeTransporte) {
-        // console.log("🚌 Enviando VT para o endpoint /api/upload/vt/confirm/ ...");
-        
+        // console.log("Enviando VT para o endpoint /api/upload/vt/confirm/ ...");
+
         const vencimentoFormatado = formEnvio.vencimento || reviewData.vencimento || '';
         const periodoInicio = formEnvio.periodoInicio || reviewData.periodoInicio;
         const periodoFim = formEnvio.periodoFim || reviewData.periodoFim;
         const competenciaMes = formEnvio.competenciaMes || reviewData.competenciaMes;
         const competenciaAno = formEnvio.competenciaAno || reviewData.competenciaAno;
-        
+
         const dadosValidadosAtualizados = (data.dados_validados || []).map(item => {
-          const rowCorrespondente = linhasValidadas.find(row => 
-            getCpf(row) === item.cpf_funcionario && 
+          const rowCorrespondente = linhasValidadas.find(row =>
+            getCpf(row) === item.cpf_funcionario &&
             getCondominio(row) === item.nome_condominio
           )
-          
+
           if (rowCorrespondente) {
             const valorEditado = getValorRow(rowCorrespondente)
             return {
@@ -1213,7 +1438,7 @@ export default function Importacao() {
           }
           return item
         })
-        
+
         const payloadVT = {
           file_upload_id: data.file_upload_id || Number(lote.id?.replace('VT-', '')) || 228,
           administradora_id: user?.administradora_id,
@@ -1233,20 +1458,20 @@ export default function Importacao() {
             valor_total_beneficios: linhasValidadas.reduce((total, row) => total + getValorRow(row), 0).toFixed(2)
           }
         };
-        
-        // console.log("📦 Payload VT:", payloadVT);
-        
+
+        // console.log("Payload VT:", payloadVT);
+
         responseEnvio = await vtService.confirmVTUpload(payloadVT);
-        
+
       } else {
-        // console.log("📦 Enviando Benefícios para o endpoint /api/upload/confirm/ ...");
-        
+        // console.log("Enviando Benefícios para o endpoint /api/upload/confirm/ ...");
+
         if (!data || !data.data_to_backend) {
           toast.error('Dados do arquivo não disponíveis')
           setEnviandoLote(false)
           return
         }
-        
+
         const loteComAjustes = lote
         const dataToBackendSincronizado = prepararDadosParaEnvio(loteComAjustes, data.data_to_backend)
 
@@ -1282,23 +1507,34 @@ export default function Importacao() {
           modelo_importacao: "VR-BENEFICIOS",
         }
 
-        // console.log("📦 Payload Benefícios:", dadosParaEnvio)
-        
-        responseEnvio = await uploadService.confirmUpload(dadosParaEnvio)
+        // console.log("Payload Benefícios:", dadosParaEnvio)
+
+        const dadosParaEnvioFinal = benedettiConvertido
+          ? adaptarPayloadBenedettiParaValeCombustivel(dadosParaEnvio)
+          : dadosParaEnvio
+
+        await enviarPayloadBeneficios(dadosParaEnvioFinal)
+        return
       }
 
-      toast.success(responseEnvio?.detail || responseEnvio?.message || 'Lote enviado com sucesso!')
+      if (responseEnvio) {
+        toast.success(responseEnvio?.detail 
+          || responseEnvio?.message 
+          || 'Lote enviado com sucesso!')
 
-      setReviewOpen(false)
-      setModalOpen(false)
+        setReviewOpen(false)
+        setModalOpen(false)
 
-      setTimeout(() => {
-        window.location.href = '/'
-      }, 1500)
-      
+        setTimeout(() => {
+          window.location.href = '/'
+        }, 1500)
+      }
+
     } catch (error) {
       console.error('Erro no envio:', error)
-      const errorDetail = error.response?.data?.detail || error.response?.data?.message || error.message;
+      const errorDetail = error.response?.data?.detail 
+      || error.response?.data?.message 
+      || error.message;
       toast.error(`Erro: ${errorDetail}`)
     } finally {
       setEnviandoLote(false)
@@ -1339,7 +1575,7 @@ export default function Importacao() {
           </div>
         </div>
 
-        <div className="lote-card" style={{ marginTop: 16, marginBottom: 16}}>
+        <div className="lote-card" style={{ marginTop: 16, marginBottom: 16 }}>
           <div className="lote-header">
             <div>
               <h3>Regra de Valor da Administradora</h3>
@@ -1400,14 +1636,13 @@ export default function Importacao() {
                 </span>
               </div>
 
-              {/* 🔥 KPI DE BLOQUEIOS (NOVO) */}
               {totalBloqueios > 0 && !isValeTransporte && (
-                <div 
-                  className={`kpi kpi-blocked ${filterOnlyBlocked ? 'active' : ''}`} 
+                <div
+                  className={`kpi kpi-blocked ${filterOnlyBlocked ? 'active' : ''}`}
                   onClick={toggleFilterBlocked}
                   style={{ cursor: 'pointer' }}
                 >
-                  <span className="kpi-label">🔒 Linhas bloqueadas por regra</span>
+                  <span className="kpi-label">Linhas bloqueadas por regra</span>
                   <span className="kpi-value error">{totalBloqueios}</span>
                 </div>
               )}
@@ -1418,7 +1653,7 @@ export default function Importacao() {
                   onClick={() => setErrosModalOpen(true)}
                   style={{ cursor: 'pointer' }}
                 >
-                  <span className="kpi-label">⚠️ Linhas com erro no processamento</span>
+                  <span className="kpi-label">Linhas com erro no processamento</span>
                   <span className="kpi-value error">{totalErrosBackend}</span>
                 </div>
               )} */}
@@ -1440,9 +1675,9 @@ export default function Importacao() {
                   {linhasExibidas.length === 0 ? (
                     <tr>
                       <td colSpan={5} style={{ textAlign: 'center', padding: '24px' }}>
-                        {filterOnlyErrors ? 'Nenhuma linha com erro encontrada.' : 
-                         filterOnlyBlocked ? 'Nenhuma linha bloqueada encontrada.' :
-                         'Nenhum registro encontrado para pré-visualização.'}
+                        {filterOnlyErrors ? 'Nenhuma linha com erro encontrada.' :
+                          filterOnlyBlocked ? 'Nenhuma linha bloqueada encontrada.' :
+                            'Nenhum registro encontrado para pré-visualização.'}
                       </td>
                     </tr>
                   ) : (
@@ -1470,7 +1705,7 @@ export default function Importacao() {
                           <td className="col-status">
                             {r.bloqueado ? (
                               <div className="status-stack">
-                                <span className="tag tag-danger">🔒 Bloqueado</span>
+                                <span className="tag tag-danger">Bloqueado</span>
                                 {r.errosValidacao?.length > 0 ? (
                                   <small className="status-detail">
                                     {r.errosValidacao.join(' • ')}
@@ -1479,7 +1714,7 @@ export default function Importacao() {
                               </div>
                             ) : temErroBackend ? (
                               <div className="status-stack">
-                                <span className="tag tag-warning">⚠️ Erro no processamento</span>
+                                <span className="tag tag-warning">Erro no processamento</span>
                                 <small className="status-detail">
                                   {erroBackendMsg}
                                 </small>
@@ -1760,6 +1995,60 @@ export default function Importacao() {
                 disabled={enviandoLote}
               >
                 Confirmar exclusão
+              </button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Modal Benedetti - Alteração para Vale Combustível */}
+        <Modal
+          open={modalBenedettiOpen}
+          title="Alterar tipo de benefício?"
+          onClose={() => {
+            if (enviandoLote) return
+            setModalBenedettiOpen(false)
+            setBenedettiPendente(null)
+          }}
+          locked={enviandoLote}
+        >
+          <div className="confirm-delete-content">
+            <p className="confirm-delete-text">
+              Essa importação pertence à administradora{' '}
+              <strong>M BENEDETTI ASSESSORIA CONDOMINIAL LTDA</strong>.
+            </p>
+
+            <p className="confirm-delete-warning-2">
+              <strong>Deseja alterar o tipo de benefício importado para vale combustível?</strong>
+            </p>
+
+            {enviandoLote && (
+              <div className="import-processing-box">
+                <div className="import-processing-spinner" />
+
+                <div>
+                  <strong>Processando importação...</strong>
+                  <p>Estamos aplicando a regra e enviando o lote.</p>
+                </div>
+              </div>
+            )}
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={confirmarBenedettiNao}
+                disabled={enviandoLote}
+              >
+                Não
+              </button>
+
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={confirmarBenedettiSim}
+                disabled={enviandoLote}
+              >
+                Sim
               </button>
             </div>
           </div>
