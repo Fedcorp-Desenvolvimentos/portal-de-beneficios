@@ -256,7 +256,6 @@ export const faturamentoService = {
       method: 'GET',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        // Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       },
     })
 
@@ -336,6 +335,27 @@ export const faturamentoService = {
     return response.data
   },
 
+  async refazerFaturamento(pedidoId) {
+    try {
+      const response = await api.post(
+        `/api/beneficios/importacoes/${pedidoId}/refazer-faturamento/`
+      )
+
+      return response.data
+    } catch (error) {
+      console.error('Erro ao refazer faturamento:', error)
+
+      const message =
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Não foi possível refazer o faturamento.'
+
+      throw new Error(message)
+    }
+  },
+
   async baixarExcelCompraVT(params = {}, filename = 'compra-vt') {
     const url = getCompraVTUrl(params)
     const token = getAuthToken()
@@ -391,9 +411,10 @@ export const faturamentoService = {
     let finalFilename = extractFilenameFromDisposition(contentDisposition)
 
     if (!finalFilename) {
-      finalFilename = filename.endsWith('.xlsx') || filename.endsWith('.xls')
-        ? filename
-        : `${filename}.xlsx`
+      finalFilename =
+        filename.endsWith('.xlsx') || filename.endsWith('.xls')
+          ? filename
+          : `${filename}.xlsx`
     }
 
     if (!finalFilename.endsWith('.xlsx') && !finalFilename.endsWith('.xls')) {
@@ -417,7 +438,6 @@ export const faturamentoService = {
       method: 'GET',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        // Accept: 'text/plain',
       },
     })
 
