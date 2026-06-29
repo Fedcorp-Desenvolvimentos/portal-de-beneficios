@@ -1030,7 +1030,6 @@ async function handleDownload(pedido) {
         )}
       </S.Root>
 
-      {/* Modais - fora do loading */}
       {/* Modal de Timeline */}
       {detailsOpen && detailsPedido && (
         <S.Overlay onMouseDown={(e) => e.target === e.currentTarget && (setDetailsOpen(false), setDetailsPedido(null))}>

@@ -417,7 +417,7 @@ export const faturamentoService = {
       method: 'GET',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        Accept: 'text/plain',
+        // Accept: 'text/plain',
       },
     })
 
