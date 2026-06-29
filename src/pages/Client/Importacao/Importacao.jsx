@@ -555,6 +555,49 @@ function buildPreviewRowsFromMovimentacoes(movimentacoes = []) {
   return Array.from(mapa.values())
 }
 
+
+function parseDateInput(value) {
+  if (!value) return null
+
+  const [year, month, day] = String(value).split('-').map(Number)
+
+  if (!year || !month || !day) return null
+
+  return new Date(year, month - 1, day)
+}
+
+function formatDateInput(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return ''
+
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+function addDaysToDateInput(value, days) {
+  const date = parseDateInput(value)
+  if (!date) return ''
+
+  date.setDate(date.getDate() + Number(days || 0))
+
+  return formatDateInput(date)
+}
+
+function subtractDaysFromDateInput(value, days) {
+  return addDaysToDateInput(value, -Number(days || 0))
+}
+
+function isAfterDateInput(dateA, dateB) {
+  const parsedA = parseDateInput(dateA)
+  const parsedB = parseDateInput(dateB)
+
+  if (!parsedA || !parsedB) return false
+
+  return parsedA.getTime() > parsedB.getTime()
+}
+
 export default function Importacao() {
   const [data, setData] = useState(null)
   const [validationVersion, setValidationVersion] = useState(0)
@@ -610,6 +653,7 @@ export default function Importacao() {
     competenciaMes: '',
     competenciaAno: '',
     vencimento: '',
+    recebimentoBeneficio: '',
   })
 
   const [formEnvio, setFormEnvio] = useState({
@@ -620,6 +664,8 @@ export default function Importacao() {
     vencimento: '',
     recebimentoBeneficio: '',
   })
+
+  const [campoDataReferenciaVT, setCampoDataReferenciaVT] = useState(null)
 
   const carregarRegraValor = async () => {
     const administradoraId = user?.administradora_id
@@ -940,6 +986,7 @@ export default function Importacao() {
         competenciaMes: '',
         competenciaAno: '',
         vencimento: '',
+        recebimentoBeneficio: '',
       })
 
       toast.success(response?.detail || 'Importação realizada com sucesso')
@@ -969,6 +1016,137 @@ export default function Importacao() {
   }, [lote])
 
   const isValeTransporte = lote?.tipo === 'vale_transporte'
+
+  useEffect(() => {
+    setCampoDataReferenciaVT(null)
+
+    setFormEnvio((prev) => ({
+      ...prev,
+      vencimento: '',
+      recebimentoBeneficio: '',
+    }))
+  }, [lote.id, lote.tipo])
+
+  const vencimentoCalculadoAutomaticamente =
+    !isValeTransporte || (isValeTransporte && campoDataReferenciaVT === 'recebimento')
+
+  const recebimentoCalculadoAutomaticamente =
+    isValeTransporte && campoDataReferenciaVT === 'vencimento'
+
+  const getDatasEnvioNormalizadas = () => {
+    const recebimento = formEnvio.recebimentoBeneficio
+    const vencimento = formEnvio.vencimento
+
+    if (isValeTransporte) {
+      if (campoDataReferenciaVT === 'vencimento' && vencimento) {
+        return {
+          recebimentoBeneficio: addDaysToDateInput(vencimento, 8),
+          vencimento,
+        }
+      }
+
+      if (recebimento) {
+        return {
+          recebimentoBeneficio: recebimento,
+          vencimento: subtractDaysFromDateInput(recebimento, 8),
+        }
+      }
+
+      if (vencimento) {
+        return {
+          recebimentoBeneficio: addDaysToDateInput(vencimento, 8),
+          vencimento,
+        }
+      }
+
+      return {
+        recebimentoBeneficio: '',
+        vencimento: '',
+      }
+    }
+
+    return {
+      recebimentoBeneficio: recebimento,
+      vencimento: recebimento ? subtractDaysFromDateInput(recebimento, 4) : '',
+    }
+  }
+
+  const sincronizarDatasEnvio = () => {
+    const datas = getDatasEnvioNormalizadas()
+
+    setFormEnvio((prev) => ({
+      ...prev,
+      recebimentoBeneficio: datas.recebimentoBeneficio,
+      vencimento: datas.vencimento,
+    }))
+
+    return datas
+  }
+
+  const handleRecebimentoBeneficioChange = (value) => {
+    if (isValeTransporte) {
+      setCampoDataReferenciaVT(value ? 'recebimento' : null)
+
+      setFormEnvio((prev) => ({
+        ...prev,
+        recebimentoBeneficio: value,
+        vencimento: value ? subtractDaysFromDateInput(value, 8) : '',
+      }))
+
+      return
+    }
+
+    setCampoDataReferenciaVT(null)
+
+    setFormEnvio((prev) => ({
+      ...prev,
+      recebimentoBeneficio: value,
+      vencimento: value ? subtractDaysFromDateInput(value, 4) : '',
+    }))
+  }
+
+  const handleVencimentoChange = (value) => {
+    if (!isValeTransporte) return
+
+    setCampoDataReferenciaVT(value ? 'vencimento' : null)
+
+    setFormEnvio((prev) => ({
+      ...prev,
+      vencimento: value,
+      recebimentoBeneficio: value ? addDaysToDateInput(value, 8) : '',
+    }))
+  }
+
+  const limparDatasBeneficio = () => {
+    setCampoDataReferenciaVT(null)
+
+    setFormEnvio((prev) => ({
+      ...prev,
+      vencimento: '',
+      recebimentoBeneficio: '',
+    }))
+  }
+
+  const validarDatasEnvio = () => {
+    const datas = sincronizarDatasEnvio()
+
+    if (isValeTransporte) {
+      if (!datas.recebimentoBeneficio || !datas.vencimento) {
+        toast.warning('Informe a data de recebimento do benefício ou o vencimento.')
+        return false
+      }
+
+      return true
+    }
+
+    if (!datas.recebimentoBeneficio) {
+      toast.warning('Informe a data de recebimento do benefício.')
+      return false
+    }
+
+    return true
+  }
+
 
   const linhasComErroBackend = useMemo(() => {
     if (!data?.linhas_com_erro || !Array.isArray(data.linhas_com_erro)) {
@@ -1194,6 +1372,8 @@ export default function Importacao() {
       recebimentoBeneficio: '',
     })
 
+    setCampoDataReferenciaVT(null)
+
     setModalOpen(false)
     setData(null)
     setDetailsOpen(false)
@@ -1220,11 +1400,24 @@ export default function Importacao() {
       competenciaMes: '',
       competenciaAno: '',
       vencimento: '',
+      recebimentoBeneficio: '',
     })
   }
 
   const abrirModalEnvio = () => {
     if (enviandoLote) return
+
+    if (!isValeTransporte) {
+      setCampoDataReferenciaVT(null)
+
+      setFormEnvio((prev) => ({
+        ...prev,
+        vencimento: prev.recebimentoBeneficio
+          ? subtractDaysFromDateInput(prev.recebimentoBeneficio, 4)
+          : '',
+      }))
+    }
+
     setModalOpen(true)
   }
 
@@ -1315,6 +1508,10 @@ export default function Importacao() {
 
     if (enviandoLote) return
 
+    if (!validarDatasEnvio()) return
+
+    const datasEnvio = getDatasEnvioNormalizadas()
+
     if (!data || (!data.data_to_backend && !isValeTransporte)) {
       console.error('Dados de envio não disponíveis')
       toast.error('Erro: dados do arquivo não disponíveis')
@@ -1351,7 +1548,8 @@ export default function Importacao() {
       periodoFim: formEnvio.periodoFim || `2026-04-30`,
       competenciaMes: formEnvio.competenciaMes || mesAtual,
       competenciaAno: formEnvio.competenciaAno || String(anoAtual),
-      vencimento: formEnvio.vencimento || `2026-04-30`,
+      vencimento: datasEnvio.vencimento || '',
+      recebimentoBeneficio: datasEnvio.recebimentoBeneficio || '',
     })
 
     setModalOpen(false)
@@ -1403,6 +1601,10 @@ export default function Importacao() {
   const confirmarEnvio = async () => {
     if (enviandoLote) return
 
+    if (!validarDatasEnvio()) return
+
+    const datasEnvio = getDatasEnvioNormalizadas()
+
     if (!lote || !lote.rows || lote.rows.length === 0) {
       toast.error('Não há dados para enviar')
       return
@@ -1416,7 +1618,7 @@ export default function Importacao() {
       if (isValeTransporte) {
         // console.log("Enviando VT para o endpoint /api/upload/vt/confirm/ ...");
 
-        const vencimentoFormatado = formEnvio.vencimento || reviewData.vencimento || '';
+        const vencimentoFormatado = datasEnvio.vencimento || reviewData.vencimento || '';
         const periodoInicio = formEnvio.periodoInicio || reviewData.periodoInicio;
         const periodoFim = formEnvio.periodoFim || reviewData.periodoFim;
         const competenciaMes = formEnvio.competenciaMes || reviewData.competenciaMes;
@@ -1449,7 +1651,7 @@ export default function Importacao() {
           competencia_mes: competenciaMes,
           competencia_ano: competenciaAno,
           vencimento: vencimentoFormatado,
-          recebimento_beneficio: formEnvio.recebimentoBeneficio || '',
+          recebimento_beneficio: datasEnvio.recebimentoBeneficio || '',
           dados_validados: dadosValidadosAtualizados,
           modelo_importacao: "VR-AUTO",
           summary: {
@@ -1475,14 +1677,14 @@ export default function Importacao() {
         const loteComAjustes = lote
         const dataToBackendSincronizado = prepararDadosParaEnvio(loteComAjustes, data.data_to_backend)
 
-        const vencimentoFormatado = formEnvio.vencimento || reviewData.vencimento || ''
+        const vencimentoFormatado = datasEnvio.vencimento || reviewData.vencimento || ''
 
         dataToBackendSincronizado.periodo_inicio = formEnvio.periodoInicio || reviewData.periodoInicio
         dataToBackendSincronizado.periodo_fim = formEnvio.periodoFim || reviewData.periodoFim
         dataToBackendSincronizado.competencia_mes = formEnvio.competenciaMes || reviewData.competenciaMes
         dataToBackendSincronizado.competencia_ano = formEnvio.competenciaAno || reviewData.competenciaAno
         dataToBackendSincronizado.vencimento = vencimentoFormatado
-        dataToBackendSincronizado.recebimento_beneficio = formEnvio.recebimentoBeneficio || ''
+        dataToBackendSincronizado.recebimento_beneficio = datasEnvio.recebimentoBeneficio || ''
         dataToBackendSincronizado.tipo_processamento = lote.tipo || 'compra'
         dataToBackendSincronizado.origem = 'importacao_faturamento'
         dataToBackendSincronizado.file_upload_id = data.file_upload_id || lote.id?.replace('IMP-', '') || 228
@@ -1913,15 +2115,16 @@ export default function Importacao() {
                 <input
                   type="date"
                   value={formEnvio.recebimentoBeneficio || ''}
-                  onChange={(e) =>
-                    setFormEnvio((prev) => ({
-                      ...prev,
-                      recebimentoBeneficio: e.target.value,
-                    }))
-                  }
-                  required
-                  disabled={enviandoLote}
+                  onChange={(e) => handleRecebimentoBeneficioChange(e.target.value)}
+                  required={!isValeTransporte || campoDataReferenciaVT !== 'vencimento'}
+                  disabled={enviandoLote || recebimentoCalculadoAutomaticamente}
                 />
+
+                {isValeTransporte && campoDataReferenciaVT === 'vencimento' && formEnvio.recebimentoBeneficio && (
+                  <small>
+                    Recebimento calculado automaticamente 8 dias após o vencimento.
+                  </small>
+                )}
               </label>
             </div>
 
@@ -1931,14 +2134,43 @@ export default function Importacao() {
                 <input
                   type="date"
                   value={formEnvio.vencimento}
-                  onChange={(e) =>
-                    setFormEnvio((prev) => ({ ...prev, vencimento: e.target.value }))
-                  }
-                  required
-                  disabled={enviandoLote}
+                  onChange={(e) => handleVencimentoChange(e.target.value)}
+                  required={isValeTransporte && campoDataReferenciaVT !== 'recebimento'}
+                  disabled={enviandoLote || vencimentoCalculadoAutomaticamente}
                 />
+
+                {!isValeTransporte && formEnvio.vencimento && (
+                  <small>
+                    Vencimento calculado automaticamente 4 dias antes do recebimento do benefício.
+                  </small>
+                )}
+
+                {isValeTransporte && campoDataReferenciaVT === 'recebimento' && formEnvio.vencimento && (
+                  <small>
+                    Vencimento calculado automaticamente 8 dias antes do recebimento.
+                  </small>
+                )}
+
+                {isValeTransporte && !campoDataReferenciaVT && (
+                  <small>
+                    Preencha recebimento ou vencimento.
+                  </small>
+                )}
+
+                {isValeTransporte && (formEnvio.recebimentoBeneficio || formEnvio.vencimento) && (
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={limparDatasBeneficio}
+                    disabled={enviandoLote}
+                    style={{ marginTop: 8, alignSelf: 'flex-start' }}
+                  >
+                    Limpar datas
+                  </button>
+                )}
               </label>
             </div>
+
 
             <div className="modal-actions">
               <button
@@ -2090,6 +2322,11 @@ export default function Importacao() {
               <div>
                 <strong>Competência:</strong>{' '}
                 {formatCompetenciaBR(reviewData.competenciaMes, reviewData.competenciaAno)}
+              </div>
+
+              <div>
+                <strong>Recebimento do benefício:</strong>{' '}
+                {formatDateBR(reviewData.recebimentoBeneficio)}
               </div>
 
               <div>
