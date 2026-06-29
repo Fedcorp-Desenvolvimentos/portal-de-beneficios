@@ -2,15 +2,25 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   FaHome,
+  FaClipboardList,
+  FaBriefcase,
+  FaTools,
   FaWallet,
   FaChartBar,
+  FaCalendarAlt,
   FaChartLine,
+  FaCog,
   FaProjectDiagram,
   FaUsers,
+  FaUserShield,
   FaBuilding,
   FaFileUpload,
   FaFileInvoiceDollar,
   FaReceipt,
+  FaUserPlus,
+  FaExchangeAlt,
+  FaDatabase,
+  FaUserCircle
 } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import * as S from "./SidebarStyles";
@@ -32,8 +42,8 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       if (!mobile) setSidebarOpen(true);
     };
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, [setSidebarOpen]);
 
   useEffect(() => {
@@ -44,11 +54,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
     if (!isMobile) return;
 
     function handleClickOutside(e) {
-      if (
-        sidebarOpen &&
-        sidebarRef.current &&
-        !sidebarRef.current.contains(e.target)
-      ) {
+      if (sidebarOpen && sidebarRef.current && !sidebarRef.current.contains(e.target)) {
         setSidebarOpen(false);
         setOverlayVisible(false);
       }
@@ -65,142 +71,141 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
     }
   };
 
+  // Função para verificar se o usuário tem acesso ao item
   const hasAccess = (allowedRoles) => {
     if (!allowedRoles || allowedRoles.length === 0) return true;
     return allowedRoles.includes(nivelAcesso);
   };
 
   const navItems = [
+    // Rotas base (liberadas)
     {
       path: "/home",
       label: "Início",
       icon: <FaHome />,
-      allowed: ["adm", "dev"],
+      allowed: ["adm", "dev"]
     },
     {
       path: "/dashboard",
       label: "Dashboard",
       icon: <FaChartBar />,
-      allowed: ["fat", "fin", "dev"],
+      allowed: ["fat", "fin", "dev"]
     },
     {
       path: "/importacao",
       label: "Upload",
       icon: <FaFileUpload />,
-      allowed: ["adm", "dev"],
+      allowed: ["adm", "dev"]
     },
     // {
     //   path: "/faturamento/individual",
     //   label: "Faturamento Individual",
     //   icon: <FaReceipt />,
-    //   allowed: ["fat", "dev", "adm"],
+    //   allowed: ["fat", "dev", "adm"]
     // },
     {
       path: "/faturamento",
       label: "Faturamento",
       icon: <FaFileInvoiceDollar />,
-      allowed: ["fat", "dev", "adm"],
+      allowed: ["fat", "dev", "adm"]
     },
     {
       path: "/gerenciamento",
       label: "Condomínios",
       icon: <FaBuilding />,
-      allowed: ["fat", "adm", "dev"],
+      allowed: ["fat", "adm", "dev"]
     },
     {
       path: "/interno/usuarios",
       label: "Usuários",
       icon: <FaUsers />,
-      allowed: ["dev", "fat"],
+      allowed: ["dev", "fat"]
     },
-    {
-      path: "/colaboradores/acompanhamento",
-      label: "Acompanhamento",
-      icon: <FaChartLine />,
-      allowed: ["adm", "dev"],
+    { 
+      path: "/colaboradores/acompanhamento", 
+      label: "Acompanhamento", 
+      icon: <FaChartLine />, 
+      allowed: ["adm", "dev"] 
     },
     // {
     //   path: "/colaboradores/acompanhamento",
     //   label: "Acompanhamento",
     //   icon: <FaChartLine />,
-    //   allowed: ["fat", "dev"],
+    //   allowed: ["fat", "dev"]
     // },
     {
       path: "/interno/administradoras",
       label: "Administradoras",
       icon: <FaBuilding />,
-      allowed: ["dev", "fat"],
+      allowed: ["dev", "fat"]
     },
     // {
     //   path: "/interno/cadastrar-administradora",
     //   label: "Criar Administradora",
     //   icon: <FaBuilding />,
-    //   allowed: ["dev"],
+    //   allowed: ["dev"]
     // },
     {
       path: "/interno/minha-administradora",
       label: "Minha Administradora",
       icon: <FaBuilding />,
-      allowed: ["adm", "dev"],
+      allowed: ["adm", "dev"]
     },
-
+    
     // {
-    //   path: "/minha-conta",
-    //   label: "Minha Conta",
+    //   path: '/minha-conta',
+    //   label: 'Minha Conta',
     //   icon: <FaUserCircle />,
-    //   allowed: ["adm", "cli", "fin", "fat", "dev"],
+    //   allowed: ['adm', 'cli', 'fin', 'fat', 'dev']
+    // }
+    // { 
+    //   path: "/movimentacoes", 
+    //   label: "Movimentações", 
+    //   icon: <FaExchangeAlt />, 
+    //   allowed: ["adm", "fat", "dev"] 
     // },
-    // {
-    //   path: "/movimentacoes",
-    //   label: "Movimentações",
-    //   icon: <FaExchangeAlt />,
-    //   allowed: ["adm", "fat", "dev"],
-    // },
-    // {
-    //   path: "/beneficios",
-    //   label: "Benefícios",
-    //   icon: <FaWallet />,
-    //   allowed: ["adm", "cli", "fin", "fat", "dev"],
+    // { 
+    //   path: "/beneficios", 
+    //   label: "Benefícios", 
+    //   icon: <FaWallet />, 
+    //   allowed: ["adm", "cli", "fin", "fat", "dev"] 
     // },
   ];
 
-  const filteredNavItems = navItems.filter((item) => hasAccess(item.allowed));
+  // Filtra os itens baseado no nível de acesso do usuário
+  const filteredNavItems = navItems.filter(item => hasAccess(item.allowed));
 
-  /*
   const dashboardBoletosItems = [
     {
       path: "/boletos-vr",
       label: "Dashboard Boletos",
       icon: <FaChartBar />,
-      exact: true,
+      exact: true
     },
     {
       path: "/boletos-vr/kanban",
       label: "Kanban VR",
-      icon: <FaProjectDiagram />,
+      icon: <FaProjectDiagram />
     },
     {
       path: "/boletos-vr/faturas",
       label: "Faturas VR",
-      icon: <FaReceipt />,
+      icon: <FaReceipt />
     },
     {
       path: "/boletos-vr/analises",
       label: "Análises VR",
-      icon: <FaChartLine />,
-    },
+      icon: <FaChartLine />
+    }
   ];
-  */
 
   return (
     <>
       {isMobile && overlayVisible && (
-        <S.Overlay
-          onClick={() => {
-            setSidebarOpen(false);
-            setOverlayVisible(false);
-          }}
-        />
+        <S.Overlay onClick={() => {
+          setSidebarOpen(false);
+          setOverlayVisible(false);
+        }} />
       )}
 
       <S.SidebarContainer
@@ -235,10 +240,8 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
         <S.Nav>
           <ul>
             {filteredNavItems.map((item) => {
-              const isActive =
-                location.pathname === item.path ||
-                (item.path !== "/faturamento" &&
-                  location.pathname.startsWith(item.path + "/"));
+              const isActive = location.pathname === item.path ||
+                (item.path !== "/faturamento" && location.pathname.startsWith(item.path + "/"));
 
               return (
                 <li key={item.path} className={isActive ? "active" : ""}>
@@ -251,11 +254,10 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
                     data-tooltip={item.label}
                     onClick={handleLinkClick}
                   >
-                    <S.IconTooltip
-                      $isClosed={!sidebarOpen}
-                      $isOpen={sidebarOpen}
-                    >
-                      <S.IconWrapper>{item.icon}</S.IconWrapper>
+                    <S.IconTooltip $isClosed={!sidebarOpen} $isOpen={sidebarOpen}>
+                      <S.IconWrapper>
+                        {item.icon}
+                      </S.IconWrapper>
                       <S.LinkText>{item.label}</S.LinkText>
                     </S.IconTooltip>
                   </S.NavLink>
@@ -264,49 +266,51 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
             })}
           </ul>
 
-          {/*
           {hasAccess(["fat", "fin", "dev"]) && (
             <S.NavSection>
-              <S.SectionLabel $isClosed={!sidebarOpen}>
-                Boletos VR
-              </S.SectionLabel>
+              <S.SectionLabel $isClosed={!sidebarOpen}>Boletos VR</S.SectionLabel>
 
               <ul>
-                {dashboardBoletosItems.map((item) => {
-                  const isActive = item.exact
-                    ? location.pathname === item.path
-                    : location.pathname === item.path ||
-                      location.pathname.startsWith(item.path + "/");
-
-                  return (
-                    <li
-                      key={item.path}
-                      className={isActive ? "active" : ""}
+                {dashboardBoletosItems.map((item) => (
+                  <li
+                    key={item.path}
+                    className={
+                      item.exact
+                        ? (location.pathname === item.path ? "active" : "")
+                        : (
+                            location.pathname === item.path ||
+                            location.pathname.startsWith(item.path + "/")
+                              ? "active"
+                              : ""
+                          )
+                    }
+                  >
+                    <S.NavLink
+                      as={Link}
+                      to={item.path}
+                      $isActive={
+                        item.exact
+                          ? location.pathname === item.path
+                          : location.pathname === item.path ||
+                            location.pathname.startsWith(item.path + "/")
+                      }
+                      $isClosed={!sidebarOpen}
+                      $isOpen={sidebarOpen}
+                      data-tooltip={item.label}
+                      onClick={handleLinkClick}
                     >
-                      <S.NavLink
-                        as={Link}
-                        to={item.path}
-                        $isActive={isActive}
-                        $isClosed={!sidebarOpen}
-                        $isOpen={sidebarOpen}
-                        data-tooltip={item.label}
-                        onClick={handleLinkClick}
-                      >
-                        <S.IconTooltip
-                          $isClosed={!sidebarOpen}
-                          $isOpen={sidebarOpen}
-                        >
-                          <S.IconWrapper>{item.icon}</S.IconWrapper>
-                          <S.LinkText>{item.label}</S.LinkText>
-                        </S.IconTooltip>
-                      </S.NavLink>
-                    </li>
-                  );
-                })}
+                      <S.IconTooltip $isClosed={!sidebarOpen} $isOpen={sidebarOpen}>
+                        <S.IconWrapper>
+                          {item.icon}
+                        </S.IconWrapper>
+                        <S.LinkText>{item.label}</S.LinkText>
+                      </S.IconTooltip>
+                    </S.NavLink>
+                  </li>
+                ))}
               </ul>
             </S.NavSection>
           )}
-          */}
         </S.Nav>
       </S.SidebarContainer>
     </>
