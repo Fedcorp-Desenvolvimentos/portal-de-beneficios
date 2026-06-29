@@ -175,6 +175,31 @@ export const Nav = styled.nav`
   }
 `;
 
+export const NavSection = styled.div`
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #e8edf5;
+`;
+
+export const SectionLabel = styled.span`
+  display: block;
+  padding: 0 0.75rem 0.5rem;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+
+  ${props => props.$isClosed && css`
+    opacity: 0;
+    height: 0;
+    padding: 0;
+    overflow: hidden;
+  `}
+`;
+
 export const NavLink = styled.a`
   display: flex;
   align-items: center;

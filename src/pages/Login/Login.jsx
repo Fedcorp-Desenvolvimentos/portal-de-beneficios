@@ -1,153 +1,207 @@
-// src/pages/Login/Login.jsx
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import * as S from './LoginStyles';
-import { GoogleLogin } from '@react-oauth/google';
-import { useGlobal } from '../../context/GlobalContext';
+import { useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  FaArrowRight,
+  FaColumns,
+  FaEnvelope,
+  FaEye,
+  FaEyeSlash,
+  FaFileUpload,
+  FaLock,
+  FaShieldAlt,
+} from 'react-icons/fa';
+
 import { useAuth } from '../../context/AuthContext';
+import { useGlobal } from '../../context/GlobalContext';
+import * as S from './LoginStyles';
 
 const Login = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(false);
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
-    const { loading, setLoading } = useGlobal();
-    const { user, login, loginGoogle } = useAuth();
-    const navigate = useNavigate();
+  const { loading } = useGlobal();
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-        setError(null);
-        
-        try {
-            const result = await login({ email, password });
+  const canSubmit = useMemo(
+    () => email.trim().length >= 3 && password.trim().length >= 6,
+    [email, password]
+  );
 
-            // console.log("result em login: ", result)
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError('');
 
-            // console.log("Tipo do usuário:", result.user?.tipo);
+    if (!canSubmit || loading) return;
 
-            if (result.success && result.user?.tipo === "fat") {
-                navigate('/dashboard');
-            } else if (result.success && result.user?.tipo === "adm") {
-                navigate('/home');
-            } else {
-                setError(result.error || 'Falha no login. Verifique suas credenciais.');
-            }
-        } catch (err) {
-            setError('Ocorreu um erro inesperado durante o login.');
-            console.error('Erro de login no componente:', err);
-        }
-    };
+    try {
+      const result = await login({
+        email: email.trim(),
+        password,
+      });
 
-    const handleGoogleSuccess = async (credentialResponse) => {
-        setError(null);
-        
-        try {
-            // console.log('Google credential received');
-            
-            const result = await loginGoogle(credentialResponse.credential);
+      if (!result.success) {
+        setError(result.error || 'Falha ao autenticar.');
+        return;
+      }
 
-            if (result.success) {
-                navigate('/home');
-            } else {
-                setError(result.error || 'Falha no login com Google');
-            }
-        } catch (err) {
-            console.error('Google login error:', err);
-            setError('Erro ao autenticar com Google. Tente novamente.');
-        }
-    };
+      navigate(result.user?.tipo === 'fat' ? '/dashboard' : '/home', {
+        replace: true,
+      });
+    } catch (err) {
+      console.error('Erro de login no componente:', err);
+      setError('Ocorreu um erro inesperado durante o login.');
+    }
+  };
 
-    const handleGoogleError = () => {
-        console.error('Google login failed');
-        setError('Erro no login com Google. Tente novamente ou use email/senha.');
-    };
+  return (
+    <S.Page>
+      <S.BrandSide aria-hidden="true">
+        <S.BrandInner>
+          <S.BrandLogoWrap>
+            <S.BrandLogo src="/assets/logo-negativo.png" alt="Logo FedCorp" />
+          </S.BrandLogoWrap>
 
-    return (
-        <>
-            <S.GradientBg />
-            
-            <S.LoginWrapper>
-                <S.LoginContainer>
-                    <S.LoginBox>
-                        <S.LogoImg 
-                            src="/imagens/LOGO.png"
-                            alt="Fedcorp Logo"
-                        />
-                        
-                        <S.Title>Portal de Benefícios</S.Title>
-                        <S.Subtitle>Insira seus dados para acessar a plataforma</S.Subtitle>
+          <S.BrandCopy>
+            <h1>
+              Plataforma
+              <br />
+              VR Benefícios
+            </h1>
+            <p>
+              Gerencie faturas, pagamentos e status dos condomínios em um único
+              lugar.
+            </p>
+          </S.BrandCopy>
 
-                        <S.Form onSubmit={handleSubmit}>
-                            <S.InputGroup>
-                                <S.Label htmlFor="email">E-mail:</S.Label>
-                                <S.Input
-                                    type="email"
-                                    id="email"
-                                    placeholder="Digite seu e-mail"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
-                                    disabled={loading}
-                                />
-                            </S.InputGroup>
+          <S.Features>
+            <S.FeatureItem>
+              <S.FeatureIcon>
+                <FaShieldAlt />
+              </S.FeatureIcon>
+              <div>
+                <strong>Acesso seguro por perfil</strong>
+                <span>Equipe e financeiro com permissões separadas</span>
+              </div>
+            </S.FeatureItem>
 
-                            <S.InputGroup>
-                                <S.Label htmlFor="password">Senha:</S.Label>
-                                <S.PasswordWrapper>
-                                    <S.Input
-                                        type={showPassword ? "text" : "password"}
-                                        id="password"
-                                        placeholder="Digite sua senha"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        required
-                                        disabled={loading}
-                                    />
-                                    <S.TogglePasswordButton
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                    >
-                                        {showPassword ? <FaEyeSlash /> : <FaEye />}
-                                    </S.TogglePasswordButton>
-                                </S.PasswordWrapper>
-                            </S.InputGroup>
+            <S.FeatureItem>
+              <S.FeatureIcon>
+                <FaFileUpload />
+              </S.FeatureIcon>
+              <div>
+                <strong>Import & revisão de faturas</strong>
+                <span>Extração automática via PDF, revise antes de gravar</span>
+              </div>
+            </S.FeatureItem>
 
-                            {error && (
-                                <S.ErrorMessage>
-                                    {error}
-                                </S.ErrorMessage>
-                            )}
+            <S.FeatureItem>
+              <S.FeatureIcon>
+                <FaColumns />
+              </S.FeatureIcon>
+              <div>
+                <strong>Kanban visual</strong>
+                <span>Acompanhe cada fatura do faturamento ao pagamento</span>
+              </div>
+            </S.FeatureItem>
+          </S.Features>
+        </S.BrandInner>
+      </S.BrandSide>
 
-                            <S.LoginButton type="submit" disabled={loading}>
-                                {loading ? 'Entrando...' : 'Entrar'}
-                            </S.LoginButton>
+      <S.FormSide>
+        <S.FormInner>
+          <S.FormHeader>
+            <h2>Bem-vindo de volta</h2>
+            <p>Acesse sua conta para continuar</p>
+          </S.FormHeader>
 
-                            {/* <S.Divider>
-                                <span>ou</span>
-                            </S.Divider>
+          <S.Form onSubmit={handleSubmit} noValidate autoComplete="off">
+            <S.Field>
+              <S.Label htmlFor="email">E-mail</S.Label>
+              <S.InputWrap>
+                <S.InputIcon>
+                  <FaEnvelope />
+                </S.InputIcon>
+                <S.Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="username"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  disabled={loading}
+                  required
+                />
+              </S.InputWrap>
+            </S.Field>
 
-                            <GoogleLogin
-                                onSuccess={handleGoogleSuccess}
-                                onError={handleGoogleError}
-                                useOneTap={false}
-                                theme="outline"
-                                size="large"
-                                text="continue_with"
-                                shape="rectangular"
-                            /> */}
+            <S.Field>
+              <S.Label htmlFor="password">Senha</S.Label>
+              <S.InputWrap>
+                <S.InputIcon>
+                  <FaLock />
+                </S.InputIcon>
+                <S.Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  disabled={loading}
+                  required
+                />
+                <S.PeekButton
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  disabled={loading}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </S.PeekButton>
+              </S.InputWrap>
+            </S.Field>
 
-                            <S.ForgotPassword href="/recuperar-senha">
-                                Esqueceu sua senha?
-                            </S.ForgotPassword>
-                        </S.Form>
-                    </S.LoginBox>
-                </S.LoginContainer>
-            </S.LoginWrapper>
-        </>
-    );
+            <S.Row>
+              <S.Checkbox>
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(event) => setRemember(event.target.checked)}
+                  disabled={loading}
+                />
+                <span>Manter conectado</span>
+              </S.Checkbox>
+
+              <S.MutedLink as={Link} to="/esqueci-senha">
+                Esqueci minha senha
+              </S.MutedLink>
+            </S.Row>
+
+            <S.SubmitButton type="submit" disabled={loading || !canSubmit}>
+              <span>{loading ? 'Entrando...' : 'Entrar'}</span>
+              {!loading && <FaArrowRight />}
+            </S.SubmitButton>
+
+            <S.Feedback $visible={Boolean(error)}>{error}</S.Feedback>
+          </S.Form>
+
+          <S.FormFooter>
+            <small>
+              Ao continuar, você concorda com os termos internos de uso da
+              plataforma FedCorp.
+            </small>
+          </S.FormFooter>
+        </S.FormInner>
+      </S.FormSide>
+    </S.Page>
+  );
 };
 
 export default Login;
