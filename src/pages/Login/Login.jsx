@@ -69,7 +69,7 @@ const Login = () => {
             <h1>
               Plataforma
               <br />
-              VR Benefícios
+              FedHub Benefícios
             </h1>
             <p>
               Gerencie faturas, pagamentos e status dos condomínios em um único
@@ -84,7 +84,7 @@ const Login = () => {
               </S.FeatureIcon>
               <div>
                 <strong>Acesso seguro por perfil</strong>
-                <span>Equipe e financeiro com permissões separadas</span>
+                <span>Segurança e informações dos dados.</span>
               </div>
             </S.FeatureItem>
 
@@ -94,7 +94,7 @@ const Login = () => {
               </S.FeatureIcon>
               <div>
                 <strong>Import & revisão de faturas</strong>
-                <span>Extração automática via PDF, revise antes de gravar</span>
+                <span>Extração automática via PDF, revise o faturamento.</span>
               </div>
             </S.FeatureItem>
 
@@ -103,8 +103,8 @@ const Login = () => {
                 <FaColumns />
               </S.FeatureIcon>
               <div>
-                <strong>Kanban visual</strong>
-                <span>Acompanhe cada fatura do faturamento ao pagamento</span>
+                <strong>Acompanhamento visual</strong>
+                <span>Acompanhe cada status, do faturamento ao pagamento</span>
               </div>
             </S.FeatureItem>
           </S.Features>
