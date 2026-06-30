@@ -219,11 +219,11 @@ export default function FileUpload({ onUpload }) {
   }
 
   const validarArquivo = (file) => {
-    if (!/\.(csv|txt|xlsx|xls)$/i.test(file.name)) {
+    if (!/\.(csv|txt|xlsx|xls|xlsm)$/i.test(file.name)) {
       setStatus('erro');
-      setMessage('Formato inválido. Selecione um arquivo .txt, .csv ou .xlsx');
+      setMessage('Formato inválido. Selecione um arquivo .txt, .csv, .xlsx ou .xlsm');
       setFileName('');
-      enqueueSnackbar('Formato inválido. Selecione um arquivo .txt, .csv ou .xlsx', { variant: 'error' });
+      enqueueSnackbar('Formato inválido. Selecione um arquivo .txt, .csv, .xlsx ou .xlsm', { variant: 'error' });
       return false;
     }
     return true;
@@ -272,7 +272,7 @@ export default function FileUpload({ onUpload }) {
             </S.UploadIconWrapper>
             <div>
               <S.UploadTitle>Upload de Arquivo</S.UploadTitle>
-              <S.UploadSubtitle>Importe arquivos .txt, .csv ou .xlsx</S.UploadSubtitle>
+              <S.UploadSubtitle>Importe arquivos .txt, .csv, .xlsx ou .xlsm</S.UploadSubtitle>
               <S.UploadHint>
                 <small>O sistema detecta automaticamente se é Vale Transporte ou Benefícios</small>
               </S.UploadHint>
@@ -292,7 +292,7 @@ export default function FileUpload({ onUpload }) {
           <input
             ref={inputRef}
             type="file"
-            accept=".txt,.csv,.xlsx,.xls"
+            accept=".txt,.csv,.xlsx,.xls,.xlsm"
             onChange={handleChange}
             hidden
           />
@@ -300,7 +300,7 @@ export default function FileUpload({ onUpload }) {
             <FiUpload size={48} />
           </S.UploadIconLarge>
           <S.UploadText>Clique para selecionar ou arraste o arquivo aqui</S.UploadText>
-          <S.UploadFormats>Formatos aceitos: .txt, .csv, .xlsx</S.UploadFormats>
+          <S.UploadFormats>Formatos aceitos: .txt, .csv, .xlsx, .xlsm</S.UploadFormats>
         </S.UploadArea>
 
         {status && (
