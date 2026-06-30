@@ -545,7 +545,7 @@ export const S = {
     }
   `,
 
-  ModalOverlay: styled.div`
+   ModalOverlay: styled.div`
     position: fixed;
     inset: 0;
     background: rgba(15, 23, 42, 0.45);
@@ -553,68 +553,144 @@ export const S = {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 16px;
     z-index: 1050;
+    overflow: hidden;
+
+    @media (max-width: 1440px), (max-height: 860px) {
+      padding: 10px;
+      align-items: center;
+    }
+
+    @media (max-width: 720px) {
+      padding: 8px;
+      align-items: flex-start;
+      overflow-y: auto;
+    }
   `,
 
   Modal: styled.div`
-    width: min(920px, 100%);
-    max-height: 90vh;
-    overflow: auto;
+    width: min(860px, calc(100vw - 32px));
+    height: auto;
+    max-height: min(760px, calc(100dvh - 32px));
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border-light);
-    border-radius: 22px;
+    border-radius: 20px;
     box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18);
+
+    @media (max-width: 1440px), (max-height: 860px) {
+      width: min(820px, calc(100vw - 24px));
+      max-height: calc(100dvh - 90px);
+      border-radius: 16px;
+    }
+
+    @media (max-width: 1280px), (max-height: 780px) {
+      width: min(760px, calc(100vw - 20px));
+      max-height: calc(100dvh - 70px);
+      border-radius: 14px;
+    }
+
+    @media (max-width: 720px) {
+      width: calc(100vw - 16px);
+      max-height: calc(100dvh - 16px);
+      border-radius: 14px;
+    }
   `,
 
   ModalHeader: styled.div`
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 16px;
-    padding: 24px 24px 16px;
+    gap: 14px;
+    padding: 20px 22px 14px;
     border-bottom: 1px solid var(--color-border-light);
+    flex-shrink: 0;
+
+    @media (max-width: 1440px), (max-height: 860px) {
+      padding: 14px 18px 10px;
+      gap: 10px;
+    }
+
+    @media (max-width: 720px) {
+      padding: 14px 14px 10px;
+    }
   `,
 
   ModalTitle: styled.h2`
     margin: 0;
-    font-size: 26px;
-    line-height: 1.1;
+    font-size: 24px;
+    line-height: 1.05;
     letter-spacing: -0.03em;
 
+    @media (max-width: 1440px), (max-height: 860px) {
+      font-size: 21px;
+    }
+
     @media (max-width: 720px) {
-      font-size: 22px;
+      font-size: 19px;
     }
   `,
 
   ModalClose: styled.button`
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     border-radius: 10px;
     border: 1px solid var(--color-border-light);
     background: var(--color-bg-tertiary);
     color: var(--color-text-primary);
-    font-size: 24px;
+    font-size: 22px;
     line-height: 1;
     cursor: pointer;
+    flex-shrink: 0;
 
     &:hover {
       border-color: var(--color-border);
     }
+
+    @media (max-width: 1440px), (max-height: 860px) {
+      width: 32px;
+      height: 32px;
+      font-size: 20px;
+      border-radius: 9px;
+    }
   `,
 
   ModalBody: styled.div`
-    padding: 20px 24px 24px;
+    padding: 16px 22px 0;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+
+    @media (max-width: 1440px), (max-height: 860px) {
+      padding: 12px 18px 0;
+    }
+
+    @media (max-width: 720px) {
+      padding: 12px 14px 0;
+    }
   `,
 
   ModalStatusRow: styled.div`
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+
+    @media (max-width: 1440px), (max-height: 860px) {
+      margin-bottom: 8px;
+    }
   `,
 
   ModalGrid: styled.div`
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding-bottom: 12px;
+
+    @media (max-width: 1440px), (max-height: 860px) {
+      gap: 9px;
+      padding-bottom: 10px;
+    }
 
     @media (max-width: 720px) {
       grid-template-columns: 1fr;
@@ -624,26 +700,97 @@ export const S = {
   ModalInfo: styled.div`
     background: var(--color-bg-tertiary);
     border: 1px solid var(--color-border-light);
-    border-radius: 14px;
-    padding: 14px;
+    border-radius: 13px;
+    padding: 12px 14px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
+    min-width: 0;
 
     &.full {
       grid-column: 1 / -1;
     }
 
+    span,
+    small,
+    label {
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    strong {
+      font-size: 15px;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+
     strong.money {
       color: var(--color-success);
+    }
+
+    @media (max-width: 1440px), (max-height: 860px) {
+      padding: 10px 12px;
+      border-radius: 11px;
+      gap: 4px;
+
+      strong {
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 1280px), (max-height: 780px) {
+      padding: 8px 10px;
+
+      span,
+      small,
+      label {
+        font-size: 10px;
+      }
+
+      strong {
+        font-size: 13px;
+      }
     }
   `,
 
   ModalActions: styled.div`
-    margin-top: 20px;
+    position: sticky;
+    bottom: 0;
+    margin-top: 0;
+    padding: 12px 22px 16px;
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
+    gap: 10px;
     flex-wrap: wrap;
+    flex-shrink: 0;
+    background: var(--color-bg-primary);
+    border-top: 1px solid var(--color-border-light);
+    box-shadow: 0 -8px 20px rgba(15, 23, 42, 0.06);
+
+    button {
+      min-height: 38px;
+      padding-top: 9px;
+      padding-bottom: 9px;
+    }
+
+    @media (max-width: 1440px), (max-height: 860px) {
+      padding: 10px 18px 12px;
+
+      button {
+        min-height: 34px;
+        padding-top: 7px;
+        padding-bottom: 7px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      padding: 10px 14px 12px;
+      flex-direction: column;
+
+      button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
   `,
 };
