@@ -151,6 +151,474 @@
   background: #e5e7eb;
 }
 
+/* ================================
+   PREVIEW
+================================ */
+
+.fat-preview-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.fat-preview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.fat-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.fat-preview-grid span {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.fat-preview-grid strong {
+  font-size: 18px;
+}
+
+.fat-preview-toggle {
+  border: 1px solid #dbe3f0;
+  background: #fff;
+  color: #2563eb;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.fat-preview-toggle:hover {
+  background: #f8fafc;
+}
+
+.fat-preview-table-wrap {
+  margin-top: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: auto;
+  background: #fff;
+}
+
+.fat-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.fat-preview-table th,
+.fat-preview-table td {
+  padding: 13px 14px;
+  border-bottom: 1px solid #eef2f7;
+  text-align: left;
+  font-size: 13px;
+  color: #0f172a;
+  vertical-align: middle;
+}
+
+.fat-preview-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.fat-preview-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.fat-preview-table th:last-child,
+.fat-preview-table td:last-child {
+  width: 92px;
+  min-width: 92px;
+}
+
+.fat-status-ok {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.fat-preview-empty {
+  text-align: center;
+  padding: 22px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* ================================
+   AÇÕES DA TABELA
+================================ */
+
+.fat-preview-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.fat-preview-actions .fat-preview-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  justify-content: center;
+  font-size: 0;
+}
+
+.fat-preview-actions .fat-preview-btn svg {
+  flex-shrink: 0;
+}
+
+/* ================================
+   BOTÕES
+================================ */
+
+.fat-preview-btn {
+  border: 1px solid #dbe3f0;
+  background: #fff;
+  color: #0f172a;
+  border-radius: 9px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.fat-preview-btn:hover {
+  background: #f8fafc;
+}
+
+.fat-preview-btn.danger {
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.fat-preview-btn.danger:hover {
+  background: #fef2f2;
+}
+
+.fat-preview-btn.ghost {
+  background: #f8fafc;
+  color: #475569;
+}
+
+.fat-preview-btn.success {
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+.fat-preview-btn.success:hover {
+  background: #f0fdf4;
+}
+
+.fat-preview-btn.edit-inline {
+  height: 30px;
+  padding: 0 9px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.fat-preview-btn.edit-inline span {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ================================
+   MODAIS
+================================ */
+
+.fat-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 9999;
+}
+
+.fat-modal-card {
+  width: min(620px, 100%);
+  max-height: 86vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.24);
+}
+
+.fat-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.fat-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.fat-modal-body {
+  padding: 20px;
+}
+
+.fat-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* ================================
+   MODAL DE BENEFÍCIOS
+================================ */
+
+.fat-benefits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fat-benefit-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* IMPORTANTE:
+   Não usar ".fat-benefit-card div" genérico,
+   porque isso quebra o input e os botões de edição.
+*/
+
+.fat-benefit-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fat-benefit-info strong,
+.fat-benefit-card > div:first-child strong {
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.fat-benefit-info span,
+.fat-benefit-card > div:first-child span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.fat-benefit-card span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.fat-benefit-value-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fat-benefit-value-actions.inline {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-direction: row;
+  white-space: nowrap;
+}
+
+.fat-benefit-value-actions.inline strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+/* ================================
+   EDIÇÃO DO VALOR NO MODAL
+================================ */
+
+.fat-benefit-edit-inline {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  flex-direction: row !important;
+  gap: 8px;
+  flex-wrap: nowrap !important;
+  white-space: nowrap;
+}
+
+.fat-benefit-edit-inline .fat-money-prefix {
+  font-size: 13px;
+  font-weight: 800;
+  color: #334155;
+  line-height: 1;
+}
+
+.fat-benefit-edit-inline input {
+  width: 96px;
+  height: 34px;
+  border: 1px solid #dbe3f0;
+  border-radius: 9px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  outline: none;
+  text-align: right;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.fat-benefit-edit-inline input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.fat-icon-action {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: 1px solid #dbe3f0;
+  background: #fff;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.fat-icon-action.success {
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+.fat-icon-action.success:hover {
+  background: #f0fdf4;
+}
+
+.fat-icon-action.ghost {
+  border-color: #dbe3f0;
+  color: #64748b;
+}
+
+.fat-icon-action.ghost:hover {
+  background: #f8fafc;
+}
+
+/* Compatibilidade caso ainda exista classe antiga no JSX */
+.fat-benefit-edit {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  flex-direction: row !important;
+  gap: 8px;
+  flex-wrap: nowrap !important;
+  white-space: nowrap;
+}
+
+.fat-benefit-edit span {
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.fat-benefit-edit input {
+  width: 96px;
+  height: 34px;
+  border: 1px solid #dbe3f0;
+  border-radius: 9px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  outline: none;
+  text-align: right;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.fat-benefit-edit input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* ================================
+   CONFIRMAÇÃO
+================================ */
+
+.fat-confirm-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fat-confirm-content p {
+  margin: 0;
+  color: #0f172a;
+}
+
+.fat-confirm-content small {
+  color: #64748b;
+}
+
+/* ================================
+   RESPONSIVO
+================================ */
+
+@media (max-width: 900px) {
+  .fat-preview-header {
+    flex-direction: column;
+  }
+
+  .fat-preview-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .fat-modal-actions {
+    flex-direction: column;
+  }
+
+  .fat-modal-actions button {
+    justify-content: center;
+  }
+}
+
 @media (max-width: 768px) {
   .fat-form-page {
     padding: 16px;
@@ -177,29 +645,37 @@
   .btn {
     width: 100%;
   }
+
+  .fat-preview-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.fat-preview-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
+@media (max-width: 700px) {
+  .fat-benefit-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .fat-benefit-value-actions.inline,
+  .fat-benefit-edit-inline,
+  .fat-benefit-edit {
+    width: 100%;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+  }
 }
 
-.fat-preview-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-top: 10px;
-}
+@media (max-width: 520px) {
+  .fat-preview-grid {
+    grid-template-columns: 1fr;
+  }
 
-.fat-preview-grid span {
-  display: block;
-  font-size: 12px;
-  color: #64748b;
-}
+  .fat-modal-overlay {
+    padding: 14px;
+  }
 
-.fat-preview-grid strong {
-  font-size: 18px;
+  .fat-modal-card {
+    border-radius: 14px;
+  }
 }

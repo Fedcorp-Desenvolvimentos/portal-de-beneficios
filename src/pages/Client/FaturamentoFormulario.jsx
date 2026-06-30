@@ -1,5 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import {
+  Eye,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  PencilLine,
+  Check,
+  X as XIcon,
+} from 'lucide-react'
 
 import { entebenService } from '../../services/entebenService'
 
@@ -55,10 +64,21 @@ const parseMaybeJson = (value) => {
   }
 }
 
+const normalizeText = (value) =>
+  String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase()
+
+const onlyDigits = (value) => String(value || '').replace(/\D/g, '')
+
 const getDadosRequisicao = (data) =>
   parseMaybeJson(data?.dados_requisicao) ||
   parseMaybeJson(data?.raw?.ultima?.dados_requisicao) ||
   parseMaybeJson(data?.raw?.metaUltima?.dados_requisicao) ||
+  parseMaybeJson(data?.data_to_backend) ||
   {}
 
 const getCondominios = (data) => {
@@ -66,6 +86,10 @@ const getCondominios = (data) => {
 
   if (Array.isArray(data?.condominios) && data.condominios.length) {
     return data.condominios
+  }
+
+  if (Array.isArray(data?.data_to_backend?.condominios) && data.data_to_backend.condominios.length) {
+    return data.data_to_backend.condominios
   }
 
   if (Array.isArray(dadosReq?.condominios) && dadosReq.condominios.length) {
@@ -86,6 +110,46 @@ const getCondominios = (data) => {
   return []
 }
 
+const getMovimentacoesDiretas = (data) => {
+  const dadosReq = getDadosRequisicao(data)
+
+  const possibilidades = [
+    data?.movimentacoes_detalhada,
+    data?.movimentacoes,
+    data?.preview,
+    data?.total_por_beneficiario,
+
+    data?.summary?.total_por_beneficiario,
+    data?.summary?.movimentacoes_detalhada,
+
+    data?.data_to_backend?.movimentacoes_detalhada,
+    data?.data_to_backend?.movimentacoes,
+    data?.data_to_backend?.summary?.total_por_beneficiario,
+
+    dadosReq?.movimentacoes_detalhada,
+    dadosReq?.movimentacoes,
+    dadosReq?.summary?.total_por_beneficiario,
+
+    data?.raw?.state?.movimentacoes_detalhada,
+    data?.raw?.state?.data_to_backend?.movimentacoes_detalhada,
+    data?.raw?.state?.summary?.total_por_beneficiario,
+
+    data?.raw?.ultima?.movimentacoes_detalhada,
+    data?.raw?.ultima?.data_to_backend?.movimentacoes_detalhada,
+    data?.raw?.ultima?.summary?.total_por_beneficiario,
+
+    data?.raw?.metaUltima?.movimentacoes_detalhada,
+    data?.raw?.metaUltima?.data_to_backend?.movimentacoes_detalhada,
+    data?.raw?.metaUltima?.summary?.total_por_beneficiario,
+  ]
+
+  for (const item of possibilidades) {
+    if (Array.isArray(item) && item.length) return item
+  }
+
+  return []
+}
+
 const getFuncionarios = (data) =>
   getCondominios(data).flatMap((condo) => {
     if (Array.isArray(condo?.funcionarios)) return condo.funcionarios
@@ -93,12 +157,114 @@ const getFuncionarios = (data) =>
     return []
   })
 
-const getMovimentacoes = (data) =>
-  getFuncionarios(data).flatMap((func) => {
+const getMovimentacoes = (data) => {
+  const diretas = getMovimentacoesDiretas(data)
+
+  if (diretas.length) return diretas
+
+  return getFuncionarios(data).flatMap((func) => {
     if (Array.isArray(func?.movimentacoes)) return func.movimentacoes
     if (Array.isArray(func?.beneficios)) return func.beneficios
     return []
   })
+}
+
+const getNomeColaborador = (row) =>
+  row?.nome_funcionario ||
+  row?.nome_func ||
+  row?.colaborador ||
+  row?.nome_colaborador ||
+  row?.nome ||
+  row?.funcionario ||
+  row?.nome_funcionário ||
+  ''
+
+const getCondominioRow = (row) =>
+  row?.condominio ||
+  row?.nome_condominio ||
+  row?.condominio_nome ||
+  row?.NomeCondominio ||
+  row?.razao_social ||
+  row?.nome_cond ||
+  ''
+
+const getCpf = (row) =>
+  String(
+    row?.cpf ||
+    row?.cpf_func ||
+    row?.cpf_funcionario ||
+    row?.CPF ||
+    row?.documento ||
+    ''
+  ).trim()
+
+const getNomeProduto = (item) =>
+  item?.nome_produto ||
+  item?.produto_nome ||
+  item?.produto ||
+  item?.nome_beneficio ||
+  item?.beneficio_nome ||
+  item?.beneficio ||
+  item?.descricao_produto ||
+  item?.descricao ||
+  item?.tipo ||
+  'Benefício'
+
+const getCodigoProduto = (item) =>
+  String(
+    item?.codigo_produto ||
+    item?.produto_codigo ||
+    item?.cod_produto ||
+    item?.codigo ||
+    ''
+  ).trim()
+
+const getValorRow = (row) => {
+  const candidates = [
+    row?.valor_total,
+    row?.valor_recarga_bene,
+    row?.valor_beneficio,
+    row?.valor_beneficio_total,
+    row?.valor,
+    row?.total,
+    row?.amount,
+    row?.preco,
+  ]
+
+  for (const candidate of candidates) {
+    if (candidate === null || candidate === undefined || candidate === '') continue
+
+    const parsed =
+      typeof candidate === 'string'
+        ? Number(candidate.replace(/\./g, '').replace(',', '.'))
+        : Number(candidate)
+
+    if (!Number.isNaN(parsed)) return parsed
+  }
+
+  return 0
+}
+
+const getValorProduto = (item) =>
+  Number(
+    item?.valor_recarga_bene ||
+    item?.valor_total ||
+    item?.valor_beneficio ||
+    item?.valor_beneficio_total ||
+    item?.valor ||
+    item?.total ||
+    0
+  )
+
+const getRowKey = (row) => {
+  const condominio = getCondominioRow(row)
+  const nome = getNomeColaborador(row)
+  const cpf = getCpf(row)
+
+  if (cpf) return `${condominio}::${nome}::${cpf}`
+
+  return `${condominio}::${nome}`
+}
 
 const getValorTotal = (data) => {
   const dadosReq = getDadosRequisicao(data)
@@ -108,40 +274,44 @@ const getValorTotal = (data) => {
       sum +
       Number(
         mov?.valor ||
-          mov?.valor_total ||
-          mov?.valor_beneficio ||
-          mov?.total ||
-          0
+        mov?.valor_total ||
+        mov?.valor_beneficio ||
+        mov?.valor_beneficio_total ||
+        mov?.valor_recarga_bene ||
+        mov?.total ||
+        0
       ),
     0
   )
 
   return Number(
     totalMovimentacoes ||
-      data?.resumo_anterior?.valorTotal ||
-      data?.resumo_anterior?.valor_total ||
-      data?.valor_total ||
-      data?.total ||
-      data?.valor_total_beneficios ||
-      data?.summary?.valor_total_beneficios ||
-      data?.summary?.total ||
-      data?.resumo?.valor_total_beneficios ||
-      data?.resumo?.total ||
-      dadosReq?.valor_total_beneficios ||
-      dadosReq?.valor_total ||
-      dadosReq?.total ||
-      dadosReq?.total_geral ||
-      dadosReq?.summary?.valor_total_beneficios ||
-      dadosReq?.summary?.total ||
-      dadosReq?.resumo?.valor_total_beneficios ||
-      dadosReq?.resumo?.total ||
-      data?.raw?.ultima?.valor_total ||
-      data?.raw?.ultima?.total ||
-      data?.raw?.ultima?.summary?.valor_total_beneficios ||
-      data?.raw?.metaUltima?.valor_total ||
-      data?.raw?.metaUltima?.total ||
-      data?.raw?.metaUltima?.summary?.valor_total_beneficios ||
-      0
+    data?.resumo_anterior?.valorTotal ||
+    data?.resumo_anterior?.valor_total ||
+    data?.valor_total ||
+    data?.total ||
+    data?.valor_total_beneficios ||
+    data?.summary?.valor_total_beneficios ||
+    data?.summary?.valor_total ||
+    data?.summary?.total ||
+    data?.resumo?.valor_total_beneficios ||
+    data?.resumo?.total ||
+    dadosReq?.valor_total_beneficios ||
+    dadosReq?.valor_total ||
+    dadosReq?.total ||
+    dadosReq?.total_geral ||
+    dadosReq?.summary?.valor_total_beneficios ||
+    dadosReq?.summary?.valor_total ||
+    dadosReq?.summary?.total ||
+    dadosReq?.resumo?.valor_total_beneficios ||
+    dadosReq?.resumo?.total ||
+    data?.raw?.ultima?.valor_total ||
+    data?.raw?.ultima?.total ||
+    data?.raw?.ultima?.summary?.valor_total_beneficios ||
+    data?.raw?.metaUltima?.valor_total ||
+    data?.raw?.metaUltima?.total ||
+    data?.raw?.metaUltima?.summary?.valor_total_beneficios ||
+    0
   )
 }
 
@@ -150,15 +320,15 @@ const getQtdCondominios = (data) => {
 
   return Number(
     getCondominios(data).length ||
-      data?.resumo_anterior?.condominios ||
-      data?.total_condominios ||
-      data?.qtd_condominios ||
-      data?.summary?.total_condominios ||
-      dadosReq?.total_condominios ||
-      dadosReq?.qtd_condominios ||
-      dadosReq?.summary?.total_condominios ||
-      data?.raw?.metaUltima?.total_condominios ||
-      0
+    data?.resumo_anterior?.condominios ||
+    data?.total_condominios ||
+    data?.qtd_condominios ||
+    data?.summary?.total_condominios ||
+    dadosReq?.total_condominios ||
+    dadosReq?.qtd_condominios ||
+    dadosReq?.summary?.total_condominios ||
+    data?.raw?.metaUltima?.total_condominios ||
+    0
   )
 }
 
@@ -167,21 +337,21 @@ const getQtdColaboradores = (data) => {
 
   return Number(
     getFuncionarios(data).length ||
-      data?.resumo_anterior?.colaboradores ||
-      data?.total_funcionarios ||
-      data?.qtd_funcionarios ||
-      data?.total_colaboradores ||
-      data?.registros_processados ||
-      data?.summary?.total_funcionarios ||
-      data?.summary?.total_colaboradores ||
-      dadosReq?.total_funcionarios ||
-      dadosReq?.qtd_funcionarios ||
-      dadosReq?.total_colaboradores ||
-      dadosReq?.summary?.total_funcionarios ||
-      dadosReq?.summary?.total_colaboradores ||
-      data?.raw?.metaUltima?.registros_processados ||
-      data?.raw?.ultima?.registros_processados ||
-      0
+    data?.resumo_anterior?.colaboradores ||
+    data?.total_funcionarios ||
+    data?.qtd_funcionarios ||
+    data?.total_colaboradores ||
+    data?.registros_processados ||
+    data?.summary?.total_funcionarios ||
+    data?.summary?.total_colaboradores ||
+    dadosReq?.total_funcionarios ||
+    dadosReq?.qtd_funcionarios ||
+    dadosReq?.total_colaboradores ||
+    dadosReq?.summary?.total_funcionarios ||
+    dadosReq?.summary?.total_colaboradores ||
+    data?.raw?.metaUltima?.registros_processados ||
+    data?.raw?.ultima?.registros_processados ||
+    0
   )
 }
 
@@ -190,17 +360,17 @@ const getQtdMovimentacoes = (data) => {
 
   return Number(
     getMovimentacoes(data).length ||
-      data?.resumo_anterior?.movimentacoes ||
-      data?.total_movimentacoes ||
-      data?.qtd_movimentacoes ||
-      data?.registros_processados ||
-      data?.summary?.total_movimentacoes ||
-      dadosReq?.total_movimentacoes ||
-      dadosReq?.qtd_movimentacoes ||
-      dadosReq?.summary?.total_movimentacoes ||
-      data?.raw?.metaUltima?.registros_processados ||
-      data?.raw?.ultima?.registros_processados ||
-      0
+    data?.resumo_anterior?.movimentacoes ||
+    data?.total_movimentacoes ||
+    data?.qtd_movimentacoes ||
+    data?.registros_processados ||
+    data?.summary?.total_movimentacoes ||
+    dadosReq?.total_movimentacoes ||
+    dadosReq?.qtd_movimentacoes ||
+    dadosReq?.summary?.total_movimentacoes ||
+    data?.raw?.metaUltima?.registros_processados ||
+    data?.raw?.ultima?.registros_processados ||
+    0
   )
 }
 
@@ -238,12 +408,232 @@ const getPreviewId = (preview) =>
   preview?.raw?.ultima?.id ||
   null
 
+const buildBenefitsIndexes = (movimentacoes = []) => {
+  const byCondominioNomeCpf = new Map()
+  const byNomeCpf = new Map()
+  const byCondominioNome = new Map()
+
+  movimentacoes.forEach((item) => {
+    const nome = normalizeText(getNomeColaborador(item))
+    const condominio = normalizeText(getCondominioRow(item))
+    const cpf = onlyDigits(getCpf(item))
+
+    const beneficio = {
+      codigo: getCodigoProduto(item),
+      nome: getNomeProduto(item),
+      valor: getValorProduto(item),
+    }
+
+    if (!beneficio.nome && !beneficio.valor) return
+
+    const keyCondominioNomeCpf = `${condominio}::${nome}::${cpf}`
+    const keyNomeCpf = `${nome}::${cpf}`
+    const keyCondominioNome = `${condominio}::${nome}`
+
+    if (cpf) {
+      if (!byCondominioNomeCpf.has(keyCondominioNomeCpf)) {
+        byCondominioNomeCpf.set(keyCondominioNomeCpf, [])
+      }
+
+      byCondominioNomeCpf.get(keyCondominioNomeCpf).push(beneficio)
+
+      if (!byNomeCpf.has(keyNomeCpf)) {
+        byNomeCpf.set(keyNomeCpf, [])
+      }
+
+      byNomeCpf.get(keyNomeCpf).push(beneficio)
+    }
+
+    if (!byCondominioNome.has(keyCondominioNome)) {
+      byCondominioNome.set(keyCondominioNome, [])
+    }
+
+    byCondominioNome.get(keyCondominioNome).push(beneficio)
+  })
+
+  return {
+    byCondominioNomeCpf,
+    byNomeCpf,
+    byCondominioNome,
+  }
+}
+
+const enrichRowsWithBenefits = (rows = [], movimentacoes = []) => {
+  const indexes = buildBenefitsIndexes(movimentacoes)
+
+  return rows.map((row) => {
+    const nome = normalizeText(getNomeColaborador(row))
+    const condominio = normalizeText(getCondominioRow(row))
+    const cpf = onlyDigits(getCpf(row))
+
+    const keyCondominioNomeCpf = `${condominio}::${nome}::${cpf}`
+    const keyNomeCpf = `${nome}::${cpf}`
+    const keyCondominioNome = `${condominio}::${nome}`
+
+    const beneficios =
+      (cpf && indexes.byCondominioNomeCpf.get(keyCondominioNomeCpf)) ||
+      (cpf && indexes.byNomeCpf.get(keyNomeCpf)) ||
+      indexes.byCondominioNome.get(keyCondominioNome) ||
+      row?.beneficios ||
+      row?.movimentacoes ||
+      []
+
+    const beneficiosNormalizados = beneficios.map((item) => ({
+      codigo: getCodigoProduto(item),
+      nome: getNomeProduto(item),
+      valor: getValorProduto(item),
+    }))
+
+    const valorTotal =
+      beneficiosNormalizados.length > 0
+        ? beneficiosNormalizados.reduce((sum, item) => sum + Number(item.valor || 0), 0)
+        : getValorRow(row)
+
+    return {
+      ...row,
+      beneficios: beneficiosNormalizados,
+      valor_total: valorTotal,
+    }
+  })
+}
+
+const buildRowsFromMovimentacoes = (movimentacoes = []) => {
+  const mapa = new Map()
+
+  movimentacoes.forEach((item) => {
+    const condominio = getCondominioRow(item)
+    const nome = getNomeColaborador(item)
+    const cpf = getCpf(item)
+    const key = cpf ? `${condominio}::${nome}::${cpf}` : `${condominio}::${nome}`
+
+    const beneficio = {
+      codigo: getCodigoProduto(item),
+      nome: getNomeProduto(item),
+      valor: getValorProduto(item),
+    }
+
+    if (!mapa.has(key)) {
+      mapa.set(key, {
+        ...item,
+        condominio,
+        nome_funcionario: nome,
+        cpf_funcionario: cpf,
+        valor_total: 0,
+        beneficios: [],
+      })
+    }
+
+    const atual = mapa.get(key)
+
+    atual.valor_total += Number(beneficio.valor || 0)
+
+    if (beneficio.nome || beneficio.valor > 0) {
+      atual.beneficios.push(beneficio)
+    }
+
+    mapa.set(key, atual)
+  })
+
+  return Array.from(mapa.values())
+}
+
+const buildRowsFromCondominios = (data) => {
+  const condominios = getCondominios(data)
+  const rows = []
+
+  condominios.forEach((condominio) => {
+    const nomeCondominio =
+      condominio?.condominio ||
+      condominio?.nome_condominio ||
+      condominio?.nome ||
+      condominio?.razao_social ||
+      ''
+
+    const funcionarios = [
+      ...(Array.isArray(condominio?.funcionarios) ? condominio.funcionarios : []),
+      ...(Array.isArray(condominio?.colaboradores) ? condominio.colaboradores : []),
+    ]
+
+    funcionarios.forEach((funcionario) => {
+      rows.push({
+        ...funcionario,
+        condominio: nomeCondominio,
+        nome_funcionario: getNomeColaborador(funcionario),
+        cpf_funcionario: getCpf(funcionario),
+        valor_total: getValorRow(funcionario),
+        beneficios: funcionario?.beneficios || funcionario?.movimentacoes || [],
+      })
+    })
+  })
+
+  return rows
+}
+
+const buildPreviewRows = (data) => {
+  const movimentacoes = getMovimentacoes(data)
+
+  const previewRowsBackend =
+    data?.summary?.total_por_beneficiario ||
+    data?.data_to_backend?.summary?.total_por_beneficiario ||
+    getDadosRequisicao(data)?.summary?.total_por_beneficiario ||
+    data?.total_por_beneficiario ||
+    data?.preview ||
+    []
+
+  if (Array.isArray(previewRowsBackend) && previewRowsBackend.length) {
+    return enrichRowsWithBenefits(previewRowsBackend, movimentacoes)
+  }
+
+  const rowsCondominios = buildRowsFromCondominios(data)
+
+  if (rowsCondominios.length) {
+    return enrichRowsWithBenefits(rowsCondominios, movimentacoes)
+  }
+
+  return buildRowsFromMovimentacoes(movimentacoes)
+}
+
+function Modal({ open, title, onClose, children }) {
+  if (!open) return null
+
+  return (
+    <div className="fat-modal-overlay">
+      <div className="fat-modal-card">
+        <div className="fat-modal-header">
+          <h3>{title}</h3>
+
+          <button className="fat-preview-btn ghost" onClick={onClose} type="button">
+            ✕
+          </button>
+        </div>
+
+        <div className="fat-modal-body">{children}</div>
+      </div>
+    </div>
+  )
+}
+
 export default function FaturamentoFormulario({ modo = 'novo' }) {
   const navigate = useNavigate()
   const location = useLocation()
 
   const [form, setForm] = useState(initialState)
   const [preview, setPreview] = useState(null)
+  const [previewRows, setPreviewRows] = useState([])
+  const [excluidosPorColab, setExcluidosPorColab] = useState(new Set())
+  const [previewAberto, setPreviewAberto] = useState(false)
+
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const [detailsTitle, setDetailsTitle] = useState('')
+  const [detailsBenefits, setDetailsBenefits] = useState([])
+
+  const [detailsRowKey, setDetailsRowKey] = useState(null)
+  const [editingBenefitIndex, setEditingBenefitIndex] = useState(null)
+  const [editBenefitValue, setEditBenefitValue] = useState('')
+
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [colaboradorParaExcluir, setColaboradorParaExcluir] = useState(null)
+
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -322,8 +712,14 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
         return
       }
 
-      // console.log('PREVIEW FATURAMENTO ANTERIOR:', dadosCompletos)
+      const rows = buildPreviewRows(dadosCompletos)
+
       setPreview(dadosCompletos)
+      setPreviewRows(rows)
+      setExcluidosPorColab(new Set())
+
+      console.log('PREVIEW FATURAMENTO ANTERIOR:', dadosCompletos)
+      console.log('PREVIEW DETALHADO REPETIR FATURAMENTO:', rows)
     } catch (error) {
       console.error('Erro ao carregar última movimentação:', error)
       setError('Não foi possível carregar a última movimentação.')
@@ -331,6 +727,14 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
       setLoading(false)
     }
   }
+
+  const rowsAtivas = useMemo(() => {
+    if (!previewRows.length) return []
+
+    if (!excluidosPorColab.size) return previewRows
+
+    return previewRows.filter((row) => !excluidosPorColab.has(getRowKey(row)))
+  }, [previewRows, excluidosPorColab])
 
   const previewResumo = useMemo(() => {
     if (!preview) {
@@ -342,24 +746,42 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
       }
     }
 
+    const condominiosUnicos = new Set(
+      rowsAtivas
+        .map((row) => normalizeText(getCondominioRow(row)))
+        .filter(Boolean)
+    )
+
+    const movimentacoes = rowsAtivas.reduce((sum, row) => {
+      return sum + Number(row?.beneficios?.length || 0)
+    }, 0)
+
+    const valorTotal = rowsAtivas.reduce((sum, row) => {
+      return sum + Number(getValorRow(row) || 0)
+    }, 0)
+
     return {
       condominios:
+        condominiosUnicos.size ||
         Number(preview?.resumo_anterior?.condominios) ||
         getQtdCondominios(preview),
 
       colaboradores:
+        rowsAtivas.length ||
         Number(preview?.resumo_anterior?.colaboradores) ||
         getQtdColaboradores(preview),
 
       movimentacoes:
+        movimentacoes ||
         Number(preview?.resumo_anterior?.movimentacoes) ||
         getQtdMovimentacoes(preview),
 
       valorTotal:
+        valorTotal ||
         Number(preview?.resumo_anterior?.valorTotal) ||
         getValorTotal(preview),
     }
-  }, [preview])
+  }, [preview, rowsAtivas])
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -375,12 +797,99 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
       return 'Nenhuma base de faturamento encontrada.'
     }
 
+    if (modo === 'repetir' && rowsAtivas.length === 0) {
+      return 'Nenhum colaborador disponível para repetir o faturamento.'
+    }
+
     if (!form.competencia.trim()) return 'Preencha a competência.'
     if (!form.referencia.trim()) return 'Preencha a referência.'
     if (!form.diasUteis.trim()) return 'Preencha a quantidade de dias úteis.'
     if (!form.vencimento.trim()) return 'Preencha o vencimento.'
 
     return ''
+  }
+
+  function abrirDetalhes(row) {
+    setDetailsTitle(getNomeColaborador(row))
+    setDetailsBenefits(row?.beneficios || [])
+    setDetailsRowKey(getRowKey(row))
+    setEditingBenefitIndex(null)
+    setEditBenefitValue('')
+    setDetailsOpen(true)
+  }
+
+  function iniciarEdicaoBeneficio(index, valorAtual) {
+    setEditingBenefitIndex(index)
+    setEditBenefitValue(String(valorAtual || '').replace(',', '.'))
+  }
+
+  function cancelarEdicaoBeneficio() {
+    setEditingBenefitIndex(null)
+    setEditBenefitValue('')
+  }
+
+  function salvarEdicaoBeneficio(beneficioIndex) {
+    const novoValor = Number(editBenefitValue)
+
+    if (Number.isNaN(novoValor) || novoValor <= 0) {
+      setError('Informe um valor válido para o benefício.')
+      return
+    }
+
+    const rowIndex = previewRows.findIndex(
+      (row) => getRowKey(row) === detailsRowKey
+    )
+
+    if (rowIndex < 0) {
+      setError('Não foi possível localizar o colaborador para edição.')
+      return
+    }
+
+    const clone = [...previewRows]
+    const rowAtual = clone[rowIndex]
+    const beneficiosAtualizados = [...(rowAtual.beneficios || [])]
+
+    beneficiosAtualizados[beneficioIndex] = {
+      ...beneficiosAtualizados[beneficioIndex],
+      valor: novoValor,
+    }
+
+    const novoTotal = beneficiosAtualizados.reduce((total, item) => {
+      return total + Number(item?.valor || 0)
+    }, 0)
+
+    clone[rowIndex] = {
+      ...rowAtual,
+      beneficios: beneficiosAtualizados,
+      valor_total: novoTotal,
+    }
+
+    setPreviewRows(clone)
+    setDetailsBenefits(beneficiosAtualizados)
+    setEditingBenefitIndex(null)
+    setEditBenefitValue('')
+    setError('')
+  }
+
+  function abrirConfirmacaoExclusao(row) {
+    setColaboradorParaExcluir(row)
+    setConfirmDeleteOpen(true)
+  }
+
+  function cancelarExclusaoColaborador() {
+    setColaboradorParaExcluir(null)
+    setConfirmDeleteOpen(false)
+  }
+
+  function confirmarExclusaoColaborador() {
+    if (!colaboradorParaExcluir) return
+
+    const novo = new Set(excluidosPorColab)
+    novo.add(getRowKey(colaboradorParaExcluir))
+
+    setExcluidosPorColab(novo)
+    setColaboradorParaExcluir(null)
+    setConfirmDeleteOpen(false)
   }
 
   async function handleSubmit(e) {
@@ -411,9 +920,11 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
 
         resumo_anterior: previewResumo,
         condominios: getCondominios(preview),
+        colaboradores: rowsAtivas,
+        origem: modo === 'repetir' ? 'repetir_faturamento' : 'novo_faturamento',
       }
 
-      // console.log('PAYLOAD FINAL PARA BACKEND:', payload)
+      console.log('PAYLOAD FINAL PARA BACKEND:', payload)
 
       alert('Payload pronto para envio ao backend. Confira o console.')
     } catch (error) {
@@ -459,6 +970,22 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
                       <strong>IMP-{getPreviewId(preview) || 'última'}</strong>
                     </p>
                   </div>
+
+                  <button
+                    type="button"
+                    className="fat-preview-toggle"
+                    onClick={() => setPreviewAberto((prev) => !prev)}
+                  >
+                    {previewAberto ? (
+                      <>
+                        Ocultar preview <ChevronUp size={16} />
+                      </>
+                    ) : (
+                      <>
+                        Ver preview <ChevronDown size={16} />
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 <div className="fat-preview-grid">
@@ -501,6 +1028,68 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
                     </span>
                   )}
                 </div>
+
+                {previewAberto && (
+                  <div className="fat-preview-table-wrap">
+                    <table className="fat-preview-table">
+                      <thead>
+                        <tr>
+                          <th>Condomínio</th>
+                          <th>Colaborador</th>
+                          <th>Valor</th>
+                          <th>Status</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {rowsAtivas.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="fat-preview-empty">
+                              Nenhum registro encontrado para pré-visualização.
+                            </td>
+                          </tr>
+                        ) : (
+                          rowsAtivas.map((row, index) => {
+                            const nomeColaborador = getNomeColaborador(row)
+
+                            return (
+                              <tr key={`${getRowKey(row)}-${index}`}>
+                                <td>{getCondominioRow(row) || '—'}</td>
+                                <td>{nomeColaborador || '—'}</td>
+                                <td>{formatCurrency(getValorRow(row))}</td>
+                                <td>
+                                  <span className="fat-status-ok">OK</span>
+                                </td>
+                                <td>
+                                  <div className="fat-preview-actions">
+                                    <button
+                                      type="button"
+                                      className="fat-preview-btn"
+                                      onClick={() => abrirDetalhes(row)}
+                                    >
+                                      <Eye size={14} />
+
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      className="fat-preview-btn danger"
+                                      onClick={() => abrirConfirmacaoExclusao(row)}
+                                    >
+                                      <Trash2 size={14} />
+
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            )
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 
@@ -584,6 +1173,129 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
           </>
         )}
       </div>
+
+      <Modal
+        open={detailsOpen}
+        title={`Benefícios - ${detailsTitle || 'Colaborador'}`}
+        onClose={() => {
+          setDetailsOpen(false)
+          setEditingBenefitIndex(null)
+          setEditBenefitValue('')
+        }}
+      >
+        <div className="fat-benefits-list">
+          {detailsBenefits.length === 0 ? (
+            <div className="fat-preview-empty">
+              Nenhum benefício encontrado para este colaborador.
+            </div>
+          ) : (
+            detailsBenefits.map((beneficio, index) => {
+              const isEditing = editingBenefitIndex === index
+
+              return (
+                <div
+                  key={`${beneficio.codigo}-${beneficio.nome}-${index}`}
+                  className="fat-benefit-card"
+                >
+                  <div>
+                    <strong>{beneficio.nome}</strong>
+                    <br />
+                    {beneficio.codigo && (
+                      <span>Código: {beneficio.codigo}</span>
+                    )}
+                  </div>
+
+                  {!isEditing ? (
+                    <div className="fat-benefit-value-actions inline">
+                      <strong>{formatCurrency(beneficio.valor)}</strong>
+
+                      <button
+                        type="button"
+                        className="fat-preview-btn edit-inline"
+                        onClick={() => iniciarEdicaoBeneficio(index, beneficio.valor)}
+                        title="Editar valor"
+                      >
+                        <PencilLine size={14} />
+                        <span>Editar</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="fat-benefit-edit-inline">
+                      <span className="fat-money-prefix">R$</span>
+
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={editBenefitValue}
+                        onChange={(e) => setEditBenefitValue(e.target.value)}
+                        autoFocus
+                      />
+
+                      <button
+                        type="button"
+                        className="fat-icon-action success"
+                        onClick={() => salvarEdicaoBeneficio(index)}
+                        title="Salvar"
+                      >
+                        <Check size={15} />
+                      </button>
+
+                      <button
+                        type="button"
+                        className="fat-icon-action ghost"
+                        onClick={cancelarEdicaoBeneficio}
+                        title="Cancelar"
+                      >
+                        <XIcon size={15} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          )}
+        </div>
+      </Modal>
+
+      <Modal
+        open={confirmDeleteOpen}
+        title="Confirmar exclusão"
+        onClose={cancelarExclusaoColaborador}
+      >
+        <div className="fat-confirm-content">
+          <p>
+            Tem certeza que deseja excluir o colaborador{' '}
+            <strong>{getNomeColaborador(colaboradorParaExcluir)}</strong>
+            {getCondominioRow(colaboradorParaExcluir)
+              ? ` do condomínio ${getCondominioRow(colaboradorParaExcluir)}`
+              : ''}
+            ?
+          </p>
+
+          <small>
+            Essa ação remove o colaborador somente desta repetição.
+          </small>
+
+          <div className="fat-modal-actions">
+            <button
+              type="button"
+              className="fat-preview-btn ghost"
+              onClick={cancelarExclusaoColaborador}
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              className="fat-preview-btn danger"
+              onClick={confirmarExclusaoColaborador}
+            >
+              Confirmar exclusão
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
