@@ -11,10 +11,12 @@ import {
   FiInfo,
   FiCheckCircle,
   FiRefreshCw,
+  FiEye,
 } from 'react-icons/fi'
 import { BiSpreadsheet } from 'react-icons/bi'
 
 import { faturamentoService } from '../../services/faturamentoService'
+import { entebenService } from '../../services/entebenService'
 import PageLayout from '../../Layouts/PageLayout/PageLayout'
 import { S } from './ColaboradorDashboardStyles'
 
@@ -361,6 +363,11 @@ const getTipoBeneficioPedido = (pedidoApi) => {
 
 const extrairResumoPedido = (pedidoApi) => ({
   id: pedidoApi.id,
+  downloadId:
+    pedidoApi.faturamento_id ||
+    pedidoApi.faturamento?.id ||
+    pedidoApi.importacao_id ||
+    pedidoApi.id,
   nomeAdministradora: pedidoApi.nome_administradora || '-',
   fileId: pedidoApi.file_upload_id || pedidoApi.file || null,
   status: normalizarStatus(pedidoApi.status),
@@ -457,7 +464,7 @@ const SkeletonTable = () => (
           <th>Competência</th>
           <th>Valor</th>
           <th>Status</th>
-          <th>Timeline</th>
+          {/* <th>Timeline</th> */}
           <th>Excel</th>
           <th>Docs</th>
           <th>Compra</th>
@@ -500,6 +507,10 @@ export default function ColaboradorDashboard() {
   const [docs, setDocs] = useState([])
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+
+  const [docsOpen, setDocsOpen] = useState(false)
+  const [docsPedido, setDocsPedido] = useState(null)
+  const [docDownloading, setDocDownloading] = useState('')
 
   const [refazendoId, setRefazendoId] = useState(null)
   const [isRefazendo, setIsRefazendo] = useState(false)
@@ -1143,6 +1154,69 @@ export default function ColaboradorDashboard() {
     }
   }
 
+  function abrirDocsImportados(pedido) {
+    if (!pedido?.id) {
+      showToast('Pedido inválido para consulta de documentos.', {
+        variant: 'error',
+      })
+      return
+    }
+
+    setDocsPedido(pedido)
+    setDocsOpen(true)
+  }
+
+  function fecharDocsImportados() {
+    if (docDownloading) return
+
+    setDocsOpen(false)
+    setDocsPedido(null)
+  }
+
+  async function baixarDocumentoFaturamento(pedido, tipo = '') {
+    const faturamentoId = pedido?.downloadId || pedido?.faturamento_id || pedido?.id
+
+    if (!faturamentoId) {
+      showToast('ID do faturamento não encontrado para download.', {
+        variant: 'error',
+      })
+      return
+    }
+
+    try {
+      const key = `${faturamentoId}-${tipo}`
+      setDocDownloading(key)
+
+      const blob = await entebenService.downloadDocumentoFaturamento(faturamentoId, tipo)
+      const fileURL = window.URL.createObjectURL(blob)
+
+      const nomeArquivo =
+        tipo !== 'originais/'
+          ? `${tipo.replaceAll('/', '').replaceAll('-', '_')}-${faturamentoId}.pdf`
+          : `faturamento-${faturamentoId}.zip`
+
+      const a = document.createElement('a')
+      a.href = fileURL
+      a.download = nomeArquivo
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(fileURL)
+
+      showToast(`Download iniciado: ${nomeArquivo}`, {
+        variant: 'success',
+      })
+    } catch (error) {
+      console.error('Erro ao baixar documento:', error)
+
+      showToast(error?.message || 'Não foi possível baixar o documento.', {
+        variant: 'error',
+      })
+    } finally {
+      setDocDownloading('')
+    }
+  }
+
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key !== 'Escape') return
@@ -1172,6 +1246,8 @@ export default function ColaboradorDashboard() {
         setCancelError('')
       } else if (importOpen && !uploading) {
         closeImport()
+      } else if (docsOpen && !docDownloading) {
+        fecharDocsImportados()
       } else if (detailsOpen) {
         setDetailsOpen(false)
         setDetailsPedido(null)
@@ -1187,6 +1263,8 @@ export default function ColaboradorDashboard() {
     cancelOpen,
     uploading,
     detailsOpen,
+    docsOpen,
+    docDownloading,
     statusConfirm.open,
     statusChanging,
     refazerConfirm.open,
@@ -1265,7 +1343,7 @@ export default function ColaboradorDashboard() {
                     <th>Competência</th>
                     <th>Valor</th>
                     <th>Status</th>
-                    <th>Timeline</th>
+                    {/* <th>Timeline</th> */}
                     <th>Excel</th>
                     <th>Docs</th>
                     <th>Compra</th>
@@ -1324,7 +1402,7 @@ export default function ColaboradorDashboard() {
                           </S.StatusSelect>
                         </td>
 
-                        <td>
+                        {/* <td>
                           <S.Btn
                             $size="sm"
                             onClick={() => {
@@ -1336,7 +1414,7 @@ export default function ColaboradorDashboard() {
                             <FiInfo size={14} />
                             Ver
                           </S.Btn>
-                        </td>
+                        </td> */}
 
                         <td>
                           <S.Btn
@@ -1344,20 +1422,30 @@ export default function ColaboradorDashboard() {
                             disabled={downloadingId === p.id || p.status === 'cancelado'}
                           >
                             <FiDownload size={14} />
-                            {downloadingId === p.id ? 'Baixando…' : 'Baixar'}
+                            {/* {downloadingId === p.id ? 'Baixando…' : 'Baixar'} */}
                           </S.Btn>
                         </td>
 
                         <td>
                           {['faturado', 'comprado'].includes(p.status) ? (
-                            <S.Btn
-                              onClick={() => requestRefazerFaturamento(p)}
-                              disabled={p.status === 'cancelado' || refazendoId === p.id}
-                              title="Refazer faturamento e reenviar documentos"
-                            >
-                              <FiRefreshCw size={14} />
-                              {refazendoId === p.id ? 'Refazendo…' : 'Refazer'}
-                            </S.Btn>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              <S.Btn
+                                onClick={() => abrirDocsImportados(p)}
+                                title="Ver documentos importados"
+                              >
+                                <FiEye size={14} />
+                                
+                              </S.Btn>
+
+                              <S.Btn
+                                onClick={() => requestRefazerFaturamento(p)}
+                                disabled={p.status === 'cancelado' || refazendoId === p.id}
+                                title="Refazer faturamento e reenviar documentos"
+                              >
+                                <FiRefreshCw size={14} />
+                                {/* {refazendoId === p.id ? 'Refazendo…' : 'Refazer'} */}
+                              </S.Btn>
+                            </div>
                           ) : (
                             <S.Btn
                               onClick={() => openImport(p)}
@@ -1469,6 +1557,92 @@ export default function ColaboradorDashboard() {
                 ))}
               </S.Timeline>
             </S.ModalBody>
+          </S.Modal>
+        </S.Overlay>
+      )}
+
+      {/* Modal de Documentos Importados */}
+      {docsOpen && docsPedido && (
+        <S.Overlay
+          onMouseDown={(e) =>
+            e.target === e.currentTarget && !docDownloading && fecharDocsImportados()
+          }
+        >
+          <S.Modal style={{ maxWidth: 560 }}>
+            <S.ModalHeader>
+              <div>
+                <S.ModalTitle>Documentos importados</S.ModalTitle>
+                <S.ModalSub>
+                  Pedido {docsPedido.id} · {docsPedido.nomeCondominio}
+                </S.ModalSub>
+              </div>
+
+              <S.ModalClose onClick={fecharDocsImportados} disabled={!!docDownloading}>
+                <FiX size={18} />
+              </S.ModalClose>
+            </S.ModalHeader>
+
+            <S.ModalBody>
+              <S.ConfirmMsg>
+                Baixe os documentos gerados/importados para este faturamento.
+              </S.ConfirmMsg>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                  gap: 12,
+                  marginTop: 16,
+                }}
+              >
+                <S.Btn
+                  onClick={() => baixarDocumentoFaturamento(docsPedido, 'boleto-original/')}
+                  disabled={!!docDownloading}
+                >
+                  <FiDownload size={14} />
+                  {docDownloading === `${docsPedido.downloadId || docsPedido.id}-boleto-original/`
+                    ? 'Baixando...'
+                    : 'Boleto'}
+                </S.Btn>
+
+                <S.Btn
+                  onClick={() => baixarDocumentoFaturamento(docsPedido, 'nota-fiscal-original/')}
+                  disabled={!!docDownloading}
+                >
+                  <FiDownload size={14} />
+                  {docDownloading === `${docsPedido.downloadId || docsPedido.id}-nota-fiscal-original/`
+                    ? 'Baixando...'
+                    : 'NF'}
+                </S.Btn>
+
+                <S.Btn
+                  onClick={() => baixarDocumentoFaturamento(docsPedido, 'nota-debito-original/')}
+                  disabled={!!docDownloading}
+                >
+                  <FiDownload size={14} />
+                  {docDownloading === `${docsPedido.downloadId || docsPedido.id}-nota-debito-original/`
+                    ? 'Baixando...'
+                    : 'Nota Débito'}
+                </S.Btn>
+
+                <S.Btn
+                  $variant="primary"
+                  onClick={() => baixarDocumentoFaturamento(docsPedido, 'originais/')}
+                  disabled={!!docDownloading}
+                >
+                  <FiDownload size={14} />
+                  {docDownloading === `${docsPedido.downloadId || docsPedido.id}-originais/`
+                    ? 'Baixando...'
+                    : 'Baixar todos'}
+                </S.Btn>
+              </div>
+            </S.ModalBody>
+
+            <S.ModalFooter>
+              <S.Btn onClick={fecharDocsImportados} disabled={!!docDownloading}>
+                Fechar
+              </S.Btn>
+            </S.ModalFooter>
           </S.Modal>
         </S.Overlay>
       )}
