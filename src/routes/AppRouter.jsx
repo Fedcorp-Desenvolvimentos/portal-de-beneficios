@@ -47,6 +47,7 @@ import Usuarios from '../pages/Interno/Usuarios/Usuarios'
 import MinhaConta from '../pages/MinhaConta/MinhaConta'
 
 import AcompanhamentoFaturados from '../pages/Interno/AcompanhamentoFaturados/AcompanhamentoFaturados'
+import BoletosVR from '../pages/Interno/BoletosVR/BoletosVR'
 
 const AppRouter = () => {
   const { isAuthenticated, user } = useAuth()
@@ -137,6 +138,26 @@ const AppRouter = () => {
             <Route
               path="/relatorios"
               element={<RelatoriosBeneficios />}
+            />
+
+            <Route
+              path="/boletos-vr"
+              element={<BoletosVR view="dashboard" />}
+            />
+
+            <Route
+              path="/boletos-vr/kanban"
+              element={<BoletosVR view="kanban" />}
+            />
+
+            <Route
+              path="/boletos-vr/faturas"
+              element={<BoletosVR view="faturas" />}
+            />
+
+            <Route
+              path="/boletos-vr/analises"
+              element={<BoletosVR view="analises" />}
             />
 
             <Route
