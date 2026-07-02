@@ -63,7 +63,7 @@ function getExportFaturamentoUrl(params = {}) {
   const queryString = query.toString()
   const API_BASE = getApiBaseUrl()
 
-  return `${API_BASE}/api/upload/export/faturamento/${
+  return `${API_BASE}/upload/export/faturamento/${
     queryString ? `?${queryString}` : ''
   }`
 }
@@ -72,7 +72,7 @@ function getCompraVTUrl(params = {}) {
   const query = new URLSearchParams(params).toString()
   const API_BASE = getApiBaseUrl()
 
-  return `${API_BASE}/api/upload/export/vt-compra/${
+  return `${API_BASE}/upload/export/vt-compra/${
     query ? `?${query}` : ''
   }`
 }
@@ -81,7 +81,7 @@ function getCompraTxtUrl(params = {}) {
   const query = new URLSearchParams(params).toString()
   const API_BASE = getApiBaseUrl()
 
-  return `${API_BASE}/api/upload/export/txt-compra/${
+  return `${API_BASE}/upload/export/txt-compra/${
     query ? `?${query}` : ''
   }`
 }

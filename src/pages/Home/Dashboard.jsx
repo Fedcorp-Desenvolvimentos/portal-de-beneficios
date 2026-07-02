@@ -384,7 +384,7 @@ export default function Dashboard() {
   };
 
   const importacaoId = ultimaMovimentacao?.id || null;
-  const excelUrl = `${API_BASE_URL}/upload/export/faturamento/`;
+  const excelUrl = `${API_BASE_URL}/api/upload/export/faturamento/`;
 
   const getCondoNome = (c) =>
     c?.nome ||
