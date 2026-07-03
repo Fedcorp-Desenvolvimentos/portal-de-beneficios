@@ -5,7 +5,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import Loading from '../components/Loading/Loading'
 import { useAuth } from '../context/AuthContext'
 
-const PrivateRoute = ({ allowedRoles = [] }) => {
+const PrivateRoute = ({ allowedRoles = [], children }) => {
   const location = useLocation()
   const { isAuthenticated, isAuthenticatedCheck, user } = useAuth()
   const [isAuthChecked, setIsAuthChecked] = useState(false)
@@ -49,6 +49,7 @@ const PrivateRoute = ({ allowedRoles = [] }) => {
     return <Navigate to="/nao-autorizado" replace />
   }
 
+  if (children) return children
   return <Outlet />
 }
 

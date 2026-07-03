@@ -20,9 +20,16 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const sidebarRef = useRef(null);
   const location = useLocation();
+
   const { user } = useAuth();
 
-  const nivelAcesso = user?.tipo;
+  const nivelAcesso =
+    user?.tipo_usuario ||
+    user?.tipo ||
+    user?.role ||
+    user?.perfil ||
+    '';
+
   const emailUsuario = user?.email;
 
   useEffect(() => {
@@ -106,6 +113,12 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       label: "Condomínios",
       icon: <FaBuilding />,
       allowed: ["fat", "adm", "dev"],
+    },
+    {
+      path: "/interno/importacao-base",
+      label: "Importar Base",
+      icon: <FaFileUpload />,
+      allowed: ["dev", "fat"],
     },
     {
       path: "/interno/usuarios",
