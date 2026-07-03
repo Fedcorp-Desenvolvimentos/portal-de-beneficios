@@ -89,7 +89,6 @@ export const userService = {
         try {
             const response = await api.get('/api/users/list/', { params });
             const data = response.data;
-            // console.log('✅ Usuários carregados:', data?.length || 0);
             return Array.isArray(data) ? data : [];
         } catch (error) {
             console.error('❌ Erro ao listar usuários:', error);
@@ -122,9 +121,7 @@ export const userService = {
                 tipo: dados.tipo,
                 administradora: dados.administradora || null
             };
-            // console.log('📝 Criando usuário com payload:', payload);
             const response = await api.post('/api/users/register/', payload);
-            // console.log('✅ Usuário criado:', response.data);
             return response.data;
         } catch (error) {
             console.error('❌ Erro ao criar usuário:', error);
@@ -167,10 +164,25 @@ export const userService = {
     excluirUsuario: async (id) => {
         try {
             const response = await api.delete(`/api/users/${id}/`);
-            // console.log(`✅ Usuário ${id} excluído`);
             return response.data;
         } catch (error) {
             console.error(`❌ Erro ao excluir usuário ${id}:`, error);
+            throw error;
+        }
+    },
+
+    /**
+    * Vincular usuário a uma administradora
+     */
+    vincularAdministradora: async (userId, administradoraId) => {
+        try {
+            const response = await api.post(`/api/users/${userId}/vincular-adm/`, {
+                administradora_id: administradoraId
+            });
+            // console.log(`✅ Usuário ${userId} vinculado à administradora ${administradoraId}`);
+            return response.data;
+        } catch (error) {
+            console.error(`❌ Erro ao vincular usuário ${userId}:`, error);
             throw error;
         }
     },
@@ -181,7 +193,6 @@ export const userService = {
     desvincularAdministradora: async (userId) => {
         try {
             const response = await api.post(`/api/users/${userId}/desvincular-adm/`);
-            // console.log(`✅ Usuário ${userId} desvinculado`);
             return response.data;
         } catch (error) {
             console.error(`❌ Erro ao desvincular usuário ${userId}:`, error);
@@ -211,7 +222,6 @@ export const userService = {
         try {
             const response = await api.get('/api/entidades/administradoras/');
             const data = response.data;
-            // console.log('✅ Administradoras carregadas:', data?.length || 0);
             return Array.isArray(data) ? data : [];
         } catch (error) {
             console.error('❌ Erro ao listar administradoras:', error);
@@ -228,43 +238,14 @@ export const userService = {
     },
 
     /**
-     * Alterar senha do usuário logado.
+     * ALTERAR SENHA DO USUÁRIO LOGADO (USANDO O ENDPOINT /password/)
      */
-    changePassword: async (payload) => {
-        const response = await api.post(`/api/users/password/`, payload);
-        return response.data;
-    },
-
-    /**
-     * Vincular usuário a uma administradora
-     */
-    vincularAdministradora: async (userId, administradoraId) => {
-        try {
-            const response = await api.post(`/api/users/${userId}/vincular-adm/`, {
-                administradora_id: administradoraId
-            });
-            // console.log(`✅ Usuário ${userId} vinculado à administradora ${administradoraId}`);
-            return response.data;
-        } catch (error) {
-            console.error(`❌ Erro ao vincular usuário ${userId}:`, error);
-            throw error;
-        }
-    },
-
-    /**
-     * Altera a senha do usuário logado
-     * Para primeiro acesso, não precisa enviar old_password
-     */
-    changePassword: async (newPassword, oldPassword = null) => {
+    changePassword: async (oldPassword, newPassword) => {
         try {
             const payload = {
+                old_password: oldPassword,
                 new_password: newPassword
             };
-            
-            // Só envia a senha antiga se for fornecida
-            if (oldPassword !== null) {
-                payload.old_password = oldPassword;
-            }
             
             const response = await api.post('/api/users/password/', payload);
             return {
@@ -272,7 +253,7 @@ export const userService = {
                 data: response.data
             };
         } catch (error) {
-            console.error('Erro ao alterar senha:', error);
+            console.error('❌ Erro ao alterar senha:', error);
             return {
                 success: false,
                 error: error.response?.data?.detail || 'Erro ao alterar senha. Tente novamente.'
@@ -280,6 +261,9 @@ export const userService = {
         }
     },
 
+    /**
+     * RECUPERAÇÃO DE SENHA (via token) - para usuários que esqueceram a senha
+     */
     solicitarResetSenha: async (email) => {
         try {
             const response = await api.post('/api/users/solicitar-reset-senha/', { email });
@@ -316,9 +300,9 @@ export const userService = {
     },
     
     /**
-     * Redefine a senha usando o token
+     * Redefine a senha usando o token (para recuperação de senha)
      */
-    resetarSenha: async (token, novaSenha) => {
+    resetarSenhaComToken: async (token, novaSenha) => {
         try {
             const response = await api.post('/api/users/resetar-senha/', {
                 token,
@@ -338,7 +322,7 @@ export const userService = {
     },
 };
 
-// Exportações únicas (sem duplicação)
+// Exportações
 export const getUsuarios = userService.listarUsuarios;
 export const getUsuario = userService.buscarUsuarioPorId;
 export const createUsuario = userService.criarUsuario;
@@ -347,7 +331,7 @@ export const deleteUsuario = userService.excluirUsuario;
 export const desvincularAdministradora = userService.desvincularAdministradora;
 export const listarAdministradoras = userService.listarAdministradoras;
 export const vincularAdministradora = userService.vincularAdministradora;
-export const changePassword = userService.changePassword;
+export const changePassword = userService.changePassword; 
 export const solicitarResetSenha = userService.solicitarResetSenha;
 export const validarTokenReset = userService.validarTokenReset;
-export const resetarSenha = userService.resetarSenha;
+export const resetarSenhaComToken = userService.resetarSenhaComToken;

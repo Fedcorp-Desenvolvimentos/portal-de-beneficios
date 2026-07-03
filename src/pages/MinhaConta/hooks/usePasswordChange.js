@@ -1,3 +1,4 @@
+// hooks/usePasswordChange.js
 import { useState } from 'react';
 import { userService } from '../../../services/userService';
 
@@ -15,6 +16,7 @@ export const usePasswordChange = () => {
   };
 
   const changePassword = async (senhaAtual, novaSenha, confirmarSenha) => {
+    // Validações
     if (novaSenha !== confirmarSenha) {
       setError('As senhas não coincidem');
       return false;
@@ -27,16 +29,22 @@ export const usePasswordChange = () => {
 
     try {
       setLoading(true);
-      await userService.resetarSenha({
-        old_password: senhaAtual,
-        new_password: novaSenha
-      });
-      setPasswordData({
-        senhaAtual: '',
-        novaSenha: '',
-        confirmarSenha: ''
-      });
-      return true;
+      setError(null);
+      
+      // ✅ Agora chama a função CORRETA
+      const result = await userService.changePassword(senhaAtual, novaSenha);
+      
+      if (result.success) {
+        setPasswordData({
+          senhaAtual: '',
+          novaSenha: '',
+          confirmarSenha: ''
+        });
+        return true;
+      } else {
+        setError(result.error);
+        return false;
+      }
     } catch (err) {
       setError(err.response?.data?.detail || 'Erro ao alterar senha');
       return false;
