@@ -162,35 +162,42 @@ export default function FileUpload({ onUpload }) {
         }
       }
 
+      let resultadoHandle = { success: true };
       if (onUpload && typeof onUpload === 'function') {
-        await onUpload({ file, result: uploadResult });
+        resultadoHandle = await onUpload({ file, result: uploadResult }) || { success: true };
       }
 
-      if (uploadResult?.success) {
+      const errosInternos = uploadResult?.data_to_backend?.errors;
+      const statusErro = uploadResult?.status === 'ERRO';
+      const temErrosInternos = Array.isArray(errosInternos) && errosInternos.length > 0;
+
+      if (!resultadoHandle.success || statusErro || temErrosInternos) {
+        setStatus('erro');
+        const msgErro =
+          (Array.isArray(errosInternos) ? errosInternos.join('; ') : null) ||
+          uploadResult?.detail ||
+          uploadResult?.error ||
+          'Erro ao processar o arquivo.';
+        setMessage(msgErro);
+        enqueueSnackbar(msgErro, { variant: 'error', persist: true });
+      } else {
         setStatus('sucesso');
         setMessage(uploadResult.detail || uploadResult.message || 'Arquivo processado com sucesso.');
         enqueueSnackbar(uploadResult.detail || uploadResult.message || 'Arquivo processado com sucesso.', { variant: 'success' });
-        
-        // if (uploadResult.tipo_processamento === 'VT') {
-        //   console.log('Resumo do VT:', {
-        //     total_registros: uploadResult.summary?.total_registros,
-        //     total_funcionarios: uploadResult.summary?.total_funcionarios,
-        //     valor_total: uploadResult.summary?.valor_total_beneficios || uploadResult.summary?.valor_total_vt,
-        //     total_por_beneficiario: uploadResult.summary?.total_por_beneficiario?.length,
-        //     dados_validados: uploadResult.dados_validados?.length
-        //   });
-        // }
-      } else {
-        setStatus('erro');
-        setMessage(uploadResult?.message || 'Não foi possível processar o arquivo.');
-        enqueueSnackbar(uploadResult?.message || 'Não foi possível processar o arquivo.', { variant: 'error' });
       }
     } catch (error) {
       console.error('Erro no processamento:', error);
       setStatus('erro');
-      const errorMsg = 'Falha na comunicação: ' + (error.response?.data?.detail || error.message);
+      const data = error.response?.data;
+      const errorMsg =
+        data?.detail ||
+        data?.error ||
+        data?.message ||
+        (typeof data === 'string' ? data : null) ||
+        error.message ||
+        'Erro desconhecido ao processar o arquivo.';
       setMessage(errorMsg);
-      enqueueSnackbar(errorMsg, { variant: 'error' });
+      enqueueSnackbar(errorMsg, { variant: 'error', persist: true });
     } finally {
       stopLoading();
     }

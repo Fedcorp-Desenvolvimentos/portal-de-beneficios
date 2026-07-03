@@ -220,6 +220,11 @@ export const UploadStatus = styled.div`
     background: #eff6ff;
     border: 1px solid #bfdbfe;
   `}
+
+  ${props => props.$status === 'warning' && css`
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+  `}
 `;
 
 export const UploadStatusContent = styled.div`
@@ -241,6 +246,10 @@ export const UploadStatusMessage = styled.p`
   
   ${UploadStatus}[data-status="processando"] & {
     color: #1e40af;
+  }
+
+  ${UploadStatus}[data-status="warning"] & {
+    color: #b45309;
   }
 `;
 

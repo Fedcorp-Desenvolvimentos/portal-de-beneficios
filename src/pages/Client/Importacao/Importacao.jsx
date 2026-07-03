@@ -469,7 +469,9 @@ function enrichRowsWithBenefits(rows = [], movimentacoes = []) {
 }
 
 function getQuantidadeDias(row) {
-  return Number(row?.quantidade_dias || row?.quantidade || row?.dias || row?.dias_trabalhados || row?.quantidadeDias || 0)
+  return Number(row?.quantidade_dias ||
+    row?.quantidade || row?.dias || row?.dias_trabalhados
+    || row?.quantidadeDias || 0)
 }
 
 function getRowValidation(row, regraValor = null, isVT = false) {
@@ -839,7 +841,10 @@ export default function Importacao() {
         const semPreview = !Array.isArray(parsed) || parsed.length === 0
 
         if (semPreview) {
-          toast.error('Nenhum registro válido foi encontrado no arquivo VT.')
+          const errosInternosVT = vtData?.data_to_backend?.errors
+          if (Array.isArray(errosInternosVT) && errosInternosVT.length > 0) {
+            setErrosModalOpen(true)
+          }
           return { success: false }
         }
 
@@ -865,9 +870,13 @@ export default function Importacao() {
         setFilterOnlyErrors(false)
         setFilterOnlyBlocked(false) // RESETA FILTRO DE BLOQUEIO
 
-        toast.success(`Arquivo de Vale Transporte importado com ${parsed.length} registros`)
+        const temErrosVT = Array.isArray(vtData?.linhas_com_erro) && vtData.linhas_com_erro.length > 0;
 
-        return { success: true }
+        if (temErrosVT) {
+          setErrosModalOpen(true);
+        }
+
+        return { success: !temErrosVT }
       }
 
       // console.log("Processando como Benefícios...");
@@ -915,13 +924,10 @@ export default function Importacao() {
           excluidosPorColab: new Set(),
         })
 
-        let mensagemErro =
-          response?.detail ||
-          response?.message ||
-          response?.error ||
-          'Nenhum registro válido foi encontrado no arquivo. Verifique CPF e demais campos obrigatórios.'
-
-        toast.error(mensagemErro)
+        const errosInternos = response?.data_to_backend?.errors
+        if (Array.isArray(errosInternos) && errosInternos.length > 0) {
+          setErrosModalOpen(true)
+        }
 
         return {
           success: false,
@@ -989,18 +995,31 @@ export default function Importacao() {
         recebimentoBeneficio: '',
       })
 
-      toast.success(response?.detail || 'Importação realizada com sucesso')
+      const temErros = Array.isArray(response?.linhas_com_erro) && response.linhas_com_erro.length > 0;
+
+      if (temErros) {
+        setErrosModalOpen(true);
+      }
 
       return {
-        success: true,
+        success: !temErros,
       }
     } catch (error) {
-      const errorMessage = error.message.includes('API Error')
-        ? error.message.split('API Error: ')[1]
-        : 'Erro desconhecido na comunicação com o servidor.'
-
       console.error('Erro no processamento da importação:', error)
-      toast.error(errorMessage)
+
+      const data = error.response?.data
+      const errorMessage =
+        data?.detail ||
+        data?.error ||
+        data?.message ||
+        (typeof data === 'string' ? data : null) ||
+        (error.message && error.message.includes('API Error')
+          ? error.message.split('API Error: ')[1]
+          : null) ||
+        error.message ||
+        'Erro ao processar importação.'
+
+      toast.error(errorMessage, { autoClose: false })
 
       return {
         success: false,
@@ -1067,7 +1086,7 @@ export default function Importacao() {
 
     return {
       recebimentoBeneficio: recebimento,
-      vencimento: recebimento ? subtractDaysFromDateInput(recebimento, 4) : '',
+      vencimento: recebimento ? subtractDaysFromDateInput(recebimento, 1) : '',
     }
   }
 
@@ -1720,8 +1739,8 @@ export default function Importacao() {
       }
 
       if (responseEnvio) {
-        toast.success(responseEnvio?.detail 
-          || responseEnvio?.message 
+        toast.success(responseEnvio?.detail
+          || responseEnvio?.message
           || 'Lote enviado com sucesso!')
 
         setReviewOpen(false)
@@ -1734,9 +1753,9 @@ export default function Importacao() {
 
     } catch (error) {
       console.error('Erro no envio:', error)
-      const errorDetail = error.response?.data?.detail 
-      || error.response?.data?.message 
-      || error.message;
+      const errorDetail = error.response?.data?.detail
+        || error.response?.data?.message
+        || error.message;
       toast.error(`Erro: ${errorDetail}`)
     } finally {
       setEnviandoLote(false)
@@ -1780,7 +1799,7 @@ export default function Importacao() {
         <div className="lote-card" style={{ marginTop: 16, marginBottom: 16 }}>
           <div className="lote-header">
             <div>
-              <h3>Regra de Valor da Administradora</h3>
+              <h3>Limitador de Crédito</h3>
               <small>
                 {loadingRegraValor
                   ? 'Carregando regra...'
@@ -1823,6 +1842,26 @@ export default function Importacao() {
               </button>
             </div>
 
+            {totalErrosBackend > 0 && (
+              <div className="bloqueios-banner" style={{ border: '1px solid #fde68a', background: '#fffbeb', marginBottom: 16 }}>
+                <strong style={{ color: '#b45309' }}>
+                  ⚠ {totalErrosBackend} linha(s) com erro no processamento
+                </strong>
+                <div className="chips" style={{ marginTop: 8 }}>
+                  <span className="chip chip-danger" onClick={() => setErrosModalOpen(true)} style={{ cursor: 'pointer' }}>
+                    Ver detalhes dos erros
+                  </span>
+                  <span
+                    className={`chip ${filterOnlyErrors ? 'chip-danger' : 'chip-ghost'}`}
+                    onClick={toggleFilterErrors}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {filterOnlyErrors ? 'Mostrar todas' : 'Filtrar apenas erros'}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div className="lote-kpis">
               <div className="kpi">
                 <span className="kpi-label">Condomínios importados</span>
@@ -1849,16 +1888,16 @@ export default function Importacao() {
                 </div>
               )}
 
-              {/* {totalErrosBackend > 0 && (
-                <div 
-                  className={`kpi kpi-error ${filterOnlyErrors ? 'active' : ''}`} 
+              {totalErrosBackend > 0 && (
+                <div
+                  className={`kpi kpi-error ${filterOnlyErrors ? 'active' : ''}`}
                   onClick={() => setErrosModalOpen(true)}
                   style={{ cursor: 'pointer' }}
                 >
                   <span className="kpi-label">Linhas com erro no processamento</span>
                   <span className="kpi-value error">{totalErrosBackend}</span>
                 </div>
-              )} */}
+              )}
             </div>
 
             <div className="tabela-wrapper">
@@ -2141,7 +2180,7 @@ export default function Importacao() {
 
                 {!isValeTransporte && formEnvio.vencimento && (
                   <small>
-                    Vencimento calculado automaticamente 4 dias antes do recebimento do benefício.
+                    Vencimento calculado automaticamente 1 dias antes do recebimento do benefício.
                   </small>
                 )}
 
@@ -2469,30 +2508,7 @@ export default function Importacao() {
           </div>
         </Modal>
 
-        <Modal
-          open={errosModalOpen}
-          title="Linhas com erro no processamento"
-          onClose={() => setErrosModalOpen(false)}
-        >
-          <div className="erros-list">
-            {data?.linhas_com_erro?.length === 0 ? (
-              <p>Nenhum erro encontrado</p>
-            ) : (
-              data?.linhas_com_erro?.map((erro, idx) => (
-                <div key={idx} className="erro-item">
-                  <div className="erro-header">
-                    <span className="erro-linha">Linha {erro.linha}</span>
-                    <span className="erro-mensagem">{erro.erro}</span>
-                  </div>
-                  <details>
-                    <summary>Ver dados da linha</summary>
-                    <pre>{JSON.stringify(erro.dados, null, 2)}</pre>
-                  </details>
-                </div>
-              ))
-            )}
-          </div>
-        </Modal>
+
       </div>
     </PageLayout>
   )
