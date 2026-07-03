@@ -27,7 +27,7 @@ export const usePasswordChange = () => {
 
     try {
       setLoading(true);
-      await userService.changePassword({
+      await userService.resetarSenha({
         old_password: senhaAtual,
         new_password: novaSenha
       });
