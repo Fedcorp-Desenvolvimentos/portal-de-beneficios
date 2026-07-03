@@ -10,6 +10,7 @@ import MainLayout from '../Layouts/MainLayout/MainLayout'
 // Públicos
 import Login from '../pages/Login/Login'
 import EsqueciSenha from '../pages/Comuns/Login/EsqueciSenha'
+import ResetarSenha from '../pages/ResetarSenha/ResetarSenha'
 import NotFound from '../components/NotFound/NotFound'
 
 // Utils
@@ -94,6 +95,8 @@ const AppRouter = () => {
               : <EsqueciSenha />
           }
         />
+
+        <Route path="/resetar-senha/:token" element={<ResetarSenha />} />
 
         {/* Protegidas */}
         <Route element={<PrivateRouter />}>

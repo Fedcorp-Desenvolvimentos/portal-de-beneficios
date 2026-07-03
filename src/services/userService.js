@@ -135,31 +135,31 @@ export const userService = {
     /**
      * Atualizar usuário
      */
-   atualizarUsuario: async (id, dados) => {
-    try {
-        const usuarioAtual = await userService.buscarUsuarioPorId(id);
+    atualizarUsuario: async (id, dados) => {
+        try {
+            const usuarioAtual = await userService.buscarUsuarioPorId(id);
 
-        const payload = {
-            username: dados.username !== undefined ? dados.username : usuarioAtual.username,
-            nome: dados.nome !== undefined ? dados.nome : usuarioAtual.nome,
-            email: dados.email !== undefined ? dados.email : usuarioAtual.email,
-            tipo: dados.tipo !== undefined ? dados.tipo : usuarioAtual.tipo,
-            administradora: dados.administradora !== undefined
-                ? dados.administradora
-                : usuarioAtual.administradora_id,
-        };
+            const payload = {
+                username: dados.username !== undefined ? dados.username : usuarioAtual.username,
+                nome: dados.nome !== undefined ? dados.nome : usuarioAtual.nome,
+                email: dados.email !== undefined ? dados.email : usuarioAtual.email,
+                tipo: dados.tipo !== undefined ? dados.tipo : usuarioAtual.tipo,
+                administradora: dados.administradora !== undefined
+                    ? dados.administradora
+                    : usuarioAtual.administradora_id,
+            };
 
-        if (dados.password && dados.password.trim() !== '') {
-            payload.password = dados.password;
+            if (dados.password && dados.password.trim() !== '') {
+                payload.password = dados.password;
+            }
+
+            const response = await api.put(`/api/users/${id}/`, payload);
+            return response.data;
+        } catch (error) {
+            console.error(`❌ Erro ao atualizar usuário ${id}:`, error);
+            throw error;
         }
-
-        const response = await api.put(`/api/users/${id}/`, payload);
-        return response.data;
-    } catch (error) {
-        console.error(`❌ Erro ao atualizar usuário ${id}:`, error);
-        throw error;
-    }
-},
+    },
 
     /**
      * Excluir usuário
@@ -279,6 +279,63 @@ export const userService = {
             };
         }
     },
+
+    solicitarResetSenha: async (email) => {
+        try {
+            const response = await api.post('/api/users/solicitar-reset-senha/', { email });
+            return {
+                success: true,
+                data: response.data
+            };
+        } catch (error) {
+            console.error('❌ Erro ao solicitar reset de senha:', error);
+            return {
+                success: false,
+                error: error.response?.data?.detail || 'Erro ao solicitar recuperação de senha.'
+            };
+        }
+    },
+    
+    /**
+     * Valida token de recuperação
+     */
+    validarTokenReset: async (token) => {
+        try {
+            const response = await api.get(`/api/users/validar-token-reset/${token}/`);
+            return {
+                success: true,
+                data: response.data
+            };
+        } catch (error) {
+            console.error('❌ Erro ao validar token:', error);
+            return {
+                success: false,
+                error: error.response?.data?.detail || 'Link inválido ou expirado.'
+            };
+        }
+    },
+    
+    /**
+     * Redefine a senha usando o token
+     */
+    resetarSenha: async (token, novaSenha) => {
+        try {
+            const response = await api.post('/api/users/resetar-senha/', {
+                token,
+                nova_senha: novaSenha
+            });
+            return {
+                success: true,
+                data: response.data
+            };
+        } catch (error) {
+            console.error('❌ Erro ao resetar senha:', error);
+            return {
+                success: false,
+                error: error.response?.data?.detail || 'Erro ao redefinir senha.'
+            };
+        }
+    },
 };
 
 // Exportações únicas (sem duplicação)
@@ -291,3 +348,6 @@ export const desvincularAdministradora = userService.desvincularAdministradora;
 export const listarAdministradoras = userService.listarAdministradoras;
 export const vincularAdministradora = userService.vincularAdministradora;
 export const changePassword = userService.changePassword;
+export const solicitarResetSenha = userService.solicitarResetSenha;
+export const validarTokenReset = userService.validarTokenReset;
+export const resetarSenha = userService.resetarSenha;

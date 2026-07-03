@@ -22,6 +22,7 @@ const ResetarSenha = () => {
   const [loading, setLoading] = useState(false);
   const [tokenValido, setTokenValido] = useState(false);
   const [validandoToken, setValidandoToken] = useState(true);
+  const [email, setEmail] = useState("");
   
   const { token } = useParams();
   const navigate = useNavigate();
@@ -37,10 +38,11 @@ const ResetarSenha = () => {
       }
       
       try {
-        const response = await api.get(`/validar-token-reset/${token}/`);
+        const response = await api.get(`/api/users/validar-token-reset/${token}/`);
         
         if (response.data.valid === true) {
           setTokenValido(true);
+          setEmail(response.data.email || "");
         } else {
           setTokenValido(false);
           enqueueSnackbar(response.data.detail || "Link de recuperação inválido ou expirado.", { variant: "error" });
@@ -71,7 +73,7 @@ const ResetarSenha = () => {
 
     setLoading(true);
     try {
-      const response = await api.post("/resetar-senha/", {
+      const response = await api.post("/api/users/resetar-senha/", {
         token: token,
         nova_senha: novaSenha
       });
@@ -166,6 +168,13 @@ const ResetarSenha = () => {
 
           <S.Title>Redefinir Senha</S.Title>
           <S.Subtitle>Digite sua nova senha abaixo</S.Subtitle>
+
+          {email && (
+            <S.InfoBox>
+              <FaCheckCircle />
+              <p>Redefinindo senha para: <strong>{email}</strong></p>
+            </S.InfoBox>
+          )}
 
           <S.InfoBox>
             <FaCheckCircle />
