@@ -36,6 +36,7 @@ import Historico from '../pages/Comuns/Historico'
 
 // Interno
 import ImportacaoDocs from '../pages/Interno/ImportacaoDocs'
+import ImportacaoBase from '../pages/Interno/ImportacaoBase/ImportacaoBase'
 
 import Administradoras from '../pages/Interno/Administradoras/Administradoras'
 import CadastroAdministradora from '../pages/Interno/Administradoras/CadastroAdministradora'
@@ -196,6 +197,16 @@ const AppRouter = () => {
             <Route
               path="/interno/minha-administradora"
               element={<MinhaAdministradora />}
+            />
+
+            {/* Importação de Base */}
+            <Route
+              path="/interno/importacao-base"
+              element={
+                <PrivateRouter allowedRoles={['dev', 'fat']}>
+                  <ImportacaoBase />
+                </PrivateRouter>
+              }
             />
 
             {/* Usuários */}
