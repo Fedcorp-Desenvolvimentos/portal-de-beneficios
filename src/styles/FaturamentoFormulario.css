@@ -1,141 +1,208 @@
 .fat-form-page {
   width: 100%;
-  padding: 2px;
+  padding: 6px;
   box-sizing: border-box;
 }
 
 .fat-form-card {
-  background: #ffffff;
-  border: 1px solid #e9edf5;
-  border-radius: 20px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-  padding: 28px;
-  max-width: 980px;
+  width: 100%;
+  max-width: 1180px;
   margin: 0 auto;
+  padding: 30px;
+  box-sizing: border-box;
+
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 22px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.07);
 }
 
+
 .fat-form-header {
-  margin-bottom: 24px;
+  margin-bottom: 26px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid #eef2f7;
 }
 
 .fat-form-header h1 {
   margin: 0 0 8px;
-  font-size: 28px;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.03em;
 }
 
 .fat-form-subtitle {
   margin: 0;
+  max-width: 760px;
   font-size: 14px;
-  color: #6b7280;
+  line-height: 1.55;
+  color: #64748b;
 }
 
+
 .fat-form-alert {
-  margin-bottom: 20px;
+  margin-bottom: 22px;
   padding: 14px 16px;
-  border-radius: 12px;
+  border-radius: 14px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .fat-form-alert.error {
   background: #fef2f2;
   border: 1px solid #fecaca;
-  color: #b91c1c;
+  color: #991b1b;
 }
 
 .fat-form-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
   padding: 32px 0;
   font-size: 15px;
-  color: #6b7280;
+  font-weight: 600;
+  color: #64748b;
 }
+
 
 .fat-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 22px;
 }
 
 .fat-form-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 .form-group label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #374151;
+  font-size: 13px;
+  font-weight: 800;
+  color: #334155;
 }
 
 .form-group input,
 .form-group textarea {
   width: 100%;
+  min-height: 46px;
   border: 1px solid #dbe3ef;
-  border-radius: 12px;
-  background: #fff;
+  border-radius: 14px;
+  background: #f8fafc;
   padding: 12px 14px;
   font-size: 14px;
-  color: #111827;
+  color: #0f172a;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
   box-sizing: border-box;
 }
 
-.form-group input::placeholder,
-.form-group textarea::placeholder {
-  color: #9ca3af;
+.form-group input:hover,
+.form-group textarea:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
+  background: #ffffff;
   border-color: #2563eb;
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
 }
 
+.form-group input:disabled,
+.form-group textarea:disabled {
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #94a3b8;
+}
+
 .form-group textarea {
   resize: vertical;
-  min-height: 120px;
+  min-height: 130px;
+  line-height: 1.5;
 }
+
+.fat-field-hint {
+  display: block;
+  margin-top: -2px;
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.fat-field-hint.locked {
+  color: #b45309;
+  font-weight: 700;
+}
+
 
 .fat-form-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 12px;
-  margin-top: 8px;
+  margin-top: 2px;
+  padding-top: 18px;
+  border-top: 1px solid #eef2f7;
 }
 
 .btn {
+  min-height: 44px;
   border: none;
-  border-radius: 12px;
-  padding: 12px 18px;
+  border-radius: 14px;
+  padding: 0 18px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 800;
   cursor: pointer;
-  transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
 }
 
 .btn:hover {
   transform: translateY(-1px);
 }
 
+.btn:active {
+  transform: scale(0.98);
+}
+
 .btn:disabled {
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.65;
   transform: none;
+  box-shadow: none;
 }
 
 .btn.primary {
   background: #2563eb;
   color: #ffffff;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.24);
 }
 
 .btn.primary:hover {
@@ -143,86 +210,165 @@
 }
 
 .btn.secondary {
-  background: #f3f4f6;
-  color: #374151;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
 }
 
 .btn.secondary:hover {
-  background: #e5e7eb;
+  background: #e2e8f0;
 }
 
-/* ================================
-   PREVIEW
-================================ */
 
 .fat-preview-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 55%, #eff6ff 100%);
+  border: 1px solid #dbe3ef;
+  border-radius: 20px;
+  padding: 22px;
+  margin-bottom: 24px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.fat-preview-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  background: #2563eb;
 }
 
 .fat-preview-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 18px;
+  margin-bottom: 18px;
 }
 
-.fat-preview-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-top: 10px;
+.fat-preview-header h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
 }
 
-.fat-preview-grid span {
-  display: block;
-  font-size: 12px;
+.fat-preview-header p {
+  margin: 0;
+  font-size: 13px;
   color: #64748b;
 }
 
-.fat-preview-grid strong {
-  font-size: 18px;
+.fat-preview-header p strong {
+  color: #2563eb;
+}
+
+
+.fat-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 6px;
+}
+
+.fat-preview-item,
+.fat-preview-grid>div {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 14px;
+  min-width: 0;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.fat-preview-grid span,
+.fat-preview-item span {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.fat-preview-grid strong,
+.fat-preview-item strong {
+  display: block;
+  font-size: 20px;
+  font-weight: 900;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fat-preview-meta {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.fat-preview-meta strong {
+  color: #0f172a;
 }
 
 .fat-preview-toggle {
-  border: 1px solid #dbe3f0;
-  background: #fff;
+  min-height: 38px;
+  border: 1px solid #bfdbfe;
+  background: #ffffff;
   color: #2563eb;
-  border-radius: 10px;
-  padding: 8px 12px;
+  border-radius: 999px;
+  padding: 0 14px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 7px;
   cursor: pointer;
   white-space: nowrap;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
 }
 
 .fat-preview-toggle:hover {
-  background: #f8fafc;
+  background: #eff6ff;
+  border-color: #93c5fd;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.12);
+}
+
+.fat-preview-toggle:active {
+  transform: scale(0.98);
 }
 
 .fat-preview-table-wrap {
   margin-top: 18px;
   border: 1px solid #e5e7eb;
-  border-radius: 14px;
+  border-radius: 18px;
   overflow: auto;
-  background: #fff;
+  background: #ffffff;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
 }
 
 .fat-preview-table {
   width: 100%;
-  border-collapse: collapse;
-  min-width: 760px;
+  min-width: 820px;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .fat-preview-table th,
 .fat-preview-table td {
-  padding: 13px 14px;
+  padding: 14px 16px;
   border-bottom: 1px solid #eef2f7;
   text-align: left;
   font-size: 13px;
@@ -231,10 +377,23 @@
 }
 
 .fat-preview-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   background: #f8fafc;
   color: #475569;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fat-preview-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.fat-preview-table tbody tr:hover {
+  background: #f8fafc;
 }
 
 .fat-preview-table tr:last-child td {
@@ -243,31 +402,29 @@
 
 .fat-preview-table th:last-child,
 .fat-preview-table td:last-child {
-  width: 92px;
-  min-width: 92px;
+  width: 110px;
+  min-width: 110px;
 }
 
 .fat-status-ok {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   border-radius: 999px;
   padding: 5px 10px;
   background: #dcfce7;
   color: #166534;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 900;
 }
 
 .fat-preview-empty {
   text-align: center;
-  padding: 22px;
+  padding: 26px;
   color: #64748b;
   font-size: 13px;
+  font-weight: 600;
 }
-
-/* ================================
-   AÇÕES DA TABELA
-================================ */
 
 .fat-preview-actions {
   display: flex;
@@ -277,40 +434,49 @@
   flex-wrap: nowrap;
 }
 
-.fat-preview-actions .fat-preview-btn {
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  justify-content: center;
-  font-size: 0;
-}
-
-.fat-preview-actions .fat-preview-btn svg {
-  flex-shrink: 0;
-}
-
-/* ================================
-   BOTÕES
-================================ */
-
 .fat-preview-btn {
+  min-width: 34px;
+  min-height: 34px;
   border: 1px solid #dbe3f0;
-  background: #fff;
+  background: #ffffff;
   color: #0f172a;
-  border-radius: 9px;
-  padding: 7px 10px;
+  border-radius: 11px;
+  padding: 0 10px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   cursor: pointer;
   flex-shrink: 0;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.fat-preview-actions .fat-preview-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 0;
 }
 
 .fat-preview-btn:hover {
   background: #f8fafc;
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.fat-preview-btn:active {
+  transform: scale(0.96);
+}
+
+.fat-preview-btn svg {
+  flex-shrink: 0;
 }
 
 .fat-preview-btn.danger {
@@ -320,11 +486,16 @@
 
 .fat-preview-btn.danger:hover {
   background: #fef2f2;
+  border-color: #fca5a5;
 }
 
 .fat-preview-btn.ghost {
   background: #f8fafc;
   color: #475569;
+}
+
+.fat-preview-btn.ghost:hover {
+  background: #e2e8f0;
 }
 
 .fat-preview-btn.success {
@@ -334,28 +505,27 @@
 
 .fat-preview-btn.success:hover {
   background: #f0fdf4;
+  border-color: #86efac;
 }
 
 .fat-preview-btn.edit-inline {
-  height: 30px;
-  padding: 0 9px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 10px;
   font-size: 12px;
   line-height: 1;
 }
 
 .fat-preview-btn.edit-inline span {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
 }
-
-/* ================================
-   MODAIS
-================================ */
 
 .fat-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -364,12 +534,15 @@
 }
 
 .fat-modal-card {
-  width: min(620px, 100%);
-  max-height: 86vh;
-  overflow: auto;
-  background: #fff;
-  border-radius: 18px;
-  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.24);
+  width: min(680px, 100%);
+  max-height: 88vh;
+  overflow: hidden;
+  background: #ffffff;
+  border-radius: 22px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 30px 90px rgba(15, 23, 42, 0.32);
+  display: flex;
+  flex-direction: column;
 }
 
 .fat-modal-header {
@@ -377,51 +550,56 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px 20px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 20px 22px;
+  border-bottom: 1px solid #eef2f7;
+  background: #ffffff;
 }
 
 .fat-modal-header h3 {
   margin: 0;
   font-size: 18px;
+  font-weight: 900;
   color: #0f172a;
 }
 
 .fat-modal-body {
-  padding: 20px;
+  padding: 22px;
+  overflow: auto;
 }
 
 .fat-modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 12px;
+  margin-top: 18px;
 }
-
-/* ================================
-   MODAL DE BENEFÍCIOS
-================================ */
 
 .fat-benefits-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .fat-benefit-card {
   border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 14px;
+  border-radius: 18px;
+  padding: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 18px;
+  background: #ffffff;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
 }
 
-/* IMPORTANTE:
-   Não usar ".fat-benefit-card div" genérico,
-   porque isso quebra o input e os botões de edição.
-*/
+.fat-benefit-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.07);
+  transform: translateY(-1px);
+}
 
 .fat-benefit-info {
   display: flex;
@@ -431,17 +609,14 @@
 }
 
 .fat-benefit-info strong,
-.fat-benefit-card > div:first-child strong {
+.fat-benefit-card>div:first-child strong {
   color: #0f172a;
   font-size: 14px;
+  font-weight: 900;
 }
 
 .fat-benefit-info span,
-.fat-benefit-card > div:first-child span {
-  color: #64748b;
-  font-size: 12px;
-}
-
+.fat-benefit-card>div:first-child span,
 .fat-benefit-card span {
   color: #64748b;
   font-size: 12px;
@@ -463,84 +638,12 @@
 }
 
 .fat-benefit-value-actions.inline strong {
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 900;
   color: #0f172a;
 }
 
-/* ================================
-   EDIÇÃO DO VALOR NO MODAL
-================================ */
-
-.fat-benefit-edit-inline {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-end !important;
-  flex-direction: row !important;
-  gap: 8px;
-  flex-wrap: nowrap !important;
-  white-space: nowrap;
-}
-
-.fat-benefit-edit-inline .fat-money-prefix {
-  font-size: 13px;
-  font-weight: 800;
-  color: #334155;
-  line-height: 1;
-}
-
-.fat-benefit-edit-inline input {
-  width: 96px;
-  height: 34px;
-  border: 1px solid #dbe3f0;
-  border-radius: 9px;
-  padding: 0 10px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #0f172a;
-  outline: none;
-  text-align: right;
-  background: #fff;
-  box-sizing: border-box;
-}
-
-.fat-benefit-edit-inline input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-}
-
-.fat-icon-action {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  border: 1px solid #dbe3f0;
-  background: #fff;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer;
-  padding: 0;
-  flex-shrink: 0;
-}
-
-.fat-icon-action.success {
-  border-color: #bbf7d0;
-  color: #15803d;
-}
-
-.fat-icon-action.success:hover {
-  background: #f0fdf4;
-}
-
-.fat-icon-action.ghost {
-  border-color: #dbe3f0;
-  color: #64748b;
-}
-
-.fat-icon-action.ghost:hover {
-  background: #f8fafc;
-}
-
-/* Compatibilidade caso ainda exista classe antiga no JSX */
+.fat-benefit-edit-inline,
 .fat-benefit-edit {
   display: flex !important;
   align-items: center !important;
@@ -551,35 +654,82 @@
   white-space: nowrap;
 }
 
+.fat-benefit-edit-inline .fat-money-prefix,
 .fat-benefit-edit span {
   font-size: 13px;
-  font-weight: 700;
-  color: #475569;
+  font-weight: 900;
+  color: #334155;
+  line-height: 1;
 }
 
+.fat-benefit-edit-inline input,
 .fat-benefit-edit input {
-  width: 96px;
-  height: 34px;
+  width: 104px;
+  height: 36px;
   border: 1px solid #dbe3f0;
-  border-radius: 9px;
+  border-radius: 11px;
   padding: 0 10px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
   color: #0f172a;
   outline: none;
   text-align: right;
-  background: #fff;
+  background: #f8fafc;
   box-sizing: border-box;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
 }
 
+.fat-benefit-edit-inline input:focus,
 .fat-benefit-edit input:focus {
+  background: #ffffff;
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-/* ================================
-   CONFIRMAÇÃO
-================================ */
+.fat-icon-action {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  border: 1px solid #dbe3f0;
+  background: #ffffff;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.fat-icon-action:active {
+  transform: scale(0.96);
+}
+
+.fat-icon-action.success {
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+.fat-icon-action.success:hover {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.fat-icon-action.ghost {
+  border-color: #dbe3f0;
+  color: #64748b;
+}
+
+.fat-icon-action.ghost:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
 
 .fat-confirm-content {
   display: flex;
@@ -590,47 +740,97 @@
 .fat-confirm-content p {
   margin: 0;
   color: #0f172a;
+  line-height: 1.5;
+  font-size: 14px;
 }
 
 .fat-confirm-content small {
   color: #64748b;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
-/* ================================
-   RESPONSIVO
-================================ */
+@media (min-width: 1440px) {
+  .fat-form-card {
+    max-width: 1280px;
+    padding: 34px;
+  }
 
-@media (max-width: 900px) {
+  .fat-form-header h1 {
+    font-size: 32px;
+  }
+
+  .fat-form-grid {
+    gap: 20px;
+  }
+
+  .fat-preview-grid {
+    gap: 16px;
+  }
+
+  .fat-preview-card {
+    padding: 24px;
+  }
+}
+
+@media (min-width: 1800px) {
+  .fat-form-card {
+    max-width: 1380px;
+    padding: 38px;
+  }
+
+  .fat-form-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .fat-preview-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .fat-modal-card {
+    width: min(760px, 100%);
+  }
+}
+
+@media (max-width: 1100px) {
+  .fat-form-card {
+    max-width: 100%;
+  }
+
+  .fat-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fat-preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .fat-preview-header {
     flex-direction: column;
   }
 
   .fat-preview-toggle {
     width: 100%;
-    justify-content: center;
-  }
-
-  .fat-modal-actions {
-    flex-direction: column;
-  }
-
-  .fat-modal-actions button {
-    justify-content: center;
   }
 }
 
 @media (max-width: 768px) {
   .fat-form-page {
-    padding: 16px;
+    padding: 14px;
   }
 
   .fat-form-card {
     padding: 20px;
-    border-radius: 16px;
+    border-radius: 18px;
+  }
+
+  .fat-form-header {
+    margin-bottom: 22px;
+    padding-bottom: 18px;
   }
 
   .fat-form-header h1 {
-    font-size: 22px;
+    font-size: 23px;
   }
 
   .fat-form-grid {
@@ -640,14 +840,55 @@
 
   .fat-form-actions {
     flex-direction: column-reverse;
+    align-items: stretch;
   }
 
   .btn {
     width: 100%;
   }
 
+  .fat-preview-card {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .fat-preview-card::before {
+    width: 4px;
+  }
+
   .fat-preview-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
+  }
+
+  .fat-preview-meta {
+    font-size: 12px;
+  }
+
+  .fat-modal-overlay {
+    padding: 14px;
+    align-items: flex-end;
+  }
+
+  .fat-modal-card {
+    max-height: 92vh;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .fat-modal-header {
+    padding: 18px;
+  }
+
+  .fat-modal-body {
+    padding: 18px;
+  }
+
+  .fat-modal-actions {
+    flex-direction: column;
+  }
+
+  .fat-modal-actions button {
+    width: 100%;
+    justify-content: center;
   }
 }
 
@@ -667,15 +908,107 @@
 }
 
 @media (max-width: 520px) {
-  .fat-preview-grid {
-    grid-template-columns: 1fr;
+  .fat-form-page {
+    padding: 10px;
+  }
+
+  .fat-form-card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .fat-form-header h1 {
+    font-size: 21px;
+  }
+
+  .fat-preview-table {
+    min-width: 760px;
   }
 
   .fat-modal-overlay {
-    padding: 14px;
+    padding: 10px;
   }
 
-  .fat-modal-card {
-    border-radius: 14px;
+  .fat-benefit-edit-inline input,
+  .fat-benefit-edit input {
+    width: 100%;
+    max-width: 160px;
   }
+}
+
+.fat-form-grid {
+  align-items: flex-start;
+}
+
+.fat-form-grid .form-group:nth-child(7) {
+  max-width: 380px;
+}
+
+.fat-form>.form-group {
+  margin-top: 6px;
+}
+
+.fat-form>.form-group:has(textarea) {
+  padding-top: 22px;
+  border-top: 1px solid #eef2f7;
+}
+
+.fat-form>.form-group:has(textarea) label {
+  font-size: 14px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.fat-form>.form-group textarea {
+  min-height: 150px;
+  border-radius: 18px;
+  background: #f8fafc;
+  border: 1px solid #dbe3ef;
+  padding: 16px 18px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.fat-form>.form-group textarea:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+.fat-form>.form-group textarea:focus {
+  background: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.form-group input[type='date'] {
+  color-scheme: light;
+  cursor: pointer;
+}
+
+.form-group input[type='date']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.55;
+}
+
+.form-group input[type='date']::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+#vencimento {
+  background: #f1f5f9;
+  font-weight: 700;
+}
+
+#vencimento:focus {
+  background: #ffffff;
+}
+
+#recebimentoBeneficio {
+  font-weight: 700;
+}
+
+.fat-form-actions {
+  margin-top: 8px;
+  padding-top: 24px;
+  border-top: 1px solid #eef2f7;
 }

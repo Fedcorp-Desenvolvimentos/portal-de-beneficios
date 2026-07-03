@@ -20,7 +20,10 @@ const initialState = {
   empresa: '',
   beneficio: '',
   diasUteis: '',
+  periodoInicio: '',
+  periodoFim: '',
   vencimento: '',
+  recebimentoBeneficio: '',
   observacao: '',
 }
 
@@ -392,11 +395,63 @@ const getPreviewPeriodo = (data) => {
   return '—'
 }
 
+function parseDateInput(value) {
+  if (!value) return null
+
+  const [year, month, day] = String(value).split('-').map(Number)
+  if (!year || !month || !day) return null
+
+  return new Date(year, month - 1, day)
+}
+
+function formatDateInput(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return ''
+
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+function addDaysToDateInput(value, days) {
+  const date = parseDateInput(value)
+  if (!date) return ''
+
+  date.setDate(date.getDate() + Number(days || 0))
+  return formatDateInput(date)
+}
+
+function subtractDaysFromDateInput(value, days) {
+  return addDaysToDateInput(value, -Number(days || 0))
+}
+
 const getPreviewVencimento = (data) =>
   data?.data_vencimento ||
   data?.vencimento ||
   data?.raw?.metaUltima?.data_vencimento ||
   data?.raw?.ultima?.data_vencimento ||
+  ''
+
+const getPreviewRecebimento = (data) =>
+  data?.recebimento_beneficio ||
+  data?.recebimentoBeneficio ||
+  data?.raw?.metaUltima?.recebimento_beneficio ||
+  data?.raw?.ultima?.recebimento_beneficio ||
+  ''
+
+const getPreviewPeriodoInicio = (data) =>
+  data?.vigencia_inicio ||
+  data?.periodo_inicio ||
+  data?.raw?.metaUltima?.vigencia_inicio ||
+  data?.raw?.ultima?.vigencia_inicio ||
+  ''
+
+const getPreviewPeriodoFim = (data) =>
+  data?.vigencia_fim ||
+  data?.periodo_fim ||
+  data?.raw?.metaUltima?.vigencia_fim ||
+  data?.raw?.ultima?.vigencia_fim ||
   ''
 
 const getPreviewId = (preview) =>
@@ -637,6 +692,7 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [campoLocked, setCampoLocked] = useState(null)
 
   useEffect(() => {
     if (modo === 'repetir') {
@@ -717,9 +773,6 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
       setPreview(dadosCompletos)
       setPreviewRows(rows)
       setExcluidosPorColab(new Set())
-
-      console.log('PREVIEW FATURAMENTO ANTERIOR:', dadosCompletos)
-      console.log('PREVIEW DETALHADO REPETIR FATURAMENTO:', rows)
     } catch (error) {
       console.error('Erro ao carregar última movimentação:', error)
       setError('Não foi possível carregar a última movimentação.')
@@ -785,11 +838,31 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
 
   function handleChange(e) {
     const { name, value } = e.target
+    const isComplete = value.length === 10
 
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+    if (campoLocked === name && value) return
+
+    if (name === 'recebimentoBeneficio') {
+      setForm((prev) => ({
+        ...prev,
+        recebimentoBeneficio: value,
+        vencimento: isComplete ? subtractDaysFromDateInput(value, 4) : '',
+      }))
+      setCampoLocked(isComplete ? 'vencimento' : null)
+      return
+    }
+
+    if (name === 'vencimento') {
+      setForm((prev) => ({
+        ...prev,
+        vencimento: value,
+        recebimentoBeneficio: isComplete ? addDaysToDateInput(value, 4) : '',
+      }))
+      setCampoLocked(isComplete ? 'recebimentoBeneficio' : null)
+      return
+    }
+
+    setForm((prev) => ({ ...prev, [name]: value }))
   }
 
   function validateForm() {
@@ -803,7 +876,6 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
 
     if (!form.competencia.trim()) return 'Preencha a competência.'
     if (!form.referencia.trim()) return 'Preencha a referência.'
-    if (!form.diasUteis.trim()) return 'Preencha a quantidade de dias úteis.'
     if (!form.vencimento.trim()) return 'Preencha o vencimento.'
 
     return ''
@@ -912,7 +984,11 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
         competencia: form.competencia,
         referencia: form.referencia,
         dias_uteis: form.diasUteis,
+        periodo_inicio: form.periodoInicio,
+        periodo_fim: form.periodoFim,
         data_vencimento: form.vencimento,
+        vencimento: form.vencimento,
+        recebimento_beneficio: form.recebimentoBeneficio,
         observacao: form.observacao,
 
         importacao_id: importacaoId,
@@ -1069,7 +1145,6 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
                                       onClick={() => abrirDetalhes(row)}
                                     >
                                       <Eye size={14} />
-
                                     </button>
 
                                     <button
@@ -1078,7 +1153,6 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
                                       onClick={() => abrirConfirmacaoExclusao(row)}
                                     >
                                       <Trash2 size={14} />
-
                                     </button>
                                   </div>
                                 </td>
@@ -1120,10 +1194,12 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="diasUteis">Quantidade de dias úteis</label>
+                  <label htmlFor="diasUteis">Dias úteis</label>
                   <input
                     id="diasUteis"
                     name="diasUteis"
+                    type="number"
+                    min="0"
                     value={form.diasUteis}
                     onChange={handleChange}
                     placeholder="Ex: 20"
@@ -1132,15 +1208,51 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
                 </div>
 
                 <div className="form-group">
+                  <label htmlFor="periodoInicio">Período início</label>
+                  <input
+                    id="periodoInicio"
+                    name="periodoInicio"
+                    type="date"
+                    value={form.periodoInicio}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="periodoFim">Período fim</label>
+                  <input
+                    id="periodoFim"
+                    name="periodoFim"
+                    type="date"
+                    value={form.periodoFim}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="recebimentoBeneficio">Recebimento do benefício</label>
+                  <input
+                    id="recebimentoBeneficio"
+                    name="recebimentoBeneficio"
+                    type="date"
+                    value={form.recebimentoBeneficio}
+                    onChange={handleChange}
+                    disabled={campoLocked === 'recebimentoBeneficio'}
+                  />
+                </div>
+
+                <div className="form-group">
                   <label htmlFor="vencimento">Vencimento</label>
                   <input
                     id="vencimento"
                     name="vencimento"
+                    type="date"
                     value={form.vencimento}
                     onChange={handleChange}
-                    placeholder="Ex: 2026-05-15"
                     required
+                    disabled={campoLocked === 'vencimento'}
                   />
+
                 </div>
               </div>
 
