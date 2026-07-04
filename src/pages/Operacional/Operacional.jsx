@@ -6,6 +6,8 @@ import {
   FaFileInvoiceDollar,
   FaReceipt,
   FaSyncAlt,
+  FaSearch,
+FaSlidersH,
 } from 'react-icons/fa';
 import { useLocation } from 'react-router-dom';
 
@@ -216,13 +218,83 @@ function normalizeList(data) {
 }
 
 function OperacionalKanban({ faturas }) {
+  const [search, setSearch] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [responsavelFilter, setResponsavelFilter] = useState('');
+
+  const responsaveis = useMemo(() => {
+    const map = new Map();
+
+    faturas.forEach((fatura) => {
+      const name = getUploaderName(fatura);
+
+      if (name && name !== 'Sem responsável') {
+        map.set(name, name);
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.localeCompare(b, 'pt-BR')
+    );
+  }, [faturas]);
+
+  const filteredFaturas = useMemo(() => {
+    const normalizedSearch = search
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    return faturas.filter((fatura) => {
+      const status = computeStatus(fatura);
+      const responsavel = getUploaderName(fatura);
+
+      if (statusFilter && status !== statusFilter) {
+        return false;
+      }
+
+      if (responsavelFilter && responsavel !== responsavelFilter) {
+        return false;
+      }
+
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      const coEstipulantes = getCoEstipulantes(fatura);
+
+      const haystack = [
+        getFaturaNum(fatura),
+        getFaturaEstipulanteName(fatura),
+        responsavel,
+        ...coEstipulantes.flatMap((co) => [
+          co?.name,
+          co?.nome,
+          co?.condominio,
+          co?.condominio_nome,
+          co?.cnpj,
+          co?.documento,
+          co?.cpf_cnpj,
+        ]),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+      return haystack.includes(normalizedSearch);
+    });
+  }, [faturas, search, statusFilter, responsavelFilter]);
+
   const groups = useMemo(() => {
     const grouped = STATUS_COLUMNS.reduce((acc, column) => {
       acc[column.key] = [];
       return acc;
     }, {});
 
-    faturas.forEach((fatura) => {
+    filteredFaturas.forEach((fatura) => {
       const status = computeStatus(fatura);
 
       if (grouped[status]) {
@@ -231,79 +303,133 @@ function OperacionalKanban({ faturas }) {
     });
 
     return grouped;
-  }, [faturas]);
+  }, [filteredFaturas]);
 
   return (
-    <div className="op-kanban-grid">
-      {STATUS_COLUMNS.map((column) => {
-        const statusClass = KANBAN_STATUS_CLASS[column.key] || '';
+    <div className="op-kanban-page">
+      <div className="op-kanban-toolbar">
+        <div className="op-kanban-search">
+          <FaSearch />
 
-        return (
-          <section
-            key={column.key}
-            className={`op-kanban-column ${statusClass}`}
+          <input
+            type="search"
+            placeholder="Buscar fatura..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </div>
+
+        <button
+          className={`op-kanban-filter-btn${filtersOpen ? ' active' : ''}`}
+          type="button"
+          title="Filtros"
+          onClick={() => setFiltersOpen((value) => !value)}
+        >
+          <FaSlidersH />
+        </button>
+      </div>
+
+      {filtersOpen && (
+        <div className="op-kanban-filters">
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
           >
-            <header className="op-kanban-column-header">
-              <div className="op-kanban-title-wrap">
-                <span className="op-kanban-dot" />
+            <option value="">Todos os status</option>
+            <option value="faturado">Faturado</option>
+            <option value="atrasado">Confirmar Pagamento</option>
+            <option value="aprovado">Boleto VR Enviado</option>
+            <option value="pago">Pago</option>
+          </select>
 
-                <strong className="op-kanban-title">
-                  {column.label}
-                </strong>
-              </div>
+          <select
+            value={responsavelFilter}
+            onChange={(event) => setResponsavelFilter(event.target.value)}
+          >
+            <option value="">Todos os responsáveis</option>
 
-              <span className="op-kanban-count">
-                {groups[column.key].length}
-              </span>
-            </header>
+            {responsaveis.map((responsavel) => (
+              <option key={responsavel} value={responsavel}>
+                {responsavel}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
-            <div className="op-kanban-column-body">
-              {groups[column.key].length ? (
-                <div className="op-kanban-card-list">
-                  {groups[column.key].map((fatura) => {
-                    const coEstipulantes = getCoEstipulantes(fatura);
-                    const id = getFaturaId(fatura);
+      <div className="op-kanban-divider" />
 
-                    return (
-                      <article key={id} className="op-kanban-card">
-                        <div className="op-kanban-card-title">
-                          {getFaturaEstipulanteName(fatura)}
-                        </div>
+      <div className="op-kanban-grid">
+        {STATUS_COLUMNS.map((column) => {
+          const statusClass = KANBAN_STATUS_CLASS[column.key] || '';
 
-                        <div className="op-kanban-card-sub">
-                          {getFaturaNum(fatura)}
-                        </div>
+          return (
+            <section
+              key={column.key}
+              className={`op-kanban-column ${statusClass}`}
+            >
+              <header className="op-kanban-column-header">
+                <div className="op-kanban-title-wrap">
+                  <span className="op-kanban-dot" />
 
-                        <div className="op-kanban-card-value">
-                          {formatBRL(getFaturaTotal(fatura))}
-                        </div>
-
-                        <div className="op-kanban-card-footer">
-                          <span>
-                            Vence {fmtDate(getFirstDueDate(fatura))}
-                          </span>
-
-                          <span>
-                            {getPaidCount(fatura)}/{coEstipulantes.length} pagos
-                          </span>
-                        </div>
-
-                        <div className="op-kanban-card-uploader">
-                          {getUploaderName(fatura)}
-                        </div>
-                      </article>
-                    );
-                  })}
+                  <strong className="op-kanban-title">
+                    {column.label}
+                  </strong>
                 </div>
-              ) : (
-                <p className="op-kanban-empty">
-                  Nenhuma fatura
-                </p>
-              )}
-            </div>
-          </section>
-        );
-      })}
+
+                <span className="op-kanban-count">
+                  {groups[column.key].length}
+                </span>
+              </header>
+
+              <div className="op-kanban-column-body">
+                {groups[column.key].length ? (
+                  <div className="op-kanban-card-list">
+                    {groups[column.key].map((fatura) => {
+                      const coEstipulantes = getCoEstipulantes(fatura);
+                      const id = getFaturaId(fatura);
+
+                      return (
+                        <article key={id} className="op-kanban-card">
+                          <div className="op-kanban-card-title">
+                            {getFaturaEstipulanteName(fatura)}
+                          </div>
+
+                          <div className="op-kanban-card-sub">
+                            {getFaturaNum(fatura)}
+                          </div>
+
+                          <div className="op-kanban-card-value">
+                            {formatBRL(getFaturaTotal(fatura))}
+                          </div>
+
+                          <div className="op-kanban-card-footer">
+                            <span>
+                              Vence {fmtDate(getFirstDueDate(fatura))}
+                            </span>
+
+                            <span>
+                              {getPaidCount(fatura)}/{coEstipulantes.length} pagos
+                            </span>
+                          </div>
+
+                          <div className="op-kanban-card-uploader">
+                            {getUploaderName(fatura)}
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="op-kanban-empty">
+                    Nenhuma fatura
+                  </p>
+                )}
+              </div>
+            </section>
+          );
+        })}
+      </div>
     </div>
   );
 }
