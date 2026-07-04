@@ -1,4 +1,4 @@
-import api from "./api"
+import api from './api'
 
 function getAuthToken() {
   try {
@@ -63,24 +63,14 @@ function getExportFaturamentoUrl(params = {}) {
   const queryString = query.toString()
   const API_BASE = getApiBaseUrl()
 
-  return `${API_BASE}/api/upload/export/faturamento/${queryString ? `?${queryString}` : ''
-    }`
+  return `${API_BASE}/api/upload/export/faturamento/${queryString ? `?${queryString}` : ''}`
 }
 
 function getCompraVTUrl(params = {}) {
   const query = new URLSearchParams(params).toString()
   const API_BASE = getApiBaseUrl()
 
-  return `${API_BASE}/api/upload/export/vt-compra/${query ? `?${query}` : ''
-    }`
-}
-
-function getCompraTxtUrl(params = {}) {
-  const query = new URLSearchParams(params).toString()
-  const API_BASE = getApiBaseUrl()
-
-  return `${API_BASE}/api/upload/export/txt-compra/${query ? `?${query}` : ''
-    }`
+  return `${API_BASE}/api/upload/export/vt-compra/${query ? `?${query}` : ''}`
 }
 
 async function readErrorMessageFromResponse(response, fallbackMessage) {
@@ -89,7 +79,7 @@ async function readErrorMessageFromResponse(response, fallbackMessage) {
 
     try {
       const json = JSON.parse(text)
-      return json?.detail || json?.message || fallbackMessage
+      return json?.detail || json?.message || json?.error || fallbackMessage
     } catch {
       return text || fallbackMessage
     }
@@ -104,7 +94,7 @@ async function readErrorMessageFromBlob(blob, fallbackMessage) {
 
     try {
       const json = JSON.parse(text)
-      return json?.detail || json?.message || fallbackMessage
+      return json?.detail || json?.message || json?.error || fallbackMessage
     } catch {
       return text || fallbackMessage
     }
@@ -125,6 +115,33 @@ function downloadBlob(blob, filename) {
   link.remove()
 
   window.URL.revokeObjectURL(blobUrl)
+}
+
+function normalizeTxtPayload(payload = {}) {
+  const importacaoId =
+    payload.importacao_id ||
+    payload.importacaoId ||
+    payload.id ||
+    payload.pedidoId ||
+    null
+
+  const movimentacaoIds = Array.isArray(payload.movimentacao_ids)
+    ? payload.movimentacao_ids
+    : Array.isArray(payload.movimentacaoIds)
+      ? payload.movimentacaoIds
+      : null
+
+  const dataCompetencia =
+    payload.data_competencia ||
+    payload.dataCompetencia ||
+    payload.competencia ||
+    null
+
+  return {
+    importacao_id: importacaoId,
+    ...(movimentacaoIds?.length ? { movimentacao_ids: movimentacaoIds } : {}),
+    ...(dataCompetencia ? { data_competencia: dataCompetencia } : {}),
+  }
 }
 
 export const faturamentoService = {
@@ -199,17 +216,17 @@ export const faturamentoService = {
         .sort((a, b) =>
           String(
             b.data_importacao ||
-            b.processed_at ||
-            b.created_at ||
-            b.updated_at ||
-            ''
+              b.processed_at ||
+              b.created_at ||
+              b.updated_at ||
+              ''
           ).localeCompare(
             String(
               a.data_importacao ||
-              a.processed_at ||
-              a.created_at ||
-              a.updated_at ||
-              ''
+                a.processed_at ||
+                a.created_at ||
+                a.updated_at ||
+                ''
             )
           )
         )[0] || null
@@ -219,16 +236,36 @@ export const faturamentoService = {
   async buscarImportacaoPorId(importacaoId) {
     if (!importacaoId) return null
 
-    const importacoes = await faturamentoService.listarImportacoes()
+    try {
+      const response = await api.get(`/api/beneficios/importacoes/${importacaoId}/`)
+      return response.data
+    } catch (error) {
+      console.warn(
+        `Não foi possível buscar detalhe da importação ${importacaoId}. Tentando fallback pela listagem...`,
+        error
+      )
 
-    return (
-      importacoes.find(
-        (item) =>
-          String(item.id) === String(importacaoId) ||
-          String(item.file_upload_id) === String(importacaoId) ||
-          String(item.faturamento_id) === String(importacaoId)
-      ) || null
-    )
+      const importacoes = await faturamentoService.listarImportacoes()
+
+      return (
+        importacoes.find(
+          (item) =>
+            String(item.id) === String(importacaoId) ||
+            String(item.file_upload_id) === String(importacaoId) ||
+            String(item.faturamento_id) === String(importacaoId) ||
+            String(item.importacao_id) === String(importacaoId)
+        ) || null
+      )
+    }
+  },
+
+  async buscarDadosSelecaoImportacao(importacaoId) {
+    if (!importacaoId) {
+      throw new Error('ID da importação não informado.')
+    }
+
+    const response = await api.get(`/api/upload/importacao/${importacaoId}/select-data/`)
+    return response.data
   },
 
   async criarFaturamento(payload) {
@@ -427,39 +464,59 @@ export const faturamentoService = {
     }
   },
 
-  async baixarTxtCompra(params = {}, filename = 'compra') {
-    const url = getCompraTxtUrl(params)
-    const token = getAuthToken()
+  async baixarTxtCompra(payload = {}, filename = 'compra') {
+    const finalPayload = normalizeTxtPayload(payload)
 
-    const response = await fetch(url, {
-      method: 'GET',
+    if (!finalPayload.importacao_id) {
+      throw new Error('ID da importação não informado para gerar o TXT de compra.')
+    }
+
+    const response = await api.post('/api/upload/export/txt-compra/', finalPayload, {
+      responseType: 'blob',
       headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        Accept: 'text/plain, application/octet-stream, */*',
+        'Content-Type': 'application/json',
       },
     })
 
-    const contentType = response.headers.get('content-type') || ''
+    const blob = response.data
+    const contentDisposition = response.headers?.['content-disposition'] || ''
+    const contentType = response.headers?.['content-type'] || ''
 
-    if (!response.ok) {
-      const errorMessage = await readErrorMessageFromResponse(
-        response,
-        'Não foi possível baixar o TXT de compra.'
+    const isInvalidResponse =
+      contentType.includes('application/json') ||
+      contentType.includes('text/html')
+
+    if (isInvalidResponse) {
+      const errorMessage = await readErrorMessageFromBlob(
+        blob,
+        'O backend não retornou um TXT válido.'
       )
+
+      console.error('Resposta inválida ao baixar TXT:', {
+        contentType,
+        contentDisposition,
+        size: blob?.size,
+        errorMessage,
+        payload: finalPayload,
+      })
 
       throw new Error(errorMessage)
     }
 
-    const text = await response.text()
-
-    if (!text) {
+    if (!blob?.size) {
       throw new Error('O backend retornou um TXT vazio.')
     }
 
-    const blob = new Blob([text], {
-      type: contentType || 'text/plain;charset=utf-8',
-    })
+    let finalFilename = extractFilenameFromDisposition(contentDisposition)
 
-    const finalFilename = filename.endsWith('.txt') ? filename : `${filename}.txt`
+    if (!finalFilename) {
+      finalFilename = filename.endsWith('.txt') ? filename : `${filename}.txt`
+    }
+
+    if (!finalFilename.endsWith('.txt')) {
+      finalFilename = `${finalFilename}.txt`
+    }
 
     downloadBlob(blob, finalFilename)
 
@@ -469,4 +526,13 @@ export const faturamentoService = {
       size: blob.size,
     }
   },
+
+  async buscarDadosSelecaoImportacao(importacaoId) {
+  if (!importacaoId) {
+    throw new Error('ID da importação não informado.')
+  }
+
+  const response = await api.get(`/api/upload/importacao/${importacaoId}/select-data/`)
+  return response.data
+},
 }

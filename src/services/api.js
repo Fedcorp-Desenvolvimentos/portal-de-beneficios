@@ -1,8 +1,8 @@
 // src/services/api.js
 import axios from "axios";
 
-//export const API_BASE_URL = 'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app'
-export const API_BASE_URL = 'http://localhost:8000'
+export const API_BASE_URL = 'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app'
+// export const API_BASE_URL = 'http://localhost:8000'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
