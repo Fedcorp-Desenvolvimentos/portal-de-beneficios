@@ -1,5 +1,5 @@
-import React, { useMemo, useRef, useState, useEffect } from 'react'
-import { useSnackbar } from 'notistack'
+import React, { useMemo, useRef, useState, useEffect } from "react";
+import { useSnackbar } from "notistack";
 import {
   FiDownload,
   FiSearch,
@@ -12,100 +12,104 @@ import {
   FiCheckCircle,
   FiRefreshCw,
   FiEye,
-} from 'react-icons/fi'
-import { BiSpreadsheet } from 'react-icons/bi'
+} from "react-icons/fi";
+import { BiSpreadsheet } from "react-icons/bi";
 
-import { faturamentoService } from '../../services/faturamentoService'
-import { entebenService } from '../../services/entebenService'
-import PageLayout from '../../Layouts/PageLayout/PageLayout'
-import { S } from './ColaboradorDashboardStyles'
+import { faturamentoService } from "../../services/faturamentoService";
+import { entebenService } from "../../services/entebenService";
+import PageLayout from "../../Layouts/PageLayout/PageLayout";
+import { S } from "./ColaboradorDashboardStyles";
 
 // ============================================
 // UTILITÁRIOS
 // ============================================
 const fmtDate = (s) => {
-  if (!s) return '-'
-  const value = String(s).trim()
-  if (!value) return '-'
-  if (value.includes('/')) return value
+  if (!s) return "-";
+  const value = String(s).trim();
+  if (!value) return "-";
+  if (value.includes("/")) return value;
 
-  if (value.includes('T')) {
-    const date = new Date(value)
-    if (!isNaN(date.getTime())) return date.toLocaleDateString('pt-BR')
+  if (value.includes("T")) {
+    const date = new Date(value);
+    if (!isNaN(date.getTime())) return date.toLocaleDateString("pt-BR");
   }
 
-  const parts = value.split('-')
+  const parts = value.split("-");
 
   if (parts.length === 3) {
     if (parts[0]?.length === 4) {
-      const [y, m, d] = parts
-      return `${d}/${m}/${y}`
+      const [y, m, d] = parts;
+      return `${d}/${m}/${y}`;
     }
-    const [d, m, y] = parts
-    return y ? `${d}/${m}/${y}` : value
+    const [d, m, y] = parts;
+    return y ? `${d}/${m}/${y}` : value;
   }
 
-  return value
-}
+  return value;
+};
 
 const fmtMonthYear = (value) => {
-  if (!value) return '-'
-  const raw = String(value).trim()
-  if (!raw) return '-'
+  if (!value) return "-";
+  const raw = String(value).trim();
+  if (!raw) return "-";
 
-  if (raw.includes('-')) {
-    const parts = raw.split('-')
-    if (parts.length >= 2) return `${parts[1]}/${parts[0]}`
+  if (raw.includes("-")) {
+    const parts = raw.split("-");
+    if (parts.length >= 2) return `${parts[1]}/${parts[0]}`;
   }
 
-  const brMonthYear = raw.match(/^(0?[1-9]|1[0-2])\/(\d{4})$/)
+  const brMonthYear = raw.match(/^(0?[1-9]|1[0-2])\/(\d{4})$/);
   if (brMonthYear) {
-    const [, month, year] = brMonthYear
-    return `${month.padStart(2, '0')}/${year}`
+    const [, month, year] = brMonthYear;
+    return `${month.padStart(2, "0")}/${year}`;
   }
 
-  const isoMonthYear = raw.match(/^(\d{4})-(0?[1-9]|1[0-2])$/)
+  const isoMonthYear = raw.match(/^(\d{4})-(0?[1-9]|1[0-2])$/);
   if (isoMonthYear) {
-    const [, year, month] = isoMonthYear
-    return `${month.padStart(2, '0')}/${year}`
+    const [, year, month] = isoMonthYear;
+    return `${month.padStart(2, "0")}/${year}`;
   }
 
-  return fmtDate(raw)
-}
+  return fmtDate(raw);
+};
 
 const fmtMoney = (value) =>
-  Number(value || 0).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  })
+  Number(value || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
 
 const norm = (s) =>
-  (s || '')
+  (s || "")
     .toString()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-    .trim()
+    .trim();
 
 const statusMap = {
-  AGUARDANDO_FATURAMENTO: 'aprovado',
-  EM_FATURAMENTO: 'em_faturamento',
-  FATURADO: 'faturado',
-  COMPRADO: 'comprado',
-  CANCELADO: 'cancelado',
-}
+  AGUARDANDO_FATURAMENTO: "aprovado",
+  EM_FATURAMENTO: "em_faturamento",
+  FATURADO: "faturado",
+  COMPRADO: "comprado",
+  CANCELADO: "cancelado",
+};
 
 const normalizarStatus = (status) => {
-  return statusMap[status] || statusMap[String(status || '').toUpperCase()] || 'aprovado'
-}
+  return (
+    statusMap[status] ||
+    statusMap[String(status || "").toUpperCase()] ||
+    "aprovado"
+  );
+};
 
 const statusLabel = {
-  aprovado: 'Aprovado',
-  em_faturamento: 'Em faturamento',
-  faturado: 'Faturado',
-  comprado: 'Comprado',
-  cancelado: 'Cancelado',
-}
+  aprovado: "Aprovado",
+  em_faturamento: "Em faturamento",
+  faturado: "Faturado",
+  comprado: "Comprado",
+  cancelado: "Cancelado",
+};
 
 const statusRank = {
   aprovado: 1,
@@ -113,113 +117,113 @@ const statusRank = {
   faturado: 3,
   comprado: 4,
   cancelado: 99,
-}
+};
 
 const timelineSteps = [
   {
-    key: 'importacao',
-    title: 'Importação recebida',
-    description: 'Arquivo importado e processado no sistema.',
+    key: "importacao",
+    title: "Importação recebida",
+    description: "Arquivo importado e processado no sistema.",
     minRank: 0,
   },
   {
-    key: 'aprovado',
-    title: 'Aprovado',
-    description: 'Pedido liberado para iniciar o faturamento.',
+    key: "aprovado",
+    title: "Aprovado",
+    description: "Pedido liberado para iniciar o faturamento.",
     minRank: 1,
   },
   {
-    key: 'em_faturamento',
-    title: 'Em faturamento',
-    description: 'Planilha de faturamento baixada/iniciada.',
+    key: "em_faturamento",
+    title: "Em faturamento",
+    description: "Planilha de faturamento baixada/iniciada.",
     minRank: 2,
   },
   {
-    key: 'faturado',
-    title: 'Faturado',
-    description: 'Documentos importados e faturamento finalizado.',
+    key: "faturado",
+    title: "Faturado",
+    description: "Documentos importados e faturamento finalizado.",
     minRank: 3,
   },
   {
-    key: 'comprado',
-    title: 'Comprado',
-    description: 'Arquivo enviado para provedora de compra.',
+    key: "comprado",
+    title: "Comprado",
+    description: "Arquivo enviado para provedora de compra.",
     minRank: 4,
   },
-]
+];
 
 const getTimelineItems = (pedido) => {
-  const rankAtual = statusRank[pedido?.status] || 0
+  const rankAtual = statusRank[pedido?.status] || 0;
 
   const items = timelineSteps.map((step) => ({
     ...step,
     date:
-      step.key === 'importacao'
+      step.key === "importacao"
         ? pedido?.dataImportacao
-        : step.key === 'aprovado'
+        : step.key === "aprovado"
           ? pedido?.aprovadoEm
-          : step.key === 'em_faturamento'
+          : step.key === "em_faturamento"
             ? pedido?.emFaturamentoEm
-            : step.key === 'comprado'
+            : step.key === "comprado"
               ? pedido?.compradoEm
               : pedido?.faturadoEm,
     done: rankAtual >= step.minRank,
     current: pedido?.status === step.key,
-  }))
+  }));
 
-  if (pedido?.status === 'cancelado') {
+  if (pedido?.status === "cancelado") {
     items.push({
-      key: 'cancelado',
-      title: 'Cancelado',
-      description: pedido?.motivoCancelamento || 'Faturamento cancelado.',
+      key: "cancelado",
+      title: "Cancelado",
+      description: pedido?.motivoCancelamento || "Faturamento cancelado.",
       date: pedido?.canceladoEm,
       done: true,
       current: true,
-    })
+    });
   }
 
-  return items
-}
+  return items;
+};
 
 const BENEFICIOS_POR_CODIGO = {
-  204: 'Alimentação',
-  207: 'Multibenefícios',
-  27: 'Alimentação',
-  28: 'Vale Combustível',
-  201: 'Cesta',
-  202: 'Boas Festas',
-}
+  204: "Alimentação",
+  207: "Multibenefícios",
+  27: "Alimentação",
+  28: "Vale Combustível",
+  201: "Cesta",
+  202: "Boas Festas",
+};
 
 const BENEFICIOS_POR_SIGLA = {
-  AXA: 'Alimentação',
-  MBF: 'Multibenefícios',
-  VBA: 'Alimentação',
-  VBV: 'Vale Combustível',
-  VCA: 'Cesta',
-  NAT: 'Boas Festas',
-  VT: 'Vale Transporte',
-}
+  AXA: "Alimentação",
+  MBF: "Multibenefícios",
+  VBA: "Alimentação",
+  VBV: "Vale Combustível",
+  VCA: "Cesta",
+  NAT: "Boas Festas",
+  VT: "Vale Transporte",
+};
 
 const normalizeBeneficioText = (value) =>
-  String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .toUpperCase()
-    .trim()
+    .trim();
 
 const firstValueFromObject = (obj, keys = []) => {
-  if (!obj || typeof obj !== 'object') return ''
+  if (!obj || typeof obj !== "object") return "";
 
   for (const key of keys) {
-    const value = obj?.[key]
+    const value = obj?.[key];
 
-    if (value !== null && value !== undefined && String(value).trim() !== '') {
-      return value
+    if (value !== null && value !== undefined && String(value).trim() !== "") {
+      return value;
     }
   }
 
-  return ''
-}
+  return "";
+};
 
 const getPrimeiraMovimentacaoPedido = (pedidoApi) => {
   const listasPossiveis = [
@@ -228,138 +232,141 @@ const getPrimeiraMovimentacaoPedido = (pedidoApi) => {
     pedidoApi?.data_to_backend?.movimentacoes_detalhada,
     pedidoApi?.data_to_backend?.movimentacoes,
     pedidoApi?.summary?.movimentacoes_detalhada,
-  ]
+  ];
 
   for (const lista of listasPossiveis) {
     if (Array.isArray(lista) && lista.length > 0) {
-      return lista[0]
+      return lista[0];
     }
   }
 
-  return null
-}
+  return null;
+};
 
 const getTipoBeneficioPedido = (pedidoApi) => {
-  const primeiraMovimentacao = getPrimeiraMovimentacaoPedido(pedidoApi)
+  const primeiraMovimentacao = getPrimeiraMovimentacaoPedido(pedidoApi);
 
   const codigoRaw =
     firstValueFromObject(pedidoApi, [
-      'beneficio_alterado_para_codigo',
-      'codigo_produto',
-      'produto_codigo',
-      'cod_produto',
-      'codigo',
-      'codigo_beneficio',
-      'tipo_beneficio_codigo',
+      "beneficio_alterado_para_codigo",
+      "codigo_produto",
+      "produto_codigo",
+      "cod_produto",
+      "codigo",
+      "codigo_beneficio",
+      "tipo_beneficio_codigo",
     ]) ||
     firstValueFromObject(primeiraMovimentacao, [
-      'beneficio_alterado_para_codigo',
-      'codigo_produto',
-      'produto_codigo',
-      'cod_produto',
-      'codigo',
-      'codigo_beneficio',
-      'tipo_beneficio_codigo',
-    ])
+      "beneficio_alterado_para_codigo",
+      "codigo_produto",
+      "produto_codigo",
+      "cod_produto",
+      "codigo",
+      "codigo_beneficio",
+      "tipo_beneficio_codigo",
+    ]);
 
-  const codigo = Number(codigoRaw)
+  const codigo = Number(codigoRaw);
 
   if (!Number.isNaN(codigo) && BENEFICIOS_POR_CODIGO[codigo]) {
-    return BENEFICIOS_POR_CODIGO[codigo]
+    return BENEFICIOS_POR_CODIGO[codigo];
   }
 
   const sigla = normalizeBeneficioText(
     firstValueFromObject(pedidoApi, [
-      'beneficio_alterado_para_sigla',
-      'sigla_produto',
-      'sigla',
-      'tipo_beneficio_sigla',
+      "beneficio_alterado_para_sigla",
+      "sigla_produto",
+      "sigla",
+      "tipo_beneficio_sigla",
     ]) ||
       firstValueFromObject(primeiraMovimentacao, [
-        'beneficio_alterado_para_sigla',
-        'sigla_produto',
-        'sigla',
-        'tipo_beneficio_sigla',
-      ])
-  )
+        "beneficio_alterado_para_sigla",
+        "sigla_produto",
+        "sigla",
+        "tipo_beneficio_sigla",
+      ]),
+  );
 
   if (sigla && BENEFICIOS_POR_SIGLA[sigla]) {
-    return BENEFICIOS_POR_SIGLA[sigla]
+    return BENEFICIOS_POR_SIGLA[sigla];
   }
 
   const descricao = normalizeBeneficioText(
     firstValueFromObject(pedidoApi, [
-      'beneficio_alterado_para',
-      'beneficio_alterado_para_descricao',
-      'tipo_beneficio',
-      'nome_beneficio',
-      'beneficio_nome',
-      'beneficio',
-      'nome_produto',
-      'produto_nome',
-      'produto',
-      'descricao_produto',
-      'descricao',
+      "beneficio_alterado_para",
+      "beneficio_alterado_para_descricao",
+      "tipo_beneficio",
+      "nome_beneficio",
+      "beneficio_nome",
+      "beneficio",
+      "nome_produto",
+      "produto_nome",
+      "produto",
+      "descricao_produto",
+      "descricao",
     ]) ||
       firstValueFromObject(primeiraMovimentacao, [
-        'beneficio_alterado_para',
-        'beneficio_alterado_para_descricao',
-        'tipo_beneficio',
-        'nome_beneficio',
-        'beneficio_nome',
-        'beneficio',
-        'nome_produto',
-        'produto_nome',
-        'produto',
-        'descricao_produto',
-        'descricao',
-      ])
-  )
+        "beneficio_alterado_para",
+        "beneficio_alterado_para_descricao",
+        "tipo_beneficio",
+        "nome_beneficio",
+        "beneficio_nome",
+        "beneficio",
+        "nome_produto",
+        "produto_nome",
+        "produto",
+        "descricao_produto",
+        "descricao",
+      ]),
+  );
 
   if (
-    descricao.includes('COMBUSTIVEL') ||
-    descricao.includes('COMBUSTÍVEL') ||
-    descricao === 'AUTO'
+    descricao.includes("COMBUSTIVEL") ||
+    descricao.includes("COMBUSTÍVEL") ||
+    descricao === "AUTO"
   ) {
-    return 'Vale Combustível'
+    return "Vale Combustível";
   }
 
-  if (descricao.includes('TRANSPORTE')) {
-    return 'Vale Transporte'
+  if (descricao.includes("TRANSPORTE")) {
+    return "Vale Transporte";
   }
 
-  if (descricao.includes('MULTIBENEFICIO') || descricao.includes('MULTIBENEFICIOS')) {
-    return 'Multibenefícios'
+  if (
+    descricao.includes("MULTIBENEFICIO") ||
+    descricao.includes("MULTIBENEFICIOS")
+  ) {
+    return "Multibenefícios";
   }
 
-  if (descricao.includes('CESTA')) {
-    return 'Cesta'
+  if (descricao.includes("CESTA")) {
+    return "Cesta";
   }
 
-  if (descricao.includes('BOAS FESTAS') || descricao.includes('NATAL')) {
-    return 'Boas Festas'
+  if (descricao.includes("BOAS FESTAS") || descricao.includes("NATAL")) {
+    return "Boas Festas";
   }
 
-  if (descricao.includes('ALIMENTACAO') || descricao.includes('REFEICAO')) {
-    return 'Alimentação/Refeição'
+  if (descricao.includes("ALIMENTACAO") || descricao.includes("REFEICAO")) {
+    return "Alimentação/Refeição";
   }
 
-  const modelo = normalizeBeneficioText(pedidoApi?.modelo_importacao)
+  const modelo = normalizeBeneficioText(pedidoApi?.modelo_importacao);
 
-  if (modelo.includes('VT')) {
-    return 'Vale Transporte'
+  if (modelo.includes("VT")) {
+    return "Vale Transporte";
   }
 
-  if (modelo.includes('AUTO') || modelo.includes('COMBUSTIVEL')) {
-    return 'Vale Combustível'
+  if (modelo.includes("AUTO") || modelo.includes("COMBUSTIVEL")) {
+    return "Vale Combustível";
   }
 
-  if (modelo.includes('VR')) {
-    return 'Alimentação/Refeição'
+  if (modelo.includes("VR")) {
+    return "Alimentação/Refeição";
   }
 
-  return '-'
-}
+  return "-";
+};
 
 const extrairResumoPedido = (pedidoApi) => ({
   id: pedidoApi.id,
@@ -368,28 +375,31 @@ const extrairResumoPedido = (pedidoApi) => ({
     pedidoApi.faturamento?.id ||
     pedidoApi.importacao_id ||
     pedidoApi.id,
-  nomeAdministradora: pedidoApi.nome_administradora || '-',
+  nomeAdministradora: pedidoApi.nome_administradora || "-",
   fileId: pedidoApi.file_upload_id || pedidoApi.file || null,
   status: normalizarStatus(pedidoApi.status),
   dataVencimento: pedidoApi.data_vencimento,
-  mesUtilizacao: fmtMonthYear(pedidoApi.vigencia_inicio || pedidoApi.competencia),
-  quantidadeDias: pedidoApi.quantidade_dias || '-',
+  mesUtilizacao: fmtMonthYear(
+    pedidoApi.vigencia_inicio || pedidoApi.competencia,
+  ),
+  quantidadeDias: pedidoApi.quantidade_dias || "-",
   dataImportacao: pedidoApi.data_importacao,
   tipoBeneficio: getTipoBeneficioPedido(pedidoApi),
   valorTotal: parseFloat(pedidoApi.valor_total || 0),
-  totalFuncionarios: pedidoApi.total_funcionarios || pedidoApi.registros_processados || 0,
+  totalFuncionarios:
+    pedidoApi.total_funcionarios || pedidoApi.registros_processados || 0,
   nomeCondominio: pedidoApi.nome_condominio || `Pedido ${pedidoApi.id}`,
-  cnpj: pedidoApi.cnpj || '-',
-  cidade: pedidoApi.cidade || '-',
-  uf: pedidoApi.uf || '-',
+  cnpj: pedidoApi.cnpj || "-",
+  cidade: pedidoApi.cidade || "-",
+  uf: pedidoApi.uf || "-",
   importadoEm: pedidoApi.data_importacao,
   aprovadoEm: pedidoApi.data_aprovacao || pedidoApi.data_importacao,
   emFaturamentoEm: pedidoApi.data_em_faturamento || null,
   faturadoEm: pedidoApi.data_faturamento || null,
   canceladoEm: pedidoApi.data_cancelamento || null,
-  motivoCancelamento: pedidoApi.motivo_cancelamento || '',
+  motivoCancelamento: pedidoApi.motivo_cancelamento || "",
   compradoEm: pedidoApi.data_compra || pedidoApi.data_comprado || null,
-})
+});
 
 // ============================================
 // SKELETON COMPONENTS
@@ -405,17 +415,17 @@ const SkeletonStats = () => (
       ))}
     </S.StatsMini>
   </S.PageHeader>
-)
+);
 
 const SkeletonFilters = () => (
   <S.Filters>
-    <S.Search style={{ position: 'relative' }}>
+    <S.Search style={{ position: "relative" }}>
       <S.SkeletonIcon $width="15px" $height="15px" />
       <S.SkeletonLine $width="100%" $height="40px" $borderRadius="12px" />
     </S.Search>
     <S.SkeletonLine $width="180px" $height="40px" $borderRadius="12px" />
   </S.Filters>
-)
+);
 
 const SkeletonTableRow = () => (
   <tr>
@@ -451,7 +461,7 @@ const SkeletonTableRow = () => (
       <S.SkeletonLine $width="60px" $height="28px" $borderRadius="6px" />
     </td>
   </tr>
-)
+);
 
 const SkeletonTable = () => (
   <S.TableWrap>
@@ -477,7 +487,7 @@ const SkeletonTable = () => (
       </tbody>
     </S.Table>
   </S.TableWrap>
-)
+);
 
 const SkeletonPagination = () => (
   <S.Pagination>
@@ -488,121 +498,131 @@ const SkeletonPagination = () => (
       <S.SkeletonLine $width="80px" $height="34px" $borderRadius="8px" />
     </S.PaginationActions>
   </S.Pagination>
-)
+);
 
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
 export default function ColaboradorDashboard() {
-  const { enqueueSnackbar } = useSnackbar()
+  const { enqueueSnackbar } = useSnackbar();
 
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('todos')
-  const [pedidos, setPedidos] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [downloadingId, setDownloadingId] = useState(null)
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("todos");
+  const [pedidos, setPedidos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState(null);
 
-  const [importOpen, setImportOpen] = useState(false)
-  const [selectedPedido, setSelectedPedido] = useState(null)
-  const [docs, setDocs] = useState([])
-  const [uploading, setUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
+  const [compraOpen, setCompraOpen] = useState(false);
+  const [compraPedido, setCompraPedido] = useState(null);
+  const [boletosCompra, setBoletosCompra] = useState([]);
+  const [boletosSelecionados, setBoletosSelecionados] = useState([]);
+  const [boletosLoading, setBoletosLoading] = useState(false);
+  const [gerandoCompra, setGerandoCompra] = useState(false);
+  const [compraError, setCompraError] = useState("");
 
-  const [docsOpen, setDocsOpen] = useState(false)
-  const [docsPedido, setDocsPedido] = useState(null)
-  const [docDownloading, setDocDownloading] = useState('')
+  const [importOpen, setImportOpen] = useState(false);
+  const [selectedPedido, setSelectedPedido] = useState(null);
+  const [docs, setDocs] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  const [refazendoId, setRefazendoId] = useState(null)
-  const [isRefazendo, setIsRefazendo] = useState(false)
+  const [docsOpen, setDocsOpen] = useState(false);
+  const [docsPedido, setDocsPedido] = useState(null);
+  const [docDownloading, setDocDownloading] = useState("");
+
+  const [refazendoId, setRefazendoId] = useState(null);
+  const [isRefazendo, setIsRefazendo] = useState(false);
   const [refazerConfirm, setRefazerConfirm] = useState({
     open: false,
     pedido: null,
-  })
+  });
 
-  const [detailsOpen, setDetailsOpen] = useState(false)
-  const [detailsPedido, setDetailsPedido] = useState(null)
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsPedido, setDetailsPedido] = useState(null);
 
-  const [cancelOpen, setCancelOpen] = useState(false)
-  const [cancelReason, setCancelReason] = useState('')
-  const [cancelError, setCancelError] = useState('')
-  const [cancelPedido, setCancelPedido] = useState(null)
-  const [cancelSubmitting, setCancelSubmitting] = useState(false)
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelError, setCancelError] = useState("");
+  const [cancelPedido, setCancelPedido] = useState(null);
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
 
   const [confirm, setConfirm] = useState({
     open: false,
-    title: '',
-    message: '',
+    title: "",
+    message: "",
     onConfirm: null,
-  })
+  });
 
   const [confirmFinalize, setConfirmFinalize] = useState({
     open: false,
-    title: '',
-    message: '',
+    title: "",
+    message: "",
     onConfirm: null,
-  })
+  });
 
   const [statusConfirm, setStatusConfirm] = useState({
     open: false,
     pedido: null,
-    newStatus: '',
-  })
+    newStatus: "",
+  });
 
-  const [statusChanging, setStatusChanging] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [statusChanging, setStatusChanging] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const itemsPerPage = 10
-  const fileRef = useRef(null)
+  const itemsPerPage = 10;
+  const fileRef = useRef(null);
 
   const showToast = (message, options = {}) => {
     enqueueSnackbar(message, {
-      variant: options.variant || 'info',
-      anchorOrigin: { vertical: 'top', horizontal: 'right' },
+      variant: options.variant || "info",
+      anchorOrigin: { vertical: "top", horizontal: "right" },
       ...options,
-    })
-  }
+    });
+  };
 
   async function carregarPedidos() {
     try {
-      setLoading(true)
-      const response = await faturamentoService.listarPedidosFuncionario()
+      setLoading(true);
+      const response = await faturamentoService.listarPedidosFuncionario();
 
-      let lista = []
+      let lista = [];
 
-      if (Array.isArray(response)) lista = response
-      else if (response?.results && Array.isArray(response.results)) lista = response.results
-      else if (response?.data && Array.isArray(response.data)) lista = response.data
-      else lista = []
+      if (Array.isArray(response)) lista = response;
+      else if (response?.results && Array.isArray(response.results))
+        lista = response.results;
+      else if (response?.data && Array.isArray(response.data))
+        lista = response.data;
+      else lista = [];
 
-      const pedidosFormatados = lista.map(extrairResumoPedido)
-      setPedidos(pedidosFormatados)
+      const pedidosFormatados = lista.map(extrairResumoPedido);
+      setPedidos(pedidosFormatados);
     } catch (error) {
-      console.error('Erro ao carregar pedidos:', error)
-      showToast('Não foi possível carregar os pedidos.', { variant: 'error' })
-      setPedidos([])
+      console.error("Erro ao carregar pedidos:", error);
+      showToast("Não foi possível carregar os pedidos.", { variant: "error" });
+      setPedidos([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   useEffect(() => {
-    carregarPedidos()
-  }, [])
+    carregarPedidos();
+  }, []);
 
   const stats = useMemo(
     () => ({
       total: pedidos.length,
-      aprovados: pedidos.filter((p) => p.status === 'aprovado').length,
-      emFat: pedidos.filter((p) => p.status === 'em_faturamento').length,
-      faturados: pedidos.filter((p) => p.status === 'faturado').length,
-      comprado: pedidos.filter((p) => p.status === 'comprado').length,
-      cancelados: pedidos.filter((p) => p.status === 'cancelado').length,
+      aprovados: pedidos.filter((p) => p.status === "aprovado").length,
+      emFat: pedidos.filter((p) => p.status === "em_faturamento").length,
+      faturados: pedidos.filter((p) => p.status === "faturado").length,
+      comprado: pedidos.filter((p) => p.status === "comprado").length,
+      cancelados: pedidos.filter((p) => p.status === "cancelado").length,
     }),
-    [pedidos]
-  )
+    [pedidos],
+  );
 
   const filtered = useMemo(() => {
-    const q = norm(search)
+    const q = norm(search);
 
     return pedidos.filter((p) => {
       const hay = norm(
@@ -616,76 +636,82 @@ export default function ColaboradorDashboard() {
           p.cnpj,
           p.cidade,
           p.uf,
-        ].join(' ')
-      )
+        ].join(" "),
+      );
 
-      return (!q || hay.includes(q)) && (statusFilter === 'todos' || p.status === statusFilter)
-    })
-  }, [pedidos, search, statusFilter])
+      return (
+        (!q || hay.includes(q)) &&
+        (statusFilter === "todos" || p.status === statusFilter)
+      );
+    });
+  }, [pedidos, search, statusFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
 
   const paginatedPedidos = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage
-    return filtered.slice(start, start + itemsPerPage)
-  }, [filtered, currentPage])
+    const start = (currentPage - 1) * itemsPerPage;
+    return filtered.slice(start, start + itemsPerPage);
+  }, [filtered, currentPage]);
 
   useEffect(() => {
-    setCurrentPage(1)
-  }, [search, statusFilter])
+    setCurrentPage(1);
+  }, [search, statusFilter]);
 
   async function handleDownload(pedido) {
-    if (pedido.status === 'cancelado') {
-      showToast('Não é possível baixar o faturamento de um pedido cancelado.', {
-        variant: 'warning',
-      })
-      return
+    if (pedido.status === "cancelado") {
+      showToast("Não é possível baixar o faturamento de um pedido cancelado.", {
+        variant: "warning",
+      });
+      return;
     }
 
     try {
-      setDownloadingId(pedido.id)
+      setDownloadingId(pedido.id);
 
       await faturamentoService.baixarExportFaturamento(
         { importacao_id: pedido.id },
-        `pedido-${pedido.id}.xlsx`
-      )
+        `pedido-${pedido.id}.xlsx`,
+      );
 
       setPedidos((prev) =>
         prev.map((item) =>
           item.id === pedido.id
             ? {
                 ...item,
-                status: 'em_faturamento',
+                status: "em_faturamento",
                 emFaturamentoEm: new Date().toISOString(),
               }
-            : item
-        )
-      )
+            : item,
+        ),
+      );
 
       showToast(`O pedido ${pedido.id} foi movido para "Em faturamento".`, {
-        variant: 'success',
-      })
+        variant: "success",
+      });
     } catch (error) {
-      console.error('Erro no download:', error)
+      console.error("Erro no download:", error);
 
-      showToast(error?.message || 'Não foi possível baixar a planilha deste pedido.', {
-        variant: 'error',
-      })
+      showToast(
+        error?.message || "Não foi possível baixar a planilha deste pedido.",
+        {
+          variant: "error",
+        },
+      );
     } finally {
-      setDownloadingId(null)
+      setDownloadingId(null);
     }
   }
 
   async function handleChangeStatus(pedido, newStatus) {
-    if (newStatus === 'cancelado') {
-      setCancelPedido(pedido)
-      setCancelReason('')
-      setCancelError('')
-      setCancelOpen(true)
-      return
+    if (newStatus === "cancelado") {
+      setCancelPedido(pedido);
+      setCancelReason("");
+      setCancelError("");
+      setCancelOpen(true);
+      return;
     }
 
-    await faturamentoService.alterarStatusPedido(pedido.id, newStatus)
+    await faturamentoService.alterarStatusPedido(pedido.id, newStatus);
 
     setPedidos((prev) =>
       prev.map((item) =>
@@ -694,302 +720,459 @@ export default function ColaboradorDashboard() {
               ...item,
               status: newStatus,
             }
-          : item
-      )
-    )
+          : item,
+      ),
+    );
 
-    showToast(`Pedido ${pedido.id} alterado para "${statusLabel[newStatus]}".`, {
-      variant: 'success',
-    })
+    showToast(
+      `Pedido ${pedido.id} alterado para "${statusLabel[newStatus]}".`,
+      {
+        variant: "success",
+      },
+    );
   }
 
   function requestStatusChange(pedido, newStatus) {
-    if (!pedido || !newStatus || newStatus === pedido.status) return
+    if (!pedido || !newStatus || newStatus === pedido.status) return;
 
-    if (newStatus === 'cancelado') {
-      setCancelPedido(pedido)
-      setCancelReason('')
-      setCancelError('')
-      setStatusConfirm({ open: false, pedido: null, newStatus: '' })
-      setCancelOpen(true)
-      return
+    if (newStatus === "cancelado") {
+      setCancelPedido(pedido);
+      setCancelReason("");
+      setCancelError("");
+      setStatusConfirm({ open: false, pedido: null, newStatus: "" });
+      setCancelOpen(true);
+      return;
     }
 
     setStatusConfirm({
       open: true,
       pedido,
       newStatus,
-    })
+    });
   }
 
   async function confirmStatusChange() {
-    if (!statusConfirm.pedido || !statusConfirm.newStatus || statusChanging) return
+    if (!statusConfirm.pedido || !statusConfirm.newStatus || statusChanging)
+      return;
 
     try {
-      setStatusChanging(true)
-      await handleChangeStatus(statusConfirm.pedido, statusConfirm.newStatus)
+      setStatusChanging(true);
+      await handleChangeStatus(statusConfirm.pedido, statusConfirm.newStatus);
       setStatusConfirm({
         open: false,
         pedido: null,
-        newStatus: '',
-      })
+        newStatus: "",
+      });
     } catch (error) {
-      console.error('Erro ao alterar status:', error)
-      showToast(error?.message || 'Não foi possível alterar o status.', {
-        variant: 'error',
-      })
+      console.error("Erro ao alterar status:", error);
+      showToast(error?.message || "Não foi possível alterar o status.", {
+        variant: "error",
+      });
     } finally {
-      setStatusChanging(false)
+      setStatusChanging(false);
     }
   }
 
   function cancelStatusChange() {
-    if (statusChanging) return
+    if (statusChanging) return;
 
     setStatusConfirm({
       open: false,
       pedido: null,
-      newStatus: '',
-    })
+      newStatus: "",
+    });
   }
 
   async function handleCancelBilling() {
-    const motivo = cancelReason.trim()
+    const motivo = cancelReason.trim();
 
     if (!cancelPedido?.id) {
-      showToast('Pedido inválido para cancelamento.', {
-        variant: 'error',
-      })
-      return
+      showToast("Pedido inválido para cancelamento.", {
+        variant: "error",
+      });
+      return;
     }
 
     if (!motivo) {
-      setCancelError('Informe o motivo do cancelamento.')
-      return
+      setCancelError("Informe o motivo do cancelamento.");
+      return;
     }
 
     if (motivo.length < 5) {
-      setCancelError('Descreva um motivo mais claro para o cancelamento.')
-      return
+      setCancelError("Descreva um motivo mais claro para o cancelamento.");
+      return;
     }
 
     try {
-      setCancelSubmitting(true)
+      setCancelSubmitting(true);
 
-      await faturamentoService.alterarStatusPedido(cancelPedido.id, 'cancelado', motivo)
+      await faturamentoService.alterarStatusPedido(
+        cancelPedido.id,
+        "cancelado",
+        motivo,
+      );
 
       setPedidos((prev) =>
         prev.map((item) =>
           item.id === cancelPedido.id
             ? {
                 ...item,
-                status: 'cancelado',
+                status: "cancelado",
                 motivoCancelamento: motivo,
                 canceladoEm: new Date().toISOString(),
               }
-            : item
-        )
-      )
+            : item,
+        ),
+      );
 
       showToast(`O pedido ${cancelPedido.id} foi cancelado.`, {
-        variant: 'warning',
-      })
+        variant: "warning",
+      });
 
-      setCancelOpen(false)
-      setCancelPedido(null)
-      setCancelReason('')
-      setCancelError('')
+      setCancelOpen(false);
+      setCancelPedido(null);
+      setCancelReason("");
+      setCancelError("");
     } catch (error) {
-      console.error('Erro ao cancelar:', error)
-      showToast(error?.message || 'Não foi possível cancelar o pedido.', {
-        variant: 'error',
-      })
+      console.error("Erro ao cancelar:", error);
+      showToast(error?.message || "Não foi possível cancelar o pedido.", {
+        variant: "error",
+      });
     } finally {
-      setCancelSubmitting(false)
+      setCancelSubmitting(false);
     }
   }
 
   function openImport(pedido, options = {}) {
-    const { refazendo = false } = options
+    const { refazendo = false } = options;
 
-    if (pedido.status === 'cancelado') {
-      showToast('Este pedido está cancelado.', { variant: 'info' })
-      return
+    if (pedido.status === "cancelado") {
+      showToast("Este pedido está cancelado.", { variant: "info" });
+      return;
     }
 
-    if (!refazendo && pedido.status === 'comprado') {
-      showToast('Este pedido já foi comprado. Use "Refazer" para reenviar documentos.', {
-        variant: 'info',
-      })
-      return
+    if (!refazendo && pedido.status === "comprado") {
+      showToast(
+        'Este pedido já foi comprado. Use "Refazer" para reenviar documentos.',
+        {
+          variant: "info",
+        },
+      );
+      return;
     }
 
-    if (!refazendo && pedido.status === 'faturado') {
-      showToast('Este pedido já foi faturado. Use "Refazer" para reenviar documentos.', {
-        variant: 'info',
-      })
-      return
+    if (!refazendo && pedido.status === "faturado") {
+      showToast(
+        'Este pedido já foi faturado. Use "Refazer" para reenviar documentos.',
+        {
+          variant: "info",
+        },
+      );
+      return;
     }
 
     setSelectedPedido({
       ...pedido,
       refazendo,
-    })
-    setDocs([])
-    setImportOpen(true)
+    });
+    setDocs([]);
+    setImportOpen(true);
   }
 
   function requestRefazerFaturamento(pedido) {
-    if (!pedido) return
+    if (!pedido) return;
 
-    if (pedido.status === 'cancelado') {
-      showToast('Não é possível refazer um pedido cancelado.', {
-        variant: 'warning',
-      })
-      return
+    if (pedido.status === "cancelado") {
+      showToast("Não é possível refazer um pedido cancelado.", {
+        variant: "warning",
+      });
+      return;
     }
 
-    if (!['faturado', 'comprado'].includes(pedido.status)) {
-      showToast('Só é possível refazer pedidos faturados ou comprados.', {
-        variant: 'warning',
-      })
-      return
+    if (!["faturado", "comprado"].includes(pedido.status)) {
+      showToast("Só é possível refazer pedidos faturados ou comprados.", {
+        variant: "warning",
+      });
+      return;
     }
 
     setRefazerConfirm({
       open: true,
       pedido,
-    })
+    });
   }
 
   async function confirmarRefazerFaturamento() {
-    const pedido = refazerConfirm.pedido
+    const pedido = refazerConfirm.pedido;
 
-    if (!pedido?.id || refazendoId === pedido.id) return
+    if (!pedido?.id || refazendoId === pedido.id) return;
 
     try {
-      setRefazendoId(pedido.id)
-      setIsRefazendo(true)
+      setRefazendoId(pedido.id);
+      setIsRefazendo(true);
 
-      if (typeof faturamentoService.refazerFaturamento === 'function') {
-        await faturamentoService.refazerFaturamento(pedido.id)
+      if (typeof faturamentoService.refazerFaturamento === "function") {
+        await faturamentoService.refazerFaturamento(pedido.id);
       } else {
         await faturamentoService.alterarStatusPedido(
           pedido.id,
-          'em_faturamento',
-          'Refazendo faturamento'
-        )
+          "em_faturamento",
+          "Refazendo faturamento",
+        );
       }
 
       const pedidoAtualizado = {
         ...pedido,
-        status: 'em_faturamento',
+        status: "em_faturamento",
         faturadoEm: null,
         compradoEm: null,
         refazendo: true,
-      }
+      };
 
       setPedidos((prev) =>
-        prev.map((item) => (item.id === pedido.id ? pedidoAtualizado : item))
-      )
+        prev.map((item) => (item.id === pedido.id ? pedidoAtualizado : item)),
+      );
 
       setRefazerConfirm({
         open: false,
         pedido: null,
-      })
+      });
 
       showToast(`Pedido ${pedido.id} liberado para refazer faturamento.`, {
-        variant: 'success',
-      })
+        variant: "success",
+      });
 
-      openImport(pedidoAtualizado, { refazendo: true })
+      openImport(pedidoAtualizado, { refazendo: true });
     } catch (error) {
-      console.error('Erro ao refazer faturamento:', error)
-      showToast(error?.message || 'Não foi possível refazer o faturamento.', {
-        variant: 'error',
-      })
+      console.error("Erro ao refazer faturamento:", error);
+      showToast(error?.message || "Não foi possível refazer o faturamento.", {
+        variant: "error",
+      });
     } finally {
-      setRefazendoId(null)
-      setIsRefazendo(false)
+      setRefazendoId(null);
+      setIsRefazendo(false);
     }
   }
 
   function cancelRefazerFaturamento() {
-    if (isRefazendo) return
+    if (isRefazendo) return;
 
     setRefazerConfirm({
       open: false,
       pedido: null,
-    })
+    });
+  }
+
+  const getBoletoId = (boleto) =>
+    boleto?.id ||
+    boleto?.boleto_id ||
+    boleto?.documento ||
+    boleto?.numero_documento ||
+    boleto?.nosso_numero ||
+    boleto?.linha_digitavel ||
+    boleto?.codigo_barras;
+
+  const normalizarListaBoletos = (response) => {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.results)) return response.results;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.boletos)) return response.boletos;
+    return [];
+  };
+
+  function fecharCompraModal() {
+    if (boletosLoading || gerandoCompra) return;
+
+    setCompraOpen(false);
+    setCompraPedido(null);
+    setBoletosCompra([]);
+    setBoletosSelecionados([]);
+    setCompraError("");
+  }
+
+  async function abrirCompraModal(pedido) {
+    if (pedido.status !== "faturado") {
+      showToast("A compra só fica disponível para pedidos faturados.", {
+        variant: "warning",
+      });
+      return;
+    }
+
+    try {
+      setCompraPedido(pedido);
+      setCompraOpen(true);
+      setBoletosCompra([]);
+      setBoletosSelecionados([]);
+      setCompraError("");
+      setBoletosLoading(true);
+
+      const response =
+        typeof faturamentoService.listarBoletosCompra === "function"
+          ? await faturamentoService.listarBoletosCompra(pedido.id)
+          : typeof faturamentoService.listarBoletosPorPedido === "function"
+            ? await faturamentoService.listarBoletosPorPedido(pedido.id)
+            : null;
+
+      const lista = normalizarListaBoletos(response);
+      setBoletosCompra(lista);
+
+      if (!lista.length) {
+        setCompraError("Nenhum boleto foi encontrado para este faturamento.");
+      }
+    } catch (error) {
+      console.error("Erro ao carregar boletos da compra:", error);
+
+      const message =
+        error?.message ||
+        "Não foi possível carregar os boletos deste faturamento.";
+      setCompraError(message);
+      showToast(message, { variant: "error" });
+    } finally {
+      setBoletosLoading(false);
+    }
+  }
+
+  function toggleBoletoCompra(boleto) {
+    const boletoId = getBoletoId(boleto);
+
+    if (!boletoId) {
+      showToast("Este boleto não possui identificador válido.", {
+        variant: "warning",
+      });
+      return;
+    }
+
+    setBoletosSelecionados((prev) => {
+      const jaSelecionado = prev.some((item) => getBoletoId(item) === boletoId);
+
+      if (jaSelecionado) {
+        return prev.filter((item) => getBoletoId(item) !== boletoId);
+      }
+
+      return [...prev, boleto];
+    });
+  }
+
+  function toggleTodosBoletosCompra() {
+    if (!boletosCompra.length) return;
+
+    const todosSelecionados =
+      boletosSelecionados.length === boletosCompra.length;
+    setBoletosSelecionados(todosSelecionados ? [] : boletosCompra);
+  }
+
+  async function gerarTxtCompraSelecionados() {
+    if (!compraPedido?.id) {
+      showToast("Pedido inválido para geração do TXT.", {
+        variant: "error",
+      });
+      return;
+    }
+
+    if (!boletosSelecionados.length) {
+      showToast("Selecione pelo menos um boleto para gerar o TXT.", {
+        variant: "warning",
+      });
+      return;
+    }
+
+    const boletosIds = boletosSelecionados.map(getBoletoId).filter(Boolean);
+
+    if (!boletosIds.length) {
+      showToast("Nenhum boleto selecionado possui identificador válido.", {
+        variant: "error",
+      });
+      return;
+    }
+
+    const isVT = compraPedido.tipoBeneficio?.includes("Transporte");
+
+    try {
+      setGerandoCompra(true);
+      setDownloadingId(compraPedido.id);
+
+      const payload = {
+        importacao_id: compraPedido.id,
+        boletos_ids: boletosIds,
+        boletos: boletosSelecionados,
+      };
+
+      if (
+        isVT &&
+        typeof faturamentoService.baixarExcelCompraVTSelecionados === "function"
+      ) {
+        await faturamentoService.baixarExcelCompraVTSelecionados(
+          payload,
+          `compra-vt-${compraPedido.id}`,
+        );
+      } else if (
+        typeof faturamentoService.baixarTxtCompraSelecionados === "function"
+      ) {
+        await faturamentoService.baixarTxtCompraSelecionados(
+          payload,
+          `compra-${compraPedido.id}`,
+        );
+      } else {
+        await faturamentoService.baixarTxtCompra(
+          payload,
+          `compra-${compraPedido.id}`,
+        );
+      }
+
+      const todosSelecionados =
+        boletosSelecionados.length === boletosCompra.length;
+
+      if (todosSelecionados) {
+        setPedidos((prev) =>
+          prev.map((item) =>
+            item.id === compraPedido.id
+              ? {
+                  ...item,
+                  status: "comprado",
+                  compradoEm: new Date().toISOString(),
+                }
+              : item,
+          ),
+        );
+      }
+
+      showToast(
+        todosSelecionados
+          ? `TXT de compra do pedido ${compraPedido.id} gerado com sucesso.`
+          : `TXT parcial do pedido ${compraPedido.id} gerado com ${boletosSelecionados.length} boleto(s).`,
+        { variant: "success" },
+      );
+
+      fecharCompraModal();
+    } catch (error) {
+      console.error("Erro ao gerar TXT de compra:", error);
+      showToast(error?.message || "Não foi possível gerar o TXT de compra.", {
+        variant: "error",
+      });
+    } finally {
+      setGerandoCompra(false);
+      setDownloadingId(null);
+    }
   }
 
   async function handleCompra(pedido) {
-    if (pedido.status !== 'faturado') {
-      showToast('A compra só fica disponível para pedidos faturados.', {
-        variant: 'warning',
-      })
-      return
-    }
-
-    const isVT = pedido.tipoBeneficio?.includes('Transporte')
-
-    try {
-      setDownloadingId(pedido.id)
-
-      if (isVT) {
-        await faturamentoService.baixarExcelCompraVT(
-          { importacao_id: pedido.id },
-          `compra-vt-${pedido.id}`
-        )
-      } else {
-        await faturamentoService.baixarTxtCompra(
-          { importacao_id: pedido.id },
-          `compra-${pedido.id}`
-        )
-      }
-
-      setPedidos((prev) =>
-        prev.map((item) =>
-          item.id === pedido.id
-            ? {
-                ...item,
-                status: 'comprado',
-                compradoEm: new Date().toISOString(),
-              }
-            : item
-        )
-      )
-
-      showToast(
-        isVT
-          ? `Excel de compra VT do pedido ${pedido.id} baixado com sucesso.`
-          : `TXT do pedido ${pedido.id} baixado com sucesso.`,
-        { variant: 'success' }
-      )
-    } catch (error) {
-      console.error('Erro ao baixar arquivo de compra:', error)
-      showToast(error?.message || 'Não foi possível baixar o arquivo de compra.', {
-        variant: 'error',
-      })
-    } finally {
-      setDownloadingId(null)
-    }
+    await abrirCompraModal(pedido);
   }
 
   function closeImport() {
-    if (uploading) return
-    setImportOpen(false)
-    setSelectedPedido(null)
-    setDocs([])
+    if (uploading) return;
+    setImportOpen(false);
+    setSelectedPedido(null);
+    setDocs([]);
   }
 
   function handleFiles(list) {
-    const allowed = []
-    const rejected = []
+    const allowed = [];
+    const rejected = [];
 
     for (const f of Array.from(list || [])) {
-      if (/\.(pdf|xml|png|jpg|jpeg)$/i.test(f.name)) allowed.push(f)
-      else rejected.push(f)
+      if (/\.(pdf|xml|png|jpg|jpeg)$/i.test(f.name)) allowed.push(f);
+      else rejected.push(f);
     }
 
     if (rejected.length) {
@@ -997,97 +1180,106 @@ export default function ColaboradorDashboard() {
         `Formatos aceitos: PDF, XML, PNG, JPG. Ignorados: ${rejected
           .slice(0, 3)
           .map((r) => r.name)
-          .join(', ')}`,
+          .join(", ")}`,
         {
-          variant: 'warning',
-        }
-      )
+          variant: "warning",
+        },
+      );
     }
 
     setDocs((prev) => {
-      const keys = new Set(prev.map((f) => `${f.name}-${f.size}`))
-      return [...prev, ...allowed.filter((f) => !keys.has(`${f.name}-${f.size}`))]
-    })
+      const keys = new Set(prev.map((f) => `${f.name}-${f.size}`));
+      return [
+        ...prev,
+        ...allowed.filter((f) => !keys.has(`${f.name}-${f.size}`)),
+      ];
+    });
   }
 
   function requestRemove(idx) {
-    const file = docs[idx]
+    const file = docs[idx];
 
     setConfirm({
       open: true,
-      title: 'Remover documento',
+      title: "Remover documento",
       message: `Remover "${file?.name}" da lista?`,
       onConfirm: () => {
-        setDocs((prev) => prev.filter((_, i) => i !== idx))
+        setDocs((prev) => prev.filter((_, i) => i !== idx));
         setConfirm({
           open: false,
-          title: '',
-          message: '',
+          title: "",
+          message: "",
           onConfirm: null,
-        })
-        showToast('Documento removido da lista.', {
-          variant: 'info',
-        })
+        });
+        showToast("Documento removido da lista.", {
+          variant: "info",
+        });
       },
-    })
+    });
   }
 
   function requestFinalizeImport() {
     if (!docs.length) {
-      showToast('Selecione pelo menos um documento.', {
-        variant: 'warning',
-      })
-      return
+      showToast("Selecione pelo menos um documento.", {
+        variant: "warning",
+      });
+      return;
     }
 
-    const isRefazendoPedido = selectedPedido?.refazendo
+    const isRefazendoPedido = selectedPedido?.refazendo;
 
     setConfirmFinalize({
       open: true,
-      title: isRefazendoPedido ? 'Confirmar reenvio de documentos' : 'Confirmar importação',
+      title: isRefazendoPedido
+        ? "Confirmar reenvio de documentos"
+        : "Confirmar importação",
       message: isRefazendoPedido
-        ? 'Ao reenviar a documentação, os documentos anteriores deste pedido poderão ser substituídos e o pedido voltará para faturado. Deseja continuar?'
-        : 'Ao importar a documentação, o pedido ficará disponível para o funcionário. Deseja continuar?',
+        ? "Ao reenviar a documentação, os documentos anteriores deste pedido poderão ser substituídos e o pedido voltará para faturado. Deseja continuar?"
+        : "Ao importar a documentação, o pedido ficará disponível para o funcionário. Deseja continuar?",
       onConfirm: async () => {
         setConfirmFinalize({
           open: false,
-          title: '',
-          message: '',
+          title: "",
+          message: "",
           onConfirm: null,
-        })
-        await handleUpload()
+        });
+        await handleUpload();
       },
-    })
+    });
   }
 
   async function handleUpload() {
-    if (!docs.length || !selectedPedido?.id) return
+    if (!docs.length || !selectedPedido?.id) return;
 
     const arquivoBoleto = docs.find((file) => {
-      const name = file.name.toLowerCase()
-      return name.includes('boleto') || name.includes('recibo')
-    })
+      const name = file.name.toLowerCase();
+      return name.includes("boleto") || name.includes("recibo");
+    });
 
     const arquivoNotaDebito = docs.find((file) => {
-      const name = file.name.toLowerCase()
-      return name.includes('debito') || name.includes('débito')
-    })
+      const name = file.name.toLowerCase();
+      return name.includes("debito") || name.includes("débito");
+    });
 
     const arquivoNotaFiscal = docs.find((file) => {
-      const name = file.name.toLowerCase()
-      return name.includes('fiscal') || name.includes('nota_fiscal') || name.includes('nf')
-    })
+      const name = file.name.toLowerCase();
+      return (
+        name.includes("fiscal") ||
+        name.includes("nota_fiscal") ||
+        name.includes("nf")
+      );
+    });
 
     if (!arquivoBoleto && !arquivoNotaDebito && !arquivoNotaFiscal) {
-      showToast('Envie boleto/recibo, nota de débito ou nota fiscal.', {
-        variant: 'warning',
-      })
-      return
+      showToast("Envie boleto/recibo, nota de débito ou nota fiscal.", {
+        variant: "warning",
+      });
+      return;
     }
 
     try {
-      setUploading(true)
-      setUploadProgress(1)
+      setUploading(true);
+      setUploadProgress(1);
 
       await faturamentoService.importarDocumentos(
         {
@@ -1100,162 +1292,170 @@ export default function ColaboradorDashboard() {
           arquivoNotaDebito,
           arquivoNotaFiscal,
         },
-        (percent) => setUploadProgress(percent)
-      )
+        (percent) => setUploadProgress(percent),
+      );
 
-      setUploadProgress(100)
+      setUploadProgress(100);
 
       await faturamentoService.alterarStatusPedido(
         selectedPedido.id,
-        'faturado',
-        selectedPedido.refazendo ? 'Documentos reenviados no refaturamento' : undefined
-      )
+        "faturado",
+        selectedPedido.refazendo
+          ? "Documentos reenviados no refaturamento"
+          : undefined,
+      );
 
       setPedidos((prev) =>
         prev.map((item) =>
           item.id === selectedPedido.id
             ? {
                 ...item,
-                status: 'faturado',
+                status: "faturado",
                 importadoEm: new Date().toISOString(),
                 faturadoEm: new Date().toISOString(),
                 compradoEm: null,
               }
-            : item
-        )
-      )
+            : item,
+        ),
+      );
 
       showToast(
         selectedPedido.refazendo
           ? `Documentos reenviados para o pedido ${selectedPedido.id}.`
           : `Documentos enviados para ${selectedPedido.id}.`,
         {
-          variant: 'success',
-        }
-      )
+          variant: "success",
+        },
+      );
 
       setConfirmFinalize({
         open: false,
-        title: '',
-        message: '',
+        title: "",
+        message: "",
         onConfirm: null,
-      })
+      });
 
-      closeImport()
-      await carregarPedidos()
+      closeImport();
+      await carregarPedidos();
     } catch (error) {
-      console.error('Erro ao importar:', error)
-      showToast(error?.message || 'Não foi possível concluir a importação.', {
-        variant: 'error',
-      })
+      console.error("Erro ao importar:", error);
+      showToast(error?.message || "Não foi possível concluir a importação.", {
+        variant: "error",
+      });
     } finally {
-      setUploading(false)
-      setUploadProgress(0)
+      setUploading(false);
+      setUploadProgress(0);
     }
   }
 
   function abrirDocsImportados(pedido) {
     if (!pedido?.id) {
-      showToast('Pedido inválido para consulta de documentos.', {
-        variant: 'error',
-      })
-      return
+      showToast("Pedido inválido para consulta de documentos.", {
+        variant: "error",
+      });
+      return;
     }
 
-    setDocsPedido(pedido)
-    setDocsOpen(true)
+    setDocsPedido(pedido);
+    setDocsOpen(true);
   }
 
   function fecharDocsImportados() {
-    if (docDownloading) return
+    if (docDownloading) return;
 
-    setDocsOpen(false)
-    setDocsPedido(null)
+    setDocsOpen(false);
+    setDocsPedido(null);
   }
 
-  async function baixarDocumentoFaturamento(pedido, tipo = '') {
-    const faturamentoId = pedido?.downloadId || pedido?.faturamento_id || pedido?.id
+  async function baixarDocumentoFaturamento(pedido, tipo = "") {
+    const faturamentoId =
+      pedido?.downloadId || pedido?.faturamento_id || pedido?.id;
 
     if (!faturamentoId) {
-      showToast('ID do faturamento não encontrado para download.', {
-        variant: 'error',
-      })
-      return
+      showToast("ID do faturamento não encontrado para download.", {
+        variant: "error",
+      });
+      return;
     }
 
     try {
-      const key = `${faturamentoId}-${tipo}`
-      setDocDownloading(key)
+      const key = `${faturamentoId}-${tipo}`;
+      setDocDownloading(key);
 
-      const blob = await entebenService.downloadDocumentoFaturamento(faturamentoId, tipo)
-      const fileURL = window.URL.createObjectURL(blob)
+      const blob = await entebenService.downloadDocumentoFaturamento(
+        faturamentoId,
+        tipo,
+      );
+      const fileURL = window.URL.createObjectURL(blob);
 
       const nomeArquivo =
-        tipo !== 'originais/'
-          ? `${tipo.replaceAll('/', '').replaceAll('-', '_')}-${faturamentoId}.pdf`
-          : `faturamento-${faturamentoId}.zip`
+        tipo !== "originais/"
+          ? `${tipo.replaceAll("/", "").replaceAll("-", "_")}-${faturamentoId}.pdf`
+          : `faturamento-${faturamentoId}.zip`;
 
-      const a = document.createElement('a')
-      a.href = fileURL
-      a.download = nomeArquivo
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      window.URL.revokeObjectURL(fileURL)
+      const a = document.createElement("a");
+      a.href = fileURL;
+      a.download = nomeArquivo;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(fileURL);
 
       showToast(`Download iniciado: ${nomeArquivo}`, {
-        variant: 'success',
-      })
+        variant: "success",
+      });
     } catch (error) {
-      console.error('Erro ao baixar documento:', error)
+      console.error("Erro ao baixar documento:", error);
 
-      showToast(error?.message || 'Não foi possível baixar o documento.', {
-        variant: 'error',
-      })
+      showToast(error?.message || "Não foi possível baixar o documento.", {
+        variant: "error",
+      });
     } finally {
-      setDocDownloading('')
+      setDocDownloading("");
     }
   }
 
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key !== 'Escape') return
+      if (e.key !== "Escape") return;
 
       if (refazerConfirm.open && !isRefazendo) {
-        cancelRefazerFaturamento()
+        cancelRefazerFaturamento();
       } else if (statusConfirm.open && !statusChanging) {
-        cancelStatusChange()
+        cancelStatusChange();
       } else if (confirm.open) {
         setConfirm({
           open: false,
-          title: '',
-          message: '',
+          title: "",
+          message: "",
           onConfirm: null,
-        })
+        });
       } else if (confirmFinalize.open && !uploading) {
         setConfirmFinalize({
           open: false,
-          title: '',
-          message: '',
+          title: "",
+          message: "",
           onConfirm: null,
-        })
+        });
       } else if (cancelOpen && !cancelSubmitting) {
-        setCancelOpen(false)
-        setCancelPedido(null)
-        setCancelReason('')
-        setCancelError('')
+        setCancelOpen(false);
+        setCancelPedido(null);
+        setCancelReason("");
+        setCancelError("");
       } else if (importOpen && !uploading) {
-        closeImport()
+        closeImport();
+      } else if (compraOpen && !boletosLoading && !gerandoCompra) {
+        fecharCompraModal();
       } else if (docsOpen && !docDownloading) {
-        fecharDocsImportados()
+        fecharDocsImportados();
       } else if (detailsOpen) {
-        setDetailsOpen(false)
-        setDetailsPedido(null)
+        setDetailsOpen(false);
+        setDetailsPedido(null);
       }
-    }
+    };
 
-    window.addEventListener('keydown', handleEscape)
-    return () => window.removeEventListener('keydown', handleEscape)
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
   }, [
     importOpen,
     confirm.open,
@@ -1265,12 +1465,15 @@ export default function ColaboradorDashboard() {
     detailsOpen,
     docsOpen,
     docDownloading,
+    compraOpen,
+    boletosLoading,
+    gerandoCompra,
     statusConfirm.open,
     statusChanging,
     refazerConfirm.open,
     isRefazendo,
     cancelSubmitting,
-  ])
+  ]);
 
   return (
     <PageLayout
@@ -1317,13 +1520,16 @@ export default function ColaboradorDashboard() {
                 />
 
                 {search && (
-                  <S.SearchClear onClick={() => setSearch('')}>
+                  <S.SearchClear onClick={() => setSearch("")}>
                     <FiX size={14} />
                   </S.SearchClear>
                 )}
               </S.Search>
 
-              <S.Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <S.Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
                 <option value="todos">Todos os status</option>
                 <option value="aprovado">Aprovados</option>
                 <option value="em_faturamento">Em faturamento</option>
@@ -1362,8 +1568,8 @@ export default function ColaboradorDashboard() {
                           <S.IdMain>Pedido #{p.id}</S.IdMain>
                           <S.IdSub>{p.tipoBeneficio}</S.IdSub>
 
-                          {p.status === 'cancelado' && p.motivoCancelamento && (
-                            <S.IdSub style={{ color: '#b91c1c' }}>
+                          {p.status === "cancelado" && p.motivoCancelamento && (
+                            <S.IdSub style={{ color: "#b91c1c" }}>
                               Motivo: {p.motivoCancelamento}
                             </S.IdSub>
                           )}
@@ -1382,7 +1588,7 @@ export default function ColaboradorDashboard() {
 
                         <td style={{ fontSize: 13 }}>{p.mesUtilizacao}</td>
 
-                        <td style={{ fontWeight: 600, color: '#16a34a' }}>
+                        <td style={{ fontWeight: 600, color: "#16a34a" }}>
                           {fmtMoney(p.valorTotal)}
                         </td>
 
@@ -1391,10 +1597,14 @@ export default function ColaboradorDashboard() {
                             <select
                               value={p.status}
                               disabled={statusChanging || cancelSubmitting}
-                              onChange={(e) => requestStatusChange(p, e.target.value)}
+                              onChange={(e) =>
+                                requestStatusChange(p, e.target.value)
+                              }
                             >
                               <option value="aprovado">Aprovado</option>
-                              <option value="em_faturamento">Em faturamento</option>
+                              <option value="em_faturamento">
+                                Em faturamento
+                              </option>
                               <option value="faturado">Faturado</option>
                               <option value="comprado">Comprado</option>
                               <option value="cancelado">Cancelar</option>
@@ -1419,7 +1629,9 @@ export default function ColaboradorDashboard() {
                         <td>
                           <S.Btn
                             onClick={() => handleDownload(p)}
-                            disabled={downloadingId === p.id || p.status === 'cancelado'}
+                            disabled={
+                              downloadingId === p.id || p.status === "cancelado"
+                            }
                           >
                             <FiDownload size={14} />
                             {/* {downloadingId === p.id ? 'Baixando…' : 'Baixar'} */}
@@ -1427,19 +1639,27 @@ export default function ColaboradorDashboard() {
                         </td>
 
                         <td>
-                          {['faturado', 'comprado'].includes(p.status) ? (
-                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          {["faturado", "comprado"].includes(p.status) ? (
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                flexWrap: "wrap",
+                              }}
+                            >
                               <S.Btn
                                 onClick={() => abrirDocsImportados(p)}
                                 title="Ver documentos importados"
                               >
                                 <FiEye size={14} />
-                                
                               </S.Btn>
 
                               <S.Btn
                                 onClick={() => requestRefazerFaturamento(p)}
-                                disabled={p.status === 'cancelado' || refazendoId === p.id}
+                                disabled={
+                                  p.status === "cancelado" ||
+                                  refazendoId === p.id
+                                }
                                 title="Refazer faturamento e reenviar documentos"
                               >
                                 <FiRefreshCw size={14} />
@@ -1449,7 +1669,7 @@ export default function ColaboradorDashboard() {
                           ) : (
                             <S.Btn
                               onClick={() => openImport(p)}
-                              disabled={p.status === 'cancelado'}
+                              disabled={p.status === "cancelado"}
                             >
                               <BiSpreadsheet size={14} />
                               Importar
@@ -1458,17 +1678,22 @@ export default function ColaboradorDashboard() {
                         </td>
 
                         <td>
-                          {p.status === 'faturado' ? (
+                          {p.status === "faturado" ? (
                             <S.Btn
                               $variant="primary"
-                              onClick={() => handleCompra(p)}
+                              onClick={() => abrirCompraModal(p)}
                               disabled={downloadingId === p.id}
+                              title="Gerar TXT de Compra"
                             >
                               <FiDownload size={14} />
-                              {downloadingId === p.id ? 'Baixando…' : 'Compra'}
+                              {downloadingId === p.id
+                                ? "Processando…"
+                                : "Gerar TXT"}
                             </S.Btn>
                           ) : (
-                            <span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>
+                            <span style={{ color: "#9ca3af", fontSize: 12 }}>
+                              —
+                            </span>
                           )}
                         </td>
                       </tr>
@@ -1482,13 +1707,15 @@ export default function ColaboradorDashboard() {
               <S.Pagination>
                 <S.PaginationInfo>
                   Mostrando {(currentPage - 1) * itemsPerPage + 1}–
-                  {Math.min(currentPage * itemsPerPage, filtered.length)} de {filtered.length}{' '}
-                  pedidos
+                  {Math.min(currentPage * itemsPerPage, filtered.length)} de{" "}
+                  {filtered.length} pedidos
                 </S.PaginationInfo>
 
                 <S.PaginationActions className="actions">
                   <S.Btn
-                    onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                    onClick={() =>
+                      setCurrentPage((page) => Math.max(page - 1, 1))
+                    }
                     disabled={currentPage === 1}
                   >
                     Anterior
@@ -1499,7 +1726,9 @@ export default function ColaboradorDashboard() {
                   </S.PaginationPage>
 
                   <S.Btn
-                    onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
+                    onClick={() =>
+                      setCurrentPage((page) => Math.min(page + 1, totalPages))
+                    }
                     disabled={currentPage === totalPages}
                   >
                     Próxima
@@ -1515,7 +1744,8 @@ export default function ColaboradorDashboard() {
       {detailsOpen && detailsPedido && (
         <S.Overlay
           onMouseDown={(e) =>
-            e.target === e.currentTarget && (setDetailsOpen(false), setDetailsPedido(null))
+            e.target === e.currentTarget &&
+            (setDetailsOpen(false), setDetailsPedido(null))
           }
         >
           <S.Modal style={{ maxWidth: 520 }}>
@@ -1529,8 +1759,8 @@ export default function ColaboradorDashboard() {
 
               <S.ModalClose
                 onClick={() => {
-                  setDetailsOpen(false)
-                  setDetailsPedido(null)
+                  setDetailsOpen(false);
+                  setDetailsPedido(null);
                 }}
               >
                 <FiX size={18} />
@@ -1548,10 +1778,14 @@ export default function ColaboradorDashboard() {
                     <S.TimelineContent $current={item.current}>
                       <S.TimelineTop>
                         <strong>{item.title}</strong>
-                        <span>{item.date ? fmtDate(item.date) : 'Pendente'}</span>
+                        <span>
+                          {item.date ? fmtDate(item.date) : "Pendente"}
+                        </span>
                       </S.TimelineTop>
 
-                      <S.TimelineDescription>{item.description}</S.TimelineDescription>
+                      <S.TimelineDescription>
+                        {item.description}
+                      </S.TimelineDescription>
                     </S.TimelineContent>
                   </S.TimelineStep>
                 ))}
@@ -1561,11 +1795,205 @@ export default function ColaboradorDashboard() {
         </S.Overlay>
       )}
 
+      {/* Modal de Geração de TXT de Compra */}
+      {compraOpen && compraPedido && (
+        <S.Overlay
+          onMouseDown={(e) =>
+            e.target === e.currentTarget &&
+            !boletosLoading &&
+            !gerandoCompra &&
+            fecharCompraModal()
+          }
+        >
+          <S.Modal style={{ maxWidth: 820 }}>
+            <S.ModalHeader>
+              <div>
+                <S.ModalTitle>Gerar TXT de Compra</S.ModalTitle>
+
+                <S.ModalSub>
+                  Pedido {compraPedido.id} · {compraPedido.nomeCondominio}
+                </S.ModalSub>
+              </div>
+
+              <S.ModalClose
+                onClick={fecharCompraModal}
+                disabled={boletosLoading || gerandoCompra}
+              >
+                <FiX size={18} />
+              </S.ModalClose>
+            </S.ModalHeader>
+
+            <S.ModalBody>
+              <S.ConfirmMsg>
+                Selecione os boletos que foram pagos e devem entrar no arquivo
+                de compra.
+              </S.ConfirmMsg>
+
+              {boletosLoading ? (
+                <S.FilesEmpty>Carregando boletos...</S.FilesEmpty>
+              ) : compraError ? (
+                <S.FilesEmpty>{compraError}</S.FilesEmpty>
+              ) : boletosCompra.length === 0 ? (
+                <S.FilesEmpty>
+                  Nenhum boleto encontrado para este faturamento.
+                </S.FilesEmpty>
+              ) : (
+                <>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 12,
+                      margin: "16px 0 10px",
+                    }}
+                  >
+                    <strong style={{ fontSize: 13, color: "#334155" }}>
+                      {boletosSelecionados.length} de {boletosCompra.length}{" "}
+                      boleto(s) selecionado(s)
+                    </strong>
+
+                    <S.Btn
+                      type="button"
+                      onClick={toggleTodosBoletosCompra}
+                      disabled={gerandoCompra}
+                    >
+                      {boletosSelecionados.length === boletosCompra.length
+                        ? "Limpar seleção"
+                        : "Selecionar todos"}
+                    </S.Btn>
+                  </div>
+
+                  <S.TableWrap style={{ maxHeight: 360, overflow: "auto" }}>
+                    <S.Table>
+                      <thead>
+                        <tr>
+                          <th style={{ width: 48 }}>Sel.</th>
+                          <th>Boleto</th>
+                          <th>Condomínio</th>
+                          <th>Vencimento</th>
+                          <th>Valor</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {boletosCompra.map((boleto, index) => {
+                          const boletoId = getBoletoId(boleto);
+                          const checked = boletosSelecionados.some(
+                            (item) => getBoletoId(item) === boletoId,
+                          );
+
+                          const numeroBoleto =
+                            boleto?.documento ||
+                            boleto?.numero_documento ||
+                            boleto?.nosso_numero ||
+                            boleto?.id ||
+                            `Boleto ${index + 1}`;
+
+                          const condominio =
+                            boleto?.nome_condominio ||
+                            boleto?.condominio ||
+                            boleto?.razao_social ||
+                            boleto?.cliente ||
+                            "-";
+
+                          const vencimento =
+                            boleto?.vencimento ||
+                            boleto?.data_vencimento ||
+                            boleto?.dt_vencimento ||
+                            boleto?.dataVencimento;
+
+                          const valor =
+                            boleto?.valor ||
+                            boleto?.valor_boleto ||
+                            boleto?.valor_total ||
+                            boleto?.total;
+
+                          const status =
+                            boleto?.status ||
+                            boleto?.situacao ||
+                            boleto?.status_boleto ||
+                            "-";
+
+                          return (
+                            <tr key={boletoId || `${numeroBoleto}-${index}`}>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  disabled={gerandoCompra || !boletoId}
+                                  onChange={() => toggleBoletoCompra(boleto)}
+                                />
+                              </td>
+
+                              <td>
+                                <S.IdMain>{numeroBoleto}</S.IdMain>
+
+                                {!boletoId && (
+                                  <S.IdSub style={{ color: "#b91c1c" }}>
+                                    Sem identificador
+                                  </S.IdSub>
+                                )}
+                              </td>
+
+                              <td>{condominio}</td>
+
+                              <td>
+                                <S.Inline>
+                                  <FiCalendar size={14} />
+                                  {fmtDate(vencimento)}
+                                </S.Inline>
+                              </td>
+
+                              <td style={{ fontWeight: 600, color: "#16a34a" }}>
+                                {fmtMoney(valor)}
+                              </td>
+
+                              <td style={{ fontSize: 13 }}>{status}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </S.Table>
+                  </S.TableWrap>
+                </>
+              )}
+            </S.ModalBody>
+
+            <S.ModalFooter>
+              <S.Btn
+                onClick={fecharCompraModal}
+                disabled={boletosLoading || gerandoCompra}
+              >
+                Cancelar
+              </S.Btn>
+
+              <S.Btn
+                $variant="primary"
+                onClick={gerarTxtCompraSelecionados}
+                disabled={
+                  boletosLoading ||
+                  gerandoCompra ||
+                  !boletosCompra.length ||
+                  !boletosSelecionados.length
+                }
+              >
+                <FiDownload size={14} />
+                {gerandoCompra ? "Gerando..." : "Gerar TXT"}
+              </S.Btn>
+            </S.ModalFooter>
+          </S.Modal>
+        </S.Overlay>
+      )}
+
       {/* Modal de Documentos Importados */}
       {docsOpen && docsPedido && (
         <S.Overlay
           onMouseDown={(e) =>
-            e.target === e.currentTarget && !docDownloading && fecharDocsImportados()
+            e.target === e.currentTarget &&
+            !docDownloading &&
+            fecharDocsImportados()
           }
         >
           <S.Modal style={{ maxWidth: 560 }}>
@@ -1577,7 +2005,10 @@ export default function ColaboradorDashboard() {
                 </S.ModalSub>
               </div>
 
-              <S.ModalClose onClick={fecharDocsImportados} disabled={!!docDownloading}>
+              <S.ModalClose
+                onClick={fecharDocsImportados}
+                disabled={!!docDownloading}
+              >
                 <FiX size={18} />
               </S.ModalClose>
             </S.ModalHeader>
@@ -1589,51 +2020,69 @@ export default function ColaboradorDashboard() {
 
               <div
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
                   gap: 12,
                   marginTop: 16,
                 }}
               >
                 <S.Btn
-                  onClick={() => baixarDocumentoFaturamento(docsPedido, 'boleto-original/')}
+                  onClick={() =>
+                    baixarDocumentoFaturamento(docsPedido, "boleto-original/")
+                  }
                   disabled={!!docDownloading}
                 >
                   <FiDownload size={14} />
-                  {docDownloading === `${docsPedido.downloadId || docsPedido.id}-boleto-original/`
-                    ? 'Baixando...'
-                    : 'Boleto'}
+                  {docDownloading ===
+                  `${docsPedido.downloadId || docsPedido.id}-boleto-original/`
+                    ? "Baixando..."
+                    : "Boleto"}
                 </S.Btn>
 
                 <S.Btn
-                  onClick={() => baixarDocumentoFaturamento(docsPedido, 'nota-fiscal-original/')}
+                  onClick={() =>
+                    baixarDocumentoFaturamento(
+                      docsPedido,
+                      "nota-fiscal-original/",
+                    )
+                  }
                   disabled={!!docDownloading}
                 >
                   <FiDownload size={14} />
-                  {docDownloading === `${docsPedido.downloadId || docsPedido.id}-nota-fiscal-original/`
-                    ? 'Baixando...'
-                    : 'NF'}
+                  {docDownloading ===
+                  `${docsPedido.downloadId || docsPedido.id}-nota-fiscal-original/`
+                    ? "Baixando..."
+                    : "NF"}
                 </S.Btn>
 
                 <S.Btn
-                  onClick={() => baixarDocumentoFaturamento(docsPedido, 'nota-debito-original/')}
+                  onClick={() =>
+                    baixarDocumentoFaturamento(
+                      docsPedido,
+                      "nota-debito-original/",
+                    )
+                  }
                   disabled={!!docDownloading}
                 >
                   <FiDownload size={14} />
-                  {docDownloading === `${docsPedido.downloadId || docsPedido.id}-nota-debito-original/`
-                    ? 'Baixando...'
-                    : 'Nota Débito'}
+                  {docDownloading ===
+                  `${docsPedido.downloadId || docsPedido.id}-nota-debito-original/`
+                    ? "Baixando..."
+                    : "Nota Débito"}
                 </S.Btn>
 
                 <S.Btn
                   $variant="primary"
-                  onClick={() => baixarDocumentoFaturamento(docsPedido, 'originais/')}
+                  onClick={() =>
+                    baixarDocumentoFaturamento(docsPedido, "originais/")
+                  }
                   disabled={!!docDownloading}
                 >
                   <FiDownload size={14} />
-                  {docDownloading === `${docsPedido.downloadId || docsPedido.id}-originais/`
-                    ? 'Baixando...'
-                    : 'Baixar todos'}
+                  {docDownloading ===
+                  `${docsPedido.downloadId || docsPedido.id}-originais/`
+                    ? "Baixando..."
+                    : "Baixar todos"}
                 </S.Btn>
               </div>
             </S.ModalBody>
@@ -1650,13 +2099,17 @@ export default function ColaboradorDashboard() {
       {/* Modal de Importação / Reenvio */}
       {importOpen && selectedPedido && (
         <S.Overlay
-          onMouseDown={(e) => e.target === e.currentTarget && !uploading && closeImport()}
+          onMouseDown={(e) =>
+            e.target === e.currentTarget && !uploading && closeImport()
+          }
         >
           <S.Modal>
             <S.ModalHeader>
               <div>
                 <S.ModalTitle>
-                  {selectedPedido.refazendo ? 'Reenviar documentos' : 'Importar documentos'}
+                  {selectedPedido.refazendo
+                    ? "Reenviar documentos"
+                    : "Importar documentos"}
                 </S.ModalTitle>
 
                 <S.ModalSub>
@@ -1673,8 +2126,8 @@ export default function ColaboradorDashboard() {
               <S.Dropzone
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
-                  e.preventDefault()
-                  if (!uploading) handleFiles(e.dataTransfer.files)
+                  e.preventDefault();
+                  if (!uploading) handleFiles(e.dataTransfer.files);
                 }}
                 onClick={() => !uploading && fileRef.current?.click()}
               >
@@ -1683,8 +2136,12 @@ export default function ColaboradorDashboard() {
                 </S.DropzoneIcon>
 
                 <div>
-                  <S.DropzoneTitle>Arraste ou clique para selecionar</S.DropzoneTitle>
-                  <S.DropzoneHint>PDF, XML, PNG, JPG · múltiplos arquivos</S.DropzoneHint>
+                  <S.DropzoneTitle>
+                    Arraste ou clique para selecionar
+                  </S.DropzoneTitle>
+                  <S.DropzoneHint>
+                    PDF, XML, PNG, JPG · múltiplos arquivos
+                  </S.DropzoneHint>
                 </div>
 
                 <S.FileInput
@@ -1709,12 +2166,16 @@ export default function ColaboradorDashboard() {
                         <div>
                           <S.FileName>{f.name}</S.FileName>
                           <S.FileSub>
-                            {(f.size / 1024).toFixed(1)} KB · {f.type || 'tipo desconhecido'}
+                            {(f.size / 1024).toFixed(1)} KB ·{" "}
+                            {f.type || "tipo desconhecido"}
                           </S.FileSub>
                         </div>
                       </S.FileLeft>
 
-                      <S.FileRemove onClick={() => requestRemove(i)} disabled={uploading}>
+                      <S.FileRemove
+                        onClick={() => requestRemove(i)}
+                        disabled={uploading}
+                      >
                         <FiTrash2 size={14} />
                       </S.FileRemove>
                     </S.FileRow>
@@ -1730,7 +2191,9 @@ export default function ColaboradorDashboard() {
                   </S.UploadProgressTop>
 
                   <S.UploadProgressBar>
-                    <S.UploadProgressFill style={{ width: `${uploadProgress}%` }} />
+                    <S.UploadProgressFill
+                      style={{ width: `${uploadProgress}%` }}
+                    />
                   </S.UploadProgressBar>
                 </S.UploadProgress>
               )}
@@ -1750,8 +2213,8 @@ export default function ColaboradorDashboard() {
                 {uploading
                   ? `Enviando ${uploadProgress}%`
                   : selectedPedido.refazendo
-                    ? 'Reenviar documentos'
-                    : 'Enviar documentos'}
+                    ? "Reenviar documentos"
+                    : "Enviar documentos"}
               </S.Btn>
             </S.ModalFooter>
           </S.Modal>
@@ -1766,8 +2229,8 @@ export default function ColaboradorDashboard() {
             !cancelSubmitting &&
             (setCancelOpen(false),
             setCancelPedido(null),
-            setCancelReason(''),
-            setCancelError(''))
+            setCancelReason(""),
+            setCancelError(""))
           }
         >
           <S.Modal style={{ maxWidth: 460 }}>
@@ -1779,11 +2242,11 @@ export default function ColaboradorDashboard() {
 
               <S.ModalClose
                 onClick={() => {
-                  if (cancelSubmitting) return
-                  setCancelOpen(false)
-                  setCancelPedido(null)
-                  setCancelReason('')
-                  setCancelError('')
+                  if (cancelSubmitting) return;
+                  setCancelOpen(false);
+                  setCancelPedido(null);
+                  setCancelReason("");
+                  setCancelError("");
                 }}
                 disabled={cancelSubmitting}
               >
@@ -1792,14 +2255,16 @@ export default function ColaboradorDashboard() {
             </S.ModalHeader>
 
             <S.ModalBody>
-              <S.FieldLabel htmlFor="cancel-reason">Motivo do cancelamento</S.FieldLabel>
+              <S.FieldLabel htmlFor="cancel-reason">
+                Motivo do cancelamento
+              </S.FieldLabel>
 
               <S.Textarea
                 id="cancel-reason"
                 value={cancelReason}
                 onChange={(e) => {
-                  setCancelReason(e.target.value)
-                  setCancelError('')
+                  setCancelReason(e.target.value);
+                  setCancelError("");
                 }}
                 placeholder="Descreva o motivo..."
                 rows={4}
@@ -1812,11 +2277,11 @@ export default function ColaboradorDashboard() {
             <S.ModalFooter>
               <S.Btn
                 onClick={() => {
-                  if (cancelSubmitting) return
-                  setCancelOpen(false)
-                  setCancelPedido(null)
-                  setCancelReason('')
-                  setCancelError('')
+                  if (cancelSubmitting) return;
+                  setCancelOpen(false);
+                  setCancelPedido(null);
+                  setCancelReason("");
+                  setCancelError("");
                 }}
                 disabled={cancelSubmitting}
               >
@@ -1827,9 +2292,9 @@ export default function ColaboradorDashboard() {
                 $variant="primary"
                 onClick={handleCancelBilling}
                 disabled={cancelSubmitting}
-                style={{ background: '#ef4444', borderColor: '#ef4444' }}
+                style={{ background: "#ef4444", borderColor: "#ef4444" }}
               >
-                {cancelSubmitting ? 'Cancelando...' : 'Confirmar cancelamento'}
+                {cancelSubmitting ? "Cancelando..." : "Confirmar cancelamento"}
               </S.Btn>
             </S.ModalFooter>
           </S.Modal>
@@ -1843,8 +2308,8 @@ export default function ColaboradorDashboard() {
             e.target === e.currentTarget &&
             setConfirm({
               open: false,
-              title: '',
-              message: '',
+              title: "",
+              message: "",
               onConfirm: null,
             })
           }
@@ -1857,8 +2322,8 @@ export default function ColaboradorDashboard() {
                 onClick={() =>
                   setConfirm({
                     open: false,
-                    title: '',
-                    message: '',
+                    title: "",
+                    message: "",
                     onConfirm: null,
                   })
                 }
@@ -1876,8 +2341,8 @@ export default function ColaboradorDashboard() {
                 onClick={() =>
                   setConfirm({
                     open: false,
-                    title: '',
-                    message: '',
+                    title: "",
+                    message: "",
                     onConfirm: null,
                   })
                 }
@@ -1888,7 +2353,7 @@ export default function ColaboradorDashboard() {
               <S.Btn
                 $variant="primary"
                 onClick={() => confirm.onConfirm && confirm.onConfirm()}
-                style={{ background: '#ef4444', borderColor: '#ef4444' }}
+                style={{ background: "#ef4444", borderColor: "#ef4444" }}
               >
                 Remover
               </S.Btn>
@@ -1905,8 +2370,8 @@ export default function ColaboradorDashboard() {
             e.target === e.currentTarget &&
             setConfirmFinalize({
               open: false,
-              title: '',
-              message: '',
+              title: "",
+              message: "",
               onConfirm: null,
             })
           }
@@ -1920,8 +2385,8 @@ export default function ColaboradorDashboard() {
                   !uploading &&
                   setConfirmFinalize({
                     open: false,
-                    title: '',
-                    message: '',
+                    title: "",
+                    message: "",
                     onConfirm: null,
                   })
                 }
@@ -1940,8 +2405,8 @@ export default function ColaboradorDashboard() {
                   !uploading &&
                   setConfirmFinalize({
                     open: false,
-                    title: '',
-                    message: '',
+                    title: "",
+                    message: "",
                     onConfirm: null,
                   })
                 }
@@ -1952,10 +2417,12 @@ export default function ColaboradorDashboard() {
 
               <S.Btn
                 $variant="primary"
-                onClick={() => confirmFinalize.onConfirm && confirmFinalize.onConfirm()}
+                onClick={() =>
+                  confirmFinalize.onConfirm && confirmFinalize.onConfirm()
+                }
                 disabled={uploading}
               >
-                {uploading ? 'Processando...' : 'Confirmar envio'}
+                {uploading ? "Processando..." : "Confirmar envio"}
               </S.Btn>
             </S.ModalFooter>
           </S.Modal>
@@ -1966,7 +2433,9 @@ export default function ColaboradorDashboard() {
       {refazerConfirm.open && refazerConfirm.pedido && (
         <S.Overlay
           onMouseDown={(e) =>
-            !isRefazendo && e.target === e.currentTarget && cancelRefazerFaturamento()
+            !isRefazendo &&
+            e.target === e.currentTarget &&
+            cancelRefazerFaturamento()
           }
         >
           <S.Modal style={{ maxWidth: 430 }}>
@@ -1976,15 +2445,18 @@ export default function ColaboradorDashboard() {
                 <S.ModalSub>Pedido {refazerConfirm.pedido.id}</S.ModalSub>
               </div>
 
-              <S.ModalClose onClick={cancelRefazerFaturamento} disabled={isRefazendo}>
+              <S.ModalClose
+                onClick={cancelRefazerFaturamento}
+                disabled={isRefazendo}
+              >
                 <FiX size={18} />
               </S.ModalClose>
             </S.ModalHeader>
 
             <S.ModalBody>
               <S.ConfirmMsg>
-                Deseja refazer o faturamento deste pedido? Após confirmar, ele será liberado
-                para reenviar a documentação.
+                Deseja refazer o faturamento deste pedido? Após confirmar, ele
+                será liberado para reenviar a documentação.
               </S.ConfirmMsg>
             </S.ModalBody>
 
@@ -1998,7 +2470,7 @@ export default function ColaboradorDashboard() {
                 onClick={confirmarRefazerFaturamento}
                 disabled={isRefazendo}
               >
-                {isRefazendo ? 'Refazendo...' : 'Refazer faturamento'}
+                {isRefazendo ? "Refazendo..." : "Refazer faturamento"}
               </S.Btn>
             </S.ModalFooter>
           </S.Modal>
@@ -2009,22 +2481,29 @@ export default function ColaboradorDashboard() {
       {statusConfirm.open && (
         <S.Overlay
           onMouseDown={(e) =>
-            !statusChanging && e.target === e.currentTarget && cancelStatusChange()
+            !statusChanging &&
+            e.target === e.currentTarget &&
+            cancelStatusChange()
           }
         >
           <S.Modal style={{ maxWidth: 400 }}>
             <S.ModalHeader>
               <S.ModalTitle>Confirmar alteração de status</S.ModalTitle>
 
-              <S.ModalClose onClick={cancelStatusChange} disabled={statusChanging}>
+              <S.ModalClose
+                onClick={cancelStatusChange}
+                disabled={statusChanging}
+              >
                 <FiX size={18} />
               </S.ModalClose>
             </S.ModalHeader>
 
             <S.ModalBody>
               <S.ConfirmMsg>
-                Deseja alterar o pedido {statusConfirm.pedido?.id || ''} para "
-                {statusLabel[statusConfirm.newStatus] || statusConfirm.newStatus}"?
+                Deseja alterar o pedido {statusConfirm.pedido?.id || ""} para "
+                {statusLabel[statusConfirm.newStatus] ||
+                  statusConfirm.newStatus}
+                "?
               </S.ConfirmMsg>
             </S.ModalBody>
 
@@ -2038,12 +2517,12 @@ export default function ColaboradorDashboard() {
                 onClick={confirmStatusChange}
                 disabled={statusChanging}
               >
-                {statusChanging ? 'Alterando...' : 'Alterar status'}
+                {statusChanging ? "Alterando..." : "Alterar status"}
               </S.Btn>
             </S.ModalFooter>
           </S.Modal>
         </S.Overlay>
       )}
     </PageLayout>
-  )
+  );
 }
