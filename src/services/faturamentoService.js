@@ -63,27 +63,24 @@ function getExportFaturamentoUrl(params = {}) {
   const queryString = query.toString()
   const API_BASE = getApiBaseUrl()
 
-  return `${API_BASE}/upload/export/faturamento/${
-    queryString ? `?${queryString}` : ''
-  }`
+  return `${API_BASE}/api/upload/export/faturamento/${queryString ? `?${queryString}` : ''
+    }`
 }
 
 function getCompraVTUrl(params = {}) {
   const query = new URLSearchParams(params).toString()
   const API_BASE = getApiBaseUrl()
 
-  return `${API_BASE}/upload/export/vt-compra/${
-    query ? `?${query}` : ''
-  }`
+  return `${API_BASE}/api/upload/export/vt-compra/${query ? `?${query}` : ''
+    }`
 }
 
 function getCompraTxtUrl(params = {}) {
   const query = new URLSearchParams(params).toString()
   const API_BASE = getApiBaseUrl()
 
-  return `${API_BASE}/upload/export/txt-compra/${
-    query ? `?${query}` : ''
-  }`
+  return `${API_BASE}/api/upload/export/txt-compra/${query ? `?${query}` : ''
+    }`
 }
 
 async function readErrorMessageFromResponse(response, fallbackMessage) {
@@ -202,17 +199,17 @@ export const faturamentoService = {
         .sort((a, b) =>
           String(
             b.data_importacao ||
-              b.processed_at ||
-              b.created_at ||
-              b.updated_at ||
-              ''
+            b.processed_at ||
+            b.created_at ||
+            b.updated_at ||
+            ''
           ).localeCompare(
             String(
               a.data_importacao ||
-                a.processed_at ||
-                a.created_at ||
-                a.updated_at ||
-                ''
+              a.processed_at ||
+              a.created_at ||
+              a.updated_at ||
+              ''
             )
           )
         )[0] || null
