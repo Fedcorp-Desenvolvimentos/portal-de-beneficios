@@ -50,6 +50,7 @@ import MinhaConta from '../pages/MinhaConta/MinhaConta'
 
 import AcompanhamentoFaturados from '../pages/Interno/AcompanhamentoFaturados/AcompanhamentoFaturados'
 import BoletosVR from '../pages/Interno/BoletosVR/BoletosVR'
+import Operacional from '../pages/Operacional/Operacional'
 
 const AppRouter = () => {
   const { isAuthenticated, user } = useAuth()
@@ -162,6 +163,24 @@ const AppRouter = () => {
             <Route
               path="/boletos-vr/analises"
               element={<BoletosVR view="analises" />}
+            />
+
+            {/* Operacional */}
+            <Route
+              path="/operacional"
+              element={<Operacional view="dashboard" />}
+            />
+            <Route
+              path="/operacional/kanban"
+              element={<Operacional view="kanban" />}
+            />
+            <Route
+              path="/operacional/faturas"
+              element={<Operacional view="faturas" />}
+            />
+            <Route
+              path="/operacional/analises"
+              element={<Operacional view="analises" />}
             />
 
             <Route

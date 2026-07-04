@@ -179,31 +179,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
 
   const filteredNavItems = navItems.filter((item) => hasAccess(item.allowed));
 
-  /*
-  const dashboardBoletosItems = [
-    {
-      path: "/boletos-vr",
-      label: "Dashboard Boletos",
-      icon: <FaChartBar />,
-      exact: true,
-    },
-    {
-      path: "/boletos-vr/kanban",
-      label: "Kanban VR",
-      icon: <FaProjectDiagram />,
-    },
-    {
-      path: "/boletos-vr/faturas",
-      label: "Faturas VR",
-      icon: <FaReceipt />,
-    },
-    {
-      path: "/boletos-vr/analises",
-      label: "Análises VR",
-      icon: <FaChartLine />,
-    },
-  ];
-  */
+
 
   return (
     <>
@@ -277,15 +253,19 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
             })}
           </ul>
 
-          {/*
-          {hasAccess(["fat", "fin", "dev"]) && (
+          {hasAccess(["fat", "dev"]) && (
             <S.NavSection>
               <S.SectionLabel $isClosed={!sidebarOpen}>
-                Boletos VR
+                Equipe Fedcorp
               </S.SectionLabel>
 
               <ul>
-                {dashboardBoletosItems.map((item) => {
+                {[
+                  { path: "/operacional", label: "Painel Geral", icon: <FaChartBar />, exact: true },
+                  { path: "/operacional/kanban", label: "Kanban", icon: <FaProjectDiagram /> },
+                  { path: "/operacional/faturas", label: "Faturas", icon: <FaReceipt /> },
+                  { path: "/operacional/analises", label: "Análises", icon: <FaChartLine /> },
+                ].map((item) => {
                   const isActive = item.exact
                     ? location.pathname === item.path
                     : location.pathname === item.path ||
@@ -319,7 +299,6 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
               </ul>
             </S.NavSection>
           )}
-          */}
         </S.Nav>
       </S.SidebarContainer>
     </>
