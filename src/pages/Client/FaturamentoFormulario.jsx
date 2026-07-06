@@ -846,7 +846,7 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
       setForm((prev) => ({
         ...prev,
         recebimentoBeneficio: value,
-        vencimento: isComplete ? subtractDaysFromDateInput(value, 4) : '',
+        vencimento: isComplete ? subtractDaysFromDateInput(value, 1) : '',
       }))
       setCampoLocked(isComplete ? 'vencimento' : null)
       return
@@ -856,7 +856,7 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
       setForm((prev) => ({
         ...prev,
         vencimento: value,
-        recebimentoBeneficio: isComplete ? addDaysToDateInput(value, 4) : '',
+        recebimentoBeneficio: isComplete ? addDaysToDateInput(value, 1) : '',
       }))
       setCampoLocked(isComplete ? 'recebimentoBeneficio' : null)
       return
