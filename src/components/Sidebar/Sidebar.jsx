@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   FaHome,
-  FaWallet,
   FaChartBar,
   FaChartLine,
   FaProjectDiagram,
@@ -28,7 +27,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
     user?.tipo ||
     user?.role ||
     user?.perfil ||
-    '';
+    "";
 
   const emailUsuario = user?.email;
 
@@ -82,7 +81,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       path: "/home",
       label: "Início",
       icon: <FaHome />,
-      allowed: ["adm", "dev"],
+      allowed: ["adm", "dep", "dev"],
     },
     {
       path: "/dashboard",
@@ -94,19 +93,13 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       path: "/importacao",
       label: "Upload",
       icon: <FaFileUpload />,
-      allowed: ["adm", "dev"],
+      allowed: ["adm", "dep", "dev"],
     },
-    // {
-    //   path: "/faturamento/individual",
-    //   label: "Faturamento Individual",
-    //   icon: <FaReceipt />,
-    //   allowed: ["fat", "dev", "adm"],
-    // },
     {
       path: "/faturamento",
       label: "Faturamento",
       icon: <FaFileInvoiceDollar />,
-      allowed: ["fat", "dev", "adm"],
+      allowed: ["fat", "dev", "adm", "dep"],
     },
     {
       path: "/gerenciamento",
@@ -130,56 +123,23 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       path: "/colaboradores/acompanhamento",
       label: "Acompanhamento",
       icon: <FaChartLine />,
-      allowed: ["adm", "dev"],
+      allowed: ["adm", "dep", "dev"],
     },
-    // {
-    //   path: "/colaboradores/acompanhamento",
-    //   label: "Acompanhamento",
-    //   icon: <FaChartLine />,
-    //   allowed: ["fat", "dev"],
-    // },
     {
       path: "/interno/administradoras",
       label: "Administradoras",
       icon: <FaBuilding />,
       allowed: ["dev", "fat"],
     },
-    // {
-    //   path: "/interno/cadastrar-administradora",
-    //   label: "Criar Administradora",
-    //   icon: <FaBuilding />,
-    //   allowed: ["dev"],
-    // },
     {
       path: "/interno/minha-administradora",
       label: "Minha Administradora",
       icon: <FaBuilding />,
-      allowed: ["adm", "dev"],
+      allowed: ["adm", "dep", "dev"],
     },
-
-    // {
-    //   path: "/minha-conta",
-    //   label: "Minha Conta",
-    //   icon: <FaUserCircle />,
-    //   allowed: ["adm", "cli", "fin", "fat", "dev"],
-    // },
-    // {
-    //   path: "/movimentacoes",
-    //   label: "Movimentações",
-    //   icon: <FaExchangeAlt />,
-    //   allowed: ["adm", "fat", "dev"],
-    // },
-    // {
-    //   path: "/beneficios",
-    //   label: "Benefícios",
-    //   icon: <FaWallet />,
-    //   allowed: ["adm", "cli", "fin", "fat", "dev"],
-    // },
   ];
 
   const filteredNavItems = navItems.filter((item) => hasAccess(item.allowed));
-
-
 
   return (
     <>
@@ -261,21 +221,35 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
 
               <ul>
                 {[
-                  { path: "/operacional", label: "Painel Geral", icon: <FaChartBar />, exact: true },
-                  { path: "/operacional/kanban", label: "Kanban", icon: <FaProjectDiagram /> },
-                  { path: "/operacional/faturas", label: "Faturas", icon: <FaReceipt /> },
-                  { path: "/operacional/analises", label: "Análises", icon: <FaChartLine /> },
+                  {
+                    path: "/operacional",
+                    label: "Painel Geral",
+                    icon: <FaChartBar />,
+                    exact: true,
+                  },
+                  {
+                    path: "/operacional/kanban",
+                    label: "Kanban",
+                    icon: <FaProjectDiagram />,
+                  },
+                  {
+                    path: "/operacional/faturas",
+                    label: "Faturas",
+                    icon: <FaReceipt />,
+                  },
+                  {
+                    path: "/operacional/analises",
+                    label: "Análises",
+                    icon: <FaChartLine />,
+                  },
                 ].map((item) => {
                   const isActive = item.exact
                     ? location.pathname === item.path
                     : location.pathname === item.path ||
-                      location.pathname.startsWith(item.path + "/");
+                    location.pathname.startsWith(item.path + "/");
 
                   return (
-                    <li
-                      key={item.path}
-                      className={isActive ? "active" : ""}
-                    >
+                    <li key={item.path} className={isActive ? "active" : ""}>
                       <S.NavLink
                         as={Link}
                         to={item.path}

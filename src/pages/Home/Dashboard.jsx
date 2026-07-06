@@ -20,6 +20,26 @@ import { useAuth } from '../../context/AuthContext.jsx';
 
 import { S } from './DashboardStyles';
 
+const getNumberFrom = (...values) => {
+  for (const value of values) {
+    if (value === null || value === undefined || value === '') continue;
+
+    if (typeof value === 'number' && !Number.isNaN(value)) {
+      return value;
+    }
+
+    const parsed = Number(
+      String(value)
+        .replace(/\./g, '')
+        .replace(',', '.')
+    );
+
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+
+  return 0;
+};
+
 const formatCurrency = (n) =>
   `R$ ${Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
@@ -83,11 +103,7 @@ const getAdministradoraIdsFromCondominio = (condominio) => {
   const ids = [];
 
   if (Array.isArray(condominio?.administradoras)) {
-    ids.push(
-      ...condominio.administradoras
-        .map(getIdValue)
-        .filter(isValidId)
-    );
+    ids.push(...condominio.administradoras.map(getIdValue).filter(isValidId));
   }
 
   ids.push(
@@ -238,81 +254,60 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) return;
+
     carregarDados();
   }, [user]);
 
   const carregarDados = async () => {
-  try {
-    setIsLoading(true);
-    startLoading('Carregando dashboard...');
+    try {
+      setIsLoading(true);
+      startLoading('Carregando dashboard...');
 
-    const administradoraId = getAdministradoraIdFromUser(user);
+      const administradoraId = getAdministradoraIdFromUser(user);
 
-    if (!administradoraId) {
-      console.warn('Usuário sem administradora vinculada:', user);
+      if (!administradoraId) {
+        console.warn('Usuário sem administradora vinculada:', user);
 
-      setUltimaMovimentacao(null);
-      setHistoricoImportacoes([]);
-      setAcordos([]);
+        setUltimaMovimentacao(null);
+        setHistoricoImportacoes([]);
+        setAcordos([]);
 
-      enqueueSnackbar('Usuário sem administradora vinculada', {
-        variant: 'warning',
+        enqueueSnackbar('Usuário sem administradora vinculada', {
+          variant: 'warning',
+        });
+
+        return;
+      }
+
+      const [ultima, historico, acordosData] = await Promise.all([
+        entebenService.getUltimaMovimentacao(),
+        entebenService.getImportacoes(),
+        entebenService.getcondominios({
+          administradora_id: administradoraId,
+        }),
+      ]);
+
+      const condominiosRecebidos = toArray(acordosData);
+
+      const condominiosFiltrados = condominiosRecebidos.filter((condominio) => {
+        const idsAdministradora = getAdministradoraIdsFromCondominio(condominio);
+
+        if (idsAdministradora.length === 0) return true;
+
+        return pertenceAAdministradora(condominio, administradoraId);
       });
 
-      return;
+      setUltimaMovimentacao(ultima);
+      setHistoricoImportacoes(toArray(historico));
+      setAcordos(condominiosFiltrados);
+    } catch (e) {
+      enqueueSnackbar('Erro ao carregar dados do dashboard', { variant: 'error' });
+    } finally {
+      setIsLoading(false);
+      stopLoading();
     }
-
-    const [ultima, historico, acordosData] = await Promise.all([
-      entebenService.getUltimaMovimentacao(),
-      entebenService.getImportacoes(),
-      entebenService.getcondominios({
-        administradora_id: administradoraId,
-      }),
-    ]);
-
-    const condominiosRecebidos = toArray(acordosData);
-
-    const condominiosFiltrados = condominiosRecebidos.filter((condominio) => {
-      const idsAdministradora = getAdministradoraIdsFromCondominio(condominio);
-
-      if (idsAdministradora.length === 0) return true;
-
-      return pertenceAAdministradora(condominio, administradoraId);
-    });
-
-    // console.log('USER LOGADO:', user);
-    // console.log('ADMINISTRADORA DO USER:', administradoraId);
-    // console.log('TOTAL RECEBIDO DA API:', condominiosRecebidos.length);
-    // console.log('TOTAL FILTRADO NO FRONT:', condominiosFiltrados.length);
-    // console.log(
-    //   'AMOSTRA CONDOMÍNIOS:',
-    //   condominiosRecebidos.slice(0, 5).map((condominio) => ({
-    //     id: condominio.id,
-    //     nome:
-    //       condominio.nome ||
-    //       condominio.condominio ||
-    //       condominio.razao_social ||
-    //       condominio.fantasia,
-    //     administradorasEncontradas:
-    //       getAdministradoraIdsFromCondominio(condominio),
-    //   }))
-    // );
-
-    setUltimaMovimentacao(ultima);
-    // console.log('ÚLTIMA MOVIMENTAÇÃO DASHBOARD:', ultima);
-    // console.log('HISTÓRICO IMPORTAÇÕES DASHBOARD:', historico);
-    // console.log('CONDOMÍNIOS DASHBOARD:', acordosData);
-
-    setHistoricoImportacoes(toArray(historico));
-    setAcordos(condominiosFiltrados);
-  } catch (e) {
-    // console.error('Erro ao carregar dashboard:', e);
-    enqueueSnackbar('Erro ao carregar dados do dashboard', { variant: 'error' });
-  } finally {
-    setIsLoading(false);
-    stopLoading();
-  }
-};
+  };
 
   const todayStr = useMemo(() => {
     const d = new Date();
@@ -358,14 +353,50 @@ export default function Dashboard() {
       .slice(0, 8);
   }, [acordos, condoQuery]);
 
-  const totalImportacoes = historicoImportacoes.length;
+  const getStatusValue = (item) =>
+    item?.status ||
+    item?.situacao ||
+    item?.status_faturamento ||
+    item?.status_importacao ||
+    '';
 
-  const faturamentoTotal = acordos.reduce(
-    (s, a) => s + Number(a.valor || 0),
+  const isFechado = (item) => {
+    const status = normTxt(getStatusValue(item));
+
+    return (
+      status.includes('fechado') ||
+      status.includes('concluido') ||
+      status.includes('concluida') ||
+      status.includes('finalizado') ||
+      status.includes('finalizada')
+    );
+  };
+
+  const getValorCondominio = (item) =>
+    getNumberFrom(
+      item?.valor,
+      item?.valor_total,
+      item?.total,
+      item?.faturamento,
+      item?.ultimo_faturamento,
+      item?.valor_ultimo_faturamento,
+      item?.ultimo_valor_faturado,
+      item?.total_beneficios,
+      item?.valor_total_beneficios
+    );
+
+  const totalImportacoes = getNumberFrom(
+    historicoImportacoes.length,
+    ultimaMovimentacao?.total_importacoes,
+    ultimaMovimentacao?.quantidade_importacoes
+  );
+
+  const faturamentoTotalCondominios = acordos.reduce(
+    (sum, item) => sum + getValorCondominio(item),
     0
   );
 
-  const totalAberto = acordos.filter((a) => a.status !== 'Fechado').length;
+  const totalAberto = acordos.filter((item) => !isFechado(item)).length;
 
   const totalCondominios = acordos.length;
 
@@ -384,7 +415,6 @@ export default function Dashboard() {
   };
 
   const importacaoId = ultimaMovimentacao?.id || null;
-  // const excelUrl = `${API_BASE_URL}/api/upload/export/faturamento/`;
 
   const getCondoNome = (c) =>
     c?.nome ||
@@ -425,26 +455,6 @@ export default function Dashboard() {
   const getVencimento = (c) =>
     c?.vencimento || c?.data_vencimento || c?.proximo_vencimento || '—';
 
-  const getNumberFrom = (...values) => {
-    for (const value of values) {
-      if (value === null || value === undefined || value === '') continue;
-
-      if (typeof value === 'number' && !Number.isNaN(value)) {
-        return value;
-      }
-
-      const parsed = Number(
-        String(value)
-          .replace(/\./g, '')
-          .replace(',', '.')
-      );
-
-      if (!Number.isNaN(parsed)) return parsed;
-    }
-
-    return 0;
-  };
-
   const ultimaSummary =
     ultimaMovimentacao?.summary ||
     ultimaMovimentacao?.resumo ||
@@ -461,7 +471,7 @@ export default function Dashboard() {
     ultimaSummary?.total_valor,
     ultimaSummary?.valor_total_importacao,
     ultimaSummary?.valor_total_faturamento,
-    faturamentoTotal
+    faturamentoTotalCondominios
   );
 
   const totalFuncionariosUltimaImportacao = getNumberFrom(
@@ -499,99 +509,100 @@ export default function Dashboard() {
     setCondoQuery('');
   };
 
-const handleDownloadExcel = async () => {
-  try {
-    if (!importacaoId) {
-      enqueueSnackbar('Nenhuma importação encontrada para exportar.', {
-        variant: 'warning',
+  const handleDownloadExcel = async () => {
+    try {
+      if (!importacaoId) {
+        enqueueSnackbar('Nenhuma importação encontrada para exportar.', {
+          variant: 'warning',
+        });
+        return;
+      }
+
+      startLoading('Baixando Excel...');
+
+      const response = await api.get('/api/upload/export/faturamento/', {
+        params: {
+          importacao_id: importacaoId,
+        },
+        responseType: 'blob',
       });
-      return;
-    }
 
-    startLoading('Baixando Excel...');
+      const contentType = response.headers['content-type'] || '';
 
-    const response = await api.get('/api/upload/export/faturamento/', {
-      params: {
-        importacao_id: importacaoId,
-      },
-      responseType: 'blob',
-    });
+      if (contentType.includes('application/json')) {
+        const text = await response.data.text();
+        const json = JSON.parse(text);
 
-    const contentType = response.headers['content-type'] || '';
-
-    if (contentType.includes('application/json')) {
-      const text = await response.data.text();
-      const json = JSON.parse(text);
-
-      throw new Error(
-        json?.detail ||
+        throw new Error(
+          json?.detail ||
           json?.erro ||
           json?.error ||
           json?.message ||
           'Erro ao gerar Excel'
-      );
-    }
-
-    const blob = new Blob([response.data], {
-      type:
-        contentType ||
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    });
-
-    const contentDisposition = response.headers['content-disposition'];
-
-    let filename = `faturamento-importacao-${importacaoId}.xlsx`;
-
-    if (contentDisposition) {
-      const filenameMatch =
-        contentDisposition.match(/filename\*=UTF-8''([^;]+)/) ||
-        contentDisposition.match(/filename="?([^"]+)"?/);
-
-      if (filenameMatch?.[1]) {
-        filename = decodeURIComponent(filenameMatch[1]);
+        );
       }
-    }
 
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-
-    link.href = url;
-    link.download = filename;
-
-    document.body.appendChild(link);
-    link.click();
-
-    link.remove();
-    window.URL.revokeObjectURL(url);
-
-    enqueueSnackbar('Excel baixado com sucesso', { variant: 'success' });
-  } catch (error) {
-    console.error('Erro ao baixar Excel:', error);
-
-    const status = error?.response?.status;
-
-    if (status === 400) {
-      enqueueSnackbar(
-        error?.message || 'Backend recusou a exportação. Verifique a importação selecionada.',
-        { variant: 'error' }
-      );
-      return;
-    }
-
-    if (status === 401) {
-      enqueueSnackbar('Sessão expirada. Faça login novamente.', {
-        variant: 'warning',
+      const blob = new Blob([response.data], {
+        type:
+          contentType ||
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
-      return;
-    }
 
-    enqueueSnackbar(error?.message || 'Erro ao baixar Excel', {
-      variant: 'error',
-    });
-  } finally {
-    stopLoading();
-  }
-};
+      const contentDisposition = response.headers['content-disposition'];
+
+      let filename = `faturamento-importacao-${importacaoId}.xlsx`;
+
+      if (contentDisposition) {
+        const filenameMatch =
+          contentDisposition.match(/filename\*=UTF-8''([^;]+)/) ||
+          contentDisposition.match(/filename="?([^"]+)"?/);
+
+        if (filenameMatch?.[1]) {
+          filename = decodeURIComponent(filenameMatch[1]);
+        }
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      link.href = url;
+      link.download = filename;
+
+      document.body.appendChild(link);
+      link.click();
+
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      enqueueSnackbar('Excel baixado com sucesso', { variant: 'success' });
+    } catch (error) {
+      console.error('Erro ao baixar Excel:', error);
+
+      const status = error?.response?.status;
+
+      if (status === 400) {
+        enqueueSnackbar(
+          error?.message ||
+          'Backend recusou a exportação. Verifique a importação selecionada.',
+          { variant: 'error' }
+        );
+        return;
+      }
+
+      if (status === 401) {
+        enqueueSnackbar('Sessão expirada. Faça login novamente.', {
+          variant: 'warning',
+        });
+        return;
+      }
+
+      enqueueSnackbar(error?.message || 'Erro ao baixar Excel', {
+        variant: 'error',
+      });
+    } finally {
+      stopLoading();
+    }
+  };
 
   const getSaudacao = () => {
     const hora = new Date().getHours();
@@ -604,7 +615,8 @@ const handleDownloadExcel = async () => {
 
   return (
     <PageLayout
-      title={`${getSaudacao()} ${user?.nome || user?.username || user?.email || 'Usuário'}!`}
+      title={`${getSaudacao()} ${user?.nome || user?.username || user?.email || 'Usuário'
+        }!`}
       subtitle="Acompanhe importações, faturamento, pendências e documentos em um só lugar."
     >
       <S.Root>
@@ -666,7 +678,13 @@ const handleDownloadExcel = async () => {
                     <S.KPILabel>Faturamento total</S.KPILabel>
                   </S.KPITop>
 
-                  <S.KPIValue>{formatCurrency(faturamentoTotal || valorTotalUltimaImportacao)}</S.KPIValue>
+                  <S.KPIValue>
+                    {formatCurrency(
+                      faturamentoTotalCondominios > 0
+                        ? faturamentoTotalCondominios
+                        : valorTotalUltimaImportacao
+                    )}
+                  </S.KPIValue>
                   <S.KPIFoot>Base filtrada da administradora</S.KPIFoot>
                 </S.KPICard>
 
@@ -680,10 +698,9 @@ const handleDownloadExcel = async () => {
 
                   <S.KPIFoot>
                     {pendencias.length > 0
-                      ? `${pendencias.length} condomínio${
-                          pendencias.length > 1 ? 's' : ''
-                        } com pendência`
-                      : 'Nenhuma pendência'}
+                      ? `${pendencias.length} condomínio${pendencias.length > 1 ? 's' : ''
+                      } com vencimento pendente`
+                      : 'Nenhuma pendência vencida'}
                   </S.KPIFoot>
                 </S.KPICard>
 
@@ -736,8 +753,8 @@ const handleDownloadExcel = async () => {
                             <span>
                               {ultimaMovimentacao.data_importacao
                                 ? new Date(
-                                    ultimaMovimentacao.data_importacao
-                                  ).toLocaleDateString('pt-BR')
+                                  ultimaMovimentacao.data_importacao
+                                ).toLocaleDateString('pt-BR')
                                 : '—'}
                             </span>
 
@@ -745,10 +762,10 @@ const handleDownloadExcel = async () => {
                               {getImportStatus() === 'success'
                                 ? 'Concluído'
                                 : getImportStatus() === 'warning'
-                                ? 'Processando'
-                                : getImportStatus() === 'danger'
-                                ? 'Erro'
-                                : 'Processado'}
+                                  ? 'Processando'
+                                  : getImportStatus() === 'danger'
+                                    ? 'Erro'
+                                    : 'Processado'}
                             </S.Badge>
                           </S.ImportMeta>
                         </S.ImportContent>
