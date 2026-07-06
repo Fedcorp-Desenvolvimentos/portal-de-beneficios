@@ -16,12 +16,8 @@ const ModalOverlay = styled.div`
   animation: fadeIn 0.2s ease;
 
   @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 `;
 
@@ -98,8 +94,7 @@ const FormGroup = styled.div`
     color: var(--color-text-secondary);
   }
 
-  input,
-  select {
+  input, select {
     width: 100%;
     padding: 10px 12px;
     border: 1px solid var(--color-border);
@@ -124,10 +119,6 @@ const FormGroup = styled.div`
 
   select {
     cursor: pointer;
-
-    &:disabled {
-      cursor: not-allowed;
-    }
   }
 `;
 
@@ -153,13 +144,6 @@ const FieldError = styled.div`
   margin-top: 4px;
 `;
 
-const HelpText = styled.div`
-  color: var(--color-text-tertiary);
-  font-size: 12px;
-  line-height: 1.4;
-  margin-top: 6px;
-`;
-
 const ModalFooter = styled.div`
   display: flex;
   justify-content: flex-end;
@@ -183,9 +167,7 @@ const Button = styled.button`
     cursor: not-allowed;
   }
 
-  ${(props) =>
-    props.$variant === 'secondary' &&
-    `
+  ${props => props.$variant === 'secondary' && `
     background: var(--color-bg-tertiary);
     color: var(--color-text-secondary);
     border: 1px solid var(--color-border);
@@ -195,9 +177,7 @@ const Button = styled.button`
     }
   `}
 
-  ${(props) =>
-    props.$variant === 'primary' &&
-    `
+  ${props => props.$variant === 'primary' && `
     background: var(--color-primary);
     color: white;
 
@@ -208,17 +188,6 @@ const Button = styled.button`
   `}
 `;
 
-const TIPOS_USUARIO = [
-  {
-    value: 'adm',
-    label: 'Usuário da Administradora / Imobiliária',
-  },
-  {
-    value: 'dep',
-    label: 'Departamento Pessoal',
-  },
-];
-
 export default function UsuarioModal({
   isOpen,
   onClose,
@@ -226,203 +195,112 @@ export default function UsuarioModal({
   usuario,
   administradoraId,
   administradoras = [],
-  title,
-  tiposPermitidos = ['adm', 'dep'],
-  bloquearTipoUsuario = false,
+  title
 }) {
   const { enqueueSnackbar } = useSnackbar();
-
-  const tiposPermitidosNormalizados = Array.isArray(tiposPermitidos)
-    ? tiposPermitidos.filter(Boolean)
-    : ['adm', 'dep'];
-
-  const tiposDisponiveis = TIPOS_USUARIO.filter((tipo) =>
-    tiposPermitidosNormalizados.includes(tipo.value)
-  );
-
-  const tipoPadrao = tiposDisponiveis[0]?.value || 'adm';
-
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
     confirmPassword: '',
-    tipo: tipoPadrao,
-    administradora: null,
+    tipo: 'adm',
+    administradora: null
   });
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
-    if (!isOpen) return;
-
-    if (usuario) {
-      const tipoUsuario = usuario.tipo || tipoPadrao;
-      const tipoPermitido = tiposPermitidosNormalizados.includes(tipoUsuario)
-        ? tipoUsuario
-        : tipoPadrao;
-
-      setFormData({
-        username: usuario.username || '',
-        email: usuario.email || '',
-        tipo: bloquearTipoUsuario ? tipoPermitido : tipoUsuario,
-        administradora:
-          usuario.administradora_id ||
-          usuario.administradora?.id ||
-          usuario.administradora ||
-          administradoraId ||
-          null,
-        password: '',
-        confirmPassword: '',
-      });
-    } else {
-      setFormData({
-        username: '',
-        email: '',
-        tipo: tipoPadrao,
-        administradora: administradoraId || null,
-        password: '',
-        confirmPassword: '',
-      });
+    if (isOpen) {
+      if (usuario) {
+        setFormData({
+          username: usuario.username || '',
+          email: usuario.email || '',
+          tipo: usuario.tipo || 'adm',
+          administradora: usuario.administradora_id || administradoraId || null,
+          password: '',
+          confirmPassword: ''
+        });
+      } else {
+        setFormData({
+          username: '',
+          email: '',
+          tipo: 'adm',
+          administradora: administradoraId || null,
+          password: '',
+          confirmPassword: ''
+        });
+      }
+      setError('');
+      setPasswordError('');
     }
-
-    setError('');
-    setPasswordError('');
-  }, [
-    usuario,
-    administradoraId,
-    isOpen,
-    tipoPadrao,
-    bloquearTipoUsuario,
-    tiposPermitidosNormalizados.join('|'),
-  ]);
+  }, [usuario, administradoraId, isOpen]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    if (name === 'tipo' && bloquearTipoUsuario) {
-      return;
-    }
-
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
-      [name]: value,
+      [name]: value
     }));
 
     if (name === 'password' || name === 'confirmPassword') {
       setPasswordError('');
-    }
-
-    if (error) {
-      setError('');
-    }
-  };
-
-  const getTipoDescricao = (tipo) => {
-    if (tipo === 'adm') {
-      return 'Usuário da Administradora: acessa os dados dos condomínios permitidos pela regra do backend.';
-    }
-
-    if (tipo === 'dep') {
-      return 'Departamento Pessoal: acessa apenas as informações internas da administradora.';
-    }
-
-    return '';
-  };
-
-  const getTipoLabel = (tipo) => {
-    return TIPOS_USUARIO.find((item) => item.value === tipo)?.label || tipo || '—';
-  };
-
-  const validarFormulario = () => {
-    const username = formData.username.trim();
-    const email = formData.email.trim();
-    const password = formData.password.trim();
-    const confirmPassword = formData.confirmPassword.trim();
-
-    if (!username) {
-      throw new Error('Nome de usuário é obrigatório');
-    }
-
-    if (!email) {
-      throw new Error('Email é obrigatório');
-    }
-
-    if (!email.includes('@')) {
-      throw new Error('Email inválido');
-    }
-
-    if (!formData.tipo) {
-      throw new Error('Tipo de usuário é obrigatório');
-    }
-
-    if (!['adm', 'dep'].includes(formData.tipo)) {
-      throw new Error('Tipo de usuário inválido');
-    }
-
-    if (!tiposPermitidosNormalizados.includes(formData.tipo)) {
-      throw new Error('Você não tem permissão para salvar este tipo de usuário');
-    }
-
-    if (!formData.administradora) {
-      throw new Error('Administradora é obrigatória');
-    }
-
-    if (!usuario && !password) {
-      throw new Error('Senha é obrigatória');
-    }
-
-    if (password || !usuario) {
-      if (password.length < 6) {
-        setPasswordError('A senha deve ter no mínimo 6 caracteres');
-        throw new Error('A senha deve ter no mínimo 6 caracteres');
-      }
-
-      if (password !== confirmPassword) {
-        setPasswordError('As senhas não coincidem');
-        throw new Error('As senhas não coincidem');
-      }
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const password = formData.password.trim();
+    const confirmPassword = formData.confirmPassword.trim();
+
+    if (!usuario && !password) {
+      setError('Senha é obrigatória');
+      enqueueSnackbar('Senha é obrigatória', { variant: 'error' });
+      return;
+    }
+
+    if (password || !usuario) {
+      if (password && password.length < 6) {
+        setPasswordError('A senha deve ter no mínimo 6 caracteres');
+        enqueueSnackbar('A senha deve ter no mínimo 6 caracteres', { variant: 'error' });
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setPasswordError('As senhas não coincidem');
+        enqueueSnackbar('As senhas não coincidem', { variant: 'error' });
+        return;
+      }
+    }
+
     setLoading(true);
     setError('');
     setPasswordError('');
 
     try {
-      validarFormulario();
-
-      const password = formData.password.trim();
-
       const dadosParaEnvio = {
         username: formData.username.trim(),
         email: formData.email.trim(),
         tipo: formData.tipo,
-        administradora: formData.administradora
-          ? Number(formData.administradora)
-          : null,
+        password: password
       };
 
-      if (password) {
-        dadosParaEnvio.password = password;
+      if (!usuario) {
+        dadosParaEnvio.administradora = formData.administradora;
+      } else if (formData.administradora !== (usuario.administradora_id || null)) {
+        dadosParaEnvio.administradora = formData.administradora;
       }
+
+      if (!dadosParaEnvio.username) throw new Error('Nome de usuário é obrigatório');
+      if (!dadosParaEnvio.email) throw new Error('Email é obrigatório');
+      if (!dadosParaEnvio.email.includes('@')) throw new Error('Email inválido');
 
       await onSave(dadosParaEnvio);
       onClose();
     } catch (error) {
       console.error('Erro ao salvar:', error);
-
-      const errorMsg =
-        error.response?.data?.detail ||
-        error.response?.data?.message ||
-        error.message ||
-        'Erro ao salvar usuário';
-
+      const errorMsg = error.message || 'Erro ao salvar usuário';
       setError(errorMsg);
       enqueueSnackbar(errorMsg, { variant: 'error' });
     } finally {
@@ -437,10 +315,7 @@ export default function UsuarioModal({
       <ModalContent onClick={(e) => e.stopPropagation()}>
         <ModalHeader>
           <h3>{title || (usuario ? 'Editar Usuário' : 'Novo Usuário')}</h3>
-
-          <CloseButton type="button" onClick={onClose}>
-            ×
-          </CloseButton>
+          <CloseButton onClick={onClose}>×</CloseButton>
         </ModalHeader>
 
         <Form onSubmit={handleSubmit}>
@@ -471,117 +346,73 @@ export default function UsuarioModal({
           </FormGroup>
 
           <FormGroup>
-            <label>
-              Senha {usuario ? '(deixe em branco para manter a senha atual)' : '*'}
-            </label>
-
+            <label>Senha {usuario ? '(deixe em branco para manter a senha atual)' : '*'}</label>
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder={
-                usuario
-                  ? 'Deixe em branco para manter a senha atual'
-                  : 'Mínimo 6 caracteres'
-              }
+              placeholder={usuario ? 'Deixe em branco para manter a senha atual' : 'Mínimo 6 caracteres'}
               required={!usuario}
               autoComplete={usuario ? 'off' : 'new-password'}
             />
-
             <PasswordHint>
-              {usuario
-                ? 'Altere a senha apenas se necessário'
-                : 'Use pelo menos 6 caracteres'}
+              {usuario ? 'Altere a senha apenas se necessário' : 'Use pelo menos 6 caracteres'}
             </PasswordHint>
           </FormGroup>
 
-          {formData.password && (
+          {((!usuario && formData.password) || (usuario && formData.password)) && (
             <FormGroup>
               <label>Confirmar Senha *</label>
-
               <input
                 type="password"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="Digite a senha novamente"
-                required
+                required={!usuario || (usuario && formData.password)}
                 autoComplete="off"
               />
-
               {passwordError && <FieldError>{passwordError}</FieldError>}
             </FormGroup>
           )}
 
           <FormGroup>
             <label>Tipo de usuário *</label>
+            <select
+              name="tipo"
+              value={formData.tipo}
+              onChange={handleChange}
+              required
+            >
 
-            {bloquearTipoUsuario ? (
-              <>
-                <input
-                  type="text"
-                  value={getTipoLabel(formData.tipo)}
-                  disabled
-                  readOnly
-                />
+              <option value="adm">Usuário da Administradora</option>
 
-                <input type="hidden" name="tipo" value={formData.tipo} />
-              </>
-            ) : (
-              <select
-                name="tipo"
-                value={formData.tipo}
-                onChange={handleChange}
-                required
-              >
-                {tiposDisponiveis.map((tipo) => (
-                  <option key={tipo.value} value={tipo.value}>
-                    {tipo.label}
-                  </option>
-                ))}
-              </select>
-            )}
-
-            {getTipoDescricao(formData.tipo) && (
-              <HelpText>{getTipoDescricao(formData.tipo)}</HelpText>
-            )}
+            </select>
           </FormGroup>
 
           <FormGroup>
-            <label>Administradora *</label>
-
+            <label>Administradora</label>
             <select
               name="administradora"
               value={formData.administradora || ''}
               onChange={handleChange}
-              required
             >
-              <option value="">Selecione uma administradora</option>
-
-              {administradoras.map((adm) => (
+              <option value="">Nenhuma</option>
+              {administradoras.map(adm => (
                 <option key={adm.id} value={adm.id}>
-                  {adm.razao_social ||
-                    adm.nome_fantasia ||
-                    adm.nome ||
-                    `ADM ${adm.id}`}
+                  {adm.razao_social || adm.nome_fantasia || adm.nome || `ADM ${adm.id}`}
                 </option>
               ))}
             </select>
           </FormGroup>
 
           <ModalFooter>
-            <Button
-              type="button"
-              $variant="secondary"
-              onClick={onClose}
-              disabled={loading}
-            >
+            <Button type="button" $variant="secondary" onClick={onClose} disabled={loading}>
               Cancelar
             </Button>
-
             <Button type="submit" $variant="primary" disabled={loading}>
-              {loading ? 'Salvando...' : usuario ? 'Atualizar' : 'Criar'}
+              {loading ? 'Salvando...' : (usuario ? 'Atualizar' : 'Criar')}
             </Button>
           </ModalFooter>
         </Form>

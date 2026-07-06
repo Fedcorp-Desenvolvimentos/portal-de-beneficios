@@ -1047,46 +1047,40 @@ export default function Importacao() {
   }, [lote.id, lote.tipo])
 
   const vencimentoCalculadoAutomaticamente =
-    !isValeTransporte || (isValeTransporte && campoDataReferenciaVT === 'recebimento')
+    campoDataReferenciaVT === 'recebimento'
 
   const recebimentoCalculadoAutomaticamente =
-    isValeTransporte && campoDataReferenciaVT === 'vencimento'
+    campoDataReferenciaVT === 'vencimento'
 
   const getDatasEnvioNormalizadas = () => {
     const recebimento = formEnvio.recebimentoBeneficio
     const vencimento = formEnvio.vencimento
+    const dias = isValeTransporte ? 8 : 1
 
-    if (isValeTransporte) {
-      if (campoDataReferenciaVT === 'vencimento' && vencimento) {
-        return {
-          recebimentoBeneficio: addDaysToDateInput(vencimento, 8),
-          vencimento,
-        }
-      }
-
-      if (recebimento) {
-        return {
-          recebimentoBeneficio: recebimento,
-          vencimento: subtractDaysFromDateInput(recebimento, 8),
-        }
-      }
-
-      if (vencimento) {
-        return {
-          recebimentoBeneficio: addDaysToDateInput(vencimento, 8),
-          vencimento,
-        }
-      }
-
+    if (campoDataReferenciaVT === 'vencimento' && vencimento) {
       return {
-        recebimentoBeneficio: '',
-        vencimento: '',
+        recebimentoBeneficio: addDaysToDateInput(vencimento, dias),
+        vencimento,
+      }
+    }
+
+    if (recebimento) {
+      return {
+        recebimentoBeneficio: recebimento,
+        vencimento: subtractDaysFromDateInput(recebimento, dias),
+      }
+    }
+
+    if (vencimento) {
+      return {
+        recebimentoBeneficio: addDaysToDateInput(vencimento, dias),
+        vencimento,
       }
     }
 
     return {
-      recebimentoBeneficio: recebimento,
-      vencimento: recebimento ? subtractDaysFromDateInput(recebimento, 1) : '',
+      recebimentoBeneficio: '',
+      vencimento: '',
     }
   }
 
@@ -1115,24 +1109,24 @@ export default function Importacao() {
       return
     }
 
-    setCampoDataReferenciaVT(null)
+    setCampoDataReferenciaVT(value ? 'recebimento' : null)
 
     setFormEnvio((prev) => ({
       ...prev,
       recebimentoBeneficio: value,
-      vencimento: value ? subtractDaysFromDateInput(value, 4) : '',
+      vencimento: value ? subtractDaysFromDateInput(value, 1) : '',
     }))
   }
 
   const handleVencimentoChange = (value) => {
-    if (!isValeTransporte) return
+    const dias = isValeTransporte ? 8 : 1
 
     setCampoDataReferenciaVT(value ? 'vencimento' : null)
 
     setFormEnvio((prev) => ({
       ...prev,
       vencimento: value,
-      recebimentoBeneficio: value ? addDaysToDateInput(value, 8) : '',
+      recebimentoBeneficio: value ? addDaysToDateInput(value, dias) : '',
     }))
   }
 
@@ -1432,7 +1426,7 @@ export default function Importacao() {
       setFormEnvio((prev) => ({
         ...prev,
         vencimento: prev.recebimentoBeneficio
-          ? subtractDaysFromDateInput(prev.recebimentoBeneficio, 4)
+          ? subtractDaysFromDateInput(prev.recebimentoBeneficio, 1)
           : '',
       }))
     }
@@ -2155,13 +2149,13 @@ export default function Importacao() {
                   type="date"
                   value={formEnvio.recebimentoBeneficio || ''}
                   onChange={(e) => handleRecebimentoBeneficioChange(e.target.value)}
-                  required={!isValeTransporte || campoDataReferenciaVT !== 'vencimento'}
+                  required={campoDataReferenciaVT !== 'vencimento'}
                   disabled={enviandoLote || recebimentoCalculadoAutomaticamente}
                 />
 
-                {isValeTransporte && campoDataReferenciaVT === 'vencimento' && formEnvio.recebimentoBeneficio && (
+                {campoDataReferenciaVT === 'vencimento' && formEnvio.recebimentoBeneficio && (
                   <small>
-                    Recebimento calculado automaticamente 8 dias após o vencimento.
+                    Recebimento calculado automaticamente {isValeTransporte ? 8 : 1} {isValeTransporte ? 'dias' : 'dia'} após o vencimento.
                   </small>
                 )}
               </label>
@@ -2174,29 +2168,23 @@ export default function Importacao() {
                   type="date"
                   value={formEnvio.vencimento}
                   onChange={(e) => handleVencimentoChange(e.target.value)}
-                  required={isValeTransporte && campoDataReferenciaVT !== 'recebimento'}
+                  required={campoDataReferenciaVT !== 'recebimento'}
                   disabled={enviandoLote || vencimentoCalculadoAutomaticamente}
                 />
 
-                {!isValeTransporte && formEnvio.vencimento && (
+                {campoDataReferenciaVT === 'recebimento' && formEnvio.vencimento && (
                   <small>
-                    Vencimento calculado automaticamente 1 dias antes do recebimento do benefício.
+                    Vencimento calculado automaticamente {isValeTransporte ? 8 : 1} dia{isValeTransporte ? 's' : ''} antes do recebimento.
                   </small>
                 )}
 
-                {isValeTransporte && campoDataReferenciaVT === 'recebimento' && formEnvio.vencimento && (
-                  <small>
-                    Vencimento calculado automaticamente 8 dias antes do recebimento.
-                  </small>
-                )}
-
-                {isValeTransporte && !campoDataReferenciaVT && (
+                {!campoDataReferenciaVT && !formEnvio.recebimentoBeneficio && !formEnvio.vencimento && (
                   <small>
                     Preencha recebimento ou vencimento.
                   </small>
                 )}
 
-                {isValeTransporte && (formEnvio.recebimentoBeneficio || formEnvio.vencimento) && (
+                {(formEnvio.recebimentoBeneficio || formEnvio.vencimento) && (
                   <button
                     type="button"
                     className="btn-ghost"
