@@ -20,6 +20,26 @@ import { useAuth } from '../../context/AuthContext.jsx';
 
 import { S } from './DashboardStyles';
 
+const getNumberFrom = (...values) => {
+  for (const value of values) {
+    if (value === null || value === undefined || value === '') continue;
+
+    if (typeof value === 'number' && !Number.isNaN(value)) {
+      return value;
+    }
+
+    const parsed = Number(
+      String(value)
+        .replace(/\./g, '')
+        .replace(',', '.')
+    );
+
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+
+  return 0;
+};
+
 const formatCurrency = (n) =>
   `R$ ${Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
@@ -83,11 +103,7 @@ const getAdministradoraIdsFromCondominio = (condominio) => {
   const ids = [];
 
   if (Array.isArray(condominio?.administradoras)) {
-    ids.push(
-      ...condominio.administradoras
-        .map(getIdValue)
-        .filter(isValidId)
-    );
+    ids.push(...condominio.administradoras.map(getIdValue).filter(isValidId));
   }
 
   ids.push(
@@ -282,33 +298,10 @@ export default function Dashboard() {
         return pertenceAAdministradora(condominio, administradoraId);
       });
 
-      // console.log('USER LOGADO:', user);
-      // console.log('ADMINISTRADORA DO USER:', administradoraId);
-      // console.log('TOTAL RECEBIDO DA API:', condominiosRecebidos.length);
-      // console.log('TOTAL FILTRADO NO FRONT:', condominiosFiltrados.length);
-      // console.log(
-      //   'AMOSTRA CONDOMÍNIOS:',
-      //   condominiosRecebidos.slice(0, 5).map((condominio) => ({
-      //     id: condominio.id,
-      //     nome:
-      //       condominio.nome ||
-      //       condominio.condominio ||
-      //       condominio.razao_social ||
-      //       condominio.fantasia,
-      //     administradorasEncontradas:
-      //       getAdministradoraIdsFromCondominio(condominio),
-      //   }))
-      // );
-
       setUltimaMovimentacao(ultima);
-      // console.log('ÚLTIMA MOVIMENTAÇÃO DASHBOARD:', ultima);
-      // console.log('HISTÓRICO IMPORTAÇÕES DASHBOARD:', historico);
-      // console.log('CONDOMÍNIOS DASHBOARD:', acordosData);
-
       setHistoricoImportacoes(toArray(historico));
       setAcordos(condominiosFiltrados);
     } catch (e) {
-      // console.error('Erro ao carregar dashboard:', e);
       enqueueSnackbar('Erro ao carregar dados do dashboard', { variant: 'error' });
     } finally {
       setIsLoading(false);
@@ -422,7 +415,6 @@ export default function Dashboard() {
   };
 
   const importacaoId = ultimaMovimentacao?.id || null;
-  // const excelUrl = `${API_BASE_URL}/api/upload/export/faturamento/`;
 
   const getCondoNome = (c) =>
     c?.nome ||
@@ -462,26 +454,6 @@ export default function Dashboard() {
 
   const getVencimento = (c) =>
     c?.vencimento || c?.data_vencimento || c?.proximo_vencimento || '—';
-
-  const getNumberFrom = (...values) => {
-    for (const value of values) {
-      if (value === null || value === undefined || value === '') continue;
-
-      if (typeof value === 'number' && !Number.isNaN(value)) {
-        return value;
-      }
-
-      const parsed = Number(
-        String(value)
-          .replace(/\./g, '')
-          .replace(',', '.')
-      );
-
-      if (!Number.isNaN(parsed)) return parsed;
-    }
-
-    return 0;
-  };
 
   const ultimaSummary =
     ultimaMovimentacao?.summary ||
@@ -610,7 +582,8 @@ export default function Dashboard() {
 
       if (status === 400) {
         enqueueSnackbar(
-          error?.message || 'Backend recusou a exportação. Verifique a importação selecionada.',
+          error?.message ||
+          'Backend recusou a exportação. Verifique a importação selecionada.',
           { variant: 'error' }
         );
         return;
@@ -642,7 +615,8 @@ export default function Dashboard() {
 
   return (
     <PageLayout
-      title={`${getSaudacao()} ${user?.nome || user?.username || user?.email || 'Usuário'}!`}
+      title={`${getSaudacao()} ${user?.nome || user?.username || user?.email || 'Usuário'
+        }!`}
       subtitle="Acompanhe importações, faturamento, pendências e documentos em um só lugar."
     >
       <S.Root>

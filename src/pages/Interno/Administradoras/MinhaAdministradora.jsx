@@ -64,6 +64,24 @@ function getAdministradoraNome(administradora, user) {
   );
 }
 
+function getTipoUsuario(user) {
+  return user?.tipo_usuario || user?.tipo || user?.role || user?.perfil || '';
+}
+
+function getTipoUsuarioItem(usuario) {
+  return (
+    usuario?.tipo_usuario ||
+    usuario?.tipo ||
+    usuario?.role ||
+    usuario?.perfil ||
+    ''
+  );
+}
+
+function isTipoGerenciavelNaAdministradora(tipo) {
+  return ['adm', 'dep'].includes(tipo);
+}
+
 const RegraValorModal = ({
   open,
   onClose,
@@ -145,6 +163,7 @@ const RegraValorModal = ({
             <strong style={{ display: 'block', marginBottom: 6 }}>
               Regra cadastrada
             </strong>
+
             <span style={{ color: '#475569', fontSize: 14 }}>
               Status: {regraValor?.ativo ? 'Ativa' : 'Inativa'} • Limite:{' '}
               {formatCurrency(regraValor?.valor_limite)}
@@ -220,11 +239,21 @@ const RegraValorModal = ({
             marginTop: 24,
           }}
         >
-          <S.Button $variant="secondary" type="button" onClick={onClose} disabled={saving}>
+          <S.Button
+            $variant="secondary"
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+          >
             Cancelar
           </S.Button>
 
-          <S.Button $variant="primary" type="button" onClick={onSave} disabled={saving}>
+          <S.Button
+            $variant="primary"
+            type="button"
+            onClick={onSave}
+            disabled={saving}
+          >
             {saving ? 'Salvando...' : regraValor ? 'Atualizar regra' : 'Cadastrar regra'}
           </S.Button>
         </div>
@@ -236,12 +265,14 @@ const RegraValorModal = ({
 const SkeletonDadosCard = () => (
   <S.Card>
     <h2>Dados Gerais</h2>
+
     <S.DetailsGrid>
       {[...Array(8)].map((_, i) => (
         <S.DetailItem key={i}>
           <span>
             <S.SkeletonLine $width="60px" $height="12px" />
           </span>
+
           <strong>
             <S.SkeletonLine $width="180px" $height="20px" />
           </strong>
@@ -258,6 +289,7 @@ const SkeletonUsuariosCard = () => (
         <h2>
           <S.SkeletonLine $width="200px" $height="24px" $marginBottom="8px" />
         </h2>
+
         <div>
           <S.SkeletonLine $width="300px" $height="16px" />
         </div>
@@ -282,10 +314,21 @@ const SkeletonUsuariosCard = () => (
         <tbody>
           {[...Array(3)].map((_, i) => (
             <tr key={i}>
-              <td><S.SkeletonLine $width="150px" $height="16px" /></td>
-              <td><S.SkeletonLine $width="200px" $height="16px" /></td>
-              <td><S.SkeletonLine $width="100px" $height="16px" /></td>
-              <td><S.SkeletonLine $width="80px" $height="16px" /></td>
+              <td>
+                <S.SkeletonLine $width="150px" $height="16px" />
+              </td>
+
+              <td>
+                <S.SkeletonLine $width="200px" $height="16px" />
+              </td>
+
+              <td>
+                <S.SkeletonLine $width="100px" $height="16px" />
+              </td>
+
+              <td>
+                <S.SkeletonLine $width="80px" $height="16px" />
+              </td>
             </tr>
           ))}
         </tbody>
@@ -300,6 +343,7 @@ const SkeletonHeader = () => (
       <h1>
         <S.SkeletonLine $width="250px" $height="32px" $marginBottom="8px" />
       </h1>
+
       <div>
         <S.SkeletonLine $width="200px" $height="16px" />
       </div>
@@ -337,11 +381,31 @@ export default function MinhaAdministradora() {
 
   const administradoraId = getAdministradoraIdFromUser(user);
   const administradoraNome = getAdministradoraNome(administradora, user);
-  const podeGerenciarRegraValor = ['dev', 'adm', 'fat'].includes(user?.tipo);
+
+  const tipoUsuarioLogado = getTipoUsuario(user);
+
+  const usuarioPodeGerenciarUsuarios = ['fat', 'dev'].includes(tipoUsuarioLogado);
+
+  const podeCadastrarUsuario = usuarioPodeGerenciarUsuarios;
+  const podeAlterarTipoUsuario = usuarioPodeGerenciarUsuarios;
+
+  const podeGerenciarRegraValor = ['dev', 'adm', 'dep', 'fat'].includes(tipoUsuarioLogado);
+
+  const tipoUsuarioSelecionado = getTipoUsuarioItem(usuarioSelecionado);
+
+  const tiposPermitidosNoModal = podeAlterarTipoUsuario
+    ? ['adm', 'dep']
+    : [
+      isTipoGerenciavelNaAdministradora(tipoUsuarioSelecionado)
+        ? tipoUsuarioSelecionado
+        : 'adm',
+    ];
 
   useEffect(() => {
     if (!administradoraId) {
-      enqueueSnackbar('Usuário não possui administradora vinculada', { variant: 'error' });
+      enqueueSnackbar('Usuário não possui administradora vinculada', {
+        variant: 'error',
+      });
       navigate('/interno/administradoras');
       return;
     }
@@ -392,19 +456,25 @@ export default function MinhaAdministradora() {
         ? usuariosFiltrados
         : usuariosFiltrados?.results || [];
 
-      setUsuarios(
-        lista.map((usuario) => ({
-          ...usuario,
-          administradora_nome:
-            usuario.administradora_nome ||
-            usuario.nome_administradora ||
-            usuario.administradora?.nome ||
-            usuario.administradora?.razao_social ||
-            usuario.administradora?.nome_fantasia ||
-            administradoraNome ||
-            '-',
-        }))
-      );
+      const listaTratada = lista.map((usuario) => ({
+        ...usuario,
+        administradora_nome:
+          usuario.administradora_nome ||
+          usuario.nome_administradora ||
+          usuario.administradora?.nome ||
+          usuario.administradora?.razao_social ||
+          usuario.administradora?.nome_fantasia ||
+          administradoraNome ||
+          '-',
+      }));
+
+      const listaSegura = usuarioPodeGerenciarUsuarios
+        ? listaTratada
+        : listaTratada.filter((usuario) =>
+          isTipoGerenciavelNaAdministradora(getTipoUsuarioItem(usuario))
+        );
+
+      setUsuarios(listaSegura);
     } catch (error) {
       console.error('❌ Erro ao carregar usuários:', error);
       enqueueSnackbar('Erro ao carregar usuários', { variant: 'error' });
@@ -455,7 +525,10 @@ export default function MinhaAdministradora() {
     try {
       const valorNumerico = Number(valorLimite);
 
-      if (regraAtiva && (!valorLimite || Number.isNaN(valorNumerico) || valorNumerico <= 0)) {
+      if (
+        regraAtiva &&
+        (!valorLimite || Number.isNaN(valorNumerico) || valorNumerico <= 0)
+      ) {
         enqueueSnackbar('Informe um valor limite válido para ativar a regra', {
           variant: 'warning',
         });
@@ -503,16 +576,47 @@ export default function MinhaAdministradora() {
   };
 
   const handleEditarUsuario = (usuario) => {
+    const tipoUsuarioEditado = getTipoUsuarioItem(usuario);
+
+    if (
+      !usuarioPodeGerenciarUsuarios &&
+      !isTipoGerenciavelNaAdministradora(tipoUsuarioEditado)
+    ) {
+      enqueueSnackbar('Você não tem permissão para editar este tipo de usuário', {
+        variant: 'warning',
+      });
+      return;
+    }
+
     setUsuarioSelecionado(usuario);
     setModalOpen(true);
   };
 
   const handleNovoUsuario = () => {
+    if (!podeCadastrarUsuario) {
+      enqueueSnackbar('Apenas usuário faturista ou desenvolvedor pode cadastrar novos usuários', {
+        variant: 'warning',
+      });
+      return;
+    }
+
     setUsuarioSelecionado(null);
     setModalOpen(true);
   };
 
   const handleExcluirUsuario = async (usuario) => {
+    const tipoUsuarioExcluido = getTipoUsuarioItem(usuario);
+
+    if (
+      !usuarioPodeGerenciarUsuarios &&
+      !isTipoGerenciavelNaAdministradora(tipoUsuarioExcluido)
+    ) {
+      enqueueSnackbar('Você não tem permissão para excluir este tipo de usuário', {
+        variant: 'warning',
+      });
+      return;
+    }
+
     if (window.confirm(`Tem certeza que deseja excluir o usuário "${usuario.username}"?`)) {
       try {
         await userService.excluirUsuario(usuario.id);
@@ -525,10 +629,38 @@ export default function MinhaAdministradora() {
     }
   };
 
+  const resolverTipoPermitidoParaSalvar = (dados) => {
+    if (podeAlterarTipoUsuario) {
+      return dados.tipo || 'adm';
+    }
+
+    if (usuarioSelecionado) {
+      const tipoOriginal = getTipoUsuarioItem(usuarioSelecionado);
+
+      if (!isTipoGerenciavelNaAdministradora(tipoOriginal)) {
+        throw new Error('Você não tem permissão para alterar este tipo de usuário');
+      }
+
+      return tipoOriginal;
+    }
+
+    return 'adm';
+  };
+
   const handleSalvarUsuario = async (dados) => {
     try {
+      if (!usuarioSelecionado && !podeCadastrarUsuario) {
+        enqueueSnackbar('Apenas usuário faturista ou desenvolvedor pode cadastrar novos usuários', {
+          variant: 'warning',
+        });
+        return;
+      }
+
+      const tipoFinal = resolverTipoPermitidoParaSalvar(dados);
+
       const payload = {
         ...dados,
+        tipo: tipoFinal,
         administradora: dados.administradora || administradoraId,
         administradora_id: dados.administradora_id || administradoraId,
       };
@@ -594,7 +726,7 @@ export default function MinhaAdministradora() {
                   </S.Button>
                 )}
 
-                {user?.tipo === 'dev' && (
+                {tipoUsuarioLogado === 'dev' && (
                   <S.Button
                     $variant="primary"
                     onClick={() =>
@@ -693,9 +825,11 @@ export default function MinhaAdministradora() {
                   <p>Gerencie os usuários que têm acesso a esta administradora.</p>
                 </div>
 
-                <S.Button $variant="primary" onClick={handleNovoUsuario}>
-                  + Novo Usuário
-                </S.Button>
+                {podeCadastrarUsuario && (
+                  <S.Button $variant="primary" onClick={handleNovoUsuario}>
+                    + Novo Usuário
+                  </S.Button>
+                )}
               </S.CardHeader>
 
               <UsuarioTable
@@ -718,6 +852,8 @@ export default function MinhaAdministradora() {
           usuario={usuarioSelecionado}
           administradoraId={administradoraId}
           administradoras={administradoras}
+          tiposPermitidos={tiposPermitidosNoModal}
+          bloquearTipoUsuario={!podeAlterarTipoUsuario}
         />
 
         <RegraValorModal

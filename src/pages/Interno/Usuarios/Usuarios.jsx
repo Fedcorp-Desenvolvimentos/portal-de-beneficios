@@ -47,7 +47,8 @@ export default function Usuarios() {
       dev: 'Desenvolvedor',
       fin: 'Financeiro Fedcorp',
       fat: 'Faturista Fedcorp',
-      adm: 'Admin Administradora',
+      adm: 'Usuário da Administradora / Imobiliária',
+      dep: 'Departamento Pessoal',
       cli: 'Cliente',
     };
 
@@ -187,6 +188,11 @@ export default function Usuarios() {
         throw new Error('Email válido é obrigatório');
       }
 
+      if (!dados.tipo || dados.tipo.trim() === '') {
+        enqueueSnackbar('Tipo de usuário é obrigatório', { variant: 'error' });
+        throw new Error('Tipo de usuário é obrigatório');
+      }
+
       if (!selectedUser && (!dados.password || dados.password.trim() === '')) {
         enqueueSnackbar('Senha é obrigatória para novo usuário', {
           variant: 'error',
@@ -285,6 +291,7 @@ export default function Usuarios() {
                     <tr key={user.id}>
                       <td>{user.username || user.nome || '—'}</td>
                       <td>{user.email || '—'}</td>
+
                       <td>{getTipoLabel(user.tipo)}</td>
 
                       <td>
