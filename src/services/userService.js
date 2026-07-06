@@ -20,7 +20,7 @@ export const userService = {
         const payload = { email, password };
 
         try {
-            const response = await api.post('/api/auth/token/', payload);
+            const response = await api.post('/api/users/login/', payload);
             const data = response.data;
 
             const accessToken = data.access;
@@ -50,7 +50,7 @@ export const userService = {
         }
 
         try {
-            const response = await api.post('/api/auth/token/refresh/', { refresh: refreshToken });
+            const response = await api.post('/api/users/refresh/', { refresh: refreshToken });
             const data = response.data;
 
             const newAccessToken = data.access;

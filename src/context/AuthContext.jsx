@@ -27,6 +27,9 @@ export const AuthProvider = ({ children }) => {
             const response = await api.post('/api/users/login/', credentials);
             // console.log('Login response:', response.data);
             localStorage.setItem('accessToken', response.data.access);
+            if (response.data.refresh) {
+                localStorage.setItem('refreshToken', response.data.refresh);
+            }
             const userResponse = await api.get('/api/users/me/');
             // console.log('User data response:', userResponse.data);
             setUser(userResponse.data);
@@ -63,6 +66,9 @@ export const AuthProvider = ({ children }) => {
             });
 
             localStorage.setItem('accessToken', response.data.access);
+            if (response.data.refresh) {
+                localStorage.setItem('refreshToken', response.data.refresh);
+            }
 
             const userResponse = await api.get('/api/users/me/');
 
@@ -94,6 +100,7 @@ export const AuthProvider = ({ children }) => {
         setLoadingMessage("Fazendo logout...");
         setLoading(true);
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
         setUser(null);
         setIsAuthenticated(false);
         navigate('/login');
@@ -130,6 +137,7 @@ export const AuthProvider = ({ children }) => {
                
                 // Remove o token inválido para evitar futuras requisições
                 localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
                 setUser(null);
                 setIsAuthenticated(false);
 
