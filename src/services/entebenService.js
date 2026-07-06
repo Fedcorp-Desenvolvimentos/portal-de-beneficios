@@ -109,9 +109,11 @@ export const entebenService = {
     }
   },
 
-  getcondominios: async () => {
+  getcondominios: async (params = {}) => {
     try {
-      const response = await api.get('/api/entidades/condominios/')
+      const response = await api.get('/api/entidades/condominios/', {
+        params: limparParams(params),
+      })
       return response.data
     } catch (error) {
       console.error('Erro ao buscar condomínios:', error)
