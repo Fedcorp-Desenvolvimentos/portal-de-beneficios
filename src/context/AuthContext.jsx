@@ -14,6 +14,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     const { loading, setLoading, setLoadingMessage } = useGlobal();
     const navigate = useNavigate();
 
@@ -117,6 +118,7 @@ export const AuthProvider = ({ children }) => {
            if (!token) {
                 setLoading(false);
                 setIsAuthenticated(false);
+                setIsCheckingAuth(false);
 
                 const isPublicRoute = publicRoutes.some((route) =>
                     window.location.pathname.startsWith(route)
@@ -148,6 +150,7 @@ export const AuthProvider = ({ children }) => {
                 }
             } finally {
                 setLoading(false);
+                setIsCheckingAuth(false);
             }
         };
         checkAuthStatus();
@@ -158,6 +161,7 @@ export const AuthProvider = ({ children }) => {
     const authContextValue = useMemo(() => ({
         user,
         isAuthenticated,
+        isCheckingAuth,
         loading,
         login,
         loginGoogle,
@@ -166,6 +170,7 @@ export const AuthProvider = ({ children }) => {
     }), [
         user,
         isAuthenticated,
+        isCheckingAuth,
         loading,
         login,
         loginGoogle,

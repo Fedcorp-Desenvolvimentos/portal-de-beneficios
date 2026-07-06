@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   FaArrowRight,
   FaColumns,
@@ -25,6 +25,7 @@ const Login = () => {
   const { loading } = useGlobal();
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const canSubmit = useMemo(
     () => email.trim().length >= 3 && password.trim().length >= 6,
@@ -48,7 +49,8 @@ const Login = () => {
         return;
       }
 
-      navigate(result.user?.tipo === 'fat' ? '/dashboard' : '/home', {
+      const from = location.state?.from?.pathname || (result.user?.tipo === 'fat' ? '/dashboard' : '/home');
+      navigate(from, {
         replace: true,
       });
     } catch (err) {
