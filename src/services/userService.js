@@ -25,7 +25,7 @@ export const userService = {
 
             const accessToken = data.access;
             const refreshToken = data.refresh;
-            
+
             if (accessToken && refreshToken) {
                 localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
                 localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
@@ -64,11 +64,11 @@ export const userService = {
 
         } catch (error) {
             console.error('Erro ao tentar atualizar o token:', error);
-            userService.logout(); 
+            userService.logout();
             throw new Error('Sessão expirada ou refresh token inválido. Usuário deslogado.');
         }
     },
-    
+
     /**
      * Busca os dados do usuário logado.
      */
@@ -138,7 +138,7 @@ export const userService = {
 
             const payload = {
                 username: dados.username !== undefined ? dados.username : usuarioAtual.username,
-                nome: dados.nome !== undefined ? dados.nome : usuarioAtual.nome,
+                nome: dados.username !== undefined ? dados.username : usuarioAtual.username,
                 email: dados.email !== undefined ? dados.email : usuarioAtual.email,
                 tipo: dados.tipo !== undefined ? dados.tipo : usuarioAtual.tipo,
                 administradora: dados.administradora !== undefined
@@ -246,7 +246,7 @@ export const userService = {
                 old_password: oldPassword,
                 new_password: newPassword
             };
-            
+
             const response = await api.post('/api/users/password/', payload);
             return {
                 success: true,
@@ -279,7 +279,7 @@ export const userService = {
             };
         }
     },
-    
+
     /**
      * Valida token de recuperação
      */
@@ -298,7 +298,7 @@ export const userService = {
             };
         }
     },
-    
+
     /**
      * Redefine a senha usando o token (para recuperação de senha)
      */
@@ -331,7 +331,7 @@ export const deleteUsuario = userService.excluirUsuario;
 export const desvincularAdministradora = userService.desvincularAdministradora;
 export const listarAdministradoras = userService.listarAdministradoras;
 export const vincularAdministradora = userService.vincularAdministradora;
-export const changePassword = userService.changePassword; 
+export const changePassword = userService.changePassword;
 export const solicitarResetSenha = userService.solicitarResetSenha;
 export const validarTokenReset = userService.validarTokenReset;
 export const resetarSenhaComToken = userService.resetarSenhaComToken;
