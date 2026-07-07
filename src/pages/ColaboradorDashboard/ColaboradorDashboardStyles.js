@@ -1,26 +1,6 @@
 // pages/ColaboradorDashboard/ColaboradorDashboardStyles.js
 import styled, { keyframes, css } from 'styled-components';
 
-const slideIn = keyframes`
-  from {
-    opacity: 0;
-    transform: translateX(16px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-`;
-
-const spin = keyframes`
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-`;
-
 const shimmer = keyframes`
   0% {
     background-position: 200% 0;
@@ -177,6 +157,10 @@ export const S = {
     border-radius: 14px;
     overflow-x: auto;
     overflow-y: visible;
+
+    @media (max-width: 1280px) {
+      overflow: visible;
+    }
   `,
 
   Table: styled.table`
@@ -213,43 +197,39 @@ export const S = {
       background: var(--color-bg-tertiary);
     }
 
-    /* Pedido */
+    /* Layout desktop:
+       Pedido | Administradora | Vencimento | Competência | Valor | Status | Excel | Docs | Compra */
+
     th:nth-child(1),
     td:nth-child(1) {
       width: 130px;
     }
 
-    /* Administradora */
     th:nth-child(2),
     td:nth-child(2) {
       width: 260px;
     }
 
-    /* Vencimento */
     th:nth-child(3),
     td:nth-child(3) {
       width: 115px;
     }
 
-    /* Competência */
     th:nth-child(4),
     td:nth-child(4) {
       width: 105px;
     }
 
-    /* Valor */
     th:nth-child(5),
     td:nth-child(5) {
       width: 120px;
     }
 
-    /* Status */
     th:nth-child(6),
     td:nth-child(6) {
       width: 145px;
     }
 
-    /* Excel */
     th:nth-child(7),
     td:nth-child(7) {
       width: 58px;
@@ -260,7 +240,6 @@ export const S = {
       padding-right: 6px;
     }
 
-    /* Docs */
     th:nth-child(8),
     td:nth-child(8) {
       width: 96px;
@@ -272,7 +251,6 @@ export const S = {
       white-space: nowrap;
     }
 
-    /* Compra */
     th:nth-child(9),
     td:nth-child(9) {
       width: 104px;
@@ -283,8 +261,8 @@ export const S = {
       padding-right: 8px;
     }
 
-    /* Excel: botão sempre quadrado */
-    td:nth-child(7) button {
+    /* Desktop: Excel */
+    td:nth-child(7) > button {
       min-width: 36px;
       width: 36px;
       height: 32px;
@@ -292,7 +270,7 @@ export const S = {
       justify-content: center;
     }
 
-    /* Docs: container dos botões */
+    /* Desktop: Docs */
     td:nth-child(8) > div {
       display: inline-flex;
       align-items: center;
@@ -300,8 +278,7 @@ export const S = {
       gap: 6px;
     }
 
-    /* Docs: botão com texto, exemplo Importar */
-    td:nth-child(8) button {
+    td:nth-child(8) > button {
       min-width: 82px;
       width: auto;
       height: 32px;
@@ -310,74 +287,81 @@ export const S = {
       white-space: nowrap;
     }
 
-    /* Docs: quando houver dois botões juntos, considera como ícones */
-    td:nth-child(8) > div:has(button + button) button {
+    td:nth-child(8) > div:has(button + button) > button {
       min-width: 36px;
       width: 36px;
       height: 32px;
       padding: 0;
     }
 
-    /* Compra */
-    td:nth-child(9) button {
+    /* Desktop: Compra */
+    td:nth-child(9) > button {
       min-width: 82px;
       padding-left: 10px;
       padding-right: 10px;
       justify-content: center;
     }
 
-    @media (max-width: 1440px) {
-      min-width: 1040px;
+    @media (max-width: 1280px) {
+      min-width: 0;
+
+      thead th {
+        padding: 12px 8px;
+        font-size: 9px;
+      }
+
+      tbody td {
+        padding: 12px 8px;
+      }
+
+      /* Layout pequeno:
+         Pedido | Administradora | Vencimento | Competência | Valor | Status | Ações */
 
       th:nth-child(1),
       td:nth-child(1) {
-        width: 125px;
+        width: 13%;
       }
 
       th:nth-child(2),
       td:nth-child(2) {
-        width: 240px;
+        width: 26%;
       }
 
       th:nth-child(3),
       td:nth-child(3) {
-        width: 110px;
+        width: 12%;
       }
 
       th:nth-child(4),
       td:nth-child(4) {
-        width: 100px;
+        width: 11%;
       }
 
       th:nth-child(5),
       td:nth-child(5) {
-        width: 115px;
+        width: 13%;
       }
 
       th:nth-child(6),
       td:nth-child(6) {
-        width: 140px;
+        width: 15%;
       }
 
       th:nth-child(7),
       td:nth-child(7) {
-        width: 56px;
-        min-width: 56px;
-        max-width: 56px;
+        width: 10%;
+        min-width: 0;
+        max-width: none;
+        text-align: center;
       }
 
-      th:nth-child(8),
-      td:nth-child(8) {
-        width: 92px;
-        min-width: 92px;
-        max-width: 92px;
-      }
-
-      th:nth-child(9),
-      td:nth-child(9) {
-        width: 100px;
-        min-width: 100px;
-        max-width: 100px;
+      /* Em tela pequena, a coluna 7 vira Ações.
+         Remove as regras antigas do botão quadrado do Excel. */
+      td:nth-child(7) button {
+        min-width: unset;
+        width: auto;
+        height: auto;
+        padding: unset;
       }
     }
   `,
@@ -540,6 +524,127 @@ export const S = {
         padding: 5px 10px;
         font-size: 11px;
       `}
+  `,
+
+  RowActions: styled.div`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  `,
+
+  ActionsMenuWrap: styled.div`
+    position: relative;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  `,
+
+  ActionsMenuButton: styled.button`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 92px;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #ffffff;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+    font-family: var(--font);
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+
+    svg {
+      flex-shrink: 0;
+    }
+
+    &:hover {
+      background: var(--bg);
+      border-color: var(--border2);
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+    }
+  `,
+
+  ActionsDropdown: styled.div`
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 100;
+    width: 230px;
+    padding: 8px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: #ffffff;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+    display: grid;
+    gap: 4px;
+  `,
+
+  ActionItem: styled.button`
+    width: 100%;
+    min-height: 38px;
+    padding: 9px 10px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text);
+    display: grid;
+    grid-template-columns: 18px 1fr;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    line-height: 1.25;
+
+    svg {
+      width: 16px;
+      height: 16px;
+      color: #64748b;
+    }
+
+    span {
+      display: block;
+      white-space: normal;
+    }
+
+    &:hover:not(:disabled) {
+      background: #f8fafc;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &.primary {
+      background: #2563eb;
+      color: #ffffff;
+
+      svg {
+        color: #ffffff;
+      }
+
+      &:hover:not(:disabled) {
+        background: #1d4ed8;
+      }
+    }
+  `,
+
+  ActionStatus: styled.div`
+    margin-top: 4px;
+    padding: 9px 10px 6px;
+    font-size: 12px;
+    color: #64748b;
+    border-top: 1px solid var(--border);
+    text-align: center;
   `,
 
   Timeline: styled.div`
