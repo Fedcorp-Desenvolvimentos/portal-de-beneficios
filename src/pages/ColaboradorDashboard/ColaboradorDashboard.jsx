@@ -2319,219 +2319,219 @@ export default function ColaboradorDashboard() {
 
       {/* Modal Seleção de Boletos */}
       {/* Modal Seleção de Boletos */}
-{boletoModalOpen && boletoPedido && (
-  <S.Overlay
-    onMouseDown={(e) => e.target === e.currentTarget && closeBoletoModal()}
-  >
-    <S.Modal style={{ maxWidth: 760 }}>
-      <S.ModalHeader>
-        <div>
-          <S.ModalTitle>Selecionar boletos</S.ModalTitle>
-          <S.ModalSub>
-            Pedido {boletoPedido.id} · {condominiosCompra.length} boleto(s)
-          </S.ModalSub>
-        </div>
-
-        <S.ModalClose
-          onClick={closeBoletoModal}
-          disabled={downloadingId === boletoPedido.id}
+      {boletoModalOpen && boletoPedido && (
+        <S.Overlay
+          onMouseDown={(e) => e.target === e.currentTarget && closeBoletoModal()}
         >
-          <FiX size={18} />
-        </S.ModalClose>
-      </S.ModalHeader>
+          <S.Modal style={{ maxWidth: 760 }}>
+            <S.ModalHeader>
+              <div>
+                <S.ModalTitle>Selecionar boletos</S.ModalTitle>
+                <S.ModalSub>
+                  Pedido {boletoPedido.id} · {condominiosCompra.length} boleto(s)
+                </S.ModalSub>
+              </div>
 
-      <S.ModalBody style={{ padding: 0 }}>
-        <div style={{ overflowX: 'auto', maxHeight: 420, overflowY: 'auto' }}>
-          <S.Table style={{ minWidth: 720, borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={{ width: 48, padding: '10px 8px' }}>
-                  <input
-                    type="checkbox"
-                    checked={
-                      condominiosCompra.length > 0 &&
-                      selectedCondominios.size ===
-                        condominiosCompra.filter((boleto) => boleto._baixa).length
-                    }
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedCondominios(
-                          new Set(
-                            condominiosCompra
-                              .filter((boleto) => boleto._baixa)
-                              .map((boleto) => boleto._index)
-                          )
-                        )
-                      } else {
-                        setSelectedCondominios(new Set())
-                      }
-                    }}
-                    disabled={!condominiosCompra.some((boleto) => boleto._baixa)}
-                    style={{
-                      cursor: condominiosCompra.some((boleto) => boleto._baixa)
-                        ? 'pointer'
-                        : 'not-allowed',
-                    }}
-                  />
-                </th>
+              <S.ModalClose
+                onClick={closeBoletoModal}
+                disabled={downloadingId === boletoPedido.id}
+              >
+                <FiX size={18} />
+              </S.ModalClose>
+            </S.ModalHeader>
 
-                <th style={{ padding: '10px 8px', textAlign: 'left' }}>
-                  Condomínio
-                </th>
-
-                <th style={{ padding: '10px 8px', textAlign: 'left' }}>
-                  CNPJ
-                </th>
-
-                <th style={{ padding: '10px 8px', textAlign: 'left' }}>
-                  Vencimento
-                </th>
-
-                <th style={{ padding: '10px 8px', textAlign: 'right' }}>
-                  Valor
-                </th>
-
-                <th style={{ padding: '10px 8px', textAlign: 'center' }}>
-                  Func.
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {condominiosCompra.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    style={{
-                      textAlign: 'center',
-                      padding: 32,
-                      color: '#9ca3af',
-                    }}
-                  >
-                    Nenhum boleto encontrado.
-                  </td>
-                </tr>
-              ) : (
-                condominiosCompra.map((condominio) => {
-                  const checked = selectedCondominios.has(condominio._index)
-
-                  return (
-                    <tr
-                      key={`${condominio._key}-${condominio._index}`}
-                      style={{
-                        cursor: condominio._baixa ? 'pointer' : 'not-allowed',
-                        background: checked
-                          ? 'rgba(37, 99, 235, 0.06)'
-                          : undefined,
-                        opacity: condominio._baixa ? 1 : 0.65,
-                      }}
-                      onClick={() => {
-                        if (!condominio._baixa) return
-                        toggleCondominio(condominio._index)
-                      }}
-                    >
-                      <td style={{ padding: '10px 8px', textAlign: 'center' }}>
+            <S.ModalBody style={{ padding: 0 }}>
+              <div style={{ overflowX: 'auto', maxHeight: 420, overflowY: 'auto' }}>
+                <S.Table style={{ minWidth: 720, borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: 48, padding: '10px 8px' }}>
                         <input
                           type="checkbox"
-                          checked={checked}
-                          disabled={!condominio._baixa}
+                          checked={
+                            condominiosCompra.length > 0 &&
+                            selectedCondominios.size ===
+                            condominiosCompra.filter((boleto) => boleto._baixa).length
+                          }
                           onChange={(e) => {
-                            e.stopPropagation()
-                            if (!condominio._baixa) return
-                            toggleCondominio(condominio._index)
+                            if (e.target.checked) {
+                              setSelectedCondominios(
+                                new Set(
+                                  condominiosCompra
+                                    .filter((boleto) => boleto._baixa)
+                                    .map((boleto) => boleto._index)
+                                )
+                              )
+                            } else {
+                              setSelectedCondominios(new Set())
+                            }
                           }}
-                          onClick={(e) => e.stopPropagation()}
+                          disabled={!condominiosCompra.some((boleto) => boleto._baixa)}
                           style={{
-                            cursor: condominio._baixa ? 'pointer' : 'not-allowed',
+                            cursor: condominiosCompra.some((boleto) => boleto._baixa)
+                              ? 'pointer'
+                              : 'not-allowed',
                           }}
                         />
-                      </td>
+                      </th>
 
-                      <td style={{ padding: '10px 8px' }}>
-                        <strong>{condominio._nome}</strong>
+                      <th style={{ padding: '10px 8px', textAlign: 'left' }}>
+                        Condomínio
+                      </th>
 
-                        <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
-                          Documento: {condominio._documento}
-                        </div>
+                      <th style={{ padding: '10px 8px', textAlign: 'left' }}>
+                        CNPJ
+                      </th>
 
-                        <div
+                      <th style={{ padding: '10px 8px', textAlign: 'left' }}>
+                        Vencimento
+                      </th>
+
+                      <th style={{ padding: '10px 8px', textAlign: 'right' }}>
+                        Valor
+                      </th>
+
+                      <th style={{ padding: '10px 8px', textAlign: 'center' }}>
+                        Func.
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {condominiosCompra.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={6}
                           style={{
-                            fontSize: 12,
-                            color: condominio._baixa ? '#16a34a' : '#dc2626',
-                            marginTop: 2,
-                            fontWeight: 600,
+                            textAlign: 'center',
+                            padding: 32,
+                            color: '#9ca3af',
                           }}
                         >
-                          {condominio._baixa ? 'Pago/Baixado' : 'Pendente'}
-                        </div>
-                      </td>
+                          Nenhum boleto encontrado.
+                        </td>
+                      </tr>
+                    ) : (
+                      condominiosCompra.map((condominio) => {
+                        const checked = selectedCondominios.has(condominio._index)
 
-                      <td style={{ padding: '10px 8px', color: '#64748b', fontSize: 13 }}>
-                        {condominio._cnpjOriginal}
-                      </td>
+                        return (
+                          <tr
+                            key={`${condominio._key}-${condominio._index}`}
+                            style={{
+                              cursor: condominio._baixa ? 'pointer' : 'not-allowed',
+                              background: checked
+                                ? 'rgba(37, 99, 235, 0.06)'
+                                : undefined,
+                              opacity: condominio._baixa ? 1 : 0.65,
+                            }}
+                            onClick={() => {
+                              if (!condominio._baixa) return
+                              toggleCondominio(condominio._index)
+                            }}
+                          >
+                            <td style={{ padding: '10px 8px', textAlign: 'center' }}>
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                disabled={!condominio._baixa}
+                                onChange={(e) => {
+                                  e.stopPropagation()
+                                  if (!condominio._baixa) return
+                                  toggleCondominio(condominio._index)
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                  cursor: condominio._baixa ? 'pointer' : 'not-allowed',
+                                }}
+                              />
+                            </td>
 
-                      <td style={{ padding: '10px 8px', color: '#64748b', fontSize: 13 }}>
-                        {fmtDate(condominio._vencimento)}
-                      </td>
+                            <td style={{ padding: '10px 8px' }}>
+                              <strong>{condominio._nome}</strong>
 
-                      <td
-                        style={{
-                          padding: '10px 8px',
-                          textAlign: 'right',
-                          fontWeight: 600,
-                        }}
-                      >
-                        {fmtMoney(condominio._valor)}
-                      </td>
+                              <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+                                Documento: {condominio._documento}
+                              </div>
 
-                      <td
-                        style={{
-                          padding: '10px 8px',
-                          textAlign: 'center',
-                          color: '#64748b',
-                        }}
-                      >
-                        {condominio._funcionarios.length || '-'}
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </S.Table>
-        </div>
-      </S.ModalBody>
+                              <div
+                                style={{
+                                  fontSize: 12,
+                                  color: condominio._baixa ? '#16a34a' : '#dc2626',
+                                  marginTop: 2,
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {condominio._baixa ? 'Pago/Baixado' : 'Pendente'}
+                              </div>
+                            </td>
 
-      <S.ModalFooter>
-        <div style={{ marginRight: 'auto', fontSize: 13, color: '#64748b' }}>
-          {selectedCondominios.size} de{' '}
-          {condominiosCompra.filter((boleto) => boleto._baixa).length} boleto(s)
-          pago(s) selecionado(s)
-        </div>
+                            <td style={{ padding: '10px 8px', color: '#64748b', fontSize: 13 }}>
+                              {condominio._cnpjOriginal}
+                            </td>
 
-        <S.Btn
-          onClick={closeBoletoModal}
-          disabled={downloadingId === boletoPedido.id}
-        >
-          Cancelar
-        </S.Btn>
+                            <td style={{ padding: '10px 8px', color: '#64748b', fontSize: 13 }}>
+                              {fmtDate(condominio._vencimento)}
+                            </td>
 
-        <S.Btn
-          $variant="primary"
-          onClick={handleGerarTxt}
-          disabled={
-            downloadingId === boletoPedido.id ||
-            selectedCondominios.size === 0
-          }
-        >
-          {downloadingId === boletoPedido.id
-            ? 'Gerando...'
-            : `Gerar TXT (${selectedCondominios.size})`}
-        </S.Btn>
-      </S.ModalFooter>
-    </S.Modal>
-  </S.Overlay>
-)}
+                            <td
+                              style={{
+                                padding: '10px 8px',
+                                textAlign: 'right',
+                                fontWeight: 600,
+                              }}
+                            >
+                              {fmtMoney(condominio._valor)}
+                            </td>
+
+                            <td
+                              style={{
+                                padding: '10px 8px',
+                                textAlign: 'center',
+                                color: '#64748b',
+                              }}
+                            >
+                              {condominio._funcionarios.length || '-'}
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
+                  </tbody>
+                </S.Table>
+              </div>
+            </S.ModalBody>
+
+            <S.ModalFooter>
+              <div style={{ marginRight: 'auto', fontSize: 13, color: '#64748b' }}>
+                {selectedCondominios.size} de{' '}
+                {condominiosCompra.filter((boleto) => boleto._baixa).length} boleto(s)
+                pago(s) selecionado(s)
+              </div>
+
+              <S.Btn
+                onClick={closeBoletoModal}
+                disabled={downloadingId === boletoPedido.id}
+              >
+                Cancelar
+              </S.Btn>
+
+              <S.Btn
+                $variant="primary"
+                onClick={handleGerarTxt}
+                disabled={
+                  downloadingId === boletoPedido.id ||
+                  selectedCondominios.size === 0
+                }
+              >
+                {downloadingId === boletoPedido.id
+                  ? 'Gerando...'
+                  : `Gerar TXT (${selectedCondominios.size})`}
+              </S.Btn>
+            </S.ModalFooter>
+          </S.Modal>
+        </S.Overlay>
+      )}
     </PageLayout>
   )
 }

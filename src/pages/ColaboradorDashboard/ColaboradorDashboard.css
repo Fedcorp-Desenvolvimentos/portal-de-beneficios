@@ -800,258 +800,411 @@
     .cf-details-grid {
         grid-template-columns: 1fr;
     }
+
     .cf-import-grid {
         grid-template-columns: 1fr;
     }
+
     .cf-stats-mini {
         width: 100%;
         justify-content: space-between;
     }
 }
+
 .cf-timeline {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  padding: 8px 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 8px 0;
 }
 
 .cf-timeline-step {
-  position: relative;
-  display: grid;
-  grid-template-columns: 34px 1fr;
-  gap: 10px;
-  padding-bottom: 18px;
+    position: relative;
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 10px;
+    padding-bottom: 18px;
 }
 
 .cf-timeline-step:not(:last-child)::before {
-  content: '';
-  position: absolute;
-  left: 16px;
-  top: 28px;
-  bottom: -2px;
-  width: 2px;
-  background: #e5e7eb;
+    content: '';
+    position: absolute;
+    left: 16px;
+    top: 28px;
+    bottom: -2px;
+    width: 2px;
+    background: #e5e7eb;
 }
 
 .cf-timeline-marker {
-  z-index: 1;
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #e5e7eb;
-  color: #64748b;
+    z-index: 1;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e5e7eb;
+    color: #64748b;
 }
 
 .cf-timeline-step.done .cf-timeline-marker {
-  background: #dcfce7;
-  color: #16a34a;
+    background: #dcfce7;
+    color: #16a34a;
 }
 
 .cf-timeline-step.current .cf-timeline-marker {
-  background: #dbeafe;
-  color: #2563eb;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    background: #dbeafe;
+    color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
 }
 
 .cf-timeline-content {
-  padding: 10px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  background: #fff;
+    padding: 10px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #fff;
 }
 
 .cf-timeline-step.current .cf-timeline-content {
-  border-color: #93c5fd;
-  background: #eff6ff;
+    border-color: #93c5fd;
+    background: #eff6ff;
 }
 
 .cf-timeline-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
 }
 
 .cf-timeline-top strong {
-  font-size: 13px;
-  color: #0f172a;
+    font-size: 13px;
+    color: #0f172a;
 }
 
 .cf-timeline-top span {
-  font-size: 12px;
-  color: #64748b;
-  white-space: nowrap;
+    font-size: 12px;
+    color: #64748b;
+    white-space: nowrap;
 }
 
 .cf-timeline-content p {
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: #64748b;
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #64748b;
 }
 
 .cf-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-top: 14px;
-  padding: 12px 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  flex-wrap: wrap;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    flex-wrap: wrap;
 }
 
 .cf-pagination-info {
-  font-size: 12px;
-  color: var(--sub);
+    font-size: 12px;
+    color: var(--sub);
 }
 
 .cf-pagination-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .cf-pagination-page {
-  font-size: 12px;
-  color: var(--sub);
-  white-space: nowrap;
+    font-size: 12px;
+    color: var(--sub);
+    white-space: nowrap;
 }
 
 @media (max-width: 640px) {
-  .cf-pagination {
-    align-items: stretch;
-  }
+    .cf-pagination {
+        align-items: stretch;
+    }
 
-  .cf-pagination-actions {
-    width: 100%;
-    justify-content: space-between;
-  }
+    .cf-pagination-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
 }
 
 .cf-upload-progress {
-  display: grid;
-  gap: 8px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--bg);
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
 }
 
 .cf-upload-progress-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  color: var(--sub);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--sub);
 }
 
 .cf-upload-progress-top strong {
-  color: var(--accent);
+    color: var(--accent);
 }
 
 .cf-upload-progress-bar {
-  height: 8px;
-  border-radius: 999px;
-  background: #e5e7eb;
-  overflow: hidden;
+    height: 8px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    overflow: hidden;
 }
 
 .cf-upload-progress-fill {
-  height: 100%;
-  border-radius: inherit;
-  background: var(--accent);
-  transition: width 0.2s ease;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent);
+    transition: width 0.2s ease;
 }
 
 .cf-admin-cell {
-  max-width: 180px;
-  min-width: 180px;
+    max-width: 180px;
+    min-width: 180px;
 }
 
 .cf-admin-name {
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.35;
-  color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--text);
 
-  display: -webkit-box;
-  
-  -webkit-box-orient: vertical;
+    display: -webkit-box;
 
-  overflow: hidden;
-  text-overflow: ellipsis;
-  word-break: break-word;
+    -webkit-box-orient: vertical;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+}
+
+.cf-admin-cell {
+    width: 100%;
+    max-width: 240px;
+    min-width: 0;
+}
+
+.cf-admin-name {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--text);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+}
+
+/* Ajuste real da tabela do Dashboard:
+   Pedido | Administradora | Vencimento | Competência | Valor | Status | Excel | Docs | Compra */
+
+.cf-table-wrap {
+    overflow-x: auto;
+}
+
+.cf-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    min-width: 1180px;
 }
 
 /* Pedido */
 .cf-table th:nth-child(1),
 .cf-table td:nth-child(1) {
-  width: 150px;
+    width: 140px;
 }
 
 /* Administradora */
 .cf-table th:nth-child(2),
 .cf-table td:nth-child(2) {
-  width: 280px;
+    width: 330px;
 }
 
 /* Vencimento */
 .cf-table th:nth-child(3),
 .cf-table td:nth-child(3) {
-  width: 110px;
+    width: 120px;
 }
 
 /* Competência */
 .cf-table th:nth-child(4),
 .cf-table td:nth-child(4) {
-  width: 90px;
-}
-
-/* Funcionários */
-.cf-table th:nth-child(5),
-.cf-table td:nth-child(5) {
-  width: 80px;
-  text-align: center;
+    width: 115px;
 }
 
 /* Valor */
-.cf-table th:nth-child(6),
-.cf-table td:nth-child(6) {
-  width: 120px;
+.cf-table th:nth-child(5),
+.cf-table td:nth-child(5) {
+    width: 130px;
 }
 
 /* Status */
-.cf-table th:nth-child(7),
-.cf-table td:nth-child(7) {
-  width: 140px;
-}
-
-/* Timeline */
-.cf-table th:nth-child(8),
-.cf-table td:nth-child(8) {
-  width: 80px;
+.cf-table th:nth-child(6),
+.cf-table td:nth-child(6) {
+    width: 155px;
 }
 
 /* Excel */
-.cf-table th:nth-child(9),
-.cf-table td:nth-child(9) {
-  width: 90px;
+.cf-table th:nth-child(7),
+.cf-table td:nth-child(7) {
+    width: 62px;
+    min-width: 62px;
+    max-width: 62px;
+    text-align: center;
+    padding-left: 6px;
+    padding-right: 6px;
 }
 
 /* Docs */
-.cf-table th:nth-child(10),
-.cf-table td:nth-child(10) {
-  width: 110px;
+.cf-table th:nth-child(8),
+.cf-table td:nth-child(8) {
+    width: 86px;
+    min-width: 86px;
+    max-width: 86px;
+    text-align: center;
+    padding-left: 6px;
+    padding-right: 6px;
+    white-space: nowrap;
 }
 
 /* Compra */
-.cf-table th:nth-child(11),
-.cf-table td:nth-child(11) {
-  width: 110px;
+.cf-table th:nth-child(9),
+.cf-table td:nth-child(9) {
+    width: 104px;
+    min-width: 104px;
+    max-width: 104px;
+    text-align: center;
+    padding-left: 6px;
+    padding-right: 10px;
+}
+
+/* Centraliza os botões das colunas Excel, Docs e Compra */
+.cf-table td:nth-child(7),
+.cf-table td:nth-child(8),
+.cf-table td:nth-child(9) {
+    vertical-align: middle;
+}
+
+.cf-table td:nth-child(7) .cf-btn,
+.cf-table td:nth-child(8) .cf-btn,
+.cf-table td:nth-child(9) .cf-btn {
+    justify-content: center;
+}
+
+/* Botão pequeno de download/visualizar/reprocessar */
+.cf-table td:nth-child(7) .cf-btn-sm,
+.cf-table td:nth-child(8) .cf-btn-sm {
+    min-width: 36px;
+    width: 36px;
+    height: 32px;
+    padding: 0;
+}
+
+/* Quando Docs tiver dois botões lado a lado */
+.cf-table td:nth-child(8)>div,
+.cf-table td:nth-child(8) .cf-actions,
+.cf-table td:nth-child(8) .cf-doc-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+/* Botão Gerar TXT */
+.cf-table td:nth-child(9) .cf-btn {
+    min-width: 82px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+/* Administradora */
+.cf-admin-cell {
+    width: 100%;
+    max-width: 300px;
+    min-width: 0;
+}
+
+.cf-admin-name {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--text);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+}
+
+@media (max-width: 1440px) {
+    .cf-table {
+        min-width: 1120px;
+    }
+
+    .cf-table th:nth-child(1),
+    .cf-table td:nth-child(1) {
+        width: 130px;
+    }
+
+    .cf-table th:nth-child(2),
+    .cf-table td:nth-child(2) {
+        width: 300px;
+    }
+
+    .cf-table th:nth-child(3),
+    .cf-table td:nth-child(3) {
+        width: 115px;
+    }
+
+    .cf-table th:nth-child(4),
+    .cf-table td:nth-child(4) {
+        width: 105px;
+    }
+
+    .cf-table th:nth-child(5),
+    .cf-table td:nth-child(5) {
+        width: 120px;
+    }
+
+    .cf-table th:nth-child(6),
+    .cf-table td:nth-child(6) {
+        width: 145px;
+    }
+
+    .cf-table th:nth-child(7),
+    .cf-table td:nth-child(7) {
+        width: 58px;
+        min-width: 58px;
+        max-width: 58px;
+    }
+
+    .cf-table th:nth-child(8),
+    .cf-table td:nth-child(8) {
+        width: 82px;
+        min-width: 82px;
+        max-width: 82px;
+    }
+
+    .cf-table th:nth-child(9),
+    .cf-table td:nth-child(9) {
+        width: 100px;
+        min-width: 100px;
+        max-width: 100px;
+    }
 }

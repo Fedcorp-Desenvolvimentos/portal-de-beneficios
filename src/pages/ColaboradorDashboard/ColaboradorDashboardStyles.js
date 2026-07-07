@@ -21,9 +21,30 @@ const spin = keyframes`
   }
 `;
 
+const shimmer = keyframes`
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+`;
+
+const skeletonBackground = css`
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: ${shimmer} 1.5s infinite;
+`;
+
 export const S = {
   Root: styled.div`
-    --font: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+      sans-serif;
     --mono: 'Geist Mono', monospace;
     --bg: var(--color-bg-secondary);
     --surface: var(--color-bg-primary);
@@ -36,7 +57,6 @@ export const S = {
     --danger: var(--color-danger);
   `,
 
-  // Header e estatísticas
   PageHeader: styled.div`
     display: flex;
     align-items: flex-start;
@@ -58,32 +78,29 @@ export const S = {
   `,
 
   StatMini: styled.div`
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 10px 16px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    min-width: 80px;
-    border-left: 3px solid ${props => props.$color || 'var(--sub)'};
+    background: white;
+    border-radius: 16px;
+    padding: 16px 20px;
+    min-width: 100px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border-left: 3px solid ${({ $color }) => $color || 'transparent'};
 
     .value {
-      font-size: 20px;
+      font-size: 28px;
       font-weight: 700;
-      color: ${props => props.$color || 'var(--text)'};
+      color: ${({ $color }) => $color || '#2563eb'};
     }
 
     .label {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--sub);
-      margin-top: 2px;
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 4px;
     }
   `,
 
-  // Filtros
   Filters: styled.div`
     display: flex;
     gap: 10px;
@@ -154,7 +171,6 @@ export const S = {
     }
   `,
 
-  // Tabela - COM ESPAÇAMENTOS MELHORADOS
   TableWrap: styled.div`
     background: var(--surface);
     border: 1px solid var(--border);
@@ -166,14 +182,15 @@ export const S = {
   Table: styled.table`
     width: 100%;
     border-collapse: collapse;
-    min-width: 1300px;
+    table-layout: fixed;
+    min-width: 1080px;
     font-size: 13px;
 
     thead th {
       background: var(--bg);
-      padding: 16px 14px;
+      padding: 14px 10px;
       font-family: var(--mono);
-      font-size: 11px;
+      font-size: 10px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--sub);
@@ -183,7 +200,7 @@ export const S = {
     }
 
     tbody td {
-      padding: 16px 14px;
+      padding: 14px 10px;
       border-bottom: 1px solid var(--border);
       vertical-align: middle;
     }
@@ -196,18 +213,173 @@ export const S = {
       background: var(--color-bg-tertiary);
     }
 
-    /* Larguras específicas das colunas para melhor espaçamento */
-    th:nth-child(1), td:nth-child(1) { width: 140px; } /* Pedido */
-    th:nth-child(2), td:nth-child(2) { width: 240px; } /* Administradora */
-    th:nth-child(3), td:nth-child(3) { width: 110px; } /* Vencimento */
-    th:nth-child(4), td:nth-child(4) { width: 100px; } /* Competência */
-    th:nth-child(5), td:nth-child(5) { width: 90px; text-align: center; } /* Funcionários */
-    th:nth-child(6), td:nth-child(6) { width: 130px; } /* Valor */
-    th:nth-child(7), td:nth-child(7) { width: 150px; } /* Status */
-    th:nth-child(8), td:nth-child(8) { width: 80px; } /* Timeline */
-    th:nth-child(9), td:nth-child(9) { width: 100px; } /* Excel */
-    th:nth-child(10), td:nth-child(10) { width: 110px; } /* Documentos */
-    th:nth-child(11), td:nth-child(11) { width: 100px; } /* Compra */
+    /* Pedido */
+    th:nth-child(1),
+    td:nth-child(1) {
+      width: 130px;
+    }
+
+    /* Administradora */
+    th:nth-child(2),
+    td:nth-child(2) {
+      width: 260px;
+    }
+
+    /* Vencimento */
+    th:nth-child(3),
+    td:nth-child(3) {
+      width: 115px;
+    }
+
+    /* Competência */
+    th:nth-child(4),
+    td:nth-child(4) {
+      width: 105px;
+    }
+
+    /* Valor */
+    th:nth-child(5),
+    td:nth-child(5) {
+      width: 120px;
+    }
+
+    /* Status */
+    th:nth-child(6),
+    td:nth-child(6) {
+      width: 145px;
+    }
+
+    /* Excel */
+    th:nth-child(7),
+    td:nth-child(7) {
+      width: 58px;
+      min-width: 58px;
+      max-width: 58px;
+      text-align: center;
+      padding-left: 6px;
+      padding-right: 6px;
+    }
+
+    /* Docs */
+    th:nth-child(8),
+    td:nth-child(8) {
+      width: 96px;
+      min-width: 96px;
+      max-width: 96px;
+      text-align: center;
+      padding-left: 6px;
+      padding-right: 6px;
+      white-space: nowrap;
+    }
+
+    /* Compra */
+    th:nth-child(9),
+    td:nth-child(9) {
+      width: 104px;
+      min-width: 104px;
+      max-width: 104px;
+      text-align: center;
+      padding-left: 6px;
+      padding-right: 8px;
+    }
+
+    /* Excel: botão sempre quadrado */
+    td:nth-child(7) button {
+      min-width: 36px;
+      width: 36px;
+      height: 32px;
+      padding: 0;
+      justify-content: center;
+    }
+
+    /* Docs: container dos botões */
+    td:nth-child(8) > div {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    /* Docs: botão com texto, exemplo Importar */
+    td:nth-child(8) button {
+      min-width: 82px;
+      width: auto;
+      height: 32px;
+      padding: 0 12px;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    /* Docs: quando houver dois botões juntos, considera como ícones */
+    td:nth-child(8) > div:has(button + button) button {
+      min-width: 36px;
+      width: 36px;
+      height: 32px;
+      padding: 0;
+    }
+
+    /* Compra */
+    td:nth-child(9) button {
+      min-width: 82px;
+      padding-left: 10px;
+      padding-right: 10px;
+      justify-content: center;
+    }
+
+    @media (max-width: 1440px) {
+      min-width: 1040px;
+
+      th:nth-child(1),
+      td:nth-child(1) {
+        width: 125px;
+      }
+
+      th:nth-child(2),
+      td:nth-child(2) {
+        width: 240px;
+      }
+
+      th:nth-child(3),
+      td:nth-child(3) {
+        width: 110px;
+      }
+
+      th:nth-child(4),
+      td:nth-child(4) {
+        width: 100px;
+      }
+
+      th:nth-child(5),
+      td:nth-child(5) {
+        width: 115px;
+      }
+
+      th:nth-child(6),
+      td:nth-child(6) {
+        width: 140px;
+      }
+
+      th:nth-child(7),
+      td:nth-child(7) {
+        width: 56px;
+        min-width: 56px;
+        max-width: 56px;
+      }
+
+      th:nth-child(8),
+      td:nth-child(8) {
+        width: 92px;
+        min-width: 92px;
+        max-width: 92px;
+      }
+
+      th:nth-child(9),
+      td:nth-child(9) {
+        width: 100px;
+        min-width: 100px;
+        max-width: 100px;
+      }
+    }
   `,
 
   IdMain: styled.div`
@@ -222,8 +394,8 @@ export const S = {
   `,
 
   AdminCell: styled.td`
-    max-width: 240px;
-    min-width: 200px;
+    max-width: 260px;
+    min-width: 0;
   `,
 
   AdminName: styled.div`
@@ -254,7 +426,6 @@ export const S = {
     font-size: 13px;
   `,
 
-  // Status Select
   StatusSelect: styled.div`
     select {
       padding: 6px 10px;
@@ -262,31 +433,47 @@ export const S = {
       font-size: 11px;
       font-weight: 600;
       font-family: var(--font);
-      background: ${props => {
-      switch (props.$status) {
-        case 'faturado': return '#eff6ff';
-        case 'cancelado': return '#fef2f2';
-        case 'em_faturamento': return '#fffbeb';
-        case 'comprado': return '#f0fdf4';
-        default: return '#f0fdf4';
+      background: ${({ $status }) => {
+      switch ($status) {
+        case 'faturado':
+          return '#eff6ff';
+        case 'cancelado':
+          return '#fef2f2';
+        case 'em_faturamento':
+          return '#fffbeb';
+        case 'comprado':
+          return '#f0fdf4';
+        default:
+          return '#f0fdf4';
       }
     }};
-      border: 1px solid ${props => {
-      switch (props.$status) {
-        case 'faturado': return '#bfdbfe';
-        case 'cancelado': return '#fee2e2';
-        case 'em_faturamento': return '#fde68a';
-        case 'comprado': return '#bbf7d0';
-        default: return '#bbf7d0';
+      border: 1px solid
+        ${({ $status }) => {
+      switch ($status) {
+        case 'faturado':
+          return '#bfdbfe';
+        case 'cancelado':
+          return '#fee2e2';
+        case 'em_faturamento':
+          return '#fde68a';
+        case 'comprado':
+          return '#bbf7d0';
+        default:
+          return '#bbf7d0';
       }
     }};
-      color: ${props => {
-      switch (props.$status) {
-        case 'faturado': return '#2563eb';
-        case 'cancelado': return '#dc2626';
-        case 'em_faturamento': return '#d97706';
-        case 'comprado': return '#16a34a';
-        default: return '#16a34a';
+      color: ${({ $status }) => {
+      switch ($status) {
+        case 'faturado':
+          return '#2563eb';
+        case 'cancelado':
+          return '#dc2626';
+        case 'em_faturamento':
+          return '#d97706';
+        case 'comprado':
+          return '#16a34a';
+        default:
+          return '#16a34a';
       }
     }};
       cursor: pointer;
@@ -298,7 +485,6 @@ export const S = {
     }
   `,
 
-  // Botões
   Btn: styled.button`
     display: inline-flex;
     align-items: center;
@@ -324,33 +510,38 @@ export const S = {
       cursor: not-allowed;
     }
 
-  ${props => props.$variant === 'primary' && css`
-  background: #2563eb;
-  border-color: #2563eb;
-  color: #ffffff;
+    ${({ $variant }) =>
+      $variant === 'primary' &&
+      css`
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #ffffff;
 
-  &:hover:not(:disabled) {
-    background: #1d4ed8;
-    border-color: #1d4ed8;
-  }
+        &:hover:not(:disabled) {
+          background: #1d4ed8;
+          border-color: #1d4ed8;
+        }
 
-  &:focus-visible {
-    outline: 3px solid rgba(37, 99, 235, 0.25);
-    outline-offset: 2px;
-  }
-`}
+        &:focus-visible {
+          outline: 3px solid rgba(37, 99, 235, 0.25);
+          outline-offset: 2px;
+        }
+      `}
 
-    ${props => props.$variant === 'secondary' && css`
-      color: var(--sub);
-    `}
+    ${({ $variant }) =>
+      $variant === 'secondary' &&
+      css`
+        color: var(--sub);
+      `}
 
-    ${props => props.$size === 'sm' && css`
-      padding: 5px 10px;
-      font-size: 11px;
-    `}
+    ${({ $size }) =>
+      $size === 'sm' &&
+      css`
+        padding: 5px 10px;
+        font-size: 11px;
+      `}
   `,
 
-  // Timeline
   Timeline: styled.div`
     position: relative;
     display: flex;
@@ -385,14 +576,16 @@ export const S = {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: ${props => props.$done ? '#dcfce7' : '#e5e7eb'};
-    color: ${props => props.$done ? '#16a34a' : '#64748b'};
+    background: ${({ $done }) => ($done ? '#dcfce7' : '#e5e7eb')};
+    color: ${({ $done }) => ($done ? '#16a34a' : '#64748b')};
 
-    ${props => props.$current && css`
-      background: #dbeafe;
-      color: #2563eb;
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
-    `}
+    ${({ $current }) =>
+      $current &&
+      css`
+        background: #dbeafe;
+        color: #2563eb;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+      `}
   `,
 
   TimelineContent: styled.div`
@@ -401,10 +594,12 @@ export const S = {
     border-radius: 12px;
     background: #fff;
 
-    ${props => props.$current && css`
-      border-color: #93c5fd;
-      background: #eff6ff;
-    `}
+    ${({ $current }) =>
+      $current &&
+      css`
+        border-color: #93c5fd;
+        background: #eff6ff;
+      `}
   `,
 
   TimelineTop: styled.div`
@@ -432,7 +627,6 @@ export const S = {
     color: #64748b;
   `,
 
-  // Paginação
   Pagination: styled.div`
     display: flex;
     align-items: center;
@@ -472,7 +666,6 @@ export const S = {
     white-space: nowrap;
   `,
 
-  // Modal
   Overlay: styled.div`
     position: fixed;
     inset: 0;
@@ -545,7 +738,6 @@ export const S = {
     gap: 10px;
   `,
 
-  // Dropzone e upload
   Dropzone: styled.div`
     display: flex;
     align-items: center;
@@ -730,103 +922,37 @@ export const S = {
     margin: 0;
   `,
 
-
   SkeletonLine: styled.div`
     width: ${({ $width }) => $width || '100%'};
     height: ${({ $height }) => $height || '16px'};
     margin-bottom: ${({ $marginBottom }) => $marginBottom || '0'};
     border-radius: ${({ $borderRadius }) => $borderRadius || '4px'};
-    background: linear-gradient(
-      90deg,
-      #f0f0f0 25%,
-      #e0e0e0 50%,
-      #f0f0f0 75%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    
-    @keyframes shimmer {
-      0% {
-        background-position: 200% 0;
-      }
-      100% {
-        background-position: -200% 0;
-      }
-    }
+    ${skeletonBackground}
   `,
 
   SkeletonIcon: styled.div`
     width: ${({ $width }) => $width || '18px'};
     height: ${({ $height }) => $height || '18px'};
     border-radius: ${({ $borderRadius }) => $borderRadius || '4px'};
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  `,
-
-  // E atualize o StatMini para aceitar $color como transient prop:
-  StatMini: styled.div`
-    display: flex;
-    flex-direction: column;
-    background: white;
-    border-radius: 16px;
-    padding: 16px 20px;
-    min-width: 100px;
-    text-align: center;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-
-    .value {
-      font-size: 28px;
-      font-weight: 700;
-      color: ${({ $color }) => $color || '#2563eb'};
-    }
-
-    .label {
-      font-size: 12px;
-      color: #6b7280;
-      margin-top: 4px;
-    }
+    ${skeletonBackground}
   `,
 };
-
-// ============================================
-// SKELETON COMPONENTS STYLES
-// ============================================
 
 export const SkeletonLine = styled.div`
   width: ${({ $width }) => $width || '100%'};
   height: ${({ $height }) => $height || '16px'};
   margin-bottom: ${({ $marginBottom }) => $marginBottom || '0'};
   border-radius: ${({ $borderRadius }) => $borderRadius || '4px'};
-  background: linear-gradient(
-    90deg,
-    #f0f0f0 25%,
-    #e0e0e0 50%,
-    #f0f0f0 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  
-  @keyframes shimmer {
-    0% {
-      background-position: 200% 0;
-    }
-    100% {
-      background-position: -200% 0;
-    }
-  }
+  ${skeletonBackground}
 `;
 
 export const SkeletonIcon = styled.div`
   width: ${({ $width }) => $width || '18px'};
   height: ${({ $height }) => $height || '18px'};
   border-radius: ${({ $borderRadius }) => $borderRadius || '4px'};
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  ${skeletonBackground}
 `;
 
-// E atualize o StatMini para aceitar $color como transient prop:
 export const StatMini = styled.div`
   display: flex;
   flex-direction: column;
@@ -836,6 +962,7 @@ export const StatMini = styled.div`
   min-width: 100px;
   text-align: center;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-left: 3px solid ${({ $color }) => $color || 'transparent'};
 
   .value {
     font-size: 28px;
