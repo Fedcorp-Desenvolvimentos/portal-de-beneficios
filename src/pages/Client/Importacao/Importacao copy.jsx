@@ -2098,53 +2098,31 @@ export default function Importacao() {
         >
           <form onSubmit={abrirModalRevisao} className="form-grid importacao-form-envio">
             <div className="form-row two-cols">
-              <label>
-                <span>Período de Utilização — Início</span>
-                <DatePickerWrapper
-                  value={formEnvio.periodoInicio}
-                  onChange={(value) => setFormEnvio(prev => ({ ...prev, periodoInicio: value }))}
-                  placeholderText="Selecione a data"
-                  disabled={enviandoLote}
-                  required
-                />
-              </label>
+                <label>
+                  <span>Período de Utilização — Início</span>
+                  <DatePickerWrapper
+                    value={formEnvio.periodoInicio}
+                    onChange={(value) => setFormEnvio(prev => ({ ...prev, periodoInicio: value }))}
+                    placeholderText="Selecione a data"
+                    disabled={enviandoLote}
+                    required
+                  />
+                </label>
 
-              <label>
-                <span>Período de Utilização — Fim</span>
-                <DatePickerWrapper
-                  value={formEnvio.periodoFim}
-                  onChange={(value) => setFormEnvio(prev => ({ ...prev, periodoFim: value }))}
-                  placeholderText="Selecione a data"
-                  minDate={formEnvio.periodoInicio}
-                  disabled={enviandoLote}
-                  required
-                />
-              </label>
+                <label>
+                  <span>Período de Utilização — Fim</span>
+                  <DatePickerWrapper
+                    value={formEnvio.periodoFim}
+                    onChange={(value) => setFormEnvio(prev => ({ ...prev, periodoFim: value }))}
+                    placeholderText="Selecione a data"
+                    minDate={formEnvio.periodoInicio}
+                    disabled={enviandoLote}
+                    required
+                  />
+                </label>
             </div>
 
             <div className="form-row two-cols">
-              <label>
-                <span>Competência — Mês</span>
-                <select
-                  value={formEnvio.competenciaMes}
-                  onChange={(e) =>
-                    setFormEnvio((prev) => ({ ...prev, competenciaMes: e.target.value }))
-                  }
-                  required
-                  disabled={enviandoLote}
-                >
-                  <option value="" disabled>
-                    Selecione o mês
-                  </option>
-
-                  {MESES.map((m) => (
-                    <option key={m.value} value={m.value}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
               <label>
                 <span>Recebimento do benefício</span>
                 <DatePickerWrapper
@@ -2153,16 +2131,8 @@ export default function Importacao() {
                   required={campoDataReferenciaVT !== 'vencimento'}
                   disabled={enviandoLote || recebimentoCalculadoAutomaticamente}
                 />
-
-                {campoDataReferenciaVT === 'vencimento' && formEnvio.recebimentoBeneficio && (
-                  <small>
-                    Recebimento calculado automaticamente {isValeTransporte ? 8 : 1} {isValeTransporte ? 'dias' : 'dia'} após o vencimento.
-                  </small>
-                )}
               </label>
-            </div>
 
-            <div className="form-row full-width">
               <label>
                 <span>Vencimento</span>
                 <DatePickerWrapper
@@ -2171,6 +2141,21 @@ export default function Importacao() {
                   required={campoDataReferenciaVT !== 'recebimento'}
                   disabled={enviandoLote || vencimentoCalculadoAutomaticamente}
                   maxDate={getDueDateInput(1)}
+                />
+              </label>
+            </div>
+
+            <div className="form-row full-width">
+              <label>
+                <span>Vencimento</span>
+                <input
+                  type="date"
+                  value={formEnvio.vencimento}
+                  onChange={(e) => handleVencimentoChange(e.target.value)}
+                  required={campoDataReferenciaVT !== 'recebimento'}
+                  disabled={enviandoLote || vencimentoCalculadoAutomaticamente}
+                  max={obterDataVencimento(1)} // Data atual + 1 dia
+                  readOnly={campoDataReferenciaVT === 'recebimento'} // Bloqueia edição quando calculado automaticamente
                 />
 
                 {campoDataReferenciaVT === 'recebimento' && formEnvio.vencimento && (
@@ -2199,6 +2184,7 @@ export default function Importacao() {
               </label>
             </div>
 
+
             <div className="modal-actions">
               <button
                 type="button"
@@ -2214,6 +2200,7 @@ export default function Importacao() {
               </button>
             </div>
           </form>
+        
         </Modal>
 
         {/* Modal Confirmar Exclusão */}
