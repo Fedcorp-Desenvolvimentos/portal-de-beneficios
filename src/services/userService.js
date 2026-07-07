@@ -117,7 +117,6 @@ export const userService = {
             const payload = {
                 username: dados.username,
                 email: dados.email,
-                password: dados.password,
                 tipo: dados.tipo,
                 administradora: dados.administradora || null
             };
