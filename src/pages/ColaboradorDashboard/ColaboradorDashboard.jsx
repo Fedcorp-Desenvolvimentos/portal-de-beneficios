@@ -12,6 +12,7 @@ import {
   FiCheckCircle,
   FiRefreshCw,
   FiEye,
+  FiMoreVertical,
 } from 'react-icons/fi'
 import { BiSpreadsheet } from 'react-icons/bi'
 
@@ -715,8 +716,36 @@ export default function ColaboradorDashboard() {
   const [boletoPedido, setBoletoPedido] = useState(null)
   const [selectedCondominios, setSelectedCondominios] = useState(new Set())
 
+  const [openActionsId, setOpenActionsId] = useState(null)
+  const [isSmallScreen, setIsSmallScreen] = useState(false)
+
   const itemsPerPage = 10
   const fileRef = useRef(null)
+
+  useEffect(() => {
+    const checkScreen = () => {
+      setIsSmallScreen(window.innerWidth <= 1280)
+    }
+
+    checkScreen()
+    window.addEventListener('resize', checkScreen)
+
+    return () => window.removeEventListener('resize', checkScreen)
+  }, [])
+
+  useEffect(() => {
+    if (!openActionsId) return undefined
+
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('[data-actions-menu]')) {
+        setOpenActionsId(null)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [openActionsId])
 
   const condominiosCompra = useMemo(() => {
     return normalizarCondominiosCompra(boletoPedido)
@@ -1558,6 +1587,91 @@ export default function ColaboradorDashboard() {
     downloadingId,
   ])
 
+
+  const closeActionsMenu = () => {
+    setOpenActionsId(null)
+  }
+
+  const renderAcoesPedido = (p) => {
+    const isFaturadoOuComprado = ['faturado', 'comprado'].includes(p.status)
+    const podeGerarTxt = p.status === 'faturado'
+    const jaComprado = p.status === 'comprado'
+
+    return (
+      <>
+        <S.ActionItem
+          type="button"
+          onClick={() => {
+            handleDownload(p)
+            closeActionsMenu()
+          }}
+          disabled={downloadingId === p.id || p.status === 'cancelado'}
+        >
+          <FiDownload size={14} />
+          <span>Baixar Excel</span>
+        </S.ActionItem>
+
+        {isFaturadoOuComprado ? (
+          <>
+            <S.ActionItem
+              type="button"
+              onClick={() => {
+                abrirDocsImportados(p)
+                closeActionsMenu()
+              }}
+            >
+              <FiEye size={14} />
+              <span>Ver documentos</span>
+            </S.ActionItem>
+
+            <S.ActionItem
+              type="button"
+              onClick={() => {
+                requestRefazerFaturamento(p)
+                closeActionsMenu()
+              }}
+              disabled={p.status === 'cancelado' || refazendoId === p.id}
+            >
+              <FiRefreshCw size={14} />
+              <span>Refazer faturamento</span>
+            </S.ActionItem>
+          </>
+        ) : (
+          <S.ActionItem
+            type="button"
+            onClick={() => {
+              openImport(p)
+              closeActionsMenu()
+            }}
+            disabled={p.status === 'cancelado'}
+          >
+            <BiSpreadsheet size={14} />
+            <span>Importar documentos</span>
+          </S.ActionItem>
+        )}
+
+        {podeGerarTxt ? (
+          <S.ActionItem
+            type="button"
+            className="primary"
+            onClick={() => {
+              openBoletoModal(p)
+              closeActionsMenu()
+            }}
+            disabled={downloadingId === p.id}
+          >
+            <FiFileText size={14} />
+            <span>{downloadingId === p.id ? 'Gerando...' : 'Gerar TXT'}</span>
+          </S.ActionItem>
+        ) : jaComprado ? (
+          <S.ActionStatus>TXT gerado ✓</S.ActionStatus>
+        ) : (
+          <S.ActionStatus>Compra indisponível</S.ActionStatus>
+        )}
+      </>
+    )
+  }
+
   return (
     <PageLayout
       title="Dashboard do Colaborador"
@@ -1629,16 +1743,25 @@ export default function ColaboradorDashboard() {
                     <th>Competência</th>
                     <th>Valor</th>
                     <th>Status</th>
-                    <th>Excel</th>
-                    <th>Docs</th>
-                    <th>Compra</th>
+
+                    {isSmallScreen ? (
+                      <th>Ações</th>
+                    ) : (
+                      <>
+                        <th>Excel</th>
+                        <th>Docs</th>
+                        <th>Compra</th>
+                      </>
+                    )}
                   </tr>
                 </thead>
 
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <S.Empty colSpan={9}>Nenhum pedido encontrado.</S.Empty>
+                      <S.Empty colSpan={isSmallScreen ? 7 : 9}>
+                        Nenhum pedido encontrado.
+                      </S.Empty>
                     </tr>
                   ) : (
                     paginatedPedidos.map((p) => (
@@ -1687,62 +1810,84 @@ export default function ColaboradorDashboard() {
                           </S.StatusSelect>
                         </td>
 
-                        <td>
-                          <S.Btn
-                            onClick={() => handleDownload(p)}
-                            disabled={downloadingId === p.id || p.status === 'cancelado'}
-                            title="Baixar planilha de faturamento"
-                          >
-                            <FiDownload size={14} />
-                          </S.Btn>
-                        </td>
-
-                        <td>
-                          {['faturado', 'comprado'].includes(p.status) ? (
-                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                              <S.Btn
-                                onClick={() => abrirDocsImportados(p)}
-                                title="Ver documentos importados"
+                        {isSmallScreen ? (
+                          <td>
+                            <S.ActionsMenuWrap data-actions-menu>
+                              <S.ActionsMenuButton
+                                type="button"
+                                onClick={() =>
+                                  setOpenActionsId((current) => (current === p.id ? null : p.id))
+                                }
                               >
-                                <FiEye size={14} />
-                              </S.Btn>
+                                <FiMoreVertical size={16} />
+                                Ações
+                              </S.ActionsMenuButton>
 
+                              {openActionsId === p.id && (
+                                <S.ActionsDropdown>{renderAcoesPedido(p)}</S.ActionsDropdown>
+                              )}
+                            </S.ActionsMenuWrap>
+                          </td>
+                        ) : (
+                          <>
+                            <td>
                               <S.Btn
-                                onClick={() => requestRefazerFaturamento(p)}
-                                disabled={p.status === 'cancelado' || refazendoId === p.id}
-                                title="Refazer faturamento e reenviar documentos"
+                                onClick={() => handleDownload(p)}
+                                disabled={downloadingId === p.id || p.status === 'cancelado'}
+                                title="Baixar planilha de faturamento"
                               >
-                                <FiRefreshCw size={14} />
+                                <FiDownload size={14} />
                               </S.Btn>
-                            </div>
-                          ) : (
-                            <S.Btn
-                              onClick={() => openImport(p)}
-                              disabled={p.status === 'cancelado'}
-                            >
-                              <BiSpreadsheet size={14} />
-                              Importar
-                            </S.Btn>
-                          )}
-                        </td>
+                            </td>
 
-                        <td>
-                          {p.status === 'faturado' ? (
-                            <S.Btn
-                              $variant="primary"
-                              onClick={() => openBoletoModal(p)}
-                              disabled={downloadingId === p.id}
-                              title="Selecionar boletos para gerar TXT de compra"
-                            >
-                              <FiFileText size={14} />
-                              {downloadingId === p.id ? 'Gerando…' : 'Gerar TXT'}
-                            </S.Btn>
-                          ) : p.status === 'comprado' ? (
-                            <span style={{ color: '#22c55e', fontSize: 12 }}>TXT gerado ✓</span>
-                          ) : (
-                            <span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>
-                          )}
-                        </td>
+                            <td>
+                              {['faturado', 'comprado'].includes(p.status) ? (
+                                <S.RowActions>
+                                  <S.Btn
+                                    onClick={() => abrirDocsImportados(p)}
+                                    title="Ver documentos importados"
+                                  >
+                                    <FiEye size={14} />
+                                  </S.Btn>
+
+                                  <S.Btn
+                                    onClick={() => requestRefazerFaturamento(p)}
+                                    disabled={p.status === 'cancelado' || refazendoId === p.id}
+                                    title="Refazer faturamento e reenviar documentos"
+                                  >
+                                    <FiRefreshCw size={14} />
+                                  </S.Btn>
+                                </S.RowActions>
+                              ) : (
+                                <S.Btn
+                                  onClick={() => openImport(p)}
+                                  disabled={p.status === 'cancelado'}
+                                >
+                                  <BiSpreadsheet size={14} />
+                                  Importar
+                                </S.Btn>
+                              )}
+                            </td>
+
+                            <td>
+                              {p.status === 'faturado' ? (
+                                <S.Btn
+                                  $variant="primary"
+                                  onClick={() => openBoletoModal(p)}
+                                  disabled={downloadingId === p.id}
+                                  title="Selecionar boletos para gerar TXT de compra"
+                                >
+                                  <FiFileText size={14} />
+                                  {downloadingId === p.id ? 'Gerando…' : 'Gerar TXT'}
+                                </S.Btn>
+                              ) : p.status === 'comprado' ? (
+                                <span style={{ color: '#22c55e', fontSize: 12 }}>TXT gerado ✓</span>
+                              ) : (
+                                <span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>
+                              )}
+                            </td>
+                          </>
+                        )}
                       </tr>
                     ))
                   )}
