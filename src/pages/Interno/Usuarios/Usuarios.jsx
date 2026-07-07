@@ -193,20 +193,6 @@ export default function Usuarios() {
         throw new Error('Tipo de usuário é obrigatório');
       }
 
-      if (!selectedUser && (!dados.password || dados.password.trim() === '')) {
-        enqueueSnackbar('Senha é obrigatória para novo usuário', {
-          variant: 'error',
-        });
-        throw new Error('Senha é obrigatória');
-      }
-
-      if (selectedUser && dados.password && dados.password.length < 6) {
-        enqueueSnackbar('A senha deve ter no mínimo 6 caracteres', {
-          variant: 'error',
-        });
-        throw new Error('Senha muito curta');
-      }
-
       if (selectedUser) {
         await userService.atualizarUsuario(selectedUser.id, dados);
         enqueueSnackbar('Usuário atualizado com sucesso', {

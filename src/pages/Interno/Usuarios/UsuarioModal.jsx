@@ -132,18 +132,6 @@ const ErrorMessage = styled.div`
   border: 1px solid #fca5a5;
 `;
 
-const PasswordHint = styled.div`
-  color: var(--color-text-tertiary);
-  font-size: 11px;
-  margin-top: 4px;
-`;
-
-const FieldError = styled.div`
-  color: var(--color-danger);
-  font-size: 12px;
-  margin-top: 4px;
-`;
-
 const ModalFooter = styled.div`
   display: flex;
   justify-content: flex-end;
@@ -201,14 +189,11 @@ export default function UsuarioModal({
   const [formData, setFormData] = useState({
     username: '',
     email: '',
-    password: '',
-    confirmPassword: '',
     tipo: 'adm',
     administradora: null
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -218,8 +203,6 @@ export default function UsuarioModal({
           email: usuario.email || '',
           tipo: usuario.tipo || 'adm',
           administradora: usuario.administradora_id || administradoraId || null,
-          password: '',
-          confirmPassword: ''
         });
       } else {
         setFormData({
@@ -227,12 +210,9 @@ export default function UsuarioModal({
           email: '',
           tipo: 'adm',
           administradora: administradoraId || null,
-          password: '',
-          confirmPassword: ''
         });
       }
       setError('');
-      setPasswordError('');
     }
   }, [usuario, administradoraId, isOpen]);
 
@@ -242,48 +222,19 @@ export default function UsuarioModal({
       ...prev,
       [name]: value
     }));
-
-    if (name === 'password' || name === 'confirmPassword') {
-      setPasswordError('');
-    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const password = formData.password.trim();
-    const confirmPassword = formData.confirmPassword.trim();
-
-    if (!usuario && !password) {
-      setError('Senha é obrigatória');
-      enqueueSnackbar('Senha é obrigatória', { variant: 'error' });
-      return;
-    }
-
-    if (password || !usuario) {
-      if (password && password.length < 6) {
-        setPasswordError('A senha deve ter no mínimo 6 caracteres');
-        enqueueSnackbar('A senha deve ter no mínimo 6 caracteres', { variant: 'error' });
-        return;
-      }
-
-      if (password !== confirmPassword) {
-        setPasswordError('As senhas não coincidem');
-        enqueueSnackbar('As senhas não coincidem', { variant: 'error' });
-        return;
-      }
-    }
-
     setLoading(true);
     setError('');
-    setPasswordError('');
 
     try {
       const dadosParaEnvio = {
         username: formData.username.trim(),
         email: formData.email.trim(),
         tipo: formData.tipo,
-        password: password
       };
 
       if (!usuario) {
@@ -344,38 +295,6 @@ export default function UsuarioModal({
               autoComplete="off"
             />
           </FormGroup>
-
-          <FormGroup>
-            <label>Senha {usuario ? '(deixe em branco para manter a senha atual)' : '*'}</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder={usuario ? 'Deixe em branco para manter a senha atual' : 'Mínimo 6 caracteres'}
-              required={!usuario}
-              autoComplete={usuario ? 'off' : 'new-password'}
-            />
-            <PasswordHint>
-              {usuario ? 'Altere a senha apenas se necessário' : 'Use pelo menos 6 caracteres'}
-            </PasswordHint>
-          </FormGroup>
-
-          {((!usuario && formData.password) || (usuario && formData.password)) && (
-            <FormGroup>
-              <label>Confirmar Senha *</label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="Digite a senha novamente"
-                required={!usuario || (usuario && formData.password)}
-                autoComplete="off"
-              />
-              {passwordError && <FieldError>{passwordError}</FieldError>}
-            </FormGroup>
-          )}
 
           <FormGroup>
             <label>Tipo de usuário *</label>
