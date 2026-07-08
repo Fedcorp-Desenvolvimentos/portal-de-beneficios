@@ -197,9 +197,6 @@ export const S = {
       background: var(--color-bg-tertiary);
     }
 
-    /* Layout desktop:
-       Pedido | Administradora | Vencimento | Competência | Valor | Status | Excel | Docs | Compra */
-
     th:nth-child(1),
     td:nth-child(1) {
       width: 130px;
@@ -261,7 +258,6 @@ export const S = {
       padding-right: 8px;
     }
 
-    /* Desktop: Excel */
     td:nth-child(7) > button {
       min-width: 36px;
       width: 36px;
@@ -270,7 +266,6 @@ export const S = {
       justify-content: center;
     }
 
-    /* Desktop: Docs */
     td:nth-child(8) > div {
       display: inline-flex;
       align-items: center;
@@ -294,7 +289,6 @@ export const S = {
       padding: 0;
     }
 
-    /* Desktop: Compra */
     td:nth-child(9) > button {
       min-width: 82px;
       padding-left: 10px;
@@ -313,9 +307,6 @@ export const S = {
       tbody td {
         padding: 12px 8px;
       }
-
-      /* Layout pequeno:
-         Pedido | Administradora | Vencimento | Competência | Valor | Status | Ações */
 
       th:nth-child(1),
       td:nth-child(1) {
@@ -355,8 +346,6 @@ export const S = {
         text-align: center;
       }
 
-      /* Em tela pequena, a coluna 7 vira Ações.
-         Remove as regras antigas do botão quadrado do Excel. */
       td:nth-child(7) button {
         min-width: unset;
         width: auto;
@@ -472,6 +461,7 @@ export const S = {
   Btn: styled.button`
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     padding: 7px 14px;
     border-radius: 8px;
@@ -794,6 +784,41 @@ export const S = {
     overflow-y: auto;
   `,
 
+  BoletoModal: styled.div`
+    width: min(980px, calc(100vw - 48px));
+    max-width: 980px;
+    background: var(--surface);
+    border-radius: 18px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+
+    @media (max-width: 1440px) {
+      width: min(900px, calc(100vw - 420px));
+      max-width: calc(100vw - 420px);
+    }
+
+    @media (max-width: 1280px) {
+      width: min(860px, calc(100vw - 360px));
+      max-width: calc(100vw - 360px);
+    }
+
+    @media (max-width: 1024px) {
+      width: calc(100vw - 48px);
+      max-width: calc(100vw - 48px);
+    }
+
+    @media (max-width: 760px) {
+      width: calc(100vw - 24px);
+      max-width: calc(100vw - 24px);
+      max-height: 92vh;
+      border-radius: 14px;
+    }
+  `,
+
   ModalHeader: styled.div`
     display: flex;
     align-items: flex-start;
@@ -827,6 +852,11 @@ export const S = {
       background: var(--bg);
       color: var(--text);
     }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   `,
 
   ModalBody: styled.div`
@@ -835,12 +865,235 @@ export const S = {
     gap: 16px;
   `,
 
+  BoletoModalBody: styled.div`
+    padding: 0;
+    overflow: hidden;
+  `,
+
+  BoletoTableWrap: styled.div`
+    width: 100%;
+    max-height: 460px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-bottom: 1px solid var(--border);
+
+    @media (max-width: 1440px) {
+      max-height: 420px;
+    }
+
+    @media (max-width: 1280px) {
+      overflow-x: auto;
+      max-height: 390px;
+    }
+
+    @media (max-width: 760px) {
+      max-height: 55vh;
+    }
+  `,
+
+  BoletoTable: styled.table`
+    width: 100%;
+    min-width: 0;
+    border-collapse: collapse;
+    table-layout: fixed;
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #f8fafc;
+      padding: 12px 14px;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--sub);
+      font-weight: 700;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 12px 14px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover td {
+      background: #f8fafc;
+    }
+
+    th:nth-child(1),
+    td:nth-child(1) {
+      width: 52px;
+      text-align: center;
+    }
+
+    th:nth-child(2),
+    td:nth-child(2) {
+      width: auto;
+      min-width: 0;
+    }
+
+    th:nth-child(3),
+    td:nth-child(3) {
+      width: 170px;
+    }
+
+    th:nth-child(4),
+    td:nth-child(4) {
+      width: 130px;
+    }
+
+    th:nth-child(5),
+    td:nth-child(5) {
+      width: 130px;
+      text-align: right;
+    }
+
+    th:nth-child(6),
+    td:nth-child(6) {
+      width: 80px;
+      text-align: center;
+    }
+
+    td strong {
+      display: block;
+      max-width: 100%;
+      font-size: 13px;
+      line-height: 1.35;
+      color: var(--text);
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    input[type='checkbox'] {
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 1440px) {
+      thead th {
+        padding: 11px 12px;
+      }
+
+      tbody td {
+        padding: 11px 12px;
+      }
+
+      th:nth-child(1),
+      td:nth-child(1) {
+        width: 46px;
+      }
+
+      th:nth-child(3),
+      td:nth-child(3) {
+        width: 150px;
+      }
+
+      th:nth-child(4),
+      td:nth-child(4) {
+        width: 120px;
+      }
+
+      th:nth-child(5),
+      td:nth-child(5) {
+        width: 120px;
+      }
+
+      th:nth-child(6),
+      td:nth-child(6) {
+        width: 70px;
+      }
+    }
+
+    @media (max-width: 1280px) {
+      min-width: 720px;
+    }
+
+    @media (max-width: 760px) {
+      min-width: 680px;
+
+      thead th {
+        font-size: 9px;
+        padding: 10px;
+      }
+
+      tbody td {
+        padding: 10px;
+        font-size: 12px;
+      }
+
+      th:nth-child(1),
+      td:nth-child(1) {
+        width: 42px;
+      }
+
+      th:nth-child(3),
+      td:nth-child(3) {
+        width: 145px;
+      }
+
+      th:nth-child(4),
+      td:nth-child(4) {
+        width: 110px;
+      }
+
+      th:nth-child(5),
+      td:nth-child(5) {
+        width: 115px;
+      }
+
+      th:nth-child(6),
+      td:nth-child(6) {
+        width: 64px;
+      }
+    }
+  `,
+
   ModalFooter: styled.div`
     padding: 14px 22px;
     border-top: 1px solid var(--border);
     display: flex;
     justify-content: flex-end;
+    align-items: center;
     gap: 10px;
+
+    @media (max-width: 760px) {
+      padding: 12px 14px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 520px) {
+      button {
+        flex: 1;
+      }
+    }
+  `,
+
+  BoletoFooterInfo: styled.div`
+    margin-right: auto;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+
+    @media (max-width: 760px) {
+      width: 100%;
+      margin-right: 0;
+      text-align: center;
+      white-space: normal;
+    }
   `,
 
   Dropzone: styled.div`
