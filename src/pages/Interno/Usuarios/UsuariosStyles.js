@@ -296,6 +296,12 @@ export const S = {
       line-height: 1;
       &:hover:not(:disabled) { background: #fef2f2; border-radius: 4px; }
     `}
+
+    ${props => props.$variant === 'unlink-actions' && css`
+      background: #fff7ed;
+      color: #c2410c;
+      &:hover:not(:disabled) { background: #ffedd5; }
+    `}
   `,
 
   ModalOverlay: styled.div`
