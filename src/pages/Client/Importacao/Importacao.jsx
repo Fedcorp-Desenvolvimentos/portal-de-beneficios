@@ -139,6 +139,146 @@ function formatCompetenciaBR(mes, ano) {
   return `${mesFormatado}/${ano || ''}`
 }
 
+function getErrorMessageFromPayload(value) {
+  if (!value) return ''
+
+  if (typeof value === 'string') return value
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => getErrorMessageFromPayload(item))
+      .filter(Boolean)
+      .join(' • ')
+  }
+
+  if (typeof value === 'object') {
+    return (
+      value.mensagem ||
+      value.message ||
+      value.detail ||
+      value.error ||
+      value.erro ||
+      value.descricao ||
+      ''
+    )
+  }
+
+  return String(value)
+}
+
+function normalizarErroImportacao(erro, index = 0) {
+  if (!erro) {
+    return {
+      linha: '-',
+      tipo_erro: 'ERRO_PROCESSAMENTO',
+      dados: {},
+      mensagem: 'Erro não identificado no processamento.',
+      ordem: index,
+    }
+  }
+
+  if (typeof erro === 'string') {
+    return {
+      linha: '-',
+      tipo_erro: 'ERRO_PROCESSAMENTO',
+      dados: {},
+      mensagem: erro,
+      ordem: index,
+    }
+  }
+
+  const detalhes = erro.dados || erro.details || erro.record || erro.registro || erro || {}
+
+  const linha =
+    erro.linha ||
+    erro.line ||
+    erro.row ||
+    erro.row_number ||
+    erro.numero_linha ||
+    erro.index_linha ||
+    erro.excel_row ||
+    detalhes?.linha ||
+    detalhes?.line ||
+    detalhes?.row ||
+    '-'
+
+  const tipo =
+    erro.tipo_erro ||
+    erro.tipo ||
+    erro.type ||
+    erro.code ||
+    erro.codigo ||
+    erro.campo ||
+    'ERRO_PROCESSAMENTO'
+
+  const mensagem =
+    erro.mensagem ||
+    erro.message ||
+    erro.detail ||
+    erro.error ||
+    erro.erro ||
+    erro.descricao ||
+    getErrorMessageFromPayload(erro.errors) ||
+    getErrorMessageFromPayload(erro.erros) ||
+    getErrorMessageFromPayload(erro.non_field_errors) ||
+    `Erro na linha ${linha}: ${tipo}`
+
+  const errosList = Array.isArray(erro.erros) ? erro.erros : []
+
+  return {
+    linha,
+    tipo_erro: tipo,
+    dados: detalhes,
+    mensagem,
+    erros: errosList,
+    ordem: index,
+  }
+}
+
+function extrairErrosImportacao(payload) {
+  if (!payload) return []
+
+  const possiveisListas = [
+    payload?.linhas_com_erro,
+    payload?.linhasComErro,
+    payload?.data_to_backend?.linhas_com_erro,
+    payload?.data_to_backend?.linhasComErro,
+    payload?.errors,
+    payload?.erros,
+    payload?.data_to_backend?.errors,
+    payload?.data_to_backend?.erros,
+    payload?.detail?.errors,
+    payload?.message?.errors,
+  ]
+
+  const erros = []
+
+  possiveisListas.forEach((lista) => {
+    if (Array.isArray(lista)) {
+      lista.forEach((erro) => erros.push(erro))
+    }
+  })
+
+  if (erros.length === 0) {
+    const mensagem =
+      getErrorMessageFromPayload(payload?.detail) ||
+      getErrorMessageFromPayload(payload?.message) ||
+      getErrorMessageFromPayload(payload?.error) ||
+      getErrorMessageFromPayload(payload?.erro)
+
+    if (mensagem) {
+      erros.push({
+        linha: '-',
+        tipo_erro: 'ERRO_PROCESSAMENTO',
+        mensagem,
+        dados: payload,
+      })
+    }
+  }
+
+  return erros.map(normalizarErroImportacao)
+}
+
 function getMovimentacoesBackend(data) {
   return (
     data?.data_to_backend?.movimentacoes_detalhada ||
@@ -847,8 +987,9 @@ export default function Importacao() {
         const semPreview = !Array.isArray(parsed) || parsed.length === 0
 
         if (semPreview) {
-          const errosInternosVT = vtData?.data_to_backend?.errors
-          if (Array.isArray(errosInternosVT) && errosInternosVT.length > 0) {
+          const errosInternosVT = extrairErrosImportacao(vtData)
+          if (errosInternosVT.length > 0) {
+            setData(vtData)
             setErrosModalOpen(true)
           }
           return { success: false }
@@ -876,10 +1017,10 @@ export default function Importacao() {
         setFilterOnlyErrors(false)
         setFilterOnlyBlocked(false) // RESETA FILTRO DE BLOQUEIO
 
-        const temErrosVT = Array.isArray(vtData?.linhas_com_erro) && vtData.linhas_com_erro.length > 0;
+        const temErrosVT = extrairErrosImportacao(vtData).length > 0
 
         if (temErrosVT) {
-          setErrosModalOpen(true);
+          setErrosModalOpen(true)
         }
 
         return { success: !temErrosVT }
@@ -930,8 +1071,8 @@ export default function Importacao() {
           excluidosPorColab: new Set(),
         })
 
-        const errosInternos = response?.data_to_backend?.errors
-        if (Array.isArray(errosInternos) && errosInternos.length > 0) {
+        const errosInternos = extrairErrosImportacao(response)
+        if (errosInternos.length > 0) {
           setErrosModalOpen(true)
         }
 
@@ -1001,10 +1142,10 @@ export default function Importacao() {
         recebimentoBeneficio: '',
       })
 
-      const temErros = Array.isArray(response?.linhas_com_erro) && response.linhas_com_erro.length > 0;
+      const temErros = extrairErrosImportacao(response).length > 0
 
       if (temErros) {
-        setErrosModalOpen(true);
+        setErrosModalOpen(true)
       }
 
       return {
@@ -1013,19 +1154,52 @@ export default function Importacao() {
     } catch (error) {
       console.error('Erro no processamento da importação:', error)
 
-      const data = error.response?.data
+      const responseData = error.response?.data
+      const errosNormalizados = extrairErrosImportacao(responseData)
+
       const errorMessage =
-        data?.detail ||
-        data?.error ||
-        data?.message ||
-        (typeof data === 'string' ? data : null) ||
+        getErrorMessageFromPayload(responseData?.detail) ||
+        getErrorMessageFromPayload(responseData?.error) ||
+        getErrorMessageFromPayload(responseData?.message) ||
+        getErrorMessageFromPayload(responseData?.errors) ||
+        (typeof responseData === 'string' ? responseData : null) ||
         (error.message && error.message.includes('API Error')
           ? error.message.split('API Error: ')[1]
           : null) ||
         error.message ||
         'Erro ao processar importação.'
 
-      toast.error(errorMessage, { autoClose: false })
+      const errosParaTela =
+        errosNormalizados.length > 0
+          ? errosNormalizados
+          : [
+            {
+              linha: '-',
+              tipo_erro: 'ERRO_PROCESSAMENTO',
+              mensagem: errorMessage,
+              dados: responseData || {},
+            },
+          ]
+
+      setData((prev) => ({
+        ...(prev || {}),
+        linhas_com_erro: errosParaTela,
+      }))
+
+      setLote((prev) => ({
+        ...prev,
+        id: prev?.id || 'ERRO-' + Date.now(),
+        arquivo: file?.name || prev?.arquivo || 'Arquivo importado',
+        tipo: prev?.tipo || 'importacao',
+        rows: prev?.rows || [],
+        excluidosPorColab: prev?.excluidosPorColab || new Set(),
+      }))
+
+      setErrosModalOpen(true)
+
+      toast.error('Encontramos erro(s) na planilha. Veja os detalhes em tela.', {
+        autoClose: false,
+      })
 
       return {
         success: false,
@@ -1168,34 +1342,41 @@ export default function Importacao() {
 
 
   const linhasComErroBackend = useMemo(() => {
-    if (!data?.linhas_com_erro || !Array.isArray(data.linhas_com_erro)) {
+    const errosNormalizados = extrairErrosImportacao(data)
+
+    if (!Array.isArray(errosNormalizados) || errosNormalizados.length === 0) {
       return []
     }
 
     const limiteAtivo = regraValor?.ativo === true && Number(regraValor?.valor_limite) > 0
     const valorLimite = Number(regraValor?.valor_limite)
 
-    return data.linhas_com_erro
-      .filter(erro => {
+    return errosNormalizados
+      .filter((erro) => {
         if (!isValeTransporte && erro.tipo_erro === 'VALOR_EXCEDIDO' && limiteAtivo && erro.dados) {
-          const rowEncontrada = rowsAtivas.find(r => getCpf(r) === erro.dados?.cpf)
+          const rowEncontrada = rowsAtivas.find((r) => getCpf(r) === erro.dados?.cpf)
+
           if (rowEncontrada) {
             const valorAtual = getValorRow(rowEncontrada)
+
             if (valorAtual <= valorLimite) {
               return false
             }
           }
         }
+
         return true
       })
-      .map(erro => ({
+      .map((erro) => ({
         linha: erro.linha,
         tipo: erro.tipo_erro,
         detalhes: erro.dados || {},
-        mensagem: erro.tipo_erro === 'VALOR_EXCEDIDO'
-          ? `Valor excedeu o limite permitido na linha ${erro.linha} 
+        erros: erro.erros || [],
+        mensagem:
+          erro.tipo_erro === 'VALOR_EXCEDIDO'
+            ? `Valor excedeu o limite permitido na linha ${erro.linha} 
           (limite: ${formatCurrency(regraValor?.valor_limite)})`
-          : `Erro na linha ${erro.linha}: ${erro.tipo_erro || 'Dado inválido'}`
+            : erro.mensagem || `Erro na linha ${erro.linha}: ${erro.tipo_erro || 'Dado inválido'}`,
       }))
   }, [data, rowsAtivas, regraValor, isValeTransporte])
 
@@ -1264,23 +1445,28 @@ export default function Importacao() {
   )
 
   const totalErrosBackend = useMemo(() => {
-    if (!data?.linhas_com_erro || !Array.isArray(data.linhas_com_erro)) {
+    const errosNormalizados = extrairErrosImportacao(data)
+
+    if (!Array.isArray(errosNormalizados) || errosNormalizados.length === 0) {
       return 0
     }
 
     const limiteAtivo = regraValor?.ativo === true && Number(regraValor?.valor_limite) > 0
     const valorLimite = Number(regraValor?.valor_limite)
 
-    const errosValidos = data.linhas_com_erro.filter(erro => {
+    const errosValidos = errosNormalizados.filter((erro) => {
       if (!isValeTransporte && erro.tipo_erro === 'VALOR_EXCEDIDO' && limiteAtivo && erro.dados) {
-        const rowEncontrada = rowsAtivas.find(r => getCpf(r) === erro.dados?.cpf)
+        const rowEncontrada = rowsAtivas.find((r) => getCpf(r) === erro.dados?.cpf)
+
         if (rowEncontrada) {
           const valorAtual = getValorRow(rowEncontrada)
+
           if (valorAtual <= valorLimite) {
             return false
           }
         }
       }
+
       return true
     })
 
@@ -2496,6 +2682,88 @@ export default function Importacao() {
           </div>
         </Modal>
 
+        {/* Modal Erros do Processamento */}
+        <Modal
+          open={errosModalOpen}
+          title="Erros encontrados no processamento"
+          onClose={() => setErrosModalOpen(false)}
+        >
+          <div className="erros-list">
+            {linhasComErroBackend.length === 0 ? (
+              <div className="details-empty-state">
+                Nenhum erro encontrado.
+              </div>
+            ) : (
+              linhasComErroBackend.map((erro, idx) => {
+                const tipoLabel = {
+                  INFORMACAO_AUSENTE: 'Informações obrigatórias ausentes',
+                  VALOR_EXCEDIDO: 'Valor excede limite',
+                  ERRO_PROCESSAMENTO: 'Erro de processamento',
+                }[erro.tipo] || erro.tipo
+
+                return (
+                  <div key={`erro-${idx}`} className="erro-item">
+                    <div className="erro-header">
+                      <span className="erro-linha">Linha {erro.linha}</span>
+                      <span className="erro-mensagem">{tipoLabel}</span>
+                    </div>
+
+                    {erro.erros?.length > 0 && (
+                      <ul className="erro-specific-list">
+                        {erro.erros.map((msg, i) => (
+                          <li key={i}>{msg}</li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {erro.mensagem && erro.erros?.length === 0 && (
+                      <p style={{ margin: '4px 0', fontSize: 13, color: '#374151' }}>
+                        {erro.mensagem}
+                      </p>
+                    )}
+
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                      {erro.detalhes?.matricula && (
+                        <span className="chip chip-ghost">
+                          Matrícula: {erro.detalhes.matricula}
+                        </span>
+                      )}
+                      {/* {erro.detalhes?.codigo_local && (
+                        <span className="chip chip-ghost">
+                          Código Local: {erro.detalhes.codigo_local}
+                        </span>
+                      )} */}
+                      {/* {erro.detalhes?.cpf && (
+                        <span className="chip chip-ghost">
+                          CPF: {erro.detalhes.cpf}
+                        </span>
+                      )} */}
+                      {/* {erro.detalhes?.nome && (
+                        <span className="chip chip-ghost">
+                          Nome: {erro.detalhes.nome}
+                        </span>
+                      )} */}
+                      {/* {erro.detalhes?.data_nascimento && (
+                        <span className="chip chip-ghost">
+                          Data Nasc.: {erro.detalhes.data_nascimento}
+                        </span>
+                      )} */}
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+          <div className="modal-actions">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => setErrosModalOpen(false)}
+            >
+              Fechar
+            </button>
+          </div>
+        </Modal>
 
       </div>
     </PageLayout>

@@ -176,6 +176,15 @@ const Button = styled.button`
   `}
 `;
 
+const TIPOS = {
+  dev: 'Desenvolvedor',
+  // fin: 'Financeiro Fedcorp',
+  fat: 'Faturista Fedcorp',
+  adm: 'Usuário da Administradora / Imobiliária',
+  dep: 'Departamento Pessoal',
+  // cli: 'Cliente',
+}
+
 export default function UsuarioModal({
   isOpen,
   onClose,
@@ -183,13 +192,15 @@ export default function UsuarioModal({
   usuario,
   administradoraId,
   administradoras = [],
-  title
+  title,
+  tiposPermitidos,
+  bloquearTipoUsuario
 }) {
   const { enqueueSnackbar } = useSnackbar();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
-    tipo: 'adm',
+    tipo: (tiposPermitidos && tiposPermitidos.length === 1) ? tiposPermitidos[0] : 'adm',
     administradora: null
   });
   const [loading, setLoading] = useState(false);
@@ -208,7 +219,7 @@ export default function UsuarioModal({
         setFormData({
           username: '',
           email: '',
-          tipo: 'adm',
+          tipo: (tiposPermitidos && tiposPermitidos.length === 1) ? tiposPermitidos[0] : 'adm',
           administradora: administradoraId || null,
         });
       }
@@ -303,10 +314,13 @@ export default function UsuarioModal({
               value={formData.tipo}
               onChange={handleChange}
               required
+              disabled={bloquearTipoUsuario}
             >
-
-              <option value="adm">Usuário da Administradora</option>
-
+              {Object.entries(TIPOS)
+                .filter(([value]) => !tiposPermitidos || tiposPermitidos.includes(value))
+                .map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
             </select>
           </FormGroup>
 
