@@ -219,7 +219,6 @@ function normalizarErroImportacao(erro, index = 0) {
     erro.erro ||
     erro.descricao ||
     getErrorMessageFromPayload(erro.errors) ||
-    getErrorMessageFromPayload(erro.erros) ||
     getErrorMessageFromPayload(erro.non_field_errors) ||
     `Erro na linha ${linha}: ${tipo}`
 
@@ -232,7 +231,22 @@ function normalizarErroImportacao(erro, index = 0) {
   }
 }
 
-function extrairErrosImportacao(payload) {
+function isMensagemSucessoImportacao(mensagem) {
+  const texto = normalizeText(mensagem)
+
+  return (
+    texto.includes('ARQUIVO PROCESSADO') ||
+    texto.includes('CONFIRME OS DADOS') ||
+    texto.includes('PROCESSADO COM SUCESSO') ||
+    texto.includes('IMPORTADO COM SUCESSO') ||
+    texto.includes('UPLOAD REALIZADO') ||
+    texto.includes('LOTE PROCESSADO')
+  )
+}
+
+function extrairErrosImportacao(payload, options = {}) {
+  const { incluirMensagensGerais = false } = options
+
   if (!payload) return []
 
   const errosEstruturados = [
@@ -1233,7 +1247,7 @@ export default function Importacao() {
   const getDatasEnvioNormalizadas = () => {
     const recebimento = formEnvio.recebimentoBeneficio
     const vencimento = formEnvio.vencimento
-    const dias = isValeTransporte ? 8 : 1
+    const dias = isValeTransporte ? 8 : (regraValor?.d_mais ?? 1)
 
     if (campoDataReferenciaVT === 'vencimento' && vencimento) {
       return {
@@ -1292,12 +1306,12 @@ export default function Importacao() {
     setFormEnvio((prev) => ({
       ...prev,
       recebimentoBeneficio: value,
-      vencimento: value ? subtractDaysFromDateInput(value, 1) : '',
+      vencimento: value ? subtractDaysFromDateInput(value, regraValor?.d_mais ?? 1) : '',
     }))
   }
 
   const handleVencimentoChange = (value) => {
-    const dias = isValeTransporte ? 8 : 1
+    const dias = isValeTransporte ? 8 : (regraValor?.d_mais ?? 1)
 
     setCampoDataReferenciaVT(value ? 'vencimento' : null)
 
@@ -2335,13 +2349,8 @@ export default function Importacao() {
                   onChange={handleRecebimentoBeneficioChange}
                   required={campoDataReferenciaVT !== 'vencimento'}
                   disabled={enviandoLote || recebimentoCalculadoAutomaticamente}
+                  minDate={new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)}
                 />
-
-                {campoDataReferenciaVT === 'vencimento' && formEnvio.recebimentoBeneficio && (
-                  <small>
-                    Recebimento calculado automaticamente {isValeTransporte ? 8 : 1} {isValeTransporte ? 'dias' : 'dia'} após o vencimento.
-                  </small>
-                )}
               </label>
             </div>
 
@@ -2353,14 +2362,8 @@ export default function Importacao() {
                   onChange={handleVencimentoChange}
                   required={campoDataReferenciaVT !== 'recebimento'}
                   disabled={enviandoLote || vencimentoCalculadoAutomaticamente}
-                  maxDate={getDueDateInput(1)}
+                  minDate={new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)}
                 />
-
-                {campoDataReferenciaVT === 'recebimento' && formEnvio.vencimento && (
-                  <small>
-                    Vencimento calculado automaticamente {isValeTransporte ? 8 : 1} dia{isValeTransporte ? 's' : ''} antes do recebimento.
-                  </small>
-                )}
 
                 {!campoDataReferenciaVT && !formEnvio.recebimentoBeneficio && !formEnvio.vencimento && (
                   <small>
@@ -2691,19 +2694,22 @@ export default function Importacao() {
                 Nenhum erro encontrado.
               </div>
             ) : (
-              linhasComErroBackend.map((erro, idx) => {
-                const tipoLabel = {
-                  INFORMACAO_AUSENTE: 'Informações obrigatórias ausentes',
-                  VALOR_EXCEDIDO: 'Valor excede limite',
-                  ERRO_PROCESSAMENTO: 'Erro de processamento',
-                }[erro.tipo] || erro.tipo
+              linhasComErroBackend.map((erro, idx) => (
+                <div key={`erro-${idx}`} className="erro-item">
+                  <div className="erro-header">
+                    <span className="erro-linha">Linha {erro.linha}</span>
+                    <span className="erro-mensagem">{erro.tipo}</span>
+                  </div>
+                  <p style={{ margin: '4px 0', fontSize: 13, color: '#374151' }}>
+                    {erro.mensagem}
+                  </p>
 
-                return (
-                  <div key={`erro-${idx}`} className="erro-item">
-                    <div className="erro-header">
-                      <span className="erro-linha">Linha {erro.linha}</span>
-                      <span className="erro-mensagem">{tipoLabel}</span>
-                    </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                    {erro.detalhes?.campo && (
+                      <span className="chip chip-ghost">
+                        Campo: {erro.detalhes.campo}
+                      </span>
+                    )}
 
                     {erro.mensagem && (
                       <p style={{ margin: '4px 0', fontSize: 13, color: '#374151' }}>
@@ -2711,36 +2717,21 @@ export default function Importacao() {
                       </p>
                     )}
 
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-                      {erro.detalhes?.matricula && (
-                        <span className="chip chip-ghost">
-                          Matrícula: {erro.detalhes.matricula}
-                        </span>
-                      )}
-                      {/* {erro.detalhes?.codigo_local && (
-                        <span className="chip chip-ghost">
-                          Código Local: {erro.detalhes.codigo_local}
-                        </span>
-                      )} */}
-                      {/* {erro.detalhes?.cpf && (
-                        <span className="chip chip-ghost">
-                          CPF: {erro.detalhes.cpf}
-                        </span>
-                      )} */}
-                      {/* {erro.detalhes?.nome && (
-                        <span className="chip chip-ghost">
-                          Nome: {erro.detalhes.nome}
-                        </span>
-                      )} */}
-                      {/* {erro.detalhes?.data_nascimento && (
-                        <span className="chip chip-ghost">
-                          Data Nasc.: {erro.detalhes.data_nascimento}
-                        </span>
-                      )} */}
-                    </div>
+                    {erro.detalhes?.condominio && (
+                      <span className="chip chip-ghost">
+                        Condomínio: {erro.detalhes.condominio}
+                      </span>
+                    )}
                   </div>
-                )
-              })
+
+                  {erro.detalhes?.cpf || erro.detalhes?.nome || erro.detalhes?.campo || erro.detalhes?.condominio ? (
+                    <details>
+                      <summary>Detalhes do registro</summary>
+                      <pre>{JSON.stringify(erro.detalhes, null, 2)}</pre>
+                    </details>
+                  ) : null}
+                </div>
+              ))
             )}
           </div>
           <div className="modal-actions">

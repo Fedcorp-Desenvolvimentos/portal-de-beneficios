@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { criarAdministradora, consultarPessoaPorCNPJ } from '../../../services/administradoraService.js'
+import { PRODUTOS_TAXA, PERCENTUAIS_TAXA, getLabelPercentual } from '../../../constants/produtos'
 import './Administradoras.css'
 
 const initialForm = {
@@ -10,6 +11,11 @@ const initialForm = {
   email: '',
   ativo: true,
   cartao_admin: '',
+  d_mais: '',
+  taxa_ativa: false,
+  taxa_tipo: 'padrao',
+  taxa_padrao: '',
+  taxa_config: PRODUTOS_TAXA.map((p) => ({ codigo: p.codigo, valor: '' })),
 }
 
 export default function CadastroAdministradora() {
@@ -79,6 +85,15 @@ export default function CadastroAdministradora() {
     }
   }
 
+  function handleTaxaValorChange(codigo, valor) {
+    setForm((prev) => ({
+      ...prev,
+      taxa_config: prev.taxa_config.map((item) =>
+        item.codigo === codigo ? { ...item, valor } : item
+      ),
+    }))
+  }
+
   function handleBlurCNPJ(event) {
     const cnpjValue = event.target.value
     if (cnpjValue && cnpjValue.replace(/\D/g, '').length === 14) {
@@ -125,13 +140,27 @@ export default function CadastroAdministradora() {
     try {
       const cartaoAdminBoolean = form.cartao_admin === 'administradora'
       
+      const taxaPadraoNum = form.taxa_tipo === 'padrao' && form.taxa_padrao !== '' ? Number(form.taxa_padrao) : null
+
+      const taxaProdutos = form.taxa_ativa && form.taxa_tipo === 'produto'
+        ? form.taxa_config.map((item) => ({
+            codigo: item.codigo,
+            valor: item.valor !== '' ? Number(item.valor) : null,
+          }))
+        : []
+
       const formData = {
         cnpj: cnpjLimpo,
         razao_social: form.razao_social,
         nome_fantasia: form.nome_fantasia || null,
         email: form.email || null,
         ativo: form.ativo,
-        cartao_admin: cartaoAdminBoolean
+        cartao_admin: cartaoAdminBoolean,
+        d_mais: form.d_mais !== '' ? Number(form.d_mais) : null,
+        taxa_ativa: form.taxa_ativa,
+        taxa_tipo: form.taxa_ativa ? form.taxa_tipo : null,
+        taxa_padrao: taxaPadraoNum,
+        taxa_config: taxaProdutos,
       }
       
       //console.log('📤 Enviando dados:', JSON.stringify(formData, null, 2))
@@ -220,6 +249,29 @@ export default function CadastroAdministradora() {
             />
             Administradora Ativa
           </label>
+
+          <label>
+            D+ (Dias para Recebimento do Benefício)
+            <select
+              name="d_mais"
+              value={form.d_mais}
+              onChange={handleChange}
+              disabled={loading}
+            >
+              <option value="">Selecionar</option>
+              <option value="0">0 dias (mesma data do vencimento)</option>
+              <option value="1">1 dia</option>
+              <option value="2">2 dias</option>
+              <option value="3">3 dias</option>
+              <option value="4">4 dias</option>
+              <option value="5">5 dias</option>
+              <option value="7">7 dias</option>
+              <option value="10">10 dias</option>
+              <option value="15">15 dias</option>
+              <option value="20">20 dias</option>
+              <option value="30">30 dias</option>
+            </select>
+          </label>
         </div>
 
         <div className="form-group card-receipt-group">
@@ -250,6 +302,88 @@ export default function CadastroAdministradora() {
               <span>No Condomínio</span>
             </label>
           </div>
+        </div>
+
+        <div className="form-group taxa-group">
+          <label className="section-label">Taxa de Administração</label>
+
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              name="taxa_ativa"
+              checked={form.taxa_ativa}
+              onChange={handleChange}
+              disabled={loading}
+            />
+            Cobrar taxa de administração
+          </label>
+
+          {form.taxa_ativa && (
+            <>
+              <div className="taxa-tipo-group">
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="taxa_tipo"
+                    value="padrao"
+                    checked={form.taxa_tipo === 'padrao'}
+                    onChange={handleChange}
+                    disabled={loading}
+                  />
+                  <span>Taxa padrão (mesmo % para todos os produtos)</span>
+                </label>
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="taxa_tipo"
+                    value="produto"
+                    checked={form.taxa_tipo === 'produto'}
+                    onChange={handleChange}
+                    disabled={loading}
+                  />
+                  <span>Taxa por produto</span>
+                </label>
+              </div>
+
+              {form.taxa_tipo === 'padrao' && (
+                <div className="taxa-padrao-row">
+                  <label className="taxa-padrao-label">Percentual (%)</label>
+                  <select
+                    name="taxa_padrao"
+                    value={form.taxa_padrao}
+                    onChange={handleChange}
+                    disabled={loading}
+                    className="taxa-select"
+                  >
+                    {PERCENTUAIS_TAXA.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {form.taxa_tipo === 'produto' && (
+                <div className="taxa-produtos-list">
+                  {form.taxa_config.map((item) => (
+                    <div key={item.codigo} className="taxa-produto-row">
+                      <span className="taxa-produto-nome">{PRODUTOS_TAXA.find((p) => p.codigo === item.codigo)?.nome || item.codigo}</span>
+                      <select
+                        value={item.valor}
+                        onChange={(e) => handleTaxaValorChange(item.codigo, e.target.value)}
+                        disabled={loading}
+                        className="taxa-select taxa-select-small"
+                      >
+                        <option value="">Não possui taxa</option>
+                        {PERCENTUAIS_TAXA.filter((opt) => opt.value !== '').map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         <div className="form-actions">

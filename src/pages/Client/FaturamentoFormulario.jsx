@@ -14,9 +14,13 @@ import { entebenService } from '../../services/entebenService'
 
 import '../../styles/FaturamentoFormulario.css'
 
+const MESES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+]
+
 const initialState = {
   competencia: '',
-  referencia: '',
   empresa: '',
   beneficio: '',
   diasUteis: '',
@@ -874,8 +878,7 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
       return 'Nenhum colaborador disponível para repetir o faturamento.'
     }
 
-    if (!form.competencia.trim()) return 'Preencha a competência.'
-    if (!form.referencia.trim()) return 'Preencha a referência.'
+    if (!form.competencia) return 'Preencha a competência.'
     if (!form.vencimento.trim()) return 'Preencha o vencimento.'
 
     return ''
@@ -982,7 +985,7 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
 
       const payload = {
         competencia: form.competencia,
-        referencia: form.referencia,
+        referencia: MESES[Number(form.competencia) - 1] + '/' + new Date().getFullYear(),
         dias_uteis: form.diasUteis,
         periodo_inicio: form.periodoInicio,
         periodo_fim: form.periodoFim,
@@ -1171,26 +1174,17 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
               <div className="fat-form-grid">
                 <div className="form-group">
                   <label htmlFor="competencia">Competência</label>
-                  <input
+                  <select
                     id="competencia"
-                    name="competencia"
                     value={form.competencia}
-                    onChange={handleChange}
-                    placeholder="Ex: 05/2026"
+                    onChange={(e) => setForm((prev) => ({ ...prev, competencia: e.target.value }))}
                     required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="referencia">Referência</label>
-                  <input
-                    id="referencia"
-                    name="referencia"
-                    value={form.referencia}
-                    onChange={handleChange}
-                    placeholder="Ex: Maio/2026"
-                    required
-                  />
+                  >
+                    <option value="">Selecionar</option>
+                    {MESES.map((mes, i) => (
+                      <option key={i} value={String(i + 1).padStart(2, '0')}>{mes}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="form-group">

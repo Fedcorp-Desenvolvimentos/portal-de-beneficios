@@ -91,6 +91,8 @@ const RegraValorModal = ({
   setValorLimite,
   regraAtiva,
   setRegraAtiva,
+  d_mais,
+  setD_mais,
   saving,
 }) => {
   if (!open) return null;
@@ -227,6 +229,43 @@ const RegraValorModal = ({
 
             <small style={{ color: '#64748b' }}>
               Quando ativo, colaboradores com valor total acima deste limite serão bloqueados na importação.
+            </small>
+          </label>
+
+          <label style={{ display: 'grid', gap: 8 }}>
+            <span style={{ fontWeight: 600, color: '#334155' }}>
+              D+ (Dias para Recebimento do Benefício)
+            </span>
+
+            <select
+              value={d_mais}
+              onChange={(e) => setD_mais(e.target.value)}
+              disabled={saving}
+              style={{
+                width: '100%',
+                border: '1px solid #cbd5e1',
+                borderRadius: 10,
+                padding: '12px 14px',
+                fontSize: 15,
+                background: '#fff',
+              }}
+            >
+              <option value="">Selecionar</option>
+              <option value="0">0 dias (mesma data do vencimento)</option>
+              <option value="1">1 dia</option>
+              <option value="2">2 dias</option>
+              <option value="3">3 dias</option>
+              <option value="4">4 dias</option>
+              <option value="5">5 dias</option>
+              <option value="7">7 dias</option>
+              <option value="10">10 dias</option>
+              <option value="15">15 dias</option>
+              <option value="20">20 dias</option>
+              <option value="30">30 dias</option>
+            </select>
+
+            <small style={{ color: '#64748b' }}>
+              Define em quantos dias após o vencimento o benefício será recebido.
             </small>
           </label>
         </div>
@@ -374,8 +413,12 @@ export default function MinhaAdministradora() {
   const [regraValor, setRegraValor] = useState(null);
   const [valorLimite, setValorLimite] = useState('');
   const [regraAtiva, setRegraAtiva] = useState(true);
+  const [d_mais, setD_mais] = useState('');
   const [loadingRegraValor, setLoadingRegraValor] = useState(false);
   const [salvandoRegraValor, setSalvandoRegraValor] = useState(false);
+
+  const [usuarioToDelete, setUsuarioToDelete] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const { startLoading, stopLoading } = useLoading();
 
@@ -497,15 +540,18 @@ export default function MinhaAdministradora() {
       if (regraEncontrada) {
         setRegraAtiva(Boolean(regraEncontrada.ativo));
         setValorLimite(normalizarValorDecimal(regraEncontrada.valor_limite));
+        setD_mais(regraEncontrada.d_mais != null ? String(regraEncontrada.d_mais) : '');
       } else {
         setRegraAtiva(true);
         setValorLimite('');
+        setD_mais('');
       }
     } catch (error) {
       console.error('❌ Erro ao carregar regra de valor:', error);
       setRegraValor(null);
       setRegraAtiva(true);
       setValorLimite('');
+      setD_mais('');
     } finally {
       setLoadingRegraValor(false);
     }
@@ -542,6 +588,7 @@ export default function MinhaAdministradora() {
         ativo: regraAtiva,
         valor_limite: regraAtiva ? valorNumerico : null,
         bloquear_acima_limite: regraAtiva,
+        d_mais: d_mais !== '' ? Number(d_mais) : null,
       };
 
       let regraSalva;
@@ -559,6 +606,7 @@ export default function MinhaAdministradora() {
       setRegraValor(regraSalva || payload);
       setRegraAtiva(Boolean((regraSalva || payload)?.ativo));
       setValorLimite(normalizarValorDecimal((regraSalva || payload)?.valor_limite));
+      setD_mais((regraSalva || payload)?.d_mais != null ? String((regraSalva || payload).d_mais) : '');
 
       await carregarRegraValor();
 
@@ -617,16 +665,28 @@ export default function MinhaAdministradora() {
       return;
     }
 
-    if (window.confirm(`Tem certeza que deseja excluir o usuário "${usuario.username}"?`)) {
-      try {
-        await userService.excluirUsuario(usuario.id);
-        enqueueSnackbar('Usuário excluído com sucesso', { variant: 'success' });
-        await carregarUsuarios();
-      } catch (error) {
-        console.error('❌ Erro ao excluir usuário:', error);
-        enqueueSnackbar('Erro ao excluir usuário', { variant: 'error' });
-      }
+    setUsuarioToDelete(usuario);
+    setShowDeleteModal(true);
+  };
+
+  const confirmarExclusaoUsuario = async () => {
+    if (!usuarioToDelete) return;
+
+    try {
+      await userService.excluirUsuario(usuarioToDelete.id);
+      enqueueSnackbar('Usuário excluído com sucesso', { variant: 'success' });
+      setShowDeleteModal(false);
+      setUsuarioToDelete(null);
+      await carregarUsuarios();
+    } catch (error) {
+      console.error('❌ Erro ao excluir usuário:', error);
+      enqueueSnackbar('Erro ao excluir usuário', { variant: 'error' });
     }
+  };
+
+  const fecharModalExclusao = () => {
+    setShowDeleteModal(false);
+    setUsuarioToDelete(null);
   };
 
   const resolverTipoPermitidoParaSalvar = (dados) => {
@@ -866,7 +926,81 @@ export default function MinhaAdministradora() {
           regraAtiva={regraAtiva}
           setRegraAtiva={setRegraAtiva}
           saving={salvandoRegraValor}
+          d_mais={d_mais}
+          setD_mais={setD_mais}
         />
+
+        {showDeleteModal && usuarioToDelete && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(15, 23, 42, 0.65)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              padding: 16,
+            }}
+          >
+            <div
+              style={{
+                width: '100%',
+                maxWidth: 440,
+                background: '#fff',
+                borderRadius: 16,
+                padding: 24,
+                boxShadow: '0 24px 80px rgba(15, 23, 42, 0.25)',
+              }}
+            >
+              <h3 style={{ margin: '0 0 8px' }}>Confirmar exclusão</h3>
+
+              <p style={{ margin: '0 0 4px', color: '#475569', fontSize: 14 }}>
+                Deseja realmente excluir o usuário?
+              </p>
+
+              <strong style={{ display: 'block', marginBottom: 24, color: '#dc2626' }}>
+                {usuarioToDelete.username}
+              </strong>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                <button
+                  type="button"
+                  onClick={fecharModalExclusao}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 8,
+                    border: '1px solid #e2e8f0',
+                    background: '#fff',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: '#475569',
+                  }}
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={confirmarExclusaoUsuario}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: '#dc2626',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
+                >
+                  Excluir
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </S.Container>
     </PageLayout>
   );
