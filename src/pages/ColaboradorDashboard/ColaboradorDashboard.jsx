@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import { useSnackbar } from 'notistack'
 import {
   FiDownload,
@@ -656,6 +657,8 @@ const SkeletonPagination = () => (
 // ============================================
 export default function ColaboradorDashboard() {
   const { enqueueSnackbar } = useSnackbar()
+  const outletContext = useOutletContext()
+  const sidebarWidth = outletContext?.withSidebar ? 240 : 62
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('todos')
@@ -2451,6 +2454,7 @@ export default function ColaboradorDashboard() {
       {/* Modal Seleção de Boletos */}
       {boletoModalOpen && boletoPedido && (
         <S.Overlay
+          $sidebarWidth={sidebarWidth}
           onMouseDown={(e) => e.target === e.currentTarget && closeBoletoModal()}
         >
           <S.BoletoModal>

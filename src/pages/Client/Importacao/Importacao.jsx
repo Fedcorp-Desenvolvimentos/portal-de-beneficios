@@ -235,6 +235,13 @@ function normalizarErroImportacao(erro, index = 0) {
   }
 }
 
+function remapearMensagemErro(msg) {
+  const mapa = {
+    'Matrícula ausente': 'Preenchimento da matricula obrigatoria com nome do condominio',
+  }
+  return mapa[msg] || msg
+}
+
 function extrairErrosImportacao(payload) {
   if (!payload) return []
 
@@ -2711,7 +2718,7 @@ export default function Importacao() {
                     {erro.erros?.length > 0 && (
                       <ul className="erro-specific-list">
                         {erro.erros.map((msg, i) => (
-                          <li key={i}>{msg}</li>
+                          <li key={i}>{remapearMensagemErro(msg)}</li>
                         ))}
                       </ul>
                     )}
