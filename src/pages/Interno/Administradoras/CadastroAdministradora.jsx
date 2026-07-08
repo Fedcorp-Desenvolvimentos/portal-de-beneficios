@@ -10,6 +10,7 @@ const initialForm = {
   email: '',
   ativo: true,
   cartao_admin: '',
+  dias_recebimento_beneficio: '',
 }
 
 export default function CadastroAdministradora() {
@@ -131,7 +132,8 @@ export default function CadastroAdministradora() {
         nome_fantasia: form.nome_fantasia || null,
         email: form.email || null,
         ativo: form.ativo,
-        cartao_admin: cartaoAdminBoolean
+        cartao_admin: cartaoAdminBoolean,
+        dias_recebimento_beneficio: form.dias_recebimento_beneficio ? Number(form.dias_recebimento_beneficio) : null,
       }
       
       //console.log('📤 Enviando dados:', JSON.stringify(formData, null, 2))
@@ -219,6 +221,29 @@ export default function CadastroAdministradora() {
               onChange={handleChange}
             />
             Administradora Ativa
+          </label>
+
+          <label>
+            Dias para Recebimento do Benefício
+            <select
+              name="dias_recebimento_beneficio"
+              value={form.dias_recebimento_beneficio}
+              onChange={handleChange}
+              disabled={loading}
+            >
+              <option value="">Selecionar</option>
+              <option value="0">0 dias (mesma data do vencimento)</option>
+              <option value="1">1 dia</option>
+              <option value="2">2 dias</option>
+              <option value="3">3 dias</option>
+              <option value="5">5 dias</option>
+              <option value="7">7 dias</option>
+              <option value="10">10 dias</option>
+              <option value="15">15 dias</option>
+              <option value="20">20 dias</option>
+              <option value="30">30 dias</option>
+            </select>
+            <small className="helper-text">Define quantos dias após o vencimento o benefício é recebido</small>
           </label>
         </div>
 

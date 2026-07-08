@@ -15,6 +15,7 @@ import { useLoading } from "../../../hooks/useLoading.js";
 import PageLayout from '../../../Layouts/PageLayout/PageLayout.jsx'
 
 import {
+  buscarAdministradoraPorId,
   buscarRegraValorAdministradora,
   atualizarRegraValorAdministradora,
   criarRegraValorAdministradora
@@ -820,6 +821,22 @@ export default function Importacao() {
   })
 
   const [campoDataReferenciaVT, setCampoDataReferenciaVT] = useState(null)
+  const [diasRecebimentoBeneficio, setDiasRecebimentoBeneficio] = useState(1)
+
+  const carregarDiasRecebimento = async () => {
+    const administradoraId = user?.administradora_id
+    if (!administradoraId) return
+
+    try {
+      const data = await buscarAdministradoraPorId(administradoraId)
+      const dias = data?.dias_recebimento_beneficio
+      if (dias != null && !isNaN(Number(dias))) {
+        setDiasRecebimentoBeneficio(Number(dias))
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dias de recebimento:', error)
+    }
+  }
 
   const carregarRegraValor = async () => {
     const administradoraId = user?.administradora_id
@@ -853,6 +870,7 @@ export default function Importacao() {
 
   useEffect(() => {
     carregarRegraValor()
+    carregarDiasRecebimento()
   }, [user?.administradora_id])
 
   const abrirModalRegraValor = async () => {
@@ -1242,7 +1260,7 @@ export default function Importacao() {
   const getDatasEnvioNormalizadas = () => {
     const recebimento = formEnvio.recebimentoBeneficio
     const vencimento = formEnvio.vencimento
-    const dias = isValeTransporte ? 8 : 1
+    const dias = isValeTransporte ? 8 : diasRecebimentoBeneficio
 
     if (campoDataReferenciaVT === 'vencimento' && vencimento) {
       return {
@@ -1301,12 +1319,12 @@ export default function Importacao() {
     setFormEnvio((prev) => ({
       ...prev,
       recebimentoBeneficio: value,
-      vencimento: value ? subtractDaysFromDateInput(value, 1) : '',
+      vencimento: value ? subtractDaysFromDateInput(value, diasRecebimentoBeneficio) : '',
     }))
   }
 
   const handleVencimentoChange = (value) => {
-    const dias = isValeTransporte ? 8 : 1
+    const dias = isValeTransporte ? 8 : diasRecebimentoBeneficio
 
     setCampoDataReferenciaVT(value ? 'vencimento' : null)
 
