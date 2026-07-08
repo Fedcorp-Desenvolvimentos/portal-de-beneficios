@@ -223,14 +223,11 @@ function normalizarErroImportacao(erro, index = 0) {
     getErrorMessageFromPayload(erro.non_field_errors) ||
     `Erro na linha ${linha}: ${tipo}`
 
-  const errosList = Array.isArray(erro.erros) ? erro.erros : []
-
   return {
     linha,
     tipo_erro: tipo,
     dados: detalhes,
     mensagem,
-    erros: errosList,
     ordem: index,
   }
 }
@@ -238,45 +235,46 @@ function normalizarErroImportacao(erro, index = 0) {
 function extrairErrosImportacao(payload) {
   if (!payload) return []
 
-  const possiveisListas = [
-    payload?.linhas_com_erro,
-    payload?.linhasComErro,
-    payload?.data_to_backend?.linhas_com_erro,
-    payload?.data_to_backend?.linhasComErro,
-    payload?.errors,
-    payload?.erros,
-    payload?.data_to_backend?.errors,
-    payload?.data_to_backend?.erros,
-    payload?.detail?.errors,
-    payload?.message?.errors,
+  const errosEstruturados = [
+    ...(Array.isArray(payload?.linhas_com_erro) ? payload.linhas_com_erro : []),
+    ...(Array.isArray(payload?.linhasComErro) ? payload.linhasComErro : []),
+    ...(Array.isArray(payload?.data_to_backend?.linhas_com_erro) ? payload.data_to_backend.linhas_com_erro : []),
+    ...(Array.isArray(payload?.data_to_backend?.linhasComErro) ? payload.data_to_backend.linhasComErro : []),
   ]
 
-  const erros = []
-
-  possiveisListas.forEach((lista) => {
-    if (Array.isArray(lista)) {
-      lista.forEach((erro) => erros.push(erro))
-    }
-  })
-
-  if (erros.length === 0) {
-    const mensagem =
-      getErrorMessageFromPayload(payload?.detail) ||
-      getErrorMessageFromPayload(payload?.message) ||
-      getErrorMessageFromPayload(payload?.error) ||
-      getErrorMessageFromPayload(payload?.erro)
-
-    if (mensagem) {
-      erros.push({
-        linha: '-',
-        tipo_erro: 'ERRO_PROCESSAMENTO',
-        mensagem,
-        dados: payload,
-      })
-    }
+  if (errosEstruturados.length > 0) {
+    return errosEstruturados.map(normalizarErroImportacao)
   }
 
-  return erros.map(normalizarErroImportacao)
+  const errosSimples = [
+    ...(Array.isArray(payload?.errors) ? payload.errors : []),
+    ...(Array.isArray(payload?.erros) ? payload.erros : []),
+    ...(Array.isArray(payload?.data_to_backend?.errors) ? payload.data_to_backend.errors : []),
+    ...(Array.isArray(payload?.data_to_backend?.erros) ? payload.data_to_backend.erros : []),
+    ...(Array.isArray(payload?.detail?.errors) ? payload.detail.errors : []),
+    ...(Array.isArray(payload?.message?.errors) ? payload.message.errors : []),
+  ]
+
+  if (errosSimples.length > 0) {
+    return errosSimples.map(normalizarErroImportacao)
+  }
+
+  const mensagem =
+    getErrorMessageFromPayload(payload?.detail) ||
+    getErrorMessageFromPayload(payload?.message) ||
+    getErrorMessageFromPayload(payload?.error) ||
+    getErrorMessageFromPayload(payload?.erro)
+
+  if (mensagem) {
+    return [normalizarErroImportacao({
+      linha: '-',
+      tipo_erro: 'ERRO_PROCESSAMENTO',
+      mensagem,
+      dados: payload,
+    })]
+  }
+
+  return []
 }
 
 function getMovimentacoesBackend(data) {
@@ -1371,7 +1369,6 @@ export default function Importacao() {
         linha: erro.linha,
         tipo: erro.tipo_erro,
         detalhes: erro.dados || {},
-        erros: erro.erros || [],
         mensagem:
           erro.tipo_erro === 'VALOR_EXCEDIDO'
             ? `Valor excedeu o limite permitido na linha ${erro.linha} 
@@ -2708,15 +2705,7 @@ export default function Importacao() {
                       <span className="erro-mensagem">{tipoLabel}</span>
                     </div>
 
-                    {erro.erros?.length > 0 && (
-                      <ul className="erro-specific-list">
-                        {erro.erros.map((msg, i) => (
-                          <li key={i}>{msg}</li>
-                        ))}
-                      </ul>
-                    )}
-
-                    {erro.mensagem && erro.erros?.length === 0 && (
+                    {erro.mensagem && (
                       <p style={{ margin: '4px 0', fontSize: 13, color: '#374151' }}>
                         {erro.mensagem}
                       </p>
@@ -2769,3 +2758,5 @@ export default function Importacao() {
     </PageLayout>
   )
 }
+
+// arquivo com erro apresentado corretamente 
