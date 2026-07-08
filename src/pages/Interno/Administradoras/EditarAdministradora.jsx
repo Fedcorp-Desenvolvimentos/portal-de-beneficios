@@ -27,7 +27,7 @@ export default function EditarAdministradora() {
         email: data.email || '',
         ativo: data.ativo,
         cartao_admin: data.cartao_admin ? 'administradora' : 'condominio',
-        dias_recebimento_beneficio: data.dias_recebimento_beneficio ?? '',
+        d_mais: data.d_mais != null ? String(data.d_mais) : '',
         taxa_ativa: data.taxa_ativa ?? false,
         taxa_tipo: data.taxa_tipo === 'produto' ? 'produto' : 'padrao',
         taxa_padrao: data.taxa_padrao != null ? String(data.taxa_padrao) : '',
@@ -96,7 +96,7 @@ export default function EditarAdministradora() {
         email: form.email || null,
         ativo: form.ativo,
         cartao_admin: cartaoAdminBoolean,
-        dias_recebimento_beneficio: form.dias_recebimento_beneficio ? Number(form.dias_recebimento_beneficio) : null,
+        d_mais: form.d_mais !== '' ? Number(form.d_mais) : null,
         taxa_ativa: form.taxa_ativa,
         taxa_tipo: form.taxa_ativa ? form.taxa_tipo : null,
         taxa_padrao: taxaPadraoNum,
@@ -181,10 +181,10 @@ export default function EditarAdministradora() {
           </label>
 
           <label>
-            Dias para Recebimento do Benefício
+            D+ (Dias para Recebimento do Benefício)
             <select
-              name="dias_recebimento_beneficio"
-              value={form.dias_recebimento_beneficio}
+              name="d_mais"
+              value={form.d_mais}
               onChange={handleChange}
             >
               <option value="">Selecionar</option>
@@ -192,11 +192,13 @@ export default function EditarAdministradora() {
               <option value="1">1 dia</option>
               <option value="2">2 dias</option>
               <option value="3">3 dias</option>
+              <option value="4">4 dias</option>
               <option value="5">5 dias</option>
               <option value="7">7 dias</option>
               <option value="10">10 dias</option>
               <option value="15">15 dias</option>
               <option value="20">20 dias</option>
+              <option value="30">30 dias</option>
               <option value="30">30 dias</option>
             </select>
             <small className="helper-text">Define quantos dias após o vencimento o benefício é recebido</small>

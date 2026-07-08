@@ -15,7 +15,6 @@ import { useLoading } from "../../../hooks/useLoading.js";
 import PageLayout from '../../../Layouts/PageLayout/PageLayout.jsx'
 
 import {
-  buscarAdministradoraPorId,
   buscarRegraValorAdministradora,
   atualizarRegraValorAdministradora,
   criarRegraValorAdministradora
@@ -24,7 +23,6 @@ import {
 import { vtService } from '../../../services/vtService.js';
 import { obterDataVencimento } from '../../../utils/bloqueia_data.js'
 import DatePickerWrapper from '../../../components/DatePicker/DatePickerWrapper.jsx'
-import { PRODUTOS_TAXA, getNomeProdutoPorCodigo, getLabelPercentual } from '../../../constants/produtos'
 
 
 function Modal({ open, title, onClose, children, locked = false }) {
@@ -221,30 +219,34 @@ function normalizarErroImportacao(erro, index = 0) {
     erro.erro ||
     erro.descricao ||
     getErrorMessageFromPayload(erro.errors) ||
-    getErrorMessageFromPayload(erro.erros) ||
     getErrorMessageFromPayload(erro.non_field_errors) ||
     `Erro na linha ${linha}: ${tipo}`
-
-  const errosList = Array.isArray(erro.erros) ? erro.erros : []
 
   return {
     linha,
     tipo_erro: tipo,
     dados: detalhes,
     mensagem,
-    erros: errosList,
     ordem: index,
   }
 }
 
-function remapearMensagemErro(msg) {
-  const mapa = {
-    'Matrícula ausente': 'Preenchimento da matricula obrigatoria com nome do condominio',
-  }
-  return mapa[msg] || msg
+function isMensagemSucessoImportacao(mensagem) {
+  const texto = normalizeText(mensagem)
+
+  return (
+    texto.includes('ARQUIVO PROCESSADO') ||
+    texto.includes('CONFIRME OS DADOS') ||
+    texto.includes('PROCESSADO COM SUCESSO') ||
+    texto.includes('IMPORTADO COM SUCESSO') ||
+    texto.includes('UPLOAD REALIZADO') ||
+    texto.includes('LOTE PROCESSADO')
+  )
 }
 
-function extrairErrosImportacao(payload) {
+function extrairErrosImportacao(payload, options = {}) {
+  const { incluirMensagensGerais = false } = options
+
   if (!payload) return []
 
   const possiveisListas = [
@@ -264,28 +266,59 @@ function extrairErrosImportacao(payload) {
 
   possiveisListas.forEach((lista) => {
     if (Array.isArray(lista)) {
-      lista.forEach((erro) => erros.push(erro))
+      lista.forEach((erro) => {
+        if (erro) erros.push(erro)
+      })
     }
   })
 
-  if (erros.length === 0) {
-    const mensagem =
-      getErrorMessageFromPayload(payload?.detail) ||
-      getErrorMessageFromPayload(payload?.message) ||
-      getErrorMessageFromPayload(payload?.error) ||
-      getErrorMessageFromPayload(payload?.erro)
-
-    if (mensagem) {
-      erros.push({
-        linha: '-',
-        tipo_erro: 'ERRO_PROCESSAMENTO',
-        mensagem,
-        dados: payload,
-      })
-    }
+  if (erros.length > 0) {
+    return erros.map(normalizarErroImportacao)
   }
 
-  return erros.map(normalizarErroImportacao)
+  const mensagemSucesso =
+    getErrorMessageFromPayload(payload?.message) ||
+    getErrorMessageFromPayload(payload?.detail)
+
+  if (mensagemSucesso && isMensagemSucessoImportacao(mensagemSucesso)) {
+    return []
+  }
+
+  const mensagemErro =
+    getErrorMessageFromPayload(payload?.error) ||
+    getErrorMessageFromPayload(payload?.erro)
+
+  if (mensagemErro) {
+    return [
+      normalizarErroImportacao({
+        linha: '-',
+        tipo_erro: 'ERRO_PROCESSAMENTO',
+        mensagem: mensagemErro,
+        dados: payload,
+      }),
+    ]
+  }
+
+  if (!incluirMensagensGerais) {
+    return []
+  }
+
+  const mensagemGeral =
+    getErrorMessageFromPayload(payload?.detail) ||
+    getErrorMessageFromPayload(payload?.message)
+
+  if (mensagemGeral && !isMensagemSucessoImportacao(mensagemGeral)) {
+    return [
+      normalizarErroImportacao({
+        linha: '-',
+        tipo_erro: 'ERRO_PROCESSAMENTO',
+        mensagem: mensagemGeral,
+        dados: payload,
+      }),
+    ]
+  }
+
+  return []
 }
 
 function getMovimentacoesBackend(data) {
@@ -822,30 +855,6 @@ export default function Importacao() {
   })
 
   const [campoDataReferenciaVT, setCampoDataReferenciaVT] = useState(null)
-  const [diasRecebimentoBeneficio, setDiasRecebimentoBeneficio] = useState(1)
-  const [taxaConfig, setTaxaConfig] = useState(null)
-  const [taxaAtiva, setTaxaAtiva] = useState(false)
-  const [taxaTipo, setTaxaTipo] = useState(null)
-  const [taxaPadrao, setTaxaPadrao] = useState(null)
-
-  const carregarConfigAdministradora = async () => {
-    const administradoraId = user?.administradora_id
-    if (!administradoraId) return
-
-    try {
-      const data = await buscarAdministradoraPorId(administradoraId)
-      const dias = data?.dias_recebimento_beneficio
-      if (dias != null && !isNaN(Number(dias))) {
-        setDiasRecebimentoBeneficio(Number(dias))
-      }
-      setTaxaAtiva(!!data?.taxa_ativa)
-      setTaxaTipo(data?.taxa_tipo || null)
-      setTaxaPadrao(data?.taxa_padrao != null ? Number(data.taxa_padrao) : null)
-      setTaxaConfig(Array.isArray(data?.taxa_config) ? data.taxa_config : [])
-    } catch (error) {
-      console.error('Erro ao carregar configurações da administradora:', error)
-    }
-  }
 
   const carregarRegraValor = async () => {
     const administradoraId = user?.administradora_id
@@ -879,7 +888,6 @@ export default function Importacao() {
 
   useEffect(() => {
     carregarRegraValor()
-    carregarConfigAdministradora()
   }, [user?.administradora_id])
 
   const abrirModalRegraValor = async () => {
@@ -1269,7 +1277,7 @@ export default function Importacao() {
   const getDatasEnvioNormalizadas = () => {
     const recebimento = formEnvio.recebimentoBeneficio
     const vencimento = formEnvio.vencimento
-    const dias = isValeTransporte ? 8 : diasRecebimentoBeneficio
+    const dias = isValeTransporte ? 8 : (regraValor?.d_mais ?? 1)
 
     if (campoDataReferenciaVT === 'vencimento' && vencimento) {
       return {
@@ -1328,12 +1336,12 @@ export default function Importacao() {
     setFormEnvio((prev) => ({
       ...prev,
       recebimentoBeneficio: value,
-      vencimento: value ? subtractDaysFromDateInput(value, diasRecebimentoBeneficio) : '',
+      vencimento: value ? subtractDaysFromDateInput(value, regraValor?.d_mais ?? 1) : '',
     }))
   }
 
   const handleVencimentoChange = (value) => {
-    const dias = isValeTransporte ? 8 : diasRecebimentoBeneficio
+    const dias = isValeTransporte ? 8 : (regraValor?.d_mais ?? 1)
 
     setCampoDataReferenciaVT(value ? 'vencimento' : null)
 
@@ -1405,7 +1413,6 @@ export default function Importacao() {
         linha: erro.linha,
         tipo: erro.tipo_erro,
         detalhes: erro.dados || {},
-        erros: erro.erros || [],
         mensagem:
           erro.tipo_erro === 'VALOR_EXCEDIDO'
             ? `Valor excedeu o limite permitido na linha ${erro.linha} 
@@ -1893,10 +1900,6 @@ export default function Importacao() {
           recebimento_beneficio: datasEnvio.recebimentoBeneficio || '',
           dados_validados: dadosValidadosAtualizados,
           modelo_importacao: "VR-AUTO",
-          taxa_ativa: taxaAtiva,
-          taxa_tipo: taxaTipo,
-          taxa_padrao: taxaPadrao,
-          taxa_config: taxaConfig,
           summary: {
             total_funcionarios: lote.rows.length,
             total_movimentacoes: dadosValidadosAtualizados.length,
@@ -1950,10 +1953,6 @@ export default function Importacao() {
           tipo_processamento: dataToBackendSincronizado.tipo_processamento,
           origem: dataToBackendSincronizado.origem,
           modelo_importacao: "VR-BENEFICIOS",
-          taxa_ativa: taxaAtiva,
-          taxa_tipo: taxaTipo,
-          taxa_padrao: taxaPadrao,
-          taxa_config: taxaConfig,
         }
 
         // console.log("Payload Benefícios:", dadosParaEnvio)
@@ -2380,13 +2379,8 @@ export default function Importacao() {
                   onChange={handleRecebimentoBeneficioChange}
                   required={campoDataReferenciaVT !== 'vencimento'}
                   disabled={enviandoLote || recebimentoCalculadoAutomaticamente}
+                  minDate={new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)}
                 />
-
-                {campoDataReferenciaVT === 'vencimento' && formEnvio.recebimentoBeneficio && (
-                  <small>
-                    Recebimento calculado automaticamente {isValeTransporte ? 8 : 1} {isValeTransporte ? 'dias' : 'dia'} após o vencimento.
-                  </small>
-                )}
               </label>
             </div>
 
@@ -2398,14 +2392,8 @@ export default function Importacao() {
                   onChange={handleVencimentoChange}
                   required={campoDataReferenciaVT !== 'recebimento'}
                   disabled={enviandoLote || vencimentoCalculadoAutomaticamente}
-                  maxDate={getDueDateInput(1)}
+                  minDate={new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)}
                 />
-
-                {campoDataReferenciaVT === 'recebimento' && formEnvio.vencimento && (
-                  <small>
-                    Vencimento calculado automaticamente {isValeTransporte ? 8 : 1} dia{isValeTransporte ? 's' : ''} antes do recebimento.
-                  </small>
-                )}
 
                 {!campoDataReferenciaVT && !formEnvio.recebimentoBeneficio && !formEnvio.vencimento && (
                   <small>
@@ -2587,24 +2575,6 @@ export default function Importacao() {
               <div>
                 <strong>Vencimento:</strong> {formatDateBR(reviewData.vencimento)}
               </div>
-
-              {taxaAtiva && (
-                <div className="taxa-config-display">
-                  <strong>Taxa de administração:</strong>
-                  {taxaTipo === 'padrao' && taxaPadrao != null && (
-                    <span> Padrão: {getLabelPercentual(String(taxaPadrao))}</span>
-                  )}
-                  {taxaTipo === 'produto' && (
-                    <ul>
-                      {taxaConfig?.map((t) => (
-                        <li key={t.codigo}>
-                          {getNomeProdutoPorCodigo(t.codigo)}: {t.valor != null ? getLabelPercentual(String(t.valor)) : 'Não possui taxa'}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
             </div>
 
             {enviandoLote && (
@@ -2754,64 +2724,50 @@ export default function Importacao() {
                 Nenhum erro encontrado.
               </div>
             ) : (
-              linhasComErroBackend.map((erro, idx) => {
-                const tipoLabel = {
-                  INFORMACAO_AUSENTE: 'Informações obrigatórias ausentes',
-                  VALOR_EXCEDIDO: 'Valor excede limite',
-                  ERRO_PROCESSAMENTO: 'Erro de processamento',
-                }[erro.tipo] || erro.tipo
-
-                return (
-                  <div key={`erro-${idx}`} className="erro-item">
-                    <div className="erro-header">
-                      <span className="erro-linha">Linha {erro.linha}</span>
-                      <span className="erro-mensagem">{tipoLabel}</span>
-                    </div>
-
-                    {erro.erros?.length > 0 && (
-                      <ul className="erro-specific-list">
-                        {erro.erros.map((msg, i) => (
-                          <li key={i}>{remapearMensagemErro(msg)}</li>
-                        ))}
-                      </ul>
-                    )}
-
-                    {erro.mensagem && erro.erros?.length === 0 && (
-                      <p style={{ margin: '4px 0', fontSize: 13, color: '#374151' }}>
-                        {erro.mensagem}
-                      </p>
-                    )}
-
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-                      {erro.detalhes?.matricula && (
-                        <span className="chip chip-ghost">
-                          Matrícula: {erro.detalhes.matricula}
-                        </span>
-                      )}
-                      {/* {erro.detalhes?.codigo_local && (
-                        <span className="chip chip-ghost">
-                          Código Local: {erro.detalhes.codigo_local}
-                        </span>
-                      )} */}
-                      {/* {erro.detalhes?.cpf && (
-                        <span className="chip chip-ghost">
-                          CPF: {erro.detalhes.cpf}
-                        </span>
-                      )} */}
-                      {/* {erro.detalhes?.nome && (
-                        <span className="chip chip-ghost">
-                          Nome: {erro.detalhes.nome}
-                        </span>
-                      )} */}
-                      {/* {erro.detalhes?.data_nascimento && (
-                        <span className="chip chip-ghost">
-                          Data Nasc.: {erro.detalhes.data_nascimento}
-                        </span>
-                      )} */}
-                    </div>
+              linhasComErroBackend.map((erro, idx) => (
+                <div key={`erro-${idx}`} className="erro-item">
+                  <div className="erro-header">
+                    <span className="erro-linha">Linha {erro.linha}</span>
+                    <span className="erro-mensagem">{erro.tipo}</span>
                   </div>
-                )
-              })
+                  <p style={{ margin: '4px 0', fontSize: 13, color: '#374151' }}>
+                    {erro.mensagem}
+                  </p>
+
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                    {erro.detalhes?.campo && (
+                      <span className="chip chip-ghost">
+                        Campo: {erro.detalhes.campo}
+                      </span>
+                    )}
+
+                    {erro.detalhes?.cpf && (
+                      <span className="chip chip-ghost">
+                        CPF: {erro.detalhes.cpf}
+                      </span>
+                    )}
+
+                    {erro.detalhes?.nome && (
+                      <span className="chip chip-ghost">
+                        Nome: {erro.detalhes.nome}
+                      </span>
+                    )}
+
+                    {erro.detalhes?.condominio && (
+                      <span className="chip chip-ghost">
+                        Condomínio: {erro.detalhes.condominio}
+                      </span>
+                    )}
+                  </div>
+
+                  {erro.detalhes?.cpf || erro.detalhes?.nome || erro.detalhes?.campo || erro.detalhes?.condominio ? (
+                    <details>
+                      <summary>Detalhes do registro</summary>
+                      <pre>{JSON.stringify(erro.detalhes, null, 2)}</pre>
+                    </details>
+                  ) : null}
+                </div>
+              ))
             )}
           </div>
           <div className="modal-actions">
