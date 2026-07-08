@@ -769,8 +769,13 @@ export const S = {
     align-items: center;
     justify-content: center;
     padding: 16px;
+    padding-left: ${props => props.$sidebarWidth != null ? `calc(${props.$sidebarWidth}px + 16px)` : '16px'};
     z-index: 9999;
     backdrop-filter: blur(2px);
+
+    @media (max-width: 768px) {
+      padding-left: 16px;
+    }
   `,
 
   Modal: styled.div`
@@ -785,7 +790,7 @@ export const S = {
   `,
 
   BoletoModal: styled.div`
-    width: min(980px, calc(100vw - 48px));
+    width: 100%;
     max-width: 980px;
     background: var(--surface);
     border-radius: 18px;
@@ -796,26 +801,15 @@ export const S = {
     display: flex;
     flex-direction: column;
 
-    @media (max-width: 1440px) {
-      width: min(900px, calc(100vw - 420px));
-      max-width: calc(100vw - 420px);
-    }
-
-    @media (max-width: 1280px) {
-      width: min(860px, calc(100vw - 360px));
-      max-width: calc(100vw - 360px);
-    }
-
-    @media (max-width: 1024px) {
-      width: calc(100vw - 48px);
-      max-width: calc(100vw - 48px);
-    }
-
     @media (max-width: 760px) {
-      width: calc(100vw - 24px);
-      max-width: calc(100vw - 24px);
       max-height: 92vh;
       border-radius: 14px;
+    }
+
+    @media (max-width: 480px) {
+      max-height: 100vh;
+      min-height: 100vh;
+      border-radius: 0;
     }
   `,
 
@@ -826,6 +820,10 @@ export const S = {
     gap: 12px;
     padding: 20px 22px;
     border-bottom: 1px solid var(--border);
+
+    @media (max-width: 480px) {
+      padding: 14px 16px;
+    }
   `,
 
   ModalTitle: styled.div`
@@ -888,6 +886,11 @@ export const S = {
 
     @media (max-width: 760px) {
       max-height: 55vh;
+    }
+
+    @media (max-width: 480px) {
+      max-height: none;
+      flex: 1;
     }
   `,
 
@@ -1056,6 +1059,51 @@ export const S = {
         width: 64px;
       }
     }
+
+    @media (max-width: 640px) {
+      table-layout: auto;
+
+      thead th {
+        padding: 8px 10px;
+        font-size: 8px;
+      }
+
+      tbody td {
+        padding: 8px 10px;
+        font-size: 11px;
+      }
+
+      th:nth-child(1),
+      td:nth-child(1) {
+        width: 38px;
+      }
+
+      th:nth-child(3),
+      td:nth-child(3) {
+        width: 120px;
+      }
+
+      th:nth-child(4),
+      td:nth-child(4) {
+        width: 90px;
+      }
+
+      th:nth-child(5),
+      td:nth-child(5) {
+        width: 100px;
+      }
+
+      td strong {
+        font-size: 11px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      th:nth-child(3),
+      td:nth-child(3) {
+        display: none;
+      }
+    }
   `,
 
   ModalFooter: styled.div`
@@ -1076,6 +1124,10 @@ export const S = {
         flex: 1;
       }
     }
+
+    @media (max-width: 480px) {
+      padding: 12px 16px;
+    }
   `,
 
   BoletoFooterInfo: styled.div`
@@ -1093,6 +1145,11 @@ export const S = {
       margin-right: 0;
       text-align: center;
       white-space: normal;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 11px;
+      padding: 6px 10px;
     }
   `,
 
