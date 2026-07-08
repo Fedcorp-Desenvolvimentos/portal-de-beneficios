@@ -1019,6 +1019,24 @@ button:focus-visible {
     color: #374151;
 }
 
+.taxa-config-display {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #374151;
+}
+
+.taxa-config-display ul {
+    margin: 4px 0 0 16px;
+    padding: 0;
+    list-style: disc;
+    font-size: 13px;
+    color: #475569;
+}
+
+.taxa-config-display li {
+    margin-bottom: 2px;
+}
+
 .importacao-filtros {
     display: flex;
     justify-content: space-between;

@@ -406,6 +406,95 @@ small {
   font-size: 0.9rem;
 }
 
+.taxa-group {
+  margin-top: 1.5rem;
+}
+
+.taxa-tipo-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 0.5px solid #e2e8f0;
+}
+
+.taxa-tipo-group .radio-label {
+  font-size: 13px;
+}
+
+.taxa-padrao-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.taxa-padrao-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.taxa-select {
+  height: 34px;
+  border-radius: 6px;
+  border: 0.5px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 0 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  min-width: 140px;
+}
+
+.taxa-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.taxa-select-small {
+  min-width: 140px;
+  width: 140px;
+}
+
+.taxa-produtos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 0.5px solid #e2e8f0;
+}
+
+.taxa-produto-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.taxa-produto-row + .taxa-produto-row {
+  border-top: 0.5px solid #e2e8f0;
+  padding-top: 10px;
+}
+
+.taxa-produto-nome {
+  font-size: 13px;
+  font-weight: 500;
+  color: #0f172a;
+  flex: 1;
+}
+
 .condominio-address {
   margin-top: 1rem;
   padding: 1rem;
