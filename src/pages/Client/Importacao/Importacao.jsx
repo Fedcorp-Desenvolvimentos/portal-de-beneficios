@@ -249,73 +249,43 @@ function extrairErrosImportacao(payload, options = {}) {
 
   if (!payload) return []
 
-  const possiveisListas = [
-    payload?.linhas_com_erro,
-    payload?.linhasComErro,
-    payload?.data_to_backend?.linhas_com_erro,
-    payload?.data_to_backend?.linhasComErro,
-    payload?.errors,
-    payload?.erros,
-    payload?.data_to_backend?.errors,
-    payload?.data_to_backend?.erros,
-    payload?.detail?.errors,
-    payload?.message?.errors,
+  const errosEstruturados = [
+    ...(Array.isArray(payload?.linhas_com_erro) ? payload.linhas_com_erro : []),
+    ...(Array.isArray(payload?.linhasComErro) ? payload.linhasComErro : []),
+    ...(Array.isArray(payload?.data_to_backend?.linhas_com_erro) ? payload.data_to_backend.linhas_com_erro : []),
+    ...(Array.isArray(payload?.data_to_backend?.linhasComErro) ? payload.data_to_backend.linhasComErro : []),
   ]
 
-  const erros = []
-
-  possiveisListas.forEach((lista) => {
-    if (Array.isArray(lista)) {
-      lista.forEach((erro) => {
-        if (erro) erros.push(erro)
-      })
-    }
-  })
-
-  if (erros.length > 0) {
-    return erros.map(normalizarErroImportacao)
+  if (errosEstruturados.length > 0) {
+    return errosEstruturados.map(normalizarErroImportacao)
   }
 
-  const mensagemSucesso =
+  const errosSimples = [
+    ...(Array.isArray(payload?.errors) ? payload.errors : []),
+    ...(Array.isArray(payload?.erros) ? payload.erros : []),
+    ...(Array.isArray(payload?.data_to_backend?.errors) ? payload.data_to_backend.errors : []),
+    ...(Array.isArray(payload?.data_to_backend?.erros) ? payload.data_to_backend.erros : []),
+    ...(Array.isArray(payload?.detail?.errors) ? payload.detail.errors : []),
+    ...(Array.isArray(payload?.message?.errors) ? payload.message.errors : []),
+  ]
+
+  if (errosSimples.length > 0) {
+    return errosSimples.map(normalizarErroImportacao)
+  }
+
+  const mensagem =
+    getErrorMessageFromPayload(payload?.detail) ||
     getErrorMessageFromPayload(payload?.message) ||
-    getErrorMessageFromPayload(payload?.detail)
-
-  if (mensagemSucesso && isMensagemSucessoImportacao(mensagemSucesso)) {
-    return []
-  }
-
-  const mensagemErro =
     getErrorMessageFromPayload(payload?.error) ||
     getErrorMessageFromPayload(payload?.erro)
 
-  if (mensagemErro) {
-    return [
-      normalizarErroImportacao({
-        linha: '-',
-        tipo_erro: 'ERRO_PROCESSAMENTO',
-        mensagem: mensagemErro,
-        dados: payload,
-      }),
-    ]
-  }
-
-  if (!incluirMensagensGerais) {
-    return []
-  }
-
-  const mensagemGeral =
-    getErrorMessageFromPayload(payload?.detail) ||
-    getErrorMessageFromPayload(payload?.message)
-
-  if (mensagemGeral && !isMensagemSucessoImportacao(mensagemGeral)) {
-    return [
-      normalizarErroImportacao({
-        linha: '-',
-        tipo_erro: 'ERRO_PROCESSAMENTO',
-        mensagem: mensagemGeral,
-        dados: payload,
-      }),
-    ]
+  if (mensagem) {
+    return [normalizarErroImportacao({
+      linha: '-',
+      tipo_erro: 'ERRO_PROCESSAMENTO',
+      mensagem,
+      dados: payload,
+    })]
   }
 
   return []
@@ -2741,16 +2711,10 @@ export default function Importacao() {
                       </span>
                     )}
 
-                    {erro.detalhes?.cpf && (
-                      <span className="chip chip-ghost">
-                        CPF: {erro.detalhes.cpf}
-                      </span>
-                    )}
-
-                    {erro.detalhes?.nome && (
-                      <span className="chip chip-ghost">
-                        Nome: {erro.detalhes.nome}
-                      </span>
+                    {erro.mensagem && (
+                      <p style={{ margin: '4px 0', fontSize: 13, color: '#374151' }}>
+                        {erro.mensagem}
+                      </p>
                     )}
 
                     {erro.detalhes?.condominio && (
@@ -2785,3 +2749,5 @@ export default function Importacao() {
     </PageLayout>
   )
 }
+
+// arquivo com erro apresentado corretamente 
