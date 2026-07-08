@@ -6,6 +6,7 @@ import UsuarioModal from './UsuarioModal.jsx';
 import PageLayout from '../../../Layouts/PageLayout/PageLayout.jsx';
 import { S } from './UsuariosStyles';
 import SearchableSelect from './SearchableSelect';
+import { PencilLine, Trash2, Unlink } from 'lucide-react';
 
 const SkeletonTable = () => (
   <S.SkeletonTable>
@@ -282,13 +283,6 @@ export default function Usuarios() {
                               <S.VinculadoBadge>
                                 {administradoraNome || `ID: ${administradoraId}`}
                               </S.VinculadoBadge>
-                              <S.ActionBtn
-                                $variant="unlink"
-                                onClick={() => handleDesvincular(user.id, user.username)}
-                                title="Desvincular"
-                              >
-                                ✕
-                              </S.ActionBtn>
                             </S.VinculadoInfo>
                           ) : (
                             <S.NaoVinculadoInfo>
@@ -326,11 +320,16 @@ export default function Usuarios() {
                         </td>
                         <td>
                           <S.Actions>
-                            <S.ActionBtn $variant="edit" onClick={() => handleEditar(user)}>
-                              Editar
+                            <S.ActionBtn $variant="edit" onClick={() => handleEditar(user)} title="Editar">
+                              <PencilLine size={14} />
                             </S.ActionBtn>
-                            <S.ActionBtn $variant="delete" onClick={() => handleDelete(user.id, user.username)}>
-                              Excluir
+                            {possuiAdministradora && (
+                              <S.ActionBtn $variant="unlink-actions" onClick={() => handleDesvincular(user.id, user.username)} title="Desvincular">
+                                <Unlink size={14} />
+                              </S.ActionBtn>
+                            )}
+                            <S.ActionBtn $variant="delete" onClick={() => handleDelete(user.id, user.username)} title="Excluir">
+                              <Trash2 size={14} />
                             </S.ActionBtn>
                           </S.Actions>
                         </td>
