@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { buscarAdministradoraPorId, editarAdministradora } from '../../../services/administradoraService.js'
+import { PRODUTOS_TAXA, PERCENTUAIS_TAXA, getLabelPercentual } from '../../../constants/produtos'
 import './Administradoras.css'
 
 export default function EditarAdministradora() {
@@ -17,6 +18,8 @@ export default function EditarAdministradora() {
   const carregarAdministradora = async () => {
     try {
       const data = await buscarAdministradoraPorId(id)
+      const taxaConfigSalva = Array.isArray(data.taxa_config) ? data.taxa_config : []
+
       setForm({
         razao_social: data.razao_social,
         nome_fantasia: data.nome_fantasia || '',
@@ -25,6 +28,13 @@ export default function EditarAdministradora() {
         ativo: data.ativo,
         cartao_admin: data.cartao_admin ? 'administradora' : 'condominio',
         dias_recebimento_beneficio: data.dias_recebimento_beneficio ?? '',
+        taxa_ativa: data.taxa_ativa ?? false,
+        taxa_tipo: data.taxa_tipo === 'produto' ? 'produto' : 'padrao',
+        taxa_padrao: data.taxa_padrao != null ? String(data.taxa_padrao) : '',
+        taxa_config: PRODUTOS_TAXA.map((p) => {
+          const salvo = taxaConfigSalva.find((t) => t.codigo === p.codigo)
+          return { codigo: p.codigo, valor: salvo?.valor != null ? String(salvo.valor) : '' }
+        }),
       })
     } catch (error) {
       console.error('❌ Erro ao carregar:', error)
@@ -49,6 +59,15 @@ export default function EditarAdministradora() {
     setForm((prev) => ({ ...prev, [name]: newValue }))
   }
 
+  function handleTaxaValorChange(codigo, valor) {
+    setForm((prev) => ({
+      ...prev,
+      taxa_config: prev.taxa_config.map((item) =>
+        item.codigo === codigo ? { ...item, valor } : item
+      ),
+    }))
+  }
+
   async function handleSubmit(event) {
     event.preventDefault()
     setSubmitError('')
@@ -61,6 +80,15 @@ export default function EditarAdministradora() {
     try {
       const cartaoAdminBoolean = form.cartao_admin === 'administradora'
       
+      const taxaPadraoNum = form.taxa_tipo === 'padrao' && form.taxa_padrao !== '' ? Number(form.taxa_padrao) : null
+
+      const taxaProdutos = form.taxa_ativa && form.taxa_tipo === 'produto'
+        ? form.taxa_config.map((item) => ({
+            codigo: item.codigo,
+            valor: item.valor !== '' ? Number(item.valor) : null,
+          }))
+        : []
+
       const formData = {
         cnpj: form.cnpj,
         razao_social: form.razao_social,
@@ -69,6 +97,10 @@ export default function EditarAdministradora() {
         ativo: form.ativo,
         cartao_admin: cartaoAdminBoolean,
         dias_recebimento_beneficio: form.dias_recebimento_beneficio ? Number(form.dias_recebimento_beneficio) : null,
+        taxa_ativa: form.taxa_ativa,
+        taxa_tipo: form.taxa_ativa ? form.taxa_tipo : null,
+        taxa_padrao: taxaPadraoNum,
+        taxa_config: taxaProdutos,
       }
 
       
@@ -197,6 +229,83 @@ export default function EditarAdministradora() {
               <span>No Condomínio</span>
             </label>
           </div>
+        </div>
+
+        <div className="form-group taxa-group">
+          <label className="section-label">Taxa de Administração</label>
+
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              name="taxa_ativa"
+              checked={form.taxa_ativa}
+              onChange={handleChange}
+            />
+            Cobrar taxa de administração
+          </label>
+
+          {form.taxa_ativa && (
+            <>
+              <div className="taxa-tipo-group">
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="taxa_tipo"
+                    value="padrao"
+                    checked={form.taxa_tipo === 'padrao'}
+                    onChange={handleChange}
+                  />
+                  <span>Taxa padrão (mesmo % para todos os produtos)</span>
+                </label>
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="taxa_tipo"
+                    value="produto"
+                    checked={form.taxa_tipo === 'produto'}
+                    onChange={handleChange}
+                  />
+                  <span>Taxa por produto</span>
+                </label>
+              </div>
+
+              {form.taxa_tipo === 'padrao' && (
+                <div className="taxa-padrao-row">
+                  <label className="taxa-padrao-label">Percentual (%)</label>
+                  <select
+                    name="taxa_padrao"
+                    value={form.taxa_padrao}
+                    onChange={handleChange}
+                    className="taxa-select"
+                  >
+                    {PERCENTUAIS_TAXA.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {form.taxa_tipo === 'produto' && (
+                <div className="taxa-produtos-list">
+                  {form.taxa_config.map((item) => (
+                    <div key={item.codigo} className="taxa-produto-row">
+                      <span className="taxa-produto-nome">{PRODUTOS_TAXA.find((p) => p.codigo === item.codigo)?.nome || item.codigo}</span>
+                      <select
+                        value={item.valor}
+                        onChange={(e) => handleTaxaValorChange(item.codigo, e.target.value)}
+                        className="taxa-select taxa-select-small"
+                      >
+                        <option value="">Não possui taxa</option>
+                        {PERCENTUAIS_TAXA.filter((opt) => opt.value !== '').map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         <div className="form-actions">

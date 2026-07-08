@@ -24,6 +24,7 @@ import {
 import { vtService } from '../../../services/vtService.js';
 import { obterDataVencimento } from '../../../utils/bloqueia_data.js'
 import DatePickerWrapper from '../../../components/DatePicker/DatePickerWrapper.jsx'
+import { PRODUTOS_TAXA, getNomeProdutoPorCodigo, getLabelPercentual } from '../../../constants/produtos'
 
 
 function Modal({ open, title, onClose, children, locked = false }) {
@@ -822,8 +823,12 @@ export default function Importacao() {
 
   const [campoDataReferenciaVT, setCampoDataReferenciaVT] = useState(null)
   const [diasRecebimentoBeneficio, setDiasRecebimentoBeneficio] = useState(1)
+  const [taxaConfig, setTaxaConfig] = useState(null)
+  const [taxaAtiva, setTaxaAtiva] = useState(false)
+  const [taxaTipo, setTaxaTipo] = useState(null)
+  const [taxaPadrao, setTaxaPadrao] = useState(null)
 
-  const carregarDiasRecebimento = async () => {
+  const carregarConfigAdministradora = async () => {
     const administradoraId = user?.administradora_id
     if (!administradoraId) return
 
@@ -833,8 +838,12 @@ export default function Importacao() {
       if (dias != null && !isNaN(Number(dias))) {
         setDiasRecebimentoBeneficio(Number(dias))
       }
+      setTaxaAtiva(!!data?.taxa_ativa)
+      setTaxaTipo(data?.taxa_tipo || null)
+      setTaxaPadrao(data?.taxa_padrao != null ? Number(data.taxa_padrao) : null)
+      setTaxaConfig(Array.isArray(data?.taxa_config) ? data.taxa_config : [])
     } catch (error) {
-      console.error('Erro ao carregar dias de recebimento:', error)
+      console.error('Erro ao carregar configurações da administradora:', error)
     }
   }
 
@@ -870,7 +879,7 @@ export default function Importacao() {
 
   useEffect(() => {
     carregarRegraValor()
-    carregarDiasRecebimento()
+    carregarConfigAdministradora()
   }, [user?.administradora_id])
 
   const abrirModalRegraValor = async () => {
@@ -1884,6 +1893,10 @@ export default function Importacao() {
           recebimento_beneficio: datasEnvio.recebimentoBeneficio || '',
           dados_validados: dadosValidadosAtualizados,
           modelo_importacao: "VR-AUTO",
+          taxa_ativa: taxaAtiva,
+          taxa_tipo: taxaTipo,
+          taxa_padrao: taxaPadrao,
+          taxa_config: taxaConfig,
           summary: {
             total_funcionarios: lote.rows.length,
             total_movimentacoes: dadosValidadosAtualizados.length,
@@ -1937,6 +1950,10 @@ export default function Importacao() {
           tipo_processamento: dataToBackendSincronizado.tipo_processamento,
           origem: dataToBackendSincronizado.origem,
           modelo_importacao: "VR-BENEFICIOS",
+          taxa_ativa: taxaAtiva,
+          taxa_tipo: taxaTipo,
+          taxa_padrao: taxaPadrao,
+          taxa_config: taxaConfig,
         }
 
         // console.log("Payload Benefícios:", dadosParaEnvio)
@@ -2570,6 +2587,24 @@ export default function Importacao() {
               <div>
                 <strong>Vencimento:</strong> {formatDateBR(reviewData.vencimento)}
               </div>
+
+              {taxaAtiva && (
+                <div className="taxa-config-display">
+                  <strong>Taxa de administração:</strong>
+                  {taxaTipo === 'padrao' && taxaPadrao != null && (
+                    <span> Padrão: {getLabelPercentual(String(taxaPadrao))}</span>
+                  )}
+                  {taxaTipo === 'produto' && (
+                    <ul>
+                      {taxaConfig?.map((t) => (
+                        <li key={t.codigo}>
+                          {getNomeProdutoPorCodigo(t.codigo)}: {t.valor != null ? getLabelPercentual(String(t.valor)) : 'Não possui taxa'}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
 
             {enviandoLote && (
