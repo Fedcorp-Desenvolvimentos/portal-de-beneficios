@@ -1215,15 +1215,6 @@ export default function ColaboradorDashboard() {
       selectedCondominios.has(boleto._index)
     )
 
-    const boletosPendentes = selecionados.filter((boleto) => !boleto._baixa)
-
-    if (boletosPendentes.length) {
-      showToast('Selecione apenas boletos baixados/pagos para gerar o TXT.', {
-        variant: 'warning',
-      })
-      return
-    }
-
     const movimentacaoIdsSelecionados = [
       ...new Set(
         selecionados.flatMap((boleto) => boleto._movimentacaoIds || [])
@@ -1237,12 +1228,7 @@ export default function ColaboradorDashboard() {
       return
     }
 
-    const todosBoletosBaixados = condominiosCompra.length > 0 && condominiosCompra.every(
-      (boleto) => boleto._baixa
-    )
-
-    const todosSelecionados =
-      selecionados.length === condominiosCompra.length && todosBoletosBaixados
+    const todosSelecionados = selecionados.length === condominiosCompra.length
 
     try {
       setDownloadingId(boletoPedido.id)
@@ -1269,7 +1255,7 @@ export default function ColaboradorDashboard() {
 
       showToast(
         todosSelecionados
-          ? `Arquivo de compra do pedido ${boletoPedido.id} gerado com todos os boletos pagos.`
+          ? `Arquivo de compra do pedido ${boletoPedido.id} gerado com todos os boletos selecionados.`
           : `Arquivo de compra do pedido ${boletoPedido.id} gerado com ${selecionados.length} boleto(s). O pedido continuará como faturado.`,
         { variant: 'success' }
       )
@@ -2463,12 +2449,11 @@ export default function ColaboradorDashboard() {
       )}
 
       {/* Modal Seleção de Boletos */}
-      {/* Modal Seleção de Boletos */}
       {boletoModalOpen && boletoPedido && (
         <S.Overlay
           onMouseDown={(e) => e.target === e.currentTarget && closeBoletoModal()}
         >
-          <S.Modal style={{ maxWidth: 760 }}>
+          <S.BoletoModal>
             <S.ModalHeader>
               <div>
                 <S.ModalTitle>Selecionar boletos</S.ModalTitle>
@@ -2485,60 +2470,31 @@ export default function ColaboradorDashboard() {
               </S.ModalClose>
             </S.ModalHeader>
 
-            <S.ModalBody style={{ padding: 0 }}>
-              <div style={{ overflowX: 'auto', maxHeight: 420, overflowY: 'auto' }}>
-                <S.Table style={{ minWidth: 720, borderCollapse: 'collapse' }}>
+            <S.BoletoModalBody>
+              <S.BoletoTableWrap>
+                <S.BoletoTable>
                   <thead>
                     <tr>
-                      <th style={{ width: 48, padding: '10px 8px' }}>
+                      <th>
                         <input
                           type="checkbox"
                           checked={
                             condominiosCompra.length > 0 &&
-                            selectedCondominios.size ===
-                            condominiosCompra.filter((boleto) => boleto._baixa).length
+                            selectedCondominios.size === condominiosCompra.length
                           }
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedCondominios(
-                                new Set(
-                                  condominiosCompra
-                                    .filter((boleto) => boleto._baixa)
-                                    .map((boleto) => boleto._index)
-                                )
-                              )
-                            } else {
-                              setSelectedCondominios(new Set())
-                            }
-                          }}
-                          disabled={!condominiosCompra.some((boleto) => boleto._baixa)}
+                          onChange={(e) => toggleAllCondominios(e.target.checked)}
+                          disabled={!condominiosCompra.length}
                           style={{
-                            cursor: condominiosCompra.some((boleto) => boleto._baixa)
-                              ? 'pointer'
-                              : 'not-allowed',
+                            cursor: condominiosCompra.length ? 'pointer' : 'not-allowed',
                           }}
                         />
                       </th>
 
-                      <th style={{ padding: '10px 8px', textAlign: 'left' }}>
-                        Condomínio
-                      </th>
+                      <th>Condomínio</th>
+                      <th>CNPJ</th>
+                      <th>Vencimento</th>
+                      <th>Valor</th>
 
-                      <th style={{ padding: '10px 8px', textAlign: 'left' }}>
-                        CNPJ
-                      </th>
-
-                      <th style={{ padding: '10px 8px', textAlign: 'left' }}>
-                        Vencimento
-                      </th>
-
-                      <th style={{ padding: '10px 8px', textAlign: 'right' }}>
-                        Valor
-                      </th>
-
-                      <th style={{ padding: '10px 8px', textAlign: 'center' }}>
-                        Func.
-                      </th>
                     </tr>
                   </thead>
 
@@ -2564,35 +2520,26 @@ export default function ColaboradorDashboard() {
                           <tr
                             key={`${condominio._key}-${condominio._index}`}
                             style={{
-                              cursor: condominio._baixa ? 'pointer' : 'not-allowed',
+                              cursor: 'pointer',
                               background: checked
                                 ? 'rgba(37, 99, 235, 0.06)'
                                 : undefined,
-                              opacity: condominio._baixa ? 1 : 0.65,
                             }}
-                            onClick={() => {
-                              if (!condominio._baixa) return
-                              toggleCondominio(condominio._index)
-                            }}
+                            onClick={() => toggleCondominio(condominio._index)}
                           >
-                            <td style={{ padding: '10px 8px', textAlign: 'center' }}>
+                            <td>
                               <input
                                 type="checkbox"
                                 checked={checked}
-                                disabled={!condominio._baixa}
                                 onChange={(e) => {
                                   e.stopPropagation()
-                                  if (!condominio._baixa) return
                                   toggleCondominio(condominio._index)
                                 }}
                                 onClick={(e) => e.stopPropagation()}
-                                style={{
-                                  cursor: condominio._baixa ? 'pointer' : 'not-allowed',
-                                }}
                               />
                             </td>
 
-                            <td style={{ padding: '10px 8px' }}>
+                            <td>
                               <strong>{condominio._nome}</strong>
 
                               <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
@@ -2604,55 +2551,39 @@ export default function ColaboradorDashboard() {
                                   fontSize: 12,
                                   color: condominio._baixa ? '#16a34a' : '#dc2626',
                                   marginTop: 2,
-                                  fontWeight: 600,
+                                  fontWeight: 700,
                                 }}
                               >
                                 {condominio._baixa ? 'Pago/Baixado' : 'Pendente'}
                               </div>
                             </td>
 
-                            <td style={{ padding: '10px 8px', color: '#64748b', fontSize: 13 }}>
+                            <td style={{ color: '#64748b', fontSize: 13 }}>
                               {condominio._cnpjOriginal}
                             </td>
 
-                            <td style={{ padding: '10px 8px', color: '#64748b', fontSize: 13 }}>
+                            <td style={{ color: '#64748b', fontSize: 13 }}>
                               {fmtDate(condominio._vencimento)}
                             </td>
 
-                            <td
-                              style={{
-                                padding: '10px 8px',
-                                textAlign: 'right',
-                                fontWeight: 600,
-                              }}
-                            >
+                            <td style={{ fontWeight: 700 }}>
                               {fmtMoney(condominio._valor)}
                             </td>
 
-                            <td
-                              style={{
-                                padding: '10px 8px',
-                                textAlign: 'center',
-                                color: '#64748b',
-                              }}
-                            >
-                              {condominio._funcionarios.length || '-'}
-                            </td>
                           </tr>
                         )
                       })
                     )}
                   </tbody>
-                </S.Table>
-              </div>
-            </S.ModalBody>
+                </S.BoletoTable>
+              </S.BoletoTableWrap>
+            </S.BoletoModalBody>
 
             <S.ModalFooter>
-              <div style={{ marginRight: 'auto', fontSize: 13, color: '#64748b' }}>
-                {selectedCondominios.size} de{' '}
-                {condominiosCompra.filter((boleto) => boleto._baixa).length} boleto(s)
-                pago(s) selecionado(s)
-              </div>
+              <S.BoletoFooterInfo>
+                {selectedCondominios.size} de {condominiosCompra.length} boleto(s)
+                selecionado(s)
+              </S.BoletoFooterInfo>
 
               <S.Btn
                 onClick={closeBoletoModal}
@@ -2674,9 +2605,10 @@ export default function ColaboradorDashboard() {
                   : `Gerar TXT (${selectedCondominios.size})`}
               </S.Btn>
             </S.ModalFooter>
-          </S.Modal>
+          </S.BoletoModal>
         </S.Overlay>
       )}
+
     </PageLayout>
   )
 }
