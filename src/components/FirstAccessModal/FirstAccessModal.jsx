@@ -61,7 +61,7 @@ const FirstAccessModalContent = ({ onSuccess, user }) => {
     
     try {
       // Envia old_password e new_password
-      const result = await userService.changePassword(formData.newPassword, formData.oldPassword);
+      const result = await userService.changePassword(formData.oldPassword, formData.newPassword);
       
       if (result.success) {
         setSuccess(true);
