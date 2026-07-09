@@ -63,12 +63,12 @@ const AppRouter = () => {
           path="/"
           element={
             isAuthenticated
-            ? (
+              ? (
                 user?.tipo === 'fat'
                   ? <Navigate to="/dashboard" replace />
                   : <Navigate to="/home" replace />
               )
-            : <Login />
+              : <Login />
           }
         />
 
@@ -77,10 +77,10 @@ const AppRouter = () => {
           element={
             isAuthenticated
               ? (
-                  user?.tipo === 'fat'
-                    ? <Navigate to="/dashboard" replace />
-                    : <Navigate to="/home" replace />
-                )
+                user?.tipo === 'fat'
+                  ? <Navigate to="/dashboard" replace />
+                  : <Navigate to="/home" replace />
+              )
               : <Login />
           }
         />
@@ -90,10 +90,10 @@ const AppRouter = () => {
           element={
             isAuthenticated
               ? (
-                  user?.tipo === 'fat'
-                    ? <Navigate to="/dashboard" replace />
-                    : <Navigate to="/home" replace />
-                )
+                user?.tipo === 'fat'
+                  ? <Navigate to="/dashboard" replace />
+                  : <Navigate to="/home" replace />
+              )
               : <EsqueciSenha />
           }
         />
@@ -241,7 +241,7 @@ const AppRouter = () => {
               element={
                 <AcompanhamentoFaturados />
               }
-             />
+            />
 
           </Route>
         </Route>
@@ -253,7 +253,7 @@ const AppRouter = () => {
 
       <ToastContainer
         position="top-right"
-        autoClose={3500}
+        autoClose={500}
         hideProgressBar={false}
         newestOnTop
         closeOnClick
