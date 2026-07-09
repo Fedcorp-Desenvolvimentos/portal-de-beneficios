@@ -130,7 +130,7 @@ const RegraValorModal = ({
           }}
         >
           <div>
-            <h2 style={{ margin: 0 }}>Regra de Valor</h2>
+            <h2 style={{ margin: 0 }}>Limitador de Crédito</h2>
             <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: 14 }}>
               Configure uma trava de valor para bloquear importações acima do limite.
             </p>
@@ -782,7 +782,7 @@ export default function MinhaAdministradora() {
                     onClick={abrirModalRegraValor}
                     disabled={loadingRegraValor}
                   >
-                    {regraValor ? 'Editar Regra de Valor' : 'Cadastrar Regra de Valor'}
+                    {regraValor ? 'Editar Limitador de Crédito' : 'Cadastrar Limitador de Crédito'}
                   </S.Button>
                 )}
 
@@ -840,7 +840,7 @@ export default function MinhaAdministradora() {
                 </S.DetailItem>
 
                 <S.DetailItem>
-                  <span>Regra de Valor</span>
+                  <span>Limitador de Crédito</span>
                   <strong>
                     {regraValor?.ativo && regraValor?.valor_limite
                       ? `Bloqueia acima de ${formatCurrency(regraValor.valor_limite)}`
@@ -853,7 +853,7 @@ export default function MinhaAdministradora() {
                       onClick={abrirModalRegraValor}
                       disabled={loadingRegraValor}
                     >
-                      {regraValor ? 'Editar regra' : '+ Cadastrar regra'}
+                      {regraValor ? 'Editar limitador' : '+ Cadastrar limitador'}
                     </S.RegraValorAction>
                   )}
                 </S.DetailItem>
