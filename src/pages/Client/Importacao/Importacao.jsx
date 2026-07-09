@@ -279,16 +279,38 @@ function extrairErrosImportacao(payload, options = {}) {
     getErrorMessageFromPayload(payload?.error) ||
     getErrorMessageFromPayload(payload?.erro)
 
-  if (mensagem) {
-    return [normalizarErroImportacao({
+  if (!mensagem) {
+    return []
+  }
+
+  const ehMensagemDeSucesso = isMensagemSucessoImportacao(mensagem)
+
+  if (ehMensagemDeSucesso && !incluirMensagensGerais) {
+    return []
+  }
+
+  const temIndicativoDeErro =
+    normalizeText(mensagem).includes('ERRO') ||
+    normalizeText(mensagem).includes('FALHA') ||
+    normalizeText(mensagem).includes('INVALID') ||
+    normalizeText(mensagem).includes('REJEIT') ||
+    normalizeText(mensagem).includes('NAO FOI POSSIVEL') ||
+    normalizeText(mensagem).includes('NÃO FOI POSSÍVEL') ||
+    normalizeText(mensagem).includes('OBRIGATORIO') ||
+    normalizeText(mensagem).includes('OBRIGATÓRIO')
+
+  if (!temIndicativoDeErro && !incluirMensagensGerais) {
+    return []
+  }
+
+  return [
+    normalizarErroImportacao({
       linha: '-',
       tipo_erro: 'ERRO_PROCESSAMENTO',
       mensagem,
       dados: payload,
-    })]
-  }
-
-  return []
+    }),
+  ]
 }
 
 function getMovimentacoesBackend(data) {
@@ -761,6 +783,7 @@ export default function Importacao() {
   const [validationVersion, setValidationVersion] = useState(0)
   const [filterOnlyErrors, setFilterOnlyErrors] = useState(false)
   const [filterOnlyBlocked, setFilterOnlyBlocked] = useState(false)
+  const [buscaNomePreview, setBuscaNomePreview] = useState('')
   const [errosModalOpen, setErrosModalOpen] = useState(false)
 
   const { loading, startLoading, stopLoading, updateProgress } = useLoading();
@@ -1028,6 +1051,7 @@ export default function Importacao() {
         setReviewOpen(false)
         setFilterOnlyErrors(false)
         setFilterOnlyBlocked(false) // RESETA FILTRO DE BLOQUEIO
+        setBuscaNomePreview('')
 
         const temErrosVT = extrairErrosImportacao(vtData).length > 0
 
@@ -1131,6 +1155,7 @@ export default function Importacao() {
       setValidationVersion(prev => prev + 1)
       setFilterOnlyErrors(false)
       setFilterOnlyBlocked(false)
+      setBuscaNomePreview('')
 
       setDetailsOpen(false)
       setDetailsTitle('')
@@ -1486,6 +1511,13 @@ export default function Importacao() {
 
   const linhasExibidas = useMemo(() => {
     let resultado = linhasValidadas
+    const buscaNormalizada = normalizeText(buscaNomePreview)
+
+    if (buscaNormalizada) {
+      resultado = resultado.filter((row) =>
+        normalizeText(getNomeColaborador(row)).includes(buscaNormalizada)
+      )
+    }
 
     if (filterOnlyErrors) {
       resultado = resultado.filter(row => hasBackendError(row, 0))
@@ -1496,7 +1528,14 @@ export default function Importacao() {
     }
 
     return resultado
-  }, [linhasValidadas, filterOnlyErrors, filterOnlyBlocked, isValeTransporte])
+  }, [
+    linhasValidadas,
+    buscaNomePreview,
+    filterOnlyErrors,
+    filterOnlyBlocked,
+    isValeTransporte,
+    linhasComErroBackend,
+  ])
 
   const podeEnviar = useMemo(() => {
     if (linhasValidadas.length === 0) return false
@@ -1606,6 +1645,7 @@ export default function Importacao() {
     setBenedettiConvertido(false)
     setFilterOnlyErrors(false)
     setFilterOnlyBlocked(false)
+    setBuscaNomePreview('')
 
     setReviewData({
       totalFuncionarios: 0,
@@ -2097,6 +2137,34 @@ export default function Importacao() {
               )}
             </div>
 
+            <div className="preview-search-bar">
+              <div className="preview-search-field">
+                <input
+                  type="text"
+                  value={buscaNomePreview}
+                  onChange={(e) => setBuscaNomePreview(e.target.value)}
+                  placeholder="Buscar colaborador pelo nome"
+                  disabled={enviandoLote}
+                />
+
+                {buscaNomePreview && (
+                  <button
+                    type="button"
+                    className="preview-search-clear"
+                    onClick={() => setBuscaNomePreview('')}
+                    disabled={enviandoLote}
+                    aria-label="Limpar busca"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              <small>
+                Exibindo {linhasExibidas.length} de {linhasValidadas.length} colaboradores
+              </small>
+            </div>
+
             <div className="tabela-wrapper">
               <table className="tabela-importacao">
                 <thead>
@@ -2113,9 +2181,10 @@ export default function Importacao() {
                   {linhasExibidas.length === 0 ? (
                     <tr>
                       <td colSpan={5} style={{ textAlign: 'center', padding: '24px' }}>
-                        {filterOnlyErrors ? 'Nenhuma linha com erro encontrada.' :
-                          filterOnlyBlocked ? 'Nenhuma linha bloqueada encontrada.' :
-                            'Nenhum registro encontrado para pré-visualização.'}
+                        {buscaNomePreview ? 'Nenhum colaborador encontrado com esse nome.' :
+                          filterOnlyErrors ? 'Nenhuma linha com erro encontrada.' :
+                            filterOnlyBlocked ? 'Nenhuma linha bloqueada encontrada.' :
+                              'Nenhum registro encontrado para pré-visualização.'}
                       </td>
                     </tr>
                   ) : (
