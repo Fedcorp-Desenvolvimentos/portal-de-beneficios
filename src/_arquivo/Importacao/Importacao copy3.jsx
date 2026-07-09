@@ -1,26 +1,29 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import FileUpload from '../../../components/FileUpload/FileUpload.jsx'
+import FileUpload from '../components/FileUpload/FileUpload.jsx'
 import { PencilLine, Trash2, Check, X as XIcon, Eye } from 'lucide-react'
 import './Importacao.css'
-import { uploadService } from '../../../services/uploadService.js'
+import { uploadService } from '../services/uploadService.js'
 import { toast } from 'react-toastify'
 import {
   prepararDadosParaEnvio,
-} from '../../../utils/ajuste_calculo_importacao.js'
+} from '../utils/ajuste_calculo_importacao.js'
+import { getDueDateInput } from '../utils/datePickerUtils.js'
 
-import { useAuth } from '../../../context/AuthContext.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 
-import { useLoading } from "../../../hooks/useLoading.js";
-import PageLayout from '../../../Layouts/PageLayout/PageLayout.jsx'
+import { useLoading } from "../hooks/useLoading.js";
+import PageLayout from '../Layouts/PageLayout/PageLayout.jsx'
 
 import {
   buscarRegraValorAdministradora,
   atualizarRegraValorAdministradora,
   criarRegraValorAdministradora
-} from '../../../services/administradoraService.js';
+} from '../services/administradoraService.js';
 
-import { vtService } from '../../../services/vtService.js';
-import { obterDataVencimento } from '../../../utils/bloqueia_data.js'
+import { vtService } from '../services/vtService.js';
+import { obterDataVencimento } from '../utils/bloqueia_data.js'
+import DatePickerWrapper from '../components/DatePicker/DatePickerWrapper.jsx'
+
 
 function Modal({ open, title, onClose, children, locked = false }) {
   if (!open) return null
@@ -2097,70 +2100,48 @@ export default function Importacao() {
             <div className="form-row two-cols">
               <label>
                 <span>Período de Utilização — Início</span>
-                <input
-                  type="date"
+                <DatePickerWrapper
                   value={formEnvio.periodoInicio}
-                  onChange={(e) =>
-                    setFormEnvio((prev) => ({ ...prev, periodoInicio: e.target.value }))
-                  }
-                  required
+                  onChange={(value) => setFormEnvio(prev => ({ ...prev, periodoInicio: value }))}
+                  placeholderText="Selecione a data"
                   disabled={enviandoLote}
+                  required
                 />
               </label>
 
               <label>
                 <span>Período de Utilização — Fim</span>
-                <input
-                  type="date"
-                  min={formEnvio.periodoInicio || undefined}
+                <DatePickerWrapper
                   value={formEnvio.periodoFim}
-                  onChange={(e) =>
-                    setFormEnvio((prev) => ({ ...prev, periodoFim: e.target.value }))
-                  }
-                  required
+                  onChange={(value) => setFormEnvio(prev => ({ ...prev, periodoFim: value }))}
+                  placeholderText="Selecione a data"
+                  minDate={formEnvio.periodoInicio}
                   disabled={enviandoLote}
+                  required
                 />
               </label>
             </div>
 
             <div className="form-row two-cols">
               <label>
-                <span>Competência — Mês</span>
-                <select
-                  value={formEnvio.competenciaMes}
-                  onChange={(e) =>
-                    setFormEnvio((prev) => ({ ...prev, competenciaMes: e.target.value }))
-                  }
-                  required
-                  disabled={enviandoLote}
-                >
-                  <option value="" disabled>
-                    Selecione o mês
-                  </option>
-
-                  {MESES.map((m) => (
-                    <option key={m.value} value={m.value}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
                 <span>Recebimento do benefício</span>
-                <input
-                  type="date"
+                <DatePickerWrapper
                   value={formEnvio.recebimentoBeneficio || ''}
-                  onChange={(e) => handleRecebimentoBeneficioChange(e.target.value)}
+                  onChange={handleRecebimentoBeneficioChange}
                   required={campoDataReferenciaVT !== 'vencimento'}
                   disabled={enviandoLote || recebimentoCalculadoAutomaticamente}
                 />
+              </label>
 
-                {campoDataReferenciaVT === 'vencimento' && formEnvio.recebimentoBeneficio && (
-                  <small>
-                    Recebimento calculado automaticamente {isValeTransporte ? 8 : 1} {isValeTransporte ? 'dias' : 'dia'} após o vencimento.
-                  </small>
-                )}
+              <label>
+                <span>Vencimento</span>
+                <DatePickerWrapper
+                  value={formEnvio.vencimento}
+                  onChange={handleVencimentoChange}
+                  required={campoDataReferenciaVT !== 'recebimento'}
+                  disabled={enviandoLote || vencimentoCalculadoAutomaticamente}
+                  maxDate={getDueDateInput(1)}
+                />
               </label>
             </div>
 
@@ -2219,6 +2200,7 @@ export default function Importacao() {
               </button>
             </div>
           </form>
+
         </Modal>
 
         {/* Modal Confirmar Exclusão */}
