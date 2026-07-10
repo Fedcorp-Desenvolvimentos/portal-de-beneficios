@@ -249,6 +249,7 @@ function normalizarErroImportacao(erro, index = 0) {
     erro?.details ||
     erro?.record ||
     erro?.registro ||
+    erro ||
     {}
 
   const detalhes = {
@@ -280,7 +281,9 @@ function normalizarErroImportacao(erro, index = 0) {
     detalhes?.tipo_erro ||
     detalhes?.tipo ||
     detalhes?.campo ||
-    'ERRO_PROCESSAMENTO'
+    (erro?.cnpj || detalhes?.cnpj
+      ? 'ERRO_CONDOMINIO'
+      : 'ERRO_PROCESSAMENTO')
 
   const mensagensEspecificas = [
     ...normalizarListaMensagens(erro?.erros),
@@ -316,7 +319,15 @@ function normalizarErroImportacao(erro, index = 0) {
     )
   )
 
-  const colaborador = getNomeColaboradorErro(erro, detalhes)
+  const ehErroCondominio =
+    Boolean(erro?.cnpj || detalhes?.cnpj) &&
+    !erro?.cpf &&
+    !detalhes?.cpf
+
+  const colaborador = ehErroCondominio
+    ? ''
+    : getNomeColaboradorErro(erro, detalhes)
+
   const cpf = getCpf(erro) || getCpf(detalhes)
   const condominio = getCondominio(erro) || getCondominio(detalhes)
 
@@ -349,32 +360,267 @@ function isMensagemSucessoImportacao(mensagem) {
   )
 }
 
+function transformarErrosEmLista(value) {
+  if (!value) return []
+
+  if (Array.isArray(value)) {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    return []
+  }
+
+  if (typeof value !== 'object') {
+    return []
+  }
+
+  const pareceErroUnico =
+    value.linha !== undefined ||
+    value.line !== undefined ||
+    value.row !== undefined ||
+    value.row_number !== undefined ||
+    value.numero_linha !== undefined ||
+    value.index_linha !== undefined ||
+    value.excel_row !== undefined ||
+    value.mensagem !== undefined ||
+    value.message !== undefined ||
+    value.erro !== undefined ||
+    value.error !== undefined ||
+    value.nome_funcionario !== undefined ||
+    value.nome_colaborador !== undefined ||
+    value.cpf !== undefined
+
+  if (pareceErroUnico) {
+    return [value]
+  }
+
+  return Object.entries(value).flatMap(([chave, item]) => {
+    const linhaPelaChave = /^\d+$/.test(chave) ? chave : undefined
+
+    if (Array.isArray(item)) {
+      return item.flatMap((erro) => {
+        if (erro === null || erro === undefined) {
+          return []
+        }
+
+        if (typeof erro === 'object') {
+          const linha =
+            erro.linha ??
+            erro.line ??
+            erro.row ??
+            erro.row_number ??
+            erro.numero_linha ??
+            erro.index_linha ??
+            erro.excel_row ??
+            linhaPelaChave ??
+            '-'
+
+          return [
+            {
+              ...erro,
+              linha,
+            },
+          ]
+        }
+
+        return [
+          {
+            linha: linhaPelaChave ?? '-',
+            campo: linhaPelaChave ? undefined : chave,
+            mensagem: String(erro),
+          },
+        ]
+      })
+    }
+
+    if (typeof item === 'object' && item !== null) {
+      const linha =
+        item.linha ??
+        item.line ??
+        item.row ??
+        item.row_number ??
+        item.numero_linha ??
+        item.index_linha ??
+        item.excel_row ??
+        linhaPelaChave ??
+        '-'
+
+      return [
+        {
+          ...item,
+          linha,
+        },
+      ]
+    }
+
+    if (typeof item === 'string' && item.trim()) {
+      return [
+        {
+          linha: linhaPelaChave ?? '-',
+          campo: linhaPelaChave ? undefined : chave,
+          mensagem: item.trim(),
+        },
+      ]
+    }
+
+    return []
+  })
+}
+
 function extrairErrosImportacao(payload, options = {}) {
   const { incluirMensagensGerais = false } = options
 
   if (!payload) return []
 
-  const possiveisListas = [
+  /*
+   * Primeiro buscamos erros estruturados.
+   * Eles têm prioridade sobre mensagens gerais como:
+   * "Planilha contém informações obrigatórias ausentes ou incorretas."
+   */
+  const listasEstruturadas = [
     payload?.linhas_com_erro,
     payload?.linhasComErro,
+    payload?.validation_errors,
+    payload?.validationErrors,
+    payload?.erros_condominios,
+    payload?.erros_funcionarios,
+    payload?.erros_colaboradores,
+
+    payload?.data?.linhas_com_erro,
+    payload?.data?.linhasComErro,
+    payload?.data?.validation_errors,
+    payload?.data?.erros_condominios,
+    payload?.data?.erros_funcionarios,
+    payload?.data?.erros_colaboradores,
+
+    payload?.dados?.linhas_com_erro,
+    payload?.dados?.linhasComErro,
+    payload?.dados?.validation_errors,
+    payload?.dados?.erros_condominios,
+    payload?.dados?.erros_funcionarios,
+    payload?.dados?.erros_colaboradores,
+
+    payload?.result?.linhas_com_erro,
+    payload?.result?.linhasComErro,
+    payload?.result?.validation_errors,
+    payload?.result?.erros_condominios,
+    payload?.result?.erros_funcionarios,
+    payload?.result?.erros_colaboradores,
+
+    payload?.resultado?.linhas_com_erro,
+    payload?.resultado?.linhasComErro,
+    payload?.resultado?.validation_errors,
+    payload?.resultado?.erros_condominios,
+    payload?.resultado?.erros_funcionarios,
+    payload?.resultado?.erros_colaboradores,
+
+    payload?.response?.linhas_com_erro,
+    payload?.response?.linhasComErro,
+    payload?.response?.validation_errors,
+    payload?.response?.erros_condominios,
+    payload?.response?.erros_funcionarios,
+    payload?.response?.erros_colaboradores,
+
     payload?.data_to_backend?.linhas_com_erro,
     payload?.data_to_backend?.linhasComErro,
+    payload?.data_to_backend?.validation_errors,
+    payload?.data_to_backend?.erros_condominios,
+    payload?.data_to_backend?.erros_funcionarios,
+    payload?.data_to_backend?.erros_colaboradores,
+
+    payload?.detail?.linhas_com_erro,
+    payload?.detail?.linhasComErro,
+    payload?.detail?.validation_errors,
+    payload?.detail?.erros_condominios,
+    payload?.detail?.erros_funcionarios,
+    payload?.detail?.erros_colaboradores,
+
+    payload?.message?.linhas_com_erro,
+    payload?.message?.linhasComErro,
+    payload?.message?.validation_errors,
+    payload?.message?.erros_condominios,
+    payload?.message?.erros_funcionarios,
+    payload?.message?.erros_colaboradores,
+  ]
+
+  const errosEstruturados = listasEstruturadas.flatMap(
+    transformarErrosEmLista
+  )
+
+  if (errosEstruturados.length > 0) {
+    return errosEstruturados.map((erro, index) =>
+      normalizarErroImportacao(erro, index)
+    )
+  }
+
+  /*
+   * Só usa errors/erros gerais quando não houver
+   * nenhum erro estruturado.
+   */
+  const listasGerais = [
     payload?.errors,
     payload?.erros,
+
+    payload?.data?.errors,
+    payload?.data?.erros,
+
+    payload?.dados?.errors,
+    payload?.dados?.erros,
+
+    payload?.result?.errors,
+    payload?.result?.erros,
+
+    payload?.resultado?.errors,
+    payload?.resultado?.erros,
+
+    payload?.response?.errors,
+    payload?.response?.erros,
+
     payload?.data_to_backend?.errors,
     payload?.data_to_backend?.erros,
+
     payload?.detail?.errors,
     payload?.detail?.erros,
+
     payload?.message?.errors,
     payload?.message?.erros,
   ]
 
-  const erros = possiveisListas.flatMap((lista) =>
-    Array.isArray(lista) ? lista : []
-  )
+  const errosGerais = listasGerais.flatMap((lista) => {
+    if (!lista) return []
 
-  if (erros.length > 0) {
-    return erros.map(normalizarErroImportacao)
+    if (Array.isArray(lista)) {
+      return lista.map((erro) => {
+        if (typeof erro === 'string') {
+          return {
+            linha: '-',
+            tipo_erro: 'ERRO_PROCESSAMENTO',
+            mensagem: erro,
+          }
+        }
+
+        return erro
+      })
+    }
+
+    return transformarErrosEmLista(lista)
+  })
+
+  if (errosGerais.length > 0) {
+    return errosGerais.map((erro, index) =>
+      normalizarErroImportacao(erro, index)
+    )
+  }
+
+  if (payload?.detail && typeof payload.detail === 'object') {
+    const errosDetail = transformarErrosEmLista(payload.detail)
+
+    if (errosDetail.length > 0) {
+      return errosDetail.map((erro, index) =>
+        normalizarErroImportacao(erro, index)
+      )
+    }
   }
 
   const mensagem =
@@ -385,18 +631,24 @@ function extrairErrosImportacao(payload, options = {}) {
 
   if (!mensagem) return []
 
-  if (isMensagemSucessoImportacao(mensagem) && !incluirMensagensGerais) {
+  if (
+    isMensagemSucessoImportacao(mensagem) &&
+    !incluirMensagensGerais
+  ) {
     return []
   }
 
   const textoMensagem = normalizeText(mensagem)
+
   const temIndicativoDeErro =
     textoMensagem.includes('ERRO') ||
     textoMensagem.includes('FALHA') ||
     textoMensagem.includes('INVALID') ||
     textoMensagem.includes('REJEIT') ||
     textoMensagem.includes('NAO FOI POSSIVEL') ||
-    textoMensagem.includes('OBRIGATORIO')
+    textoMensagem.includes('OBRIGATORIO') ||
+    textoMensagem.includes('AUSENTE') ||
+    textoMensagem.includes('INCORRETA')
 
   if (!temIndicativoDeErro && !incluirMensagensGerais) {
     return []
@@ -1528,20 +1780,41 @@ export default function Importacao() {
       })
   }, [data, rowsAtivas, regraValor, isValeTransporte])
 
-  const hasBackendError = (row, index) => {
-    const cpf = getCpf(row)
-    const valorAtual = getValorRow(row)
-    const limiteAtivo = regraValor?.ativo === true && Number(regraValor?.valor_limite) > 0
+  const localizarErroBackendDaLinha = (row) => {
+    const cpfLinha = onlyDigits(getCpf(row))
+    const nomeLinha = normalizeText(getNomeColaborador(row))
 
-    const erroEncontrado = linhasComErroBackend.find(erro =>
-      erro.detalhes?.cpf === cpf ||
-      erro.detalhes?.nome === getNomeColaborador(row)
-    )
+    return linhasComErroBackend.find((erro) => {
+      const cpfErro = onlyDigits(getCpf(erro.detalhes))
+      const nomeErro = normalizeText(
+        erro.colaborador ||
+        getNomeColaboradorErro(erro, erro.detalhes || {})
+      )
+
+      return (
+        (cpfLinha && cpfErro && cpfLinha === cpfErro) ||
+        (nomeLinha && nomeErro && nomeLinha === nomeErro)
+      )
+    })
+  }
+
+  const hasBackendError = (row) => {
+    const valorAtual = getValorRow(row)
+    const limiteAtivo =
+      regraValor?.ativo === true &&
+      Number(regraValor?.valor_limite) > 0
+
+    const erroEncontrado = localizarErroBackendDaLinha(row)
 
     if (!erroEncontrado) return false
 
-    if (!isValeTransporte && erroEncontrado.tipo === 'VALOR_EXCEDIDO' && limiteAtivo) {
+    if (
+      !isValeTransporte &&
+      erroEncontrado.tipo === 'VALOR_EXCEDIDO' &&
+      limiteAtivo
+    ) {
       const valorLimite = Number(regraValor.valor_limite)
+
       if (valorAtual <= valorLimite) {
         return false
       }
@@ -1550,20 +1823,23 @@ export default function Importacao() {
     return true
   }
 
-  const getBackendErrorMessage = (row, index) => {
-    const cpf = getCpf(row)
+  const getBackendErrorMessage = (row) => {
     const valorAtual = getValorRow(row)
-    const limiteAtivo = regraValor?.ativo === true && Number(regraValor?.valor_limite) > 0
+    const limiteAtivo =
+      regraValor?.ativo === true &&
+      Number(regraValor?.valor_limite) > 0
 
-    const erro = linhasComErroBackend.find(e =>
-      e.detalhes?.cpf === cpf ||
-      e.detalhes?.nome === getNomeColaborador(row)
-    )
+    const erro = localizarErroBackendDaLinha(row)
 
     if (!erro) return ''
 
-    if (!isValeTransporte && erro.tipo === 'VALOR_EXCEDIDO' && limiteAtivo) {
+    if (
+      !isValeTransporte &&
+      erro.tipo === 'VALOR_EXCEDIDO' &&
+      limiteAtivo
+    ) {
       const valorLimite = Number(regraValor.valor_limite)
+
       if (valorAtual <= valorLimite) {
         return ''
       }
@@ -1632,7 +1908,7 @@ export default function Importacao() {
     }
 
     if (filterOnlyErrors) {
-      resultado = resultado.filter(row => hasBackendError(row, 0))
+      resultado = resultado.filter(row => hasBackendError(row))
     }
 
     if (filterOnlyBlocked && !isValeTransporte) {
@@ -2303,8 +2579,8 @@ export default function Importacao() {
                     linhasExibidas.map((r, idx) => {
                       const valorExibicao = getValorRow(r)
                       const nomeColaborador = getNomeColaborador(r)
-                      const temErroBackend = hasBackendError(r, idx)
-                      const erroBackendMsg = getBackendErrorMessage(r, idx)
+                      const temErroBackend = hasBackendError(r)
+                      const erroBackendMsg = getBackendErrorMessage(r)
 
                       return (
                         <tr
@@ -2880,11 +3156,24 @@ export default function Importacao() {
                   INFORMACAO_AUSENTE: 'Informações obrigatórias ausentes',
                   VALOR_EXCEDIDO: 'Valor excede o limite',
                   ERRO_PROCESSAMENTO: 'Erro de processamento',
+                  ERRO_CONDOMINIO: 'Erro no condomínio',
                 }[erro.tipo] || erro.tipo
 
-                const nomeColaborador =
-                  erro.colaborador ||
-                  getNomeColaboradorErro(erro, erro.detalhes || {})
+                const ehErroCondominio =
+                  erro.tipo === 'ERRO_CONDOMINIO' ||
+                  Boolean(erro.detalhes?.cnpj)
+
+                const nomeRegistro = ehErroCondominio
+                  ? (
+                    erro.detalhes?.nome ||
+                    erro.detalhes?.nome_condominio ||
+                    erro.detalhes?.condominio ||
+                    ''
+                  )
+                  : (
+                    erro.colaborador ||
+                    getNomeColaboradorErro(erro, erro.detalhes || {})
+                  )
 
                 const mensagens =
                   Array.isArray(erro.erros) && erro.erros.length > 0
@@ -2894,13 +3183,22 @@ export default function Importacao() {
                 return (
                   <div key={`erro-${erro.linha}-${idx}`} className="erro-item">
                     <div className="erro-header">
-                      <span className="erro-linha">Linha {erro.linha}</span>
+                      <span className="erro-linha">
+                        {erro.linha && erro.linha !== '-'
+                          ? `Linha ${erro.linha}`
+                          : erro.detalhes?.cnpj
+                            ? `CNPJ ${erro.detalhes.cnpj}`
+                            : 'Registro'}
+                      </span>
                       <span className="erro-mensagem">{tipoLabel}</span>
                     </div>
 
-                    {nomeColaborador && (
+                    {nomeRegistro && (
                       <p style={{ margin: '8px 0 4px', fontSize: 14, color: '#111827' }}>
-                        <strong>Colaborador:</strong> {nomeColaborador}
+                        <strong>
+                          {ehErroCondominio ? 'Condomínio:' : 'Colaborador:'}
+                        </strong>{' '}
+                        {nomeRegistro}
                       </p>
                     )}
 
@@ -2937,6 +3235,8 @@ export default function Importacao() {
                         </span>
                       )}
                     </div>
+
+
                   </div>
                 )
               })
