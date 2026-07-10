@@ -94,6 +94,7 @@ const RegraValorModal = ({
   d_mais,
   setD_mais,
   saving,
+  podeVerDmais,
 }) => {
   if (!open) return null;
 
@@ -232,42 +233,44 @@ const RegraValorModal = ({
             </small>
           </label>
 
-          <label style={{ display: 'grid', gap: 8 }}>
-            <span style={{ fontWeight: 600, color: '#334155' }}>
-              D+ (Dias para Recebimento do Benefício)
-            </span>
+          {podeVerDmais && (
+            <label style={{ display: 'grid', gap: 8 }}>
+              <span style={{ fontWeight: 600, color: '#334155' }}>
+                D+ (Dias para Recebimento do Benefício)
+              </span>
 
-            <select
-              value={d_mais}
-              onChange={(e) => setD_mais(e.target.value)}
-              disabled={saving}
-              style={{
-                width: '100%',
-                border: '1px solid #cbd5e1',
-                borderRadius: 10,
-                padding: '12px 14px',
-                fontSize: 15,
-                background: '#fff',
-              }}
-            >
-              <option value="">Selecionar</option>
-              <option value="0">0 dias (mesma data do vencimento)</option>
-              <option value="1">1 dia</option>
-              <option value="2">2 dias</option>
-              <option value="3">3 dias</option>
-              <option value="4">4 dias</option>
-              <option value="5">5 dias</option>
-              <option value="7">7 dias</option>
-              <option value="10">10 dias</option>
-              <option value="15">15 dias</option>
-              <option value="20">20 dias</option>
-              <option value="30">30 dias</option>
-            </select>
+              <select
+                value={d_mais}
+                onChange={(e) => setD_mais(e.target.value)}
+                disabled={saving}
+                style={{
+                  width: '100%',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: 10,
+                  padding: '12px 14px',
+                  fontSize: 15,
+                  background: '#fff',
+                }}
+              >
+                <option value="">Selecionar</option>
+                <option value="0">0 dias (mesma data do vencimento)</option>
+                <option value="1">1 dia</option>
+                <option value="2">2 dias</option>
+                <option value="3">3 dias</option>
+                <option value="4">4 dias</option>
+                <option value="5">5 dias</option>
+                <option value="7">7 dias</option>
+                <option value="10">10 dias</option>
+                <option value="15">15 dias</option>
+                <option value="20">20 dias</option>
+                <option value="30">30 dias</option>
+              </select>
 
-            <small style={{ color: '#64748b' }}>
-              Define em quantos dias após o vencimento o benefício será recebido.
-            </small>
-          </label>
+              <small style={{ color: '#64748b' }}>
+                Define em quantos dias após o vencimento o benefício será recebido.
+              </small>
+            </label>
+          )}
         </div>
 
         <div
@@ -928,6 +931,7 @@ export default function MinhaAdministradora() {
           saving={salvandoRegraValor}
           d_mais={d_mais}
           setD_mais={setD_mais}
+          podeVerDmais={user?.tipo === 'fat' || user?.tipo === 'dev'}
         />
 
         {showDeleteModal && usuarioToDelete && (

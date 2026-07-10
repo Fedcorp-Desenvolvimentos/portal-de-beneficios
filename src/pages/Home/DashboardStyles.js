@@ -44,7 +44,7 @@ export const S = {
   // ============================================
   // SKELETON COMPONENTS
   // ============================================
-  
+
   SkeletonLine: styled.div`
     height: ${props => props.$height || '20px'};
     width: ${props => props.$width || '100%'};
@@ -545,7 +545,7 @@ export const S = {
     }
   `,
 
-   ModalOverlay: styled.div`
+  ModalOverlay: styled.div`
     position: fixed;
     inset: 0;
     background: rgba(15, 23, 42, 0.45);

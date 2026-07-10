@@ -305,15 +305,17 @@ export default function Faturamento() {
     }
   }
 
-  async function baixarDocumento(faturamentoId, tipo = '') {
+  async function baixarDocumento(faturamentoId, tipo = '', nomeAdm = '') {
     try {
       const blob = await entebenService.downloadDocumentoFaturamento(faturamentoId, tipo);
       const fileURL = window.URL.createObjectURL(blob);
 
-      const nomeArquivo =
-        tipo !== 'originais/'
-          ? `${tipo.replaceAll('/', '').replaceAll('-', '_')}-${faturamentoId}.pdf`
-          : `faturamento-${faturamentoId}.zip`;
+      const hoje = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')
+      const labels = { 'boleto-original/': 'boleto', 'nota-fiscal-original/': 'nota_fiscal', 'nota-debito-original/': 'nota_debito', 'originais/': 'faturamento' }
+      const label = labels[tipo] || 'documento'
+      const iniciais = nomeAdm ? nomeAdm.split(' ').filter(p => p).map(p => p[0].toUpperCase()).join('') : 'SN'
+      const ext = tipo === 'originais/' ? '.zip' : '.pdf'
+      const nomeArquivo = `${label} - ${hoje} - ${iniciais}${ext}`
 
       const a = document.createElement('a');
       a.href = fileURL;
@@ -608,7 +610,7 @@ export default function Faturamento() {
                                 ? 'Documento disponível apenas quando o faturamento estiver concluído'
                                 : ''
                             }
-                            onClick={() => baixarDocumento(group.downloadId, 'boleto-original/')}
+                            onClick={() => baixarDocumento(group.downloadId, 'boleto-original/', group.nome_administradora)}
                           >
                             <FiDownload size={14} />
                             Boleto
@@ -621,7 +623,7 @@ export default function Faturamento() {
                                 ? 'Documento disponível apenas quando o faturamento estiver concluído'
                                 : ''
                             }
-                            onClick={() => baixarDocumento(group.downloadId, 'nota-fiscal-original/')}
+                            onClick={() => baixarDocumento(group.downloadId, 'nota-fiscal-original/', group.nome_administradora)}
                           >
                             <FiDownload size={14} />
                             NF
@@ -634,7 +636,7 @@ export default function Faturamento() {
                                 ? 'Documento disponível apenas quando o faturamento estiver concluído'
                                 : ''
                             }
-                            onClick={() => baixarDocumento(group.downloadId, 'nota-debito-original/')}
+                            onClick={() => baixarDocumento(group.downloadId, 'nota-debito-original/', group.nome_administradora)}
                           >
                             <FiDownload size={14} />
                             Nota Débito
@@ -648,7 +650,7 @@ export default function Faturamento() {
                                 ? 'Documento disponível apenas quando o faturamento estiver concluído'
                                 : ''
                             }
-                            onClick={() => baixarDocumento(group.downloadId, 'originais/')}
+                            onClick={() => baixarDocumento(group.downloadId, 'originais/', group.nome_administradora)}
                           >
                             <FiDownload size={14} />
                             Baixar todos
