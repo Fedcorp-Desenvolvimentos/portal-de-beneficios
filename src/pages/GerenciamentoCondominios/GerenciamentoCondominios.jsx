@@ -181,9 +181,9 @@ function ModalFuncionarios({
   if (!open) return null
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="cfg-modal-backdrop" onClick={onClose}>
       <div
-        className="modal cfg-funcionarios-modal"
+        className="cfg-modal cfg-funcionarios-modal"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-head">
@@ -366,9 +366,9 @@ function ModalVincularFuncionarios({
   if (!open) return null
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="cfg-modal-backdrop" onClick={onClose}>
       <div
-        className="modal cfg-funcionarios-modal"
+        className="cfg-modal cfg-funcionarios-modal"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-head">
@@ -473,9 +473,9 @@ function ModalColaborador({ open, condominio, form, onChange, onSave, onCancel }
   if (!open) return null
 
   return (
-    <div className="modal-backdrop" onClick={onCancel}>
+    <div className="cfg-modal-backdrop" onClick={onCancel}>
       <div
-        className="modal cfg-colaborador-modal"
+        className="cfg-modal cfg-colaborador-modal"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-head">
@@ -588,8 +588,8 @@ function ModalConfirm({ open, nome, onConfirm, onCancel }) {
   if (!open) return null
 
   return (
-    <div className="modal-backdrop" onClick={onCancel}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+    <div className="cfg-modal-backdrop" onClick={onCancel}>
+      <div className="cfg-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title">
             <Trash2 className="ico danger" />
@@ -739,20 +739,20 @@ export default function ConfiguracaoCondominios() {
       const condominiosFiltrados = isUsuarioGlobal
         ? results
         : results.filter((condominio) => {
-            if (!administradoraId) return false
+          if (!administradoraId) return false
 
-            const admCondominio = getAdministradoraIdFromCondominio(condominio)
+          const admCondominio = getAdministradoraIdFromCondominio(condominio)
 
-            const idsUsuario = Array.isArray(administradoraId)
-              ? administradoraId.map(String)
-              : [String(administradoraId)]
+          const idsUsuario = Array.isArray(administradoraId)
+            ? administradoraId.map(String)
+            : [String(administradoraId)]
 
-            if (Array.isArray(admCondominio)) {
-              return admCondominio.some((id) => idsUsuario.includes(String(id)))
-            }
+          if (Array.isArray(admCondominio)) {
+            return admCondominio.some((id) => idsUsuario.includes(String(id)))
+          }
 
-            return idsUsuario.includes(String(admCondominio))
-          })
+          return idsUsuario.includes(String(admCondominio))
+        })
 
       setCondominios(condominiosFiltrados)
       setTotalCondominios(condominiosFiltrados.length)
@@ -1433,12 +1433,20 @@ export default function ConfiguracaoCondominios() {
           onUnlink={(func) =>
             desvincularFuncionario(funcionariosModal.condominio, func)
           }
-          onOpenVincular={() =>
+          onOpenVincular={() => {
+            const condominioSelecionado = funcionariosModal.condominio
+
+            setFuncionariosModal({
+              open: false,
+              condominio: null,
+              funcionarios: [],
+            })
+
             setVincularModal({
               open: true,
-              condominio: funcionariosModal.condominio,
+              condominio: condominioSelecionado,
             })
-          }
+          }}
         />
 
         <ModalVincularFuncionarios
@@ -1472,11 +1480,10 @@ export default function ConfiguracaoCondominios() {
 
         <div className={`cfg-toast-wrap ${toast.open ? 'show' : ''}`}>
           <div
-            className={`cfg-toast ${
-              toast.type === 'danger'
+            className={`cfg-toast ${toast.type === 'danger'
                 ? 'cfg-toast-danger'
                 : 'cfg-toast-success'
-            }`}
+              }`}
           >
             {toast.type === 'danger' ? (
               <Trash2 className="cfg-toast-ico" />
