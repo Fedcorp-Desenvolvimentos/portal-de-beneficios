@@ -1489,10 +1489,13 @@ export default function ColaboradorDashboard() {
       const blob = await entebenService.downloadDocumentoFaturamento(faturamentoId, tipo)
       const fileURL = window.URL.createObjectURL(blob)
 
-      const nomeArquivo =
-        tipo !== 'originais/'
-          ? `${tipo.replaceAll('/', '').replaceAll('-', '_')}-${faturamentoId}.pdf`
-          : `faturamento-${faturamentoId}.zip`
+      const hoje = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')
+      const labels = { 'boleto-original/': 'boleto', 'nota-fiscal-original/': 'nota_fiscal', 'nota-debito-original/': 'nota_debito', 'originais/': 'faturamento' }
+      const label = labels[tipo] || 'documento'
+      const nomeAdm = pedido?.nomeAdministradora
+      const iniciais = nomeAdm ? nomeAdm.split(' ').filter(p => p).map(p => p[0].toUpperCase()).join('') : 'SN'
+      const ext = tipo === 'originais/' ? '.zip' : '.pdf'
+      const nomeArquivo = `${label} - ${hoje} - ${iniciais}${ext}`
 
       const a = document.createElement('a')
       a.href = fileURL

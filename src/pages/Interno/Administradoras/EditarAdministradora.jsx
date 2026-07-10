@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { buscarAdministradoraPorId, editarAdministradora } from '../../../services/administradoraService.js'
 import { PRODUTOS_TAXA, PERCENTUAIS_TAXA, getLabelPercentual } from '../../../constants/produtos'
+import { useAuth } from '../../../context/AuthContext.jsx'
 import './Administradoras.css'
 
 export default function EditarAdministradora() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const podeVerDmais = user?.tipo === 'adm' || user?.tipo === 'fat' || user?.tipo === 'dev'
   const [form, setForm] = useState(null)
   const [loading, setLoading] = useState(true)
   const [submitError, setSubmitError] = useState('')
@@ -180,29 +183,30 @@ export default function EditarAdministradora() {
             Administradora Ativa
           </label>
 
-          <label>
-            D+ (Dias para Recebimento do Benefício)
-            <select
-              name="d_mais"
-              value={form.d_mais}
-              onChange={handleChange}
-            >
-              <option value="">Selecionar</option>
-              <option value="0">0 dias (mesma data do vencimento)</option>
-              <option value="1">1 dia</option>
-              <option value="2">2 dias</option>
-              <option value="3">3 dias</option>
-              <option value="4">4 dias</option>
-              <option value="5">5 dias</option>
-              <option value="7">7 dias</option>
-              <option value="10">10 dias</option>
-              <option value="15">15 dias</option>
-              <option value="20">20 dias</option>
-              <option value="30">30 dias</option>
-              <option value="30">30 dias</option>
-            </select>
-            <small className="helper-text">Define quantos dias após o vencimento o benefício é recebido</small>
-          </label>
+          {podeVerDmais && (
+            <label>
+              D+ (Dias para Recebimento do Benefício)
+              <select
+                name="d_mais"
+                value={form.d_mais}
+                onChange={handleChange}
+              >
+                <option value="">Selecionar</option>
+                <option value="0">0 dias (mesma data do vencimento)</option>
+                <option value="1">1 dia</option>
+                <option value="2">2 dias</option>
+                <option value="3">3 dias</option>
+                <option value="4">4 dias</option>
+                <option value="5">5 dias</option>
+                <option value="7">7 dias</option>
+                <option value="10">10 dias</option>
+                <option value="15">15 dias</option>
+                <option value="20">20 dias</option>
+                <option value="30">30 dias</option>
+              </select>
+              <small className="helper-text">Define quantos dias após o vencimento o benefício é recebido</small>
+            </label>
+          )}
         </div>
 
         <div className="form-group card-receipt-group">
