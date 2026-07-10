@@ -55,27 +55,27 @@ export const S = {
     margin-bottom: 18px;
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border-light);
-    border-radius: 18px;
-    padding: 16px;
+    border-radius: 14px;
+    padding: 12px 14px;
     box-shadow: var(--shadow-lg);
   `,
 
   Search: styled.div`
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     border: 1px solid var(--color-border);
     background: var(--color-bg-tertiary);
-    border-radius: 14px;
-    padding: 0 14px;
+    border-radius: 10px;
+    padding: 0 10px;
 
     input {
       width: 100%;
       border: 0;
       outline: 0;
       background: transparent;
-      padding: 14px 4px;
-      font-size: 14px;
+      padding: 9px 4px;
+      font-size: 13px;
       color: var(--color-text-primary);
 
       &::placeholder {
@@ -91,17 +91,17 @@ export const S = {
 
   Filters: styled.div`
   display: grid;
-  grid-template-columns: repeat(4, minmax(160px, 1fr)) 180px;
-  gap: 1rem;
-  margin-top: 1rem;
+  grid-template-columns: repeat(4, minmax(140px, 1fr)) auto;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
   align-items: end;
 
   select {
-    height: 44px;
+    height: 34px;
     border: 1px solid var(--color-border);
-    border-radius: 12px;
-    padding: 0 0.9rem;
-    font-size: 0.95rem;
+    border-radius: 9px;
+    padding: 0 0.6rem;
+    font-size: 0.85rem;
     background: var(--color-bg-primary);
     color: var(--color-text-primary);
     transition: all 0.2s ease;
@@ -115,8 +115,8 @@ export const S = {
   }
 
   @media (max-width: ${notebookSmall}) {
-    grid-template-columns: repeat(2, minmax(180px, 1fr));
-    gap: 0.85rem;
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+    gap: 0.6rem;
   }
 
   @media (max-width: 640px) {
@@ -127,10 +127,10 @@ export const S = {
   FilterLabel: styled.label`
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
 
     span {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       color: var(--color-text-secondary);
       text-transform: uppercase;
@@ -138,10 +138,10 @@ export const S = {
     }
   `,
   ClearButton: styled.button`
-  height: 44px;
-  padding: 0 1.5rem;
-  border-radius: 12px;
-  font-size: 0.875rem;
+  height: 34px;
+  padding: 0 1rem;
+  border-radius: 9px;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -163,8 +163,8 @@ export const S = {
 
   @media (max-width: ${notebookSmall}) {
     width: 100%;
-    height: 42px;
-    padding: 0 1rem;
+    height: 34px;
+    padding: 0 0.8rem;
   }
 `,
   List: styled.section`
@@ -547,6 +547,157 @@ TotalCard: styled.div`
     strong {
       font-size: 1.25rem;
     }
-  }
-`,
+    }
+  `,
+
+  // ============================================
+  // FIGMA-INSPIRED COMPONENTS
+  // ============================================
+
+  StatsGrid: styled.div`
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+
+    @media (max-width: 1100px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+    }
+  `,
+
+  StatCard: styled.div`
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border-light);
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: var(--shadow-lg);
+  `,
+
+  StatRow: styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  `,
+
+  StatValue: styled.div`
+    font-size: 26px;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    font-weight: 500;
+    margin-bottom: 4px;
+  `,
+
+  StatLabel: styled.span`
+    font-size: 13px;
+    color: var(--color-text-tertiary);
+  `,
+
+  IconBox: styled.span`
+    width: ${props => props.$size || 34}px;
+    height: ${props => props.$size || 34}px;
+    border-radius: ${props => props.$radius || 9}px;
+    background: ${props => props.$bg || 'rgba(29, 78, 216, 0.08)'};
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    svg {
+      width: ${props => props.$iconSize || 16}px;
+      height: ${props => props.$iconSize || 16}px;
+      stroke: ${props => props.$color || 'var(--color-primary)'};
+    }
+  `,
+
+  CardHead: styled.button`
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 20px 22px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    color: var(--color-text-primary);
+    border-bottom: 1px solid var(--color-border-light);
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: var(--color-bg-tertiary);
+    }
+  `,
+
+  CardTitle: styled.div`
+    flex: 1;
+    min-width: 0;
+
+    strong {
+      display: block;
+      font-size: 16px;
+      margin-bottom: 2px;
+    }
+
+    small {
+      font-size: 13px;
+      color: var(--color-text-tertiary);
+    }
+  `,
+
+  CardStatus: styled.span`
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+
+    ${props => props.$variant === 'success' && css`
+      background: var(--color-success-bg);
+      color: var(--color-success);
+    `}
+    ${props => props.$variant === 'warning' && css`
+      background: var(--color-warning-bg);
+      color: var(--color-warning);
+    `}
+    ${props => props.$variant === 'danger' && css`
+      background: var(--color-danger-bg);
+      color: var(--color-danger);
+    `}
+    ${props => props.$variant === 'info' && css`
+      background: var(--color-info-bg);
+      color: var(--color-primary);
+    `}
+  `,
+
+  CardCompetencia: styled.span`
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    flex-shrink: 0;
+  `,
+
+  CardTotal: styled.strong`
+    font-size: 15px;
+    flex-shrink: 0;
+  `,
+
+  ToggleIcon: styled.span`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--color-text-tertiary);
+    transition: transform 0.2s ease;
+
+    ${props => props.$open && css`
+      transform: rotate(180deg);
+    `}
+  `,
 };

@@ -8,6 +8,7 @@ import {
   FiCalendar,
   FiCreditCard,
   FiArchive,
+  FiChevronDown,
 } from 'react-icons/fi';
 
 import { entebenService } from '../../../services/entebenService';
@@ -17,10 +18,10 @@ import { S } from './FaturamentoStyles';
 // ============================================
 // UTILITÁRIOS
 // ============================================
-const formatMoney = (value) =>
-  Number(value || 0).toLocaleString('pt-BR', {
-    minimumFractionDigits: 2,
-  });
+  const formatMoney = (value) =>
+    Number(value || 0).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+    });
 
 const normalizeStatus = (status) =>
   String(status || '')
@@ -244,6 +245,7 @@ export default function Faturamento() {
   const [error, setError] = useState('');
   const [importacoes, setImportacoes] = useState([]);
   const [paginaAtual, setPaginaAtual] = useState(1);
+  const [expandedId, setExpandedId] = useState(null);
   const itensPorPagina = 5;
 
   const showToast = (message, options = {}) => {
@@ -543,120 +545,108 @@ export default function Faturamento() {
 
                   return (
                     <S.Card key={group.key}>
-                      <S.CardTop>
-                        <S.CardMain>
-                          <S.Icon>
-                            <FiFileText size={18} />
-                          </S.Icon>
-                          <S.MainText>
-                            <h2>{group.importacaoLabel}</h2>
-                            <p>ID/Faturamento: {group.key}</p>
-                          </S.MainText>
-                        </S.CardMain>
+                      <S.CardHead
+                        onClick={() =>
+                          setExpandedId(expandedId === group.key ? null : group.key)
+                        }
+                      >
+                        <S.IconBox>
+                          <FiFileText />
+                        </S.IconBox>
 
-                        <S.Summary>
-                          <S.SummaryItem>
-                            <span>
-                              <FiCalendar size={14} /> Importação
-                            </span>
-                            <strong>{group.importacaoDate}</strong>
-                          </S.SummaryItem>
+                        <S.CardTitle>
+                          <strong>{group.importacaoLabel}</strong>
+                          <small>ID: {group.key}</small>
+                        </S.CardTitle>
 
-                          <S.SummaryItem>
-                            <span>
-                              <FiArchive size={14} /> Competência
-                            </span>
-                            <strong>{group.competencia}</strong>
-                          </S.SummaryItem>
+                        <S.CardStatus $variant={statusVariant}>
+                          {getStatusLabel(group.status)}
+                        </S.CardStatus>
 
-                          <S.SummaryItem>
-                            <span>
-                              <FiFileText size={14} /> Registros
-                            </span>
-                            <strong>{group.quantidadeBeneficios}</strong>
-                          </S.SummaryItem>
+                        <S.CardCompetencia>{group.competencia}</S.CardCompetencia>
 
-                          <S.SummaryItem>
-                            <span>
-                              <FiCreditCard size={14} /> Total
-                            </span>
-                            <strong>R$ {formatMoney(group.total)}</strong>
-                          </S.SummaryItem>
-                        </S.Summary>
-                      </S.CardTop>
+                        <S.CardTotal>R$ {formatMoney(group.total)}</S.CardTotal>
 
-                      <S.CardBody>
-                        <div>
-                          <S.Label>Resumo</S.Label>
-                          <S.BenefitTags>
-                            <S.Tag $variant={statusVariant}>
-                              {getStatusLabel(group.status)}
-                              {group.faturamento_progresso != null && ` - ${group.faturamento_progresso}%`}
-                            </S.Tag>
+                        <S.ToggleIcon $open={expandedId === group.key}>
+                          <FiChevronDown size={16} />
+                        </S.ToggleIcon>
+                      </S.CardHead>
 
-                            {group.beneficios.map((beneficio, index) => (
-                              <S.Tag key={`${beneficio}-${index}`} $variant="info">
-                                {beneficio}
-                              </S.Tag>
-                            ))}
-                          </S.BenefitTags>
-                        </div>
+                      {expandedId === group.key && (
+                        <S.CardBody>
+                          <div>
+                            <S.Label>Resumo</S.Label>
+                            <S.BenefitTags>
+                              {group.faturamento_progresso != null && (
+                                <S.Tag $variant={statusVariant}>
+                                  {group.faturamento_progresso}%
+                                </S.Tag>
+                              )}
 
-                        <S.Docs>
-                          <S.Button
-                            disabled={!podeBaixar}
-                            title={
-                              !podeBaixar
-                                ? 'Documento disponível apenas quando o faturamento estiver concluído'
-                                : ''
-                            }
-                            onClick={() => baixarDocumento(group.downloadId, 'boleto-original/', group.nome_administradora)}
-                          >
-                            <FiDownload size={14} />
-                            Boleto
-                          </S.Button>
+                              {group.beneficios.map((beneficio, index) => (
+                                <S.Tag key={`${beneficio}-${index}`} $variant="info">
+                                  {beneficio}
+                                </S.Tag>
+                              ))}
+                            </S.BenefitTags>
+                          </div>
 
-                          <S.Button
-                            disabled={!podeBaixar}
-                            title={
-                              !podeBaixar
-                                ? 'Documento disponível apenas quando o faturamento estiver concluído'
-                                : ''
-                            }
-                            onClick={() => baixarDocumento(group.downloadId, 'nota-fiscal-original/', group.nome_administradora)}
-                          >
-                            <FiDownload size={14} />
-                            NF
-                          </S.Button>
+                          <S.Docs>
+                            <S.Button
+                              disabled={!podeBaixar}
+                              title={
+                                !podeBaixar
+                                  ? 'Documento disponível apenas quando o faturamento estiver concluído'
+                                  : ''
+                              }
+                              onClick={() => baixarDocumento(group.downloadId, 'boleto-original/', group.nome_administradora)}
+                            >
+                              <FiDownload size={14} />
+                              Boleto
+                            </S.Button>
 
-                          <S.Button
-                            disabled={!podeBaixar}
-                            title={
-                              !podeBaixar
-                                ? 'Documento disponível apenas quando o faturamento estiver concluído'
-                                : ''
-                            }
-                            onClick={() => baixarDocumento(group.downloadId, 'nota-debito-original/', group.nome_administradora)}
-                          >
-                            <FiDownload size={14} />
-                            Nota Débito
-                          </S.Button>
+                            <S.Button
+                              disabled={!podeBaixar}
+                              title={
+                                !podeBaixar
+                                  ? 'Documento disponível apenas quando o faturamento estiver concluído'
+                                  : ''
+                              }
+                              onClick={() => baixarDocumento(group.downloadId, 'nota-fiscal-original/', group.nome_administradora)}
+                            >
+                              <FiDownload size={14} />
+                              NF
+                            </S.Button>
 
-                          <S.Button
-                            $variant="primary"
-                            disabled={!podeBaixar}
-                            title={
-                              !podeBaixar
-                                ? 'Documento disponível apenas quando o faturamento estiver concluído'
-                                : ''
-                            }
-                            onClick={() => baixarDocumento(group.downloadId, 'originais/', group.nome_administradora)}
-                          >
-                            <FiDownload size={14} />
-                            Baixar todos
-                          </S.Button>
-                        </S.Docs>
-                      </S.CardBody>
+                            <S.Button
+                              disabled={!podeBaixar}
+                              title={
+                                !podeBaixar
+                                  ? 'Documento disponível apenas quando o faturamento estiver concluído'
+                                  : ''
+                              }
+                              onClick={() => baixarDocumento(group.downloadId, 'nota-debito-original/', group.nome_administradora)}
+                            >
+                              <FiDownload size={14} />
+                              Nota Débito
+                            </S.Button>
+
+                            <S.Button
+                              $variant="primary"
+                              disabled={!podeBaixar}
+                              title={
+                                !podeBaixar
+                                  ? 'Documento disponível apenas quando o faturamento estiver concluído'
+                                  : ''
+                              }
+                              onClick={() => baixarDocumento(group.downloadId, 'originais/', group.nome_administradora)}
+                            >
+                              <FiDownload size={14} />
+                              Baixar todos
+                            </S.Button>
+                          </S.Docs>
+                        </S.CardBody>
+                      )}
                     </S.Card>
                   );
                 })

@@ -1,6 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import FileUpload from '../../../components/FileUpload/FileUpload.jsx'
-import { PencilLine, Trash2, Check, X as XIcon, Eye } from 'lucide-react'
+import {
+  PencilLine,
+  Trash2,
+  Check,
+  X as XIcon,
+  Eye,
+  Download,
+  ShoppingCart,
+  Receipt,
+  CreditCard,
+  ListChecks,
+  FileSpreadsheet,
+  Circle,
+} from 'lucide-react'
 import './Importacao.css'
 import { uploadService } from '../../../services/uploadService.js'
 import { toast } from 'react-toastify'
@@ -2129,46 +2142,159 @@ export default function Importacao() {
   }, [linhasValidadas, lote.rows])
 
   return (
-    <PageLayout title="Importação" subtitle="Importe arquivos .txt, .csv ou .xlsx">
+    <PageLayout
+      title="Importação de Arquivos"
+      subtitle="Processe benefícios e faturamentos automaticamente."
+    >
       <div className="importacao-container">
-        <FileUpload onUpload={handleResult} />
+        <div className="importacao-page-header">
 
-        <div className="importacao-totais">
-          <div className="importacao-card compra">
-            <h3>Compras de Benefícios</h3>
-            <p className="valor">{totalCompras}</p>
-          </div>
-
-          <div className="importacao-card faturamento">
-            <h3>Faturamento dos Benefícios</h3>
-            <p className="valor">{formatCurrency(totalFaturamento)}</p>
-          </div>
         </div>
 
-        <div className="lote-card" style={{ marginTop: 16, marginBottom: 16 }}>
-          <div className="lote-header">
-            <div>
-              <h3>Limitador de Crédito</h3>
-              <small>
-                {loadingRegraValor
-                  ? 'Carregando regra...'
-                  : isValeTransporte
-                    ? '🔸 Regra de valor não se aplica para Vale Transporte'
-                    : regraValor?.ativo && regraValor?.valor_limite
-                      ? `Bloqueio ativo para valores acima de ${formatCurrency(regraValor.valor_limite)}`
-                      : 'Nenhuma trava de valor ativa para esta administradora.'}
-              </small>
+        <div className="importacao-layout">
+          <div className="importacao-main-column">
+            <FileUpload onUpload={handleResult} />
+
+            <div className="importacao-totais">
+              <div className="importacao-card compra">
+                <div className="importacao-card-top">
+                  <span className="importacao-card-icon compra">
+                    <ShoppingCart size={18} />
+                  </span>
+
+                  <div>
+                    <h3>Compras de Benefícios</h3>
+                    <small>Total acumulado no período</small>
+                  </div>
+                </div>
+
+                <p className="valor">{totalCompras}</p>
+
+                <div className="importacao-card-footer-text">
+                  <Circle size={7} fill="currentColor" />
+                  <span>
+                    {totalCompras > 0
+                      ? `${totalCompras} movimentação(ões) registrada(s)`
+                      : 'Sem movimentações recentes'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="importacao-card faturamento">
+                <div className="importacao-card-top">
+                  <span className="importacao-card-icon faturamento">
+                    <Receipt size={18} />
+                  </span>
+
+                  <div>
+                    <h3>Faturamento dos Benefícios</h3>
+                    <small>Valor total faturado</small>
+                  </div>
+                </div>
+
+                <p className="valor">{formatCurrency(totalFaturamento)}</p>
+
+                <div className="importacao-card-footer-text">
+                  <Circle size={7} fill="currentColor" />
+                  <span>
+                    {totalFaturamento > 0
+                      ? 'Valores calculados para o lote atual'
+                      : 'Sem faturamentos no período'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <aside className="importacao-side-column">
+            <div className="importacao-side-card importacao-limitador-card">
+              <div className="importacao-side-card-header">
+                <div className="importacao-side-title">
+                  <span className="importacao-side-icon limitador">
+                    <CreditCard size={17} />
+                  </span>
+
+                  <h3>Limitador de Crédito</h3>
+                </div>
+
+                <button
+                  className="importacao-edit-rule"
+                  type="button"
+                  onClick={abrirModalRegraValor}
+                  disabled={
+                    enviandoLote || loadingRegraValor || isValeTransporte
+                  }
+                >
+                  <PencilLine size={14} />
+                  {regraValor?.id ? 'Editar regra' : 'Cadastrar regra'}
+                </button>
+              </div>
+
+              <p className="importacao-side-description">
+                Define o limite máximo de crédito para as importações desta
+                administradora. Transações que ultrapassem esse valor serão
+                bloqueadas automaticamente.
+              </p>
+
+              <div className="importacao-credit-box">
+                <span>Limite atual</span>
+
+                <strong>
+                  {loadingRegraValor
+                    ? 'Carregando...'
+                    : isValeTransporte
+                      ? 'Não aplicável'
+                      : regraValor?.ativo && regraValor?.valor_limite
+                        ? formatCurrency(regraValor.valor_limite)
+                        : 'Sem limite'}
+                </strong>
+
+                <small>
+                  {isValeTransporte
+                    ? 'A regra não se aplica ao Vale Transporte'
+                    : regraValor?.ativo
+                      ? 'por período de importação'
+                      : 'regra desativada'}
+                </small>
+              </div>
             </div>
 
-            <button
-              className="btn-ghost"
-              type="button"
-              onClick={abrirModalRegraValor}
-              disabled={enviandoLote || loadingRegraValor || isValeTransporte}
-            >
-              {regraValor?.id ? 'Editar regra' : 'Cadastrar regra'}
-            </button>
-          </div>
+            <div className="importacao-side-card">
+              <div className="importacao-side-card-header">
+                <div className="importacao-side-title">
+                  <span className="importacao-side-icon instructions">
+                    <ListChecks size={17} />
+                  </span>
+
+                  <h3>Como importar</h3>
+                </div>
+              </div>
+
+              <ol className="importacao-steps">
+                <li>
+                  <span>1</span>
+                  <p>Baixe o modelo de planilha Excel no botão acima.</p>
+                </li>
+
+                <li>
+                  <span>2</span>
+                  <p>Preencha os dados de benefícios conforme o modelo.</p>
+                </li>
+
+                <li>
+                  <span>3</span>
+                  <p>Arraste ou selecione o arquivo na área de upload.</p>
+                </li>
+
+                <li>
+                  <span>4</span>
+                  <p>Clique em “Processar Importação” para finalizar.</p>
+                </li>
+              </ol>
+            </div>
+
+
+          </aside>
         </div>
 
         {lote.id && (

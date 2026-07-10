@@ -793,4 +793,225 @@ export const S = {
       }
     }
   `,
+
+  // ============================================
+  // FIGMA-INSPIRED COMPONENTS
+  // ============================================
+
+  IconBox: styled.span`
+    width: ${props => props.$size || 36}px;
+    height: ${props => props.$size || 36}px;
+    border-radius: ${props => props.$radius || 10}px;
+    background: ${props => props.$bg || 'rgba(29, 78, 216, 0.08)'};
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    svg {
+      width: ${props => props.$iconSize || 17}px;
+      height: ${props => props.$iconSize || 17}px;
+      stroke: ${props => props.$color || 'var(--color-primary)'};
+    }
+  `,
+
+  ChangeBadge: styled.span`
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 999px;
+
+    ${props => props.$up && `
+      background: rgba(22, 163, 74, 0.10);
+      color: var(--color-success);
+    `}
+
+    ${props => !props.$up && `
+      background: rgba(239, 68, 68, 0.10);
+      color: var(--color-danger);
+    `}
+  `,
+
+  StatCard: styled.button`
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border-light);
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: var(--shadow-lg);
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+    width: 100%;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      border-color: var(--color-border);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+  `,
+
+  StatTop: styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  `,
+
+  StatValue: styled.div`
+    font-size: 30px;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    font-weight: 500;
+    margin-bottom: 6px;
+  `,
+
+  StatLabel: styled.span`
+    font-size: 13px;
+    color: var(--color-text-tertiary);
+  `,
+
+  Card: styled.section`
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border-light);
+    border-radius: 22px;
+    box-shadow: var(--shadow-lg);
+    padding: 22px;
+  `,
+
+  CardHead: styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+
+    h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+  `,
+
+  CardLink: styled.button`
+    border: 0;
+    background: transparent;
+    color: var(--color-primary);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  `,
+
+  MovementItem: styled.article`
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-border-light);
+
+    &:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    > div:nth-child(2) {
+      flex: 1;
+      min-width: 0;
+
+      strong {
+        display: block;
+        font-size: 14px;
+        margin-bottom: 2px;
+      }
+
+      p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--color-text-tertiary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  `,
+
+  MovementValue: styled.div`
+    text-align: right;
+    flex-shrink: 0;
+
+    strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    span {
+      font-size: 12px;
+      color: var(--color-text-tertiary);
+    }
+  `,
+
+  CondoListItem: styled.button`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-primary);
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: var(--color-bg-tertiary);
+    }
+
+    > span:nth-child(2) {
+      flex: 1;
+      min-width: 0;
+
+      strong {
+        display: block;
+        font-size: 14px;
+        margin-bottom: 2px;
+      }
+
+      small {
+        font-size: 12px;
+        color: var(--color-text-tertiary);
+      }
+    }
+
+    svg:last-child {
+      flex-shrink: 0;
+      color: var(--color-text-tertiary);
+    }
+  `,
+
+  CountBadge: styled.span`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-tertiary);
+    font-size: 12px;
+    font-weight: 600;
+  `,
 };

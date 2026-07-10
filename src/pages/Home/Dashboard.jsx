@@ -8,6 +8,7 @@ import {
   FiList,
   FiDownload,
   FiSearch,
+  FiChevronRight,
 } from 'react-icons/fi';
 import { BiImport } from 'react-icons/bi';
 
@@ -132,14 +133,13 @@ const pertenceAAdministradora = (condominio, administradoraId) => {
 const SkeletonKPIs = () => (
   <S.KPIs>
     {[...Array(4)].map((_, i) => (
-      <S.KPICard key={i} as="div">
-        <S.KPITop>
+      <S.StatCard key={i} as="div">
+        <S.StatTop>
           <S.SkeletonIcon $width="24px" $height="24px" $borderRadius="8px" />
-          <S.SkeletonLine $width="120px" $height="16px" />
-        </S.KPITop>
+        </S.StatTop>
         <S.SkeletonLine $width="100px" $height="36px" $marginBottom="10px" />
-        <S.SkeletonLine $width="150px" $height="14px" />
-      </S.KPICard>
+        <S.SkeletonLine $width="120px" $height="14px" />
+      </S.StatCard>
     ))}
   </S.KPIs>
 );
@@ -672,62 +672,55 @@ export default function Dashboard() {
               </S.Hero>
 
               <S.KPIs>
-                <S.KPICard onClick={() => navigate('/faturamento')}>
-                  <S.KPITop>
-                    <FiDollarSign size={18} />
-                    <S.KPILabel>Faturamento total</S.KPILabel>
-                  </S.KPITop>
+                <S.StatCard onClick={() => navigate('/faturamento')}>
+                  <S.StatTop>
+                    <S.IconBox>
+                      <FiDollarSign />
+                    </S.IconBox>
+                  </S.StatTop>
 
-                  <S.KPIValue>
+                  <S.StatValue>
                     {formatCurrency(
                       faturamentoTotalCondominios > 0
                         ? faturamentoTotalCondominios
                         : valorTotalUltimaImportacao
                     )}
-                  </S.KPIValue>
-                  <S.KPIFoot>Base filtrada da administradora</S.KPIFoot>
-                </S.KPICard>
+                  </S.StatValue>
+                  <S.StatLabel>Faturamento total</S.StatLabel>
+                </S.StatCard>
 
-                <S.KPICard onClick={() => navigate('/gerenciamento')}>
-                  <S.KPITop>
-                    <FiCalendar size={18} />
-                    <S.KPILabel>Gerenciamento de Condomínios</S.KPILabel>
-                  </S.KPITop>
+                <S.StatCard onClick={() => navigate('/gerenciamento')}>
+                  <S.StatTop>
+                    <S.IconBox $bg="rgba(245, 158, 11, 0.10)" $color="var(--color-warning)">
+                      <FiCalendar />
+                    </S.IconBox>
+                  </S.StatTop>
 
-                  <S.KPIValue>{totalAberto}</S.KPIValue>
+                  <S.StatValue>{totalAberto}</S.StatValue>
+                  <S.StatLabel>Gerenciamento de Condomínios</S.StatLabel>
+                </S.StatCard>
 
-                  <S.KPIFoot>
-                    {pendencias.length > 0
-                      ? `${pendencias.length} condomínio${pendencias.length > 1 ? 's' : ''
-                      } com vencimento pendente`
-                      : 'Nenhuma pendência vencida'}
-                  </S.KPIFoot>
-                </S.KPICard>
+                <S.StatCard onClick={() => navigate('/importacao')}>
+                  <S.StatTop>
+                    <S.IconBox $bg="rgba(22, 163, 74, 0.10)" $color="var(--color-success)">
+                      <FiFile />
+                    </S.IconBox>
+                  </S.StatTop>
 
-                <S.KPICard onClick={() => navigate('/importacao')}>
-                  <S.KPITop>
-                    <FiFile size={18} />
-                    <S.KPILabel>Importações</S.KPILabel>
-                  </S.KPITop>
+                  <S.StatValue>{totalImportacoes}</S.StatValue>
+                  <S.StatLabel>Importações</S.StatLabel>
+                </S.StatCard>
 
-                  <S.KPIValue>{totalImportacoes}</S.KPIValue>
+                <S.StatCard as="div">
+                  <S.StatTop>
+                    <S.IconBox $bg="rgba(139, 92, 246, 0.10)" $color="#8b5cf6">
+                      <FiList />
+                    </S.IconBox>
+                  </S.StatTop>
 
-                  <S.KPIFoot>
-                    {ultimaMovimentacao
-                      ? `Última: ${getImportName()}`
-                      : 'Sem importações'}
-                  </S.KPIFoot>
-                </S.KPICard>
-
-                <S.KPICard as="div">
-                  <S.KPITop>
-                    <FiList size={18} />
-                    <S.KPILabel>Condomínios</S.KPILabel>
-                  </S.KPITop>
-
-                  <S.KPIValue>{totalCondominios}</S.KPIValue>
-                  <S.KPIFoot>Base monitorada da administradora</S.KPIFoot>
-                </S.KPICard>
+                  <S.StatValue>{totalCondominios}</S.StatValue>
+                  <S.StatLabel>Condomínios</S.StatLabel>
+                </S.StatCard>
               </S.KPIs>
 
               <S.GridMain>
@@ -831,6 +824,7 @@ export default function Dashboard() {
                         <S.PanelEyebrow>Busca rápida</S.PanelEyebrow>
                         <S.PanelTitle>Condomínio</S.PanelTitle>
                       </div>
+                      <S.CountBadge>{acordos.length}</S.CountBadge>
                     </S.PanelHead>
 
                     <S.SearchBox>
@@ -875,7 +869,7 @@ export default function Dashboard() {
                               '';
 
                             return (
-                              <S.SearchItem
+                              <S.CondoListItem
                                 key={c.id ?? `${nome}-${cnpj}`}
                                 type="button"
                                 onClick={() => {
@@ -884,13 +878,19 @@ export default function Dashboard() {
                                   setCondoModalOpen(true);
                                 }}
                               >
-                                <strong>{nome}</strong>
+                                <S.IconBox $size={34} $radius={9}>
+                                  <FiSearch size={14} />
+                                </S.IconBox>
                                 <span>
-                                  {cnpj
-                                    ? `CNPJ: ${cnpj}`
-                                    : 'CNPJ não informado'}
+                                  <strong>{nome}</strong>
+                                  <small>
+                                    {cnpj
+                                      ? `CNPJ: ${cnpj}`
+                                      : 'CNPJ não informado'}
+                                  </small>
                                 </span>
-                              </S.SearchItem>
+                                <FiChevronRight size={14} />
+                              </S.CondoListItem>
                             );
                           })}
                         </S.SearchResults>
