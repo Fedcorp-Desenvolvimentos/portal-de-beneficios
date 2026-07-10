@@ -8,6 +8,7 @@ import {
   PencilLine,
   Check,
   X as XIcon,
+  Search,
 } from 'lucide-react'
 
 import { entebenService } from '../../services/entebenService'
@@ -681,6 +682,7 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
   const [previewRows, setPreviewRows] = useState([])
   const [excluidosPorColab, setExcluidosPorColab] = useState(new Set())
   const [previewAberto, setPreviewAberto] = useState(false)
+  const [buscaPreview, setBuscaPreview] = useState('')
 
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [detailsTitle, setDetailsTitle] = useState('')
@@ -792,6 +794,16 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
 
     return previewRows.filter((row) => !excluidosPorColab.has(getRowKey(row)))
   }, [previewRows, excluidosPorColab])
+
+  const rowsFiltradasPreview = useMemo(() => {
+    const termo = normalizeText(buscaPreview)
+
+    if (!termo) return rowsAtivas
+
+    return rowsAtivas.filter((row) =>
+      normalizeText(getNomeColaborador(row)).includes(termo)
+    )
+  }, [rowsAtivas, buscaPreview])
 
   const previewResumo = useMemo(() => {
     if (!preview) {
@@ -1109,63 +1121,90 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
                 </div>
 
                 {previewAberto && (
-                  <div className="fat-preview-table-wrap">
-                    <table className="fat-preview-table">
-                      <thead>
-                        <tr>
-                          <th>Condomínio</th>
-                          <th>Colaborador</th>
-                          <th>Valor</th>
-                          <th>Status</th>
-                          <th>Ações</th>
-                        </tr>
-                      </thead>
+                  <>
+                    <div className="fat-preview-search">
+                      <Search size={18} />
 
-                      <tbody>
-                        {rowsAtivas.length === 0 ? (
+                      <input
+                        type="text"
+                        value={buscaPreview}
+                        onChange={(e) => setBuscaPreview(e.target.value)}
+                        placeholder="Buscar colaborador por nome"
+                      />
+
+                      {buscaPreview && (
+                        <button
+                          type="button"
+                          className="fat-preview-search-clear"
+                          onClick={() => setBuscaPreview('')}
+                          aria-label="Limpar busca"
+                          title="Limpar busca"
+                        >
+                          <XIcon size={16} />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="fat-preview-table-wrap">
+                      <table className="fat-preview-table">
+                        <thead>
                           <tr>
-                            <td colSpan={5} className="fat-preview-empty">
-                              Nenhum registro encontrado para pré-visualização.
-                            </td>
+                            <th>Condomínio</th>
+                            <th>Colaborador</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                            <th>Ações</th>
                           </tr>
-                        ) : (
-                          rowsAtivas.map((row, index) => {
-                            const nomeColaborador = getNomeColaborador(row)
+                        </thead>
 
-                            return (
-                              <tr key={`${getRowKey(row)}-${index}`}>
-                                <td>{getCondominioRow(row) || '—'}</td>
-                                <td>{nomeColaborador || '—'}</td>
-                                <td>{formatCurrency(getValorRow(row))}</td>
-                                <td>
-                                  <span className="fat-status-ok">OK</span>
-                                </td>
-                                <td>
-                                  <div className="fat-preview-actions">
-                                    <button
-                                      type="button"
-                                      className="fat-preview-btn"
-                                      onClick={() => abrirDetalhes(row)}
-                                    >
-                                      <Eye size={14} />
-                                    </button>
+                        <tbody>
+                          {rowsFiltradasPreview.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="fat-preview-empty">
+                                {buscaPreview
+                                  ? 'Nenhum colaborador encontrado para esta busca.'
+                                  : 'Nenhum registro encontrado para pré-visualização.'}
+                              </td>
+                            </tr>
+                          ) : (
+                            rowsFiltradasPreview.map((row, index) => {
+                              const nomeColaborador = getNomeColaborador(row)
 
-                                    <button
-                                      type="button"
-                                      className="fat-preview-btn danger"
-                                      onClick={() => abrirConfirmacaoExclusao(row)}
-                                    >
-                                      <Trash2 size={14} />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            )
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                              return (
+                                <tr key={`${getRowKey(row)}-${index}`}>
+                                  <td>{getCondominioRow(row) || '—'}</td>
+                                  <td>{nomeColaborador || '—'}</td>
+                                  <td>{formatCurrency(getValorRow(row))}</td>
+                                  <td>
+                                    <span className="fat-status-ok">OK</span>
+                                  </td>
+                                  <td>
+                                    <div className="fat-preview-actions">
+                                      <button
+                                        type="button"
+                                        className="fat-preview-btn"
+                                        onClick={() => abrirDetalhes(row)}
+                                      >
+                                        <Eye size={14} />
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        className="fat-preview-btn danger"
+                                        onClick={() => abrirConfirmacaoExclusao(row)}
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 )}
               </div>
             )}
