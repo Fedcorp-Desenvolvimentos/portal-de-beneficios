@@ -483,7 +483,7 @@ small {
   padding: 6px 0;
 }
 
-.taxa-produto-row + .taxa-produto-row {
+.taxa-produto-row+.taxa-produto-row {
   border-top: 0.5px solid #e2e8f0;
   padding-top: 10px;
 }
@@ -787,5 +787,95 @@ small {
   .modal-content {
     padding: 16px;
     border-radius: 10px;
+  }
+}
+
+.administradoras-search-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.administradoras-search {
+  width: min(100%, 1300px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border: 1px solid #dbe2ea;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #94a3b8;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.administradoras-search:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.administradoras-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: #0f172a;
+  font-size: 11px;
+  outline: none;
+}
+
+.administradoras-search input::placeholder {
+  color: #94a3b8;
+}
+
+.administradoras-search-clear {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.administradoras-search-clear:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.administradoras-search-result {
+  font-size: 13px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.administradoras-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+  .administradoras-search-wrapper {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .administradoras-search {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .administradoras-search-result {
+    white-space: normal;
   }
 }
