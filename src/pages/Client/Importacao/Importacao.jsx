@@ -166,6 +166,59 @@ function getErrorMessageFromPayload(value) {
   return String(value)
 }
 
+function normalizarListaMensagens(value) {
+  if (!value) return []
+
+  if (typeof value === 'string') {
+    return value.trim() ? [value.trim()] : []
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .flatMap((item) => normalizarListaMensagens(item))
+      .filter(Boolean)
+  }
+
+  if (typeof value === 'object') {
+    return Object.entries(value).flatMap(([campo, mensagens]) => {
+      const lista = normalizarListaMensagens(mensagens)
+
+      return lista.map((mensagem) => {
+        const texto = String(mensagem || '').trim()
+        if (!texto) return ''
+
+        const campoNormalizado = String(campo || '').trim()
+        if (!campoNormalizado || campoNormalizado === 'non_field_errors') {
+          return texto
+        }
+
+        return `${campoNormalizado}: ${texto}`
+      })
+    }).filter(Boolean)
+  }
+
+  return [String(value)]
+}
+
+function getNomeColaboradorErro(erro = {}, detalhes = {}) {
+  return (
+    erro?.nome_colaborador ||
+    erro?.nome_funcionario ||
+    erro?.nome_func ||
+    erro?.colaborador ||
+    erro?.funcionario ||
+    erro?.nome ||
+    detalhes?.nome_colaborador ||
+    detalhes?.nome_funcionario ||
+    detalhes?.nome_func ||
+    detalhes?.colaborador ||
+    detalhes?.funcionario ||
+    detalhes?.nome ||
+    detalhes?.nome_funcionário ||
+    ''
+  )
+}
+
 function normalizarErroImportacao(erro, index = 0) {
   if (!erro) {
     return {
@@ -173,6 +226,8 @@ function normalizarErroImportacao(erro, index = 0) {
       tipo_erro: 'ERRO_PROCESSAMENTO',
       dados: {},
       mensagem: 'Erro não identificado no processamento.',
+      erros: ['Erro não identificado no processamento.'],
+      colaborador: '',
       ordem: index,
     }
   }
@@ -183,50 +238,100 @@ function normalizarErroImportacao(erro, index = 0) {
       tipo_erro: 'ERRO_PROCESSAMENTO',
       dados: {},
       mensagem: erro,
+      erros: [erro],
+      colaborador: '',
       ordem: index,
     }
   }
 
-  const detalhes = erro.dados || erro.details || erro.record || erro.registro || erro || {}
+  const detalhesOriginais =
+    erro?.dados ||
+    erro?.details ||
+    erro?.record ||
+    erro?.registro ||
+    {}
+
+  const detalhes = {
+    ...(typeof detalhesOriginais === 'object' && !Array.isArray(detalhesOriginais)
+      ? detalhesOriginais
+      : {}),
+  }
 
   const linha =
-    erro.linha ||
-    erro.line ||
-    erro.row ||
-    erro.row_number ||
-    erro.numero_linha ||
-    erro.index_linha ||
-    erro.excel_row ||
-    detalhes?.linha ||
-    detalhes?.line ||
-    detalhes?.row ||
+    erro?.linha ??
+    erro?.line ??
+    erro?.row ??
+    erro?.row_number ??
+    erro?.numero_linha ??
+    erro?.index_linha ??
+    erro?.excel_row ??
+    detalhes?.linha ??
+    detalhes?.line ??
+    detalhes?.row ??
     '-'
 
   const tipo =
-    erro.tipo_erro ||
-    erro.tipo ||
-    erro.type ||
-    erro.code ||
-    erro.codigo ||
-    erro.campo ||
+    erro?.tipo_erro ||
+    erro?.tipo ||
+    erro?.type ||
+    erro?.code ||
+    erro?.codigo ||
+    erro?.campo ||
+    detalhes?.tipo_erro ||
+    detalhes?.tipo ||
+    detalhes?.campo ||
     'ERRO_PROCESSAMENTO'
 
-  const mensagem =
-    erro.mensagem ||
-    erro.message ||
-    erro.detail ||
-    erro.error ||
-    erro.erro ||
-    erro.descricao ||
-    getErrorMessageFromPayload(erro.errors) ||
-    getErrorMessageFromPayload(erro.non_field_errors) ||
+  const mensagensEspecificas = [
+    ...normalizarListaMensagens(erro?.erros),
+    ...normalizarListaMensagens(erro?.errors),
+    ...normalizarListaMensagens(erro?.mensagens),
+    ...normalizarListaMensagens(erro?.validacoes),
+    ...normalizarListaMensagens(detalhes?.erros),
+    ...normalizarListaMensagens(detalhes?.errors),
+  ]
+
+  const mensagemPrincipal =
+    erro?.mensagem ||
+    erro?.message ||
+    erro?.detail ||
+    erro?.error ||
+    erro?.erro ||
+    erro?.descricao ||
+    detalhes?.mensagem ||
+    detalhes?.message ||
+    detalhes?.detail ||
+    detalhes?.error ||
+    detalhes?.erro ||
+    detalhes?.descricao ||
+    mensagensEspecificas[0] ||
     `Erro na linha ${linha}: ${tipo}`
+
+  const erros = Array.from(
+    new Set(
+      [mensagemPrincipal, ...mensagensEspecificas]
+        .flatMap((item) => normalizarListaMensagens(item))
+        .map((item) => String(item || '').trim())
+        .filter(Boolean)
+    )
+  )
+
+  const colaborador = getNomeColaboradorErro(erro, detalhes)
+  const cpf = getCpf(erro) || getCpf(detalhes)
+  const condominio = getCondominio(erro) || getCondominio(detalhes)
 
   return {
     linha,
     tipo_erro: tipo,
-    dados: detalhes,
-    mensagem,
+    dados: {
+      ...detalhes,
+      ...(colaborador ? { nome_colaborador: colaborador } : {}),
+      ...(cpf ? { cpf } : {}),
+      ...(condominio ? { condominio } : {}),
+    },
+    mensagem: erros[0] || mensagemPrincipal,
+    erros,
+    colaborador,
     ordem: index,
   }
 }
@@ -249,28 +354,27 @@ function extrairErrosImportacao(payload, options = {}) {
 
   if (!payload) return []
 
-  const errosEstruturados = [
-    ...(Array.isArray(payload?.linhas_com_erro) ? payload.linhas_com_erro : []),
-    ...(Array.isArray(payload?.linhasComErro) ? payload.linhasComErro : []),
-    ...(Array.isArray(payload?.data_to_backend?.linhas_com_erro) ? payload.data_to_backend.linhas_com_erro : []),
-    ...(Array.isArray(payload?.data_to_backend?.linhasComErro) ? payload.data_to_backend.linhasComErro : []),
+  const possiveisListas = [
+    payload?.linhas_com_erro,
+    payload?.linhasComErro,
+    payload?.data_to_backend?.linhas_com_erro,
+    payload?.data_to_backend?.linhasComErro,
+    payload?.errors,
+    payload?.erros,
+    payload?.data_to_backend?.errors,
+    payload?.data_to_backend?.erros,
+    payload?.detail?.errors,
+    payload?.detail?.erros,
+    payload?.message?.errors,
+    payload?.message?.erros,
   ]
 
-  if (errosEstruturados.length > 0) {
-    return errosEstruturados.map(normalizarErroImportacao)
-  }
+  const erros = possiveisListas.flatMap((lista) =>
+    Array.isArray(lista) ? lista : []
+  )
 
-  const errosSimples = [
-    ...(Array.isArray(payload?.errors) ? payload.errors : []),
-    ...(Array.isArray(payload?.erros) ? payload.erros : []),
-    ...(Array.isArray(payload?.data_to_backend?.errors) ? payload.data_to_backend.errors : []),
-    ...(Array.isArray(payload?.data_to_backend?.erros) ? payload.data_to_backend.erros : []),
-    ...(Array.isArray(payload?.detail?.errors) ? payload.detail.errors : []),
-    ...(Array.isArray(payload?.message?.errors) ? payload.message.errors : []),
-  ]
-
-  if (errosSimples.length > 0) {
-    return errosSimples.map(normalizarErroImportacao)
+  if (erros.length > 0) {
+    return erros.map(normalizarErroImportacao)
   }
 
   const mensagem =
@@ -279,25 +383,20 @@ function extrairErrosImportacao(payload, options = {}) {
     getErrorMessageFromPayload(payload?.error) ||
     getErrorMessageFromPayload(payload?.erro)
 
-  if (!mensagem) {
+  if (!mensagem) return []
+
+  if (isMensagemSucessoImportacao(mensagem) && !incluirMensagensGerais) {
     return []
   }
 
-  const ehMensagemDeSucesso = isMensagemSucessoImportacao(mensagem)
-
-  if (ehMensagemDeSucesso && !incluirMensagensGerais) {
-    return []
-  }
-
+  const textoMensagem = normalizeText(mensagem)
   const temIndicativoDeErro =
-    normalizeText(mensagem).includes('ERRO') ||
-    normalizeText(mensagem).includes('FALHA') ||
-    normalizeText(mensagem).includes('INVALID') ||
-    normalizeText(mensagem).includes('REJEIT') ||
-    normalizeText(mensagem).includes('NAO FOI POSSIVEL') ||
-    normalizeText(mensagem).includes('NÃO FOI POSSÍVEL') ||
-    normalizeText(mensagem).includes('OBRIGATORIO') ||
-    normalizeText(mensagem).includes('OBRIGATÓRIO')
+    textoMensagem.includes('ERRO') ||
+    textoMensagem.includes('FALHA') ||
+    textoMensagem.includes('INVALID') ||
+    textoMensagem.includes('REJEIT') ||
+    textoMensagem.includes('NAO FOI POSSIVEL') ||
+    textoMensagem.includes('OBRIGATORIO')
 
   if (!temIndicativoDeErro && !incluirMensagensGerais) {
     return []
@@ -1404,16 +1503,29 @@ export default function Importacao() {
 
         return true
       })
-      .map((erro) => ({
-        linha: erro.linha,
-        tipo: erro.tipo_erro,
-        detalhes: erro.dados || {},
-        mensagem:
+      .map((erro) => {
+        const mensagemValorExcedido =
+          `Valor excedeu o limite permitido na linha ${erro.linha} ` +
+          `(limite: ${formatCurrency(regraValor?.valor_limite)})`
+
+        const mensagens =
           erro.tipo_erro === 'VALOR_EXCEDIDO'
-            ? `Valor excedeu o limite permitido na linha ${erro.linha} 
-          (limite: ${formatCurrency(regraValor?.valor_limite)})`
-            : erro.mensagem || `Erro na linha ${erro.linha}: ${erro.tipo_erro || 'Dado inválido'}`,
-      }))
+            ? [mensagemValorExcedido]
+            : Array.isArray(erro.erros) && erro.erros.length > 0
+              ? erro.erros
+              : [erro.mensagem || `Erro na linha ${erro.linha}: ${erro.tipo_erro || 'Dado inválido'}`]
+
+        return {
+          linha: erro.linha,
+          tipo: erro.tipo_erro,
+          detalhes: erro.dados || {},
+          colaborador:
+            erro.colaborador ||
+            getNomeColaboradorErro(erro, erro.dados || {}),
+          erros: Array.from(new Set(mensagens.filter(Boolean))),
+          mensagem: mensagens[0] || 'Erro no processamento.',
+        }
+      })
   }, [data, rowsAtivas, regraValor, isValeTransporte])
 
   const hasBackendError = (row, index) => {
@@ -2763,46 +2875,74 @@ export default function Importacao() {
                 Nenhum erro encontrado.
               </div>
             ) : (
-              linhasComErroBackend.map((erro, idx) => (
-                <div key={`erro-${idx}`} className="erro-item">
-                  <div className="erro-header">
-                    <span className="erro-linha">Linha {erro.linha}</span>
-                    <span className="erro-mensagem">{erro.tipo}</span>
-                  </div>
-                  <p style={{ margin: '4px 0', fontSize: 13, color: '#374151' }}>
-                    {erro.mensagem}
-                  </p>
+              linhasComErroBackend.map((erro, idx) => {
+                const tipoLabel = {
+                  INFORMACAO_AUSENTE: 'Informações obrigatórias ausentes',
+                  VALOR_EXCEDIDO: 'Valor excede o limite',
+                  ERRO_PROCESSAMENTO: 'Erro de processamento',
+                }[erro.tipo] || erro.tipo
 
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-                    {erro.detalhes?.campo && (
-                      <span className="chip chip-ghost">
-                        Campo: {erro.detalhes.campo}
-                      </span>
-                    )}
+                const nomeColaborador =
+                  erro.colaborador ||
+                  getNomeColaboradorErro(erro, erro.detalhes || {})
 
-                    {erro.mensagem && (
-                      <p style={{ margin: '4px 0', fontSize: 13, color: '#374151' }}>
-                        {erro.mensagem}
+                const mensagens =
+                  Array.isArray(erro.erros) && erro.erros.length > 0
+                    ? erro.erros
+                    : [erro.mensagem].filter(Boolean)
+
+                return (
+                  <div key={`erro-${erro.linha}-${idx}`} className="erro-item">
+                    <div className="erro-header">
+                      <span className="erro-linha">Linha {erro.linha}</span>
+                      <span className="erro-mensagem">{tipoLabel}</span>
+                    </div>
+
+                    {nomeColaborador && (
+                      <p style={{ margin: '8px 0 4px', fontSize: 14, color: '#111827' }}>
+                        <strong>Colaborador:</strong> {nomeColaborador}
                       </p>
                     )}
 
-                    {erro.detalhes?.condominio && (
-                      <span className="chip chip-ghost">
-                        Condomínio: {erro.detalhes.condominio}
-                      </span>
+                    {mensagens.length === 1 ? (
+                      <p style={{ margin: '4px 0', fontSize: 13, color: '#374151' }}>
+                        {mensagens[0]}
+                      </p>
+                    ) : (
+                      <ul className="erro-specific-list" style={{ margin: '8px 0', paddingLeft: 20 }}>
+                        {mensagens.map((mensagem, mensagemIndex) => (
+                          <li key={`erro-msg-${idx}-${mensagemIndex}`}>
+                            {mensagem}
+                          </li>
+                        ))}
+                      </ul>
                     )}
-                  </div>
 
-                  {erro.detalhes?.cpf || erro.detalhes?.nome || erro.detalhes?.campo || erro.detalhes?.condominio ? (
-                    <details>
-                      <summary>Detalhes do registro</summary>
-                      <pre>{JSON.stringify(erro.detalhes, null, 2)}</pre>
-                    </details>
-                  ) : null}
-                </div>
-              ))
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                      {erro.detalhes?.campo && (
+                        <span className="chip chip-ghost">
+                          Campo: {erro.detalhes.campo}
+                        </span>
+                      )}
+
+                      {erro.detalhes?.cpf && (
+                        <span className="chip chip-ghost">
+                          CPF: {erro.detalhes.cpf}
+                        </span>
+                      )}
+
+                      {erro.detalhes?.condominio && (
+                        <span className="chip chip-ghost">
+                          Condomínio: {erro.detalhes.condominio}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })
             )}
           </div>
+
           <div className="modal-actions">
             <button
               type="button"
