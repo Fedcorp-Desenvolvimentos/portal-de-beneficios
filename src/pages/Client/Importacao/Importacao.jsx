@@ -1111,13 +1111,30 @@ function addDaysToDateInput(value, days) {
   const date = parseDateInput(value)
   if (!date) return ''
 
-  date.setDate(date.getDate() + Number(days || 0))
+  let remaining = Number(days || 0)
+  while (remaining > 0) {
+    date.setDate(date.getDate() + 1)
+    if (date.getDay() !== 0 && date.getDay() !== 6) {
+      remaining--
+    }
+  }
 
   return formatDateInput(date)
 }
 
 function subtractDaysFromDateInput(value, days) {
-  return addDaysToDateInput(value, -Number(days || 0))
+  const date = parseDateInput(value)
+  if (!date) return ''
+
+  let remaining = Number(days || 0)
+  while (remaining > 0) {
+    date.setDate(date.getDate() - 1)
+    if (date.getDay() !== 0 && date.getDay() !== 6) {
+      remaining--
+    }
+  }
+
+  return formatDateInput(date)
 }
 
 function isAfterDateInput(dateA, dateB) {
@@ -2759,6 +2776,7 @@ export default function Importacao() {
                   onChange={(value) => setFormEnvio(prev => ({ ...prev, periodoInicio: value }))}
                   placeholderText="Selecione a data"
                   disabled={enviandoLote}
+                  filterDate={(date) => date.getDay() !== 0 && date.getDay() !== 6}
                   required
                 />
               </label>
@@ -2771,6 +2789,7 @@ export default function Importacao() {
                   placeholderText="Selecione a data"
                   minDate={formEnvio.periodoInicio}
                   disabled={enviandoLote}
+                  filterDate={(date) => date.getDay() !== 0 && date.getDay() !== 6}
                   required
                 />
               </label>
@@ -2807,6 +2826,7 @@ export default function Importacao() {
                   required={campoDataReferenciaVT !== 'vencimento'}
                   disabled={enviandoLote || recebimentoCalculadoAutomaticamente}
                   minDate={new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)}
+                  filterDate={(date) => date.getDay() !== 0 && date.getDay() !== 6}
                 />
               </label>
             </div>
@@ -2820,6 +2840,7 @@ export default function Importacao() {
                   required={campoDataReferenciaVT !== 'recebimento'}
                   disabled={enviandoLote || vencimentoCalculadoAutomaticamente}
                   minDate={new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)}
+                  filterDate={(date) => date.getDay() !== 0 && date.getDay() !== 6}
                 />
 
                 {!campoDataReferenciaVT && !formEnvio.recebimentoBeneficio && !formEnvio.vencimento && (

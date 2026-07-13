@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 
 import { entebenService } from '../../services/entebenService'
+import DatePickerWrapper from '../../components/DatePicker/DatePickerWrapper'
 
 import '../../styles/FaturamentoFormulario.css'
 
@@ -423,12 +424,30 @@ function addDaysToDateInput(value, days) {
   const date = parseDateInput(value)
   if (!date) return ''
 
-  date.setDate(date.getDate() + Number(days || 0))
+  let remaining = Number(days || 0)
+  while (remaining > 0) {
+    date.setDate(date.getDate() + 1)
+    if (date.getDay() !== 0 && date.getDay() !== 6) {
+      remaining--
+    }
+  }
+
   return formatDateInput(date)
 }
 
 function subtractDaysFromDateInput(value, days) {
-  return addDaysToDateInput(value, -Number(days || 0))
+  const date = parseDateInput(value)
+  if (!date) return ''
+
+  let remaining = Number(days || 0)
+  while (remaining > 0) {
+    date.setDate(date.getDate() - 1)
+    if (date.getDay() !== 0 && date.getDay() !== 6) {
+      remaining--
+    }
+  }
+
+  return formatDateInput(date)
 }
 
 const getPreviewVencimento = (data) =>
@@ -1242,48 +1261,44 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
 
                 <div className="form-group">
                   <label htmlFor="periodoInicio">Período início</label>
-                  <input
+                  <DatePickerWrapper
                     id="periodoInicio"
-                    name="periodoInicio"
-                    type="date"
                     value={form.periodoInicio}
-                    onChange={handleChange}
+                    onChange={(value) => handleChange({ target: { name: 'periodoInicio', value } })}
+                    filterDate={(date) => date.getDay() !== 0 && date.getDay() !== 6}
                   />
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="periodoFim">Período fim</label>
-                  <input
+                  <DatePickerWrapper
                     id="periodoFim"
-                    name="periodoFim"
-                    type="date"
                     value={form.periodoFim}
-                    onChange={handleChange}
+                    onChange={(value) => handleChange({ target: { name: 'periodoFim', value } })}
+                    filterDate={(date) => date.getDay() !== 0 && date.getDay() !== 6}
                   />
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="recebimentoBeneficio">Recebimento do benefício</label>
-                  <input
+                  <DatePickerWrapper
                     id="recebimentoBeneficio"
-                    name="recebimentoBeneficio"
-                    type="date"
                     value={form.recebimentoBeneficio}
-                    onChange={handleChange}
+                    onChange={(value) => handleChange({ target: { name: 'recebimentoBeneficio', value } })}
                     disabled={campoLocked === 'recebimentoBeneficio'}
+                    filterDate={(date) => date.getDay() !== 0 && date.getDay() !== 6}
                   />
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="vencimento">Vencimento</label>
-                  <input
+                  <DatePickerWrapper
                     id="vencimento"
-                    name="vencimento"
-                    type="date"
                     value={form.vencimento}
-                    onChange={handleChange}
+                    onChange={(value) => handleChange({ target: { name: 'vencimento', value } })}
                     required
                     disabled={campoLocked === 'vencimento'}
+                    filterDate={(date) => date.getDay() !== 0 && date.getDay() !== 6}
                   />
 
                 </div>
