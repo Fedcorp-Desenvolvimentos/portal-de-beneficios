@@ -1,4 +1,5 @@
-import { apiFetch } from './api.js';
+// services/userService.js
+import api from './api.js';
 
 /**
  * Constantes para as chaves de armazenamento.
@@ -9,38 +10,26 @@ const STORAGE_KEYS = {
 };
 
 /**
- * Serviço para gerenciamento de autenticação do usuário.
+ * Serviço para gerenciamento de autenticação e usuários.
  */
 export const userService = {
     /**
      * Realiza a autenticação do usuário e salva ambos os tokens.
-     * @param {string} email - Nome de usuário (ou email).
-     * @param {string} password - Senha.
-     * @returns {Promise<object>} - Dados do usuário após o login.
      */
     login: async (email, password) => {
         const payload = { email, password };
 
         try {
-            // O endpoint de login deve ser adaptado ao seu backend Django (ex: /api/auth/token/)
-            const data = await apiFetch('/auth/token/', { // Endpoint comum para JWT
-                method: 'POST',
-                body: payload,
-                // Garantimos que não enviamos Authorization header para o endpoint de login
-                headers: { 'Authorization': '' } 
-            });
+            const response = await api.post('/api/users/login/', payload);
+            const data = response.data;
 
-            // ALTERAÇÃO: Assumimos que o backend retorna { access: "...", refresh: "..." }
             const accessToken = data.access;
             const refreshToken = data.refresh;
-            
+
             if (accessToken && refreshToken) {
-                // Armazenamento de ambos os tokens
                 localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
                 localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-                
-                console.log('Login bem-sucedido. Tokens armazenados.');
-                return data; 
+                return data;
             } else {
                 throw new Error('Tokens de autenticação não recebidos.');
             }
@@ -52,8 +41,6 @@ export const userService = {
 
     /**
      * Usa o refresh token para obter um novo access token.
-     * Útil para manter a sessão ativa sem exigir novo login.
-     * @returns {Promise<string>} - O novo access token.
      */
     refreshToken: async () => {
         const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
@@ -63,20 +50,13 @@ export const userService = {
         }
 
         try {
-            // Endpoint para atualizar o token (comum em bibliotecas JWT do Django)
-            const data = await apiFetch('/auth/token/refresh/', {
-                method: 'POST',
-                body: { refresh: refreshToken },
-                // Garantimos que não enviamos um access token expirado no header para este endpoint
-                headers: { 'Authorization': '' } 
-            });
+            const response = await api.post('/api/users/refresh/', { refresh: refreshToken });
+            const data = response.data;
 
             const newAccessToken = data.access;
 
             if (newAccessToken) {
-                // Salva o novo access token
                 localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, newAccessToken);
-                console.log('Access token atualizado com sucesso.');
                 return newAccessToken;
             } else {
                 throw new Error('Novo access token não recebido.');
@@ -84,26 +64,137 @@ export const userService = {
 
         } catch (error) {
             console.error('Erro ao tentar atualizar o token:', error);
-            // Em caso de falha no refresh, forçamos o logout
-            userService.logout(); 
+            userService.logout();
             throw new Error('Sessão expirada ou refresh token inválido. Usuário deslogado.');
         }
     },
-    
+
     /**
-     * Busca os dados do usuário logado usando o access token.
-     * * NOTA DE CORREÇÃO: apiFetch agora lida com o token lido do localStorage, 
-     * o que resolve o "ReferenceError: accessToken is not defined".
-     * * @returns {Promise<object>} - Dados do usuário (ex: {id: 1, email: "..."}).
+     * Busca os dados do usuário logado.
      */
     getUserData: async () => {
         try {
-            // O apiFetch adicionará o Authorization header automaticamente
-            const userData = await apiFetch('/users/me/', { method: 'GET' }); 
-            console.log('Dados do usuário buscados:', userData);
-            return userData;
+            const response = await api.get('/api/users/me/');
+            return response.data;
         } catch (error) {
             console.error('Erro ao buscar dados do usuário:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Lista todos os usuários (com opção de filtro por administradora)
+     */
+    listarUsuarios: async (params = {}) => {
+        try {
+            const response = await api.get('/api/users/list/', { params });
+            const data = response.data;
+            return Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.error('❌ Erro ao listar usuários:', error);
+            return [];
+        }
+    },
+
+    /**
+     * Busca usuário por ID
+     */
+    buscarUsuarioPorId: async (id) => {
+        try {
+            const response = await api.get(`/api/users/${id}/`);
+            return response.data;
+        } catch (error) {
+            console.error(`❌ Erro ao buscar usuário ${id}:`, error);
+            throw error;
+        }
+    },
+
+    /**
+     * Criar novo usuário
+     */
+    criarUsuario: async (dados) => {
+        try {
+            const payload = {
+                username: dados.username,
+                email: dados.email,
+                tipo: dados.tipo,
+                administradora: dados.administradora || null
+            };
+            const response = await api.post('/api/users/register/', payload);
+            return response.data;
+        } catch (error) {
+            console.error('❌ Erro ao criar usuário:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Atualizar usuário
+     */
+    atualizarUsuario: async (id, dados) => {
+        try {
+            const usuarioAtual = await userService.buscarUsuarioPorId(id);
+
+            const payload = {
+                username: dados.username !== undefined ? dados.username : usuarioAtual.username,
+                nome: dados.username !== undefined ? dados.username : usuarioAtual.username,
+                email: dados.email !== undefined ? dados.email : usuarioAtual.email,
+                tipo: dados.tipo !== undefined ? dados.tipo : usuarioAtual.tipo,
+                administradora: dados.administradora !== undefined
+                    ? dados.administradora
+                    : usuarioAtual.administradora_id,
+            };
+
+            if (dados.password && dados.password.trim() !== '') {
+                payload.password = dados.password;
+            }
+
+            const response = await api.put(`/api/users/${id}/`, payload);
+            return response.data;
+        } catch (error) {
+            console.error(`❌ Erro ao atualizar usuário ${id}:`, error);
+            throw error;
+        }
+    },
+
+    /**
+     * Excluir usuário
+     */
+    excluirUsuario: async (id) => {
+        try {
+            const response = await api.delete(`/api/users/${id}/`);
+            return response.data;
+        } catch (error) {
+            console.error(`❌ Erro ao excluir usuário ${id}:`, error);
+            throw error;
+        }
+    },
+
+    /**
+    * Vincular usuário a uma administradora
+     */
+    vincularAdministradora: async (userId, administradoraId) => {
+        try {
+            const response = await api.post(`/api/users/${userId}/vincular-adm/`, {
+                administradora_id: administradoraId
+            });
+            // console.log(`✅ Usuário ${userId} vinculado à administradora ${administradoraId}`);
+            return response.data;
+        } catch (error) {
+            console.error(`❌ Erro ao vincular usuário ${userId}:`, error);
+            throw error;
+        }
+    },
+
+    /**
+     * Desvincular administradora
+     */
+    desvincularAdministradora: async (userId) => {
+        try {
+            const response = await api.post(`/api/users/${userId}/desvincular-adm/`);
+            return response.data;
+        } catch (error) {
+            console.error(`❌ Erro ao desvincular usuário ${userId}:`, error);
             throw error;
         }
     },
@@ -112,19 +203,134 @@ export const userService = {
      * Remove ambos os tokens de autenticação (logout).
      */
     logout: () => {
-        // ALTERAÇÃO: Removendo ambos os tokens
         localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
         localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-        // apiFetch('/auth/logout/', { method: 'POST' }); // Chamar endpoint de backend, se existir
-        console.log('Logout realizado. Tokens removidos.');
     },
 
     /**
-     * Verifica se o usuário está autenticado (tem um access token válido).
-     * @returns {boolean}
+     * Verifica se o usuário está autenticado.
      */
     isAuthenticated: () => {
-        // ALTERAÇÃO: Verifica a existência do access token
         return !!localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-    }
+    },
+
+    /**
+     * Lista todas as administradoras
+     */
+    listarAdministradoras: async () => {
+        try {
+            const response = await api.get('/api/entidades/administradoras/');
+            const data = response.data;
+            return Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.error('❌ Erro ao listar administradoras:', error);
+            return [];
+        }
+    },
+
+    /**
+     * Busca os dados do usuário logado.
+     */
+    getMe: async () => {
+        const response = await api.get("/api/users/me/");
+        return response.data;
+    },
+
+    /**
+     * ALTERAR SENHA DO USUÁRIO LOGADO (USANDO O ENDPOINT /password/)
+     */
+    changePassword: async (oldPassword, newPassword) => {
+        try {
+            const payload = {
+                old_password: oldPassword,
+                new_password: newPassword
+            };
+
+            const response = await api.post('/api/users/password/', payload);
+            return {
+                success: true,
+                data: response.data
+            };
+        } catch (error) {
+            console.error('❌ Erro ao alterar senha:', error);
+            return {
+                success: false,
+                error: error.response?.data?.detail || 'Erro ao alterar senha. Tente novamente.'
+            };
+        }
+    },
+
+    /**
+     * RECUPERAÇÃO DE SENHA (via token) - para usuários que esqueceram a senha
+     */
+    solicitarResetSenha: async (email) => {
+        try {
+            const response = await api.post('/api/users/solicitar-reset-senha/', { email });
+            return {
+                success: true,
+                data: response.data
+            };
+        } catch (error) {
+            console.error('❌ Erro ao solicitar reset de senha:', error);
+            return {
+                success: false,
+                error: error.response?.data?.detail || 'Erro ao solicitar recuperação de senha.'
+            };
+        }
+    },
+
+    /**
+     * Valida token de recuperação
+     */
+    validarTokenReset: async (token) => {
+        try {
+            const response = await api.get(`/api/users/validar-token-reset/${token}/`);
+            return {
+                success: true,
+                data: response.data
+            };
+        } catch (error) {
+            console.error('❌ Erro ao validar token:', error);
+            return {
+                success: false,
+                error: error.response?.data?.detail || 'Link inválido ou expirado.'
+            };
+        }
+    },
+
+    /**
+     * Redefine a senha usando o token (para recuperação de senha)
+     */
+    resetarSenhaComToken: async (token, novaSenha) => {
+        try {
+            const response = await api.post('/api/users/resetar-senha/', {
+                token,
+                nova_senha: novaSenha
+            });
+            return {
+                success: true,
+                data: response.data
+            };
+        } catch (error) {
+            console.error('❌ Erro ao resetar senha:', error);
+            return {
+                success: false,
+                error: error.response?.data?.detail || 'Erro ao redefinir senha.'
+            };
+        }
+    },
 };
+
+// Exportações
+export const getUsuarios = userService.listarUsuarios;
+export const getUsuario = userService.buscarUsuarioPorId;
+export const createUsuario = userService.criarUsuario;
+export const updateUsuario = userService.atualizarUsuario;
+export const deleteUsuario = userService.excluirUsuario;
+export const desvincularAdministradora = userService.desvincularAdministradora;
+export const listarAdministradoras = userService.listarAdministradoras;
+export const vincularAdministradora = userService.vincularAdministradora;
+export const changePassword = userService.changePassword;
+export const solicitarResetSenha = userService.solicitarResetSenha;
+export const validarTokenReset = userService.validarTokenReset;
+export const resetarSenhaComToken = userService.resetarSenhaComToken;

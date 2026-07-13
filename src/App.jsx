@@ -1,60 +1,41 @@
-import React from 'react'
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import Sidebar from './components/Sidebar.jsx'
-import Header from './components/Header.jsx'
-import Dashboard from './pages/Dashboard.jsx'
-import Importacao from './pages/Importacao.jsx'
-import Faturamento from './pages/Faturamento.jsx'
-import Pendentes from './pages/Pendentes.jsx'
-import Historico from './pages/Historico.jsx'
-import Login from './pages/Login/Login.jsx'
-import ConfiguracaoCondominios from './pages/Configuracoes.jsx'
-import { AuthProvider, useAuth } from './context/AuthContext.jsx'
-import ProtectedRoute from './routes/ProtectedRoute.jsx'
+// src/App.jsx
+import { useState, useEffect } from 'react';
+import { useAuth } from './context/AuthContext';
+import AppRouter from "./routes/AppRouter";
+import FirstAccessModal from "./components/FirstAccessModal/FirstAccessModal";
 
-function Layout() {
-  const location = useLocation()
-  const titles = {
-    '/': 'Início',
-    '/importacao': 'Importação',
-    '/faturamento': 'Faturamento',
-    '/pendentes': 'Pendências',
-    '/historico': 'Histórico',
-    '/configuracoes': 'Configurações'
-  }
-  const title = titles[location.pathname] ?? 'Portal de Benefícios'
-  return (
-    <div className="app">
-      <Sidebar />
-      <div className="main">
-        <Header title={title} />
-        <div className="page">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/importacao" element={<Importacao />} />
-            <Route path="/faturamento" element={<Faturamento />} />
-            <Route path="/pendentes" element={<Pendentes />} />
-            <Route path="/historico" element={<Historico />} />
-            <Route path="/configuracoes" element={<ConfiguracaoCondominios />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
-      </div>
-    </div>
-  )
+function App() {
+  const { user, logout } = useAuth();
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    if (user && user.primeiro_acesso === true) {
+      setShowModal(true);
+    }
+  }, [user]);
+
+  const handleSuccess = async () => {
+    setShowModal(false);
+    await logout();
+  };
+
+  const handleClose = () => {
+    return;
+  };
+
+  return (
+    <>
+      <AppRouter />
+      {showModal && user && (
+        <FirstAccessModal
+          isOpen={showModal}
+          onClose={handleClose}
+          onSuccess={handleSuccess}
+          user={user}
+        />
+      )}
+    </>
+  );
 }
 
-export default function App() {
-  return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/*" element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        } />
-      </Routes>
-    </AuthProvider>
-  )
-}
+export default App;

@@ -1,70 +1,113 @@
+// src/services/api.js
+import axios from "axios";
 
-const API_BASE_URL = 'https://vr-beneficios-backend-fedcorp-y5bg8.ondigitalocean.app/api'; 
-const ACCESS_TOKEN_KEY = 'accessToken'; 
+export const API_BASE_URL = 'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app'
+// export const API_BASE_URL = 'http://localhost:8000'
 
-/**
- * Realiza uma requisição à API.
- * @param {string} endpoint - O caminho da API (ex: '/auth/me/').
- * @param {object} options - Opções de fetch (method, body, headers, etc.).
- * @returns {Promise<object>} - O objeto de resposta parseado em JSON ou um objeto vazio para 204.
- */
-export const apiFetch = async (endpoint, options = {}) => {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-    
-    const isFormData = options.body instanceof FormData;
+const api = axios.create({
+  baseURL: API_BASE_URL,
+});
 
-   
-    let finalHeaders = {
-        ...options.headers, 
-    };
-    
-    if (token && !finalHeaders.Authorization) {
-        finalHeaders['Authorization'] = `Bearer ${token}`;
+// Intercepta todas as requisições Axios
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("accessToken");
+
+    // Se o token existir, adicione-o ao cabeçalho Authorization
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
-    if (!isFormData && !finalHeaders['Content-Type']) {
-        finalHeaders['Content-Type'] = 'application/json';
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+const publicRoutes = ["/", "/login", "/esqueci-senha", "/resetar-senha", "/404"];
+
+const isPublic = publicRoutes.some((route) =>
+  window.location.pathname.startsWith(route)
+);
+
+// Queue for handling multiple concurrent requests while token is refreshing
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
     }
+  });
 
-    const finalOptions = {
-        ...options,
-        headers: finalHeaders, 
-    };
-    if (finalOptions.body && typeof finalOptions.body !== 'string' && !isFormData) {
-        finalOptions.body = JSON.stringify(finalOptions.body);
-    }
-    
-    try {
-        const response = await fetch(url, finalOptions);
-
-        if (!response.ok) {
-            let errorData = { detail: 'Erro desconhecido.' };
-            try {
-                
-                errorData = await response.json(); 
-            } catch (e) {
-               
-                errorData.detail = response.statusText || 'Erro de rede ou servidor.';
-            }
-
-            const errorMessage = errorData.detail || JSON.stringify(errorData);
-            throw new Error(`[${response.status} ${response.statusText}] API Error: ${errorMessage}`);
-        }
-
-        if (response.status === 204 || response.headers.get('content-length') === '0') {
-            return {};
-        }
-
-        if (response.status === 401){
-            localStorage.removeItem(ACCESS_TOKEN_KEY);
-            window.location.href = '/login/';
-        }
-
-        return await response.json();
-
-    } catch (error) {
-        console.error('Fetch error:', error);
-        throw error;
-    }
+  failedQueue = [];
 };
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry
+    ) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const refreshToken = localStorage.getItem("refreshToken");
+        if (!refreshToken) {
+          throw new Error("No refresh token available");
+        }
+
+        const response = await axios.post(
+          `${API_BASE_URL}/api/users/refresh/`,
+          {
+            refresh: refreshToken,
+          }
+        );
+
+        const newAccessToken = response.data.access;
+
+        localStorage.setItem("accessToken", newAccessToken);
+
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+        processQueue(null, newAccessToken);
+        return api(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+
+        window.location.href = "/login";
+
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+export default api;

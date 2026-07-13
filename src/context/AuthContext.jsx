@@ -1,137 +1,181 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { userService } from '../services/userService.js'; 
+// src/contexts/AuthContext.js
 
-// Criação do Contexto
-const AuthContext = createContext();
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useGlobal } from './GlobalContext.jsx';
+import api from '../services/api.js';
 
-/**
- * Hook customizado para usar o Auth Context.
- * Simplifica o acesso ao estado e às funções de autenticação.
- */
+const AuthContext = createContext(null);
+
 export const useAuth = () => {
     return useContext(AuthContext);
 };
 
-/**
- * Componente Provedor de Autenticação.
- * Gerencia o estado de autenticação, o carregamento e as funções de login/logout/refresh.
- */
 export const AuthProvider = ({ children }) => {
+    const [user, setUser] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [user, setUser] = useState(null); // Aqui você pode armazenar dados do usuário (id, email)
-    const [isLoading, setIsLoading] = useState(true); // Indica se a verificação inicial terminou
+    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+    const { loading, setLoading, setLoadingMessage } = useGlobal();
+    const navigate = useNavigate();
 
-    // =========================================================
-    // 1. Efeito de Inicialização: Verifica a sessão na montagem
-    // =========================================================
-    useEffect(() => {
-        // Função auxiliar para buscar os dados do usuário e atualizar o estado
-        const fetchAndSetUser = async () => {
-            try {
-                const userData = await userService.getUserData();
-                setUser(userData);
-                setIsAuthenticated(true);
-                return true;
-            } catch (error) {
-                // Se falhar (token inválido), o usuário será forçado a deslogar ou atualizar
-                setUser(null);
-                setIsAuthenticated(false);
-                throw error;
-            }
-        };
+    // console.log("user - context", user)
 
-        const checkInitialAuth = async () => {
-            const hasAccessToken = userService.isAuthenticated();
-
-            if (hasAccessToken) {
-                try {
-                    // MUDANÇA: Tenta buscar os dados do usuário para validar o token
-                    await fetchAndSetUser(); 
-                } catch (error) {
-                    console.warn("Access Token inválido na inicialização. Tentando Refresh...");
-                    try {
-                        // Tenta refresh se o access token falhar
-                        await handleRefreshToken();
-                        // Se o refresh for bem-sucedido, busca os dados novamente com o novo token
-                        await fetchAndSetUser();
-                    } catch (refreshError) {
-                         // Se o refresh falhar, o logout já é chamado em handleRefreshToken
-                        setIsAuthenticated(false);
-                        setUser(null);
-                    }
-                }
-            }
-            setIsLoading(false); // Finaliza o carregamento inicial
-        };
-
-        checkInitialAuth();
-    }, []);
-
-    // =========================================================
-    // 2. Funções de Manipulação de Sessão
-    // =========================================================
-
-    const handleLogin = async (username, password) => {
-        setIsLoading(true);
+    const login = useCallback(async (credentials) => {
+        setLoadingMessage("Fazendo login...");
+        setLoading(true);
         try {
-            // 1. Faz o Login e salva os tokens
-            await userService.login(username, password); 
-            
-            // 2. MUDANÇA: Busca e salva os dados do usuário após o login
-            const userData = await userService.getUserData();
-            setUser(userData); 
-
+            // 1. Faz a requisição de login
+            const response = await api.post('/api/users/login/', credentials);
+            // console.log('Login response:', response.data);
+            localStorage.setItem('accessToken', response.data.access);
+            if (response.data.refresh) {
+                localStorage.setItem('refreshToken', response.data.refresh);
+            }
+            const userResponse = await api.get('/api/users/me/');
+            // console.log('User data response:', userResponse.data);
+            setUser(userResponse.data);
             setIsAuthenticated(true);
-            return userData;
-        } catch (error) {
-            console.error('Falha no Login:', error);
-            throw error;
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
-    const handleLogout = () => {
-        userService.logout();
-        setIsAuthenticated(false);
-        setUser(null); 
-    };
-
-    const handleRefreshToken = async () => {
-        try {
-            await userService.refreshToken();
-            const userData = await userService.getUserData();
-            setUser(userData); 
-            
-            setIsAuthenticated(true);
-            return true;
+            return {
+                success: true,
+                user: userResponse.data
+            };
         } catch (error) {
-            // O userService.refreshToken já chama o logout interno em caso de falha.
+            console.error("Login failed:", error.response?.data || error.message);
+            localStorage.removeItem('accessToken');
             setIsAuthenticated(false);
             setUser(null);
-            console.error("Falha no Refresh Token. Usuário deslogado.");
-            throw error;
+
+            return {
+                success: false,
+                error:
+                    typeof error.response?.data?.detail === 'string'
+                        ? error.response.data.detail
+                        : JSON.stringify(error.response?.data?.detail) || "Falha ao tentar fazer login."
+            };
+        } finally {
+            setLoading(false);
         }
-    };
+    }, []);
 
-    // =========================================================
-    // 3. Estrutura do Contexto
-    // =========================================================
+    const loginGoogle = useCallback(async (credential) => {
+        try {
+            setLoading(true);
 
-    const authContextValue = {
-        isAuthenticated,
+            const response = await api.post('/api/users/google-login/', {
+                credential
+            });
+
+            localStorage.setItem('accessToken', response.data.access);
+            if (response.data.refresh) {
+                localStorage.setItem('refreshToken', response.data.refresh);
+            }
+
+            const userResponse = await api.get('/api/users/me/');
+
+            setUser(userResponse.data);
+            setIsAuthenticated(true);
+
+            return {
+                success: true,
+                user: userResponse.data
+            };
+
+        } catch (error) {
+            console.error(error);
+
+            localStorage.removeItem('accessToken');
+            setIsAuthenticated(false);
+            setUser(null);
+
+            return {
+                success: false,
+                error: error.response?.data?.detail || 'Erro login Google'
+            };
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    const logout = useCallback(() => {
+        setLoadingMessage("Fazendo logout...");
+        setLoading(true);
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        setUser(null);
+        setIsAuthenticated(false);
+        navigate('/login');
+        setLoading(false);
+    }, [navigate]);
+
+    useEffect(() => {
+        const checkAuthStatus = async () => {
+            // Tenta obter o token do localStorage
+            const token = localStorage.getItem('accessToken');
+            const publicRoutes = ["/", "/login", "/recuperar-senha", "/resetar-senha", "/404"];
+
+            // Se não houver token, o usuário não está autenticado
+           if (!token) {
+                setLoading(false);
+                setIsAuthenticated(false);
+                setIsCheckingAuth(false);
+
+                const isPublicRoute = publicRoutes.some((route) =>
+                    window.location.pathname.startsWith(route)
+                );
+
+                if (!isPublicRoute) {
+                    navigate("/login");
+                }
+
+                return;
+            }
+            try {
+                const response = await api.get('/api/users/me/');
+                setUser(response.data);
+                setIsAuthenticated(true);
+            } catch (error) {
+                // Se a requisição falhar, o token é inválido/expirado
+               
+                // Remove o token inválido para evitar futuras requisições
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                setUser(null);
+                setIsAuthenticated(false);
+
+                const isPublicRoute = publicRoutes.includes(window.location.pathname);
+
+                if (!isPublicRoute) {
+                    navigate("/login");
+                }
+            } finally {
+                setLoading(false);
+                setIsCheckingAuth(false);
+            }
+        };
+        checkAuthStatus();
+    }, [navigate]);
+
+    const isAuthenticatedCheck = () => isAuthenticated;
+
+    const authContextValue = useMemo(() => ({
         user,
-        isLoading,
-        login: handleLogin,
-        logout: handleLogout,
-        refreshToken: handleRefreshToken, 
-    };
-
-    // Retorna o provedor com o valor do contexto
-    if (isLoading) {
-        // Você pode retornar um componente de Loading global aqui
-        return <div>Carregando autenticação...</div>; 
-    }
+        isAuthenticated,
+        isCheckingAuth,
+        loading,
+        login,
+        loginGoogle,
+        logout,
+        isAuthenticatedCheck
+    }), [
+        user,
+        isAuthenticated,
+        isCheckingAuth,
+        loading,
+        login,
+        loginGoogle,
+        logout
+    ]);
 
     return (
         <AuthContext.Provider value={authContextValue}>
@@ -140,9 +184,4 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
-// Exemplo de como envolver sua aplicação:
-/*
-<AuthProvider>
-  <AppRoutes />
-</AuthProvider>
-*/
+export default AuthContext;

@@ -1,0 +1,372 @@
+/* .fatv2-eyebrow {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.fatv2-title {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.fatv2-subtitle {
+  margin: 10px 0 0;
+  font-size: 15px;
+  color: #64748b;
+  max-width: 760px;
+}
+
+.fatv2-toolbar {
+  margin-bottom: 18px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+}
+
+.fatv2-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #dbe2ea;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 0 14px;
+}
+
+.fatv2-search svg {
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.fatv2-search input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  padding: 14px 4px;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.fatv2-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.fatv2-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+}
+
+.fatv2-card-top {
+  padding: 22px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.fatv2-card-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.fatv2-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: rgba(29, 78, 216, 0.08);
+  color: #1d4ed8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fatv2-main-text h2 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.fatv2-main-text p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.fatv2-summary {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.fatv2-summary-item {
+  min-width: 125px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fatv2-summary-item span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.fatv2-summary-item strong {
+  font-size: 15px;
+  color: #0f172a;
+}
+
+.fatv2-card-body {
+  padding: 20px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.fatv2-label {
+  display: inline-block;
+  margin-bottom: 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.fatv2-benefit-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.fatv2-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.fatv2-docs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fatv2-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #dbe2ea;
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.2s ease;
+}
+
+.fatv2-btn:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.fatv2-btn-primary {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #ffffff;
+}
+
+.fatv2-btn-primary:hover {
+  background: #1e40af;
+  border-color: #1e40af;
+}
+
+.fatv2-empty {
+  padding: 22px 18px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 16px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 14px;
+}
+
+@media (max-width: 980px) {
+  .fatv2-card-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .fatv2-summary {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .fatv2-page {
+    padding: 18px 16px 48px;
+  }
+
+  .fatv2-hero {
+    padding: 20px;
+  }
+
+  .fatv2-title {
+    font-size: 28px;
+  }
+
+  .fatv2-docs {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .fatv2-btn {
+    width: 100%;
+  }
+
+  .fatv2-main-text h2 {
+    font-size: 18px;
+  }
+}
+
+.fatv2-total-card {
+  margin: 1rem 0;
+  padding: 1.25rem 1.5rem;
+  border-radius: 16px;
+  background: #0F3D5D;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 10px 24px rgba(15, 61, 93, 0.18);
+}
+
+.fatv2-total-card span {
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.fatv2-total-card strong {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.fatv2-tag.success {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.fatv2-tag.warning {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.fatv2-tag.danger {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.fatv2-tag.info {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.fatv2-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+  filter: grayscale(0.25);
+}
+
+.fatv2-pagination {
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.fatv2-pagination span {
+  font-weight: 600;
+  color: #0F3D5D;
+}
+
+.fatv2-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.fatv2-filters input {
+  height: 44px;
+  border: 1px solid #d7dce5;
+  border-radius: 12px;
+  padding: 0 0.9rem;
+  font-size: 0.95rem;
+  background: #fff;
+  color: #0f172a;
+  transition: all 0.2s ease;
+}
+
+.import, .comp, .vig, .venc, .status {
+  margin-left: 0.3rem;
+}
+
+.fatv2-filters input:focus {
+  outline: none;
+  border-color: #0F3D5D;
+  box-shadow: 0 0 0 3px rgba(15, 61, 93, 0.12);
+}
+
+.fatv2-filters select {
+  height: 44px;
+  border: 1px solid #d7dce5;
+  border-radius: 12px;
+  padding: 0 0.9rem;
+  font-size: 0.95rem;
+  background: #fff;
+  color: #0f172a;
+  transition: all 0.2s ease;
+}
+
+.fatv2-filters select:focus {
+  outline: none;
+  border-color: #0F3D5D;
+  box-shadow: 0 0 0 3px rgba(15, 61, 93, 0.12);
+} */

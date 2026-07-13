@@ -1,0 +1,12 @@
+.modelos-importacao-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 24px;
+  
+}
+
+.modelos-importacao-actions button {
+  flex: 1;
+  justify-content: center;
+  height: 44px;
+}
