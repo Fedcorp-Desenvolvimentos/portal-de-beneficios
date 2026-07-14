@@ -252,8 +252,9 @@ const getTipoBeneficioPedido = (pedidoApi) => {
 
   const modelo = normalizeBeneficioText(pedidoApi?.modelo_importacao)
   if (modelo) {
-    if (modelo.includes('VR') || modelo.includes('BENEFICIO')) return 'VR Benefícios'
-    if (modelo.includes('VT') || modelo.includes('AUTO')) return 'VT Auto'
+    if (modelo.includes('VT')) return 'Vale Transporte'
+    if (modelo.includes('AUTO') || modelo.includes('COMBUSTIVEL')) return 'Vale Combustível'
+    if (modelo.includes('VR') || modelo.includes('BENEFICIO')) return 'Alimentação/Refeição'
   }
 
   const codigoRaw =
@@ -355,20 +356,6 @@ const getTipoBeneficioPedido = (pedidoApi) => {
   }
 
   if (descricao.includes('ALIMENTACAO') || descricao.includes('REFEICAO')) {
-    return 'Alimentação/Refeição'
-  }
-
-  const modelo = normalizeBeneficioText(pedidoApi?.modelo_importacao)
-
-  if (modelo.includes('VT')) {
-    return 'Vale Transporte'
-  }
-
-  if (modelo.includes('AUTO') || modelo.includes('COMBUSTIVEL')) {
-    return 'Vale Combustível'
-  }
-
-  if (modelo.includes('VR')) {
     return 'Alimentação/Refeição'
   }
 
