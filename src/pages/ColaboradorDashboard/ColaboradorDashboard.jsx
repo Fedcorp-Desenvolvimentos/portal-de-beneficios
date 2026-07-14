@@ -250,6 +250,12 @@ const getPrimeiraMovimentacaoPedido = (pedidoApi) => {
 const getTipoBeneficioPedido = (pedidoApi) => {
   const primeiraMovimentacao = getPrimeiraMovimentacaoPedido(pedidoApi)
 
+  const modelo = normalizeBeneficioText(pedidoApi?.modelo_importacao)
+  if (modelo) {
+    if (modelo.includes('VR') || modelo.includes('BENEFICIO')) return 'VR Benefícios'
+    if (modelo.includes('VT') || modelo.includes('AUTO')) return 'VT Auto'
+  }
+
   const codigoRaw =
     firstValueFromObject(pedidoApi, [
       'beneficio_alterado_para_codigo',

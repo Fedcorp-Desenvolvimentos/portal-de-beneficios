@@ -182,8 +182,10 @@ export const faturamentoService = {
     return faturamentoService.importarDocumentos(payload)
   },
 
-  async listarPedidosFuncionario() {
-    const response = await api.get('/api/beneficios/importacoes/')
+  async listarPedidosFuncionario(page = 1, limit = 20) {
+    const response = await api.get('/api/beneficios/importacoes/', {
+      params: { page, limit },
+    })
     return response.data
   },
 
@@ -202,8 +204,10 @@ export const faturamentoService = {
     return pedidos.find((pedido) => String(pedido.id) === String(pedidoId)) || null
   },
 
-  async listarImportacoes() {
-    const response = await api.get('/api/beneficios/importacoes/')
+  async listarImportacoes(page = 1, limit = 100) {
+    const response = await api.get('/api/beneficios/importacoes/', {
+      params: { page, limit },
+    })
     return normalizeArray(response.data)
   },
 
@@ -238,7 +242,8 @@ export const faturamentoService = {
 
     try {
       const response = await api.get(`/api/beneficios/importacoes/${importacaoId}/`)
-      return response.data
+      const data = response.data
+      return data?.importacao || data
     } catch (error) {
       console.warn(
         `Não foi possível buscar detalhe da importação ${importacaoId}. Tentando fallback pela listagem...`,
@@ -528,11 +533,22 @@ export const faturamentoService = {
   },
 
   async buscarDadosSelecaoImportacao(importacaoId) {
-  if (!importacaoId) {
-    throw new Error('ID da importação não informado.')
-  }
+    if (!importacaoId) {
+      throw new Error('ID da importação não informado.')
+    }
 
-  const response = await api.get(`/api/upload/importacao/${importacaoId}/select-data/`)
-  return response.data
-},
+    const response = await api.get(`/api/upload/importacao/${importacaoId}/select-data/`)
+    return response.data
+  },
+
+  async buscarMovimentacoesImportacao(importacaoId, movPage = 1, movLimit = 100) {
+    if (!importacaoId) {
+      throw new Error('ID da importação não informado.')
+    }
+
+    const response = await api.get(`/api/beneficios/importacoes/${importacaoId}/`, {
+      params: { mov_page: movPage, mov_limit: movLimit },
+    })
+    return response.data
+  },
 }
