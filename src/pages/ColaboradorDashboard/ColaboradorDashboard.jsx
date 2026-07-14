@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react'
-import { useOutletContext } from 'react-router-dom'
+import { useOutletContext, Navigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import { useSnackbar } from 'notistack'
 import {
   FiDownload,
@@ -656,6 +657,15 @@ const SkeletonPagination = () => (
 // COMPONENTE PRINCIPAL
 // ============================================
 export default function ColaboradorDashboard() {
+  const { user } = useAuth()
+  const userRole = user?.tipo || user?.tipo_usuario || user?.role || user?.perfil
+
+  const admRoles = ['adm', 'cli', 'dep', 'fin']
+
+  if (admRoles.includes(userRole)) {
+    return <Navigate to="/home" replace />
+  }
+
   const { enqueueSnackbar } = useSnackbar()
   const outletContext = useOutletContext()
   const sidebarWidth = outletContext?.withSidebar ? 240 : 62

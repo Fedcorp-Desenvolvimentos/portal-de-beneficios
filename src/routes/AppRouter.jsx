@@ -137,7 +137,11 @@ const AppRouter = () => {
 
             <Route
               path="/dashboard"
-              element={<ColaboradorDashboard />}
+              element={
+                <PrivateRouter allowedRoles={['fat', 'fin', 'dev']}>
+                  <ColaboradorDashboard />
+                </PrivateRouter>
+              }
             />
 
             <Route
