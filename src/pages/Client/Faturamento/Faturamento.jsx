@@ -371,7 +371,8 @@ export default function Faturamento() {
             `Registros processados: ${item.registros_processados || 0}`,
             `Vigência: ${formatDateBR(item.vigencia_inicio)} até ${formatDateBR(item.vigencia_fim)}`,
             `Vencimento: ${formatDateBR(item.data_vencimento)}`,
-          ],
+            item.data_recebimento ? `Recebimento: ${formatDateBR(item.data_recebimento)}` : null,
+          ].filter(Boolean),
         };
       })
       .filter((group) => {

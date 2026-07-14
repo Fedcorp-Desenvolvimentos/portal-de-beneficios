@@ -1120,6 +1120,43 @@ function subtractDaysFromDateInput(value, days) {
   return addDaysToDateInput(value, -Number(days || 0))
 }
 
+function subtractBusinessDays(value, businessDays) {
+  const date = parseDateInput(value)
+  if (!date || !businessDays) return value || ''
+
+  let remaining = Number(businessDays)
+  while (remaining > 0) {
+    date.setDate(date.getDate() - 1)
+    const dayOfWeek = date.getDay()
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      remaining--
+    }
+  }
+  return formatDateInput(date)
+}
+
+function addBusinessDays(value, businessDays) {
+  const date = parseDateInput(value)
+  if (!date || !businessDays) return value || ''
+
+  let remaining = Number(businessDays)
+  while (remaining > 0) {
+    date.setDate(date.getDate() + 1)
+    const dayOfWeek = date.getDay()
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      remaining--
+    }
+  }
+  return formatDateInput(date)
+}
+
+function isWeekend(value) {
+  const date = parseDateInput(value)
+  if (!date) return false
+  const day = date.getDay()
+  return day === 0 || day === 6
+}
+
 function isAfterDateInput(dateA, dateB) {
   const parsedA = parseDateInput(dateA)
   const parsedB = parseDateInput(dateB)
@@ -1625,24 +1662,43 @@ export default function Importacao() {
     const vencimento = formEnvio.vencimento
     const dias = isValeTransporte ? 8 : (regraValor?.d_mais ?? 1)
 
-    if (campoDataReferenciaVT === 'vencimento' && vencimento) {
-      return {
-        recebimentoBeneficio: addDaysToDateInput(vencimento, dias),
-        vencimento,
+    if (isValeTransporte) {
+      if (campoDataReferenciaVT === 'vencimento' && vencimento) {
+        return {
+          recebimentoBeneficio: addDaysToDateInput(vencimento, dias),
+          vencimento,
+        }
       }
-    }
-
-    if (recebimento) {
-      return {
-        recebimentoBeneficio: recebimento,
-        vencimento: subtractDaysFromDateInput(recebimento, dias),
+      if (recebimento) {
+        return {
+          recebimentoBeneficio: recebimento,
+          vencimento: subtractDaysFromDateInput(recebimento, dias),
+        }
       }
-    }
-
-    if (vencimento) {
-      return {
-        recebimentoBeneficio: addDaysToDateInput(vencimento, dias),
-        vencimento,
+      if (vencimento) {
+        return {
+          recebimentoBeneficio: addDaysToDateInput(vencimento, dias),
+          vencimento,
+        }
+      }
+    } else {
+      if (campoDataReferenciaVT === 'vencimento' && vencimento) {
+        return {
+          recebimentoBeneficio: addBusinessDays(vencimento, dias),
+          vencimento,
+        }
+      }
+      if (recebimento) {
+        return {
+          recebimentoBeneficio: recebimento,
+          vencimento: subtractBusinessDays(recebimento, dias),
+        }
+      }
+      if (vencimento) {
+        return {
+          recebimentoBeneficio: addBusinessDays(vencimento, dias),
+          vencimento,
+        }
       }
     }
 
@@ -1682,7 +1738,7 @@ export default function Importacao() {
     setFormEnvio((prev) => ({
       ...prev,
       recebimentoBeneficio: value,
-      vencimento: value ? subtractDaysFromDateInput(value, regraValor?.d_mais ?? 1) : '',
+      vencimento: value ? subtractBusinessDays(value, regraValor?.d_mais ?? 1) : '',
     }))
   }
 
@@ -1691,11 +1747,19 @@ export default function Importacao() {
 
     setCampoDataReferenciaVT(value ? 'vencimento' : null)
 
-    setFormEnvio((prev) => ({
-      ...prev,
-      vencimento: value,
-      recebimentoBeneficio: value ? addDaysToDateInput(value, dias) : '',
-    }))
+    if (isValeTransporte) {
+      setFormEnvio((prev) => ({
+        ...prev,
+        vencimento: value,
+        recebimentoBeneficio: value ? addDaysToDateInput(value, dias) : '',
+      }))
+    } else {
+      setFormEnvio((prev) => ({
+        ...prev,
+        vencimento: value,
+        recebimentoBeneficio: value ? addBusinessDays(value, dias) : '',
+      }))
+    }
   }
 
   const limparDatasBeneficio = () => {
@@ -1707,6 +1771,18 @@ export default function Importacao() {
       recebimentoBeneficio: '',
     }))
   }
+
+  const dMais = isValeTransporte ? 8 : (regraValor?.d_mais ?? 1)
+
+  const vencimentoMinimo = formEnvio.recebimentoBeneficio
+    ? subtractBusinessDays(formEnvio.recebimentoBeneficio, dMais)
+    : ''
+
+  const recebimentoMaximo = formEnvio.vencimento
+    ? addBusinessDays(formEnvio.vencimento, dMais)
+    : ''
+
+  const minDateMesAtual = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
 
   const validarDatasEnvio = () => {
     const datas = sincronizarDatasEnvio()
@@ -2806,7 +2882,8 @@ export default function Importacao() {
                   onChange={handleRecebimentoBeneficioChange}
                   required={campoDataReferenciaVT !== 'vencimento'}
                   disabled={enviandoLote || recebimentoCalculadoAutomaticamente}
-                  minDate={new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)}
+                  minDate={minDateMesAtual}
+                  maxDate={recebimentoMaximo || undefined}
                 />
               </label>
             </div>
@@ -2819,7 +2896,7 @@ export default function Importacao() {
                   onChange={handleVencimentoChange}
                   required={campoDataReferenciaVT !== 'recebimento'}
                   disabled={enviandoLote || vencimentoCalculadoAutomaticamente}
-                  minDate={new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)}
+                  minDate={vencimentoMinimo || minDateMesAtual}
                 />
 
                 {!campoDataReferenciaVT && !formEnvio.recebimentoBeneficio && !formEnvio.vencimento && (
