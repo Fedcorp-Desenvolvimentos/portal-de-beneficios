@@ -1201,7 +1201,7 @@ export default function Importacao() {
   const [campoDataReferenciaVT, setCampoDataReferenciaVT] = useState(null)
 
   const carregarRegraValor = async () => {
-    const administradoraId = user?.administradora_id
+    const administradoraId = user?.administradora_ativa_id || user?.administradora_id || user?.administradora_ativa;
 
     if (!administradoraId) return
 
@@ -1232,7 +1232,7 @@ export default function Importacao() {
 
   useEffect(() => {
     carregarRegraValor()
-  }, [user?.administradora_id])
+  }, [user?.administradora_ativa_id, user?.administradora_id, user?.administradora_ativa])
 
   const abrirModalRegraValor = async () => {
     await carregarRegraValor()
@@ -1240,7 +1240,7 @@ export default function Importacao() {
   }
 
   const salvarRegraValor = async () => {
-    const administradoraId = user?.administradora_id
+    const administradoraId = user?.administradora_ativa_id || user?.administradora_id || user?.administradora_ativa;
     const valorLimite = Number(formRegraValor.valor_limite)
 
     if (!administradoraId) {
@@ -1315,9 +1315,9 @@ export default function Importacao() {
           file.name.toLowerCase().includes('vale_transporte');
 
         if (isVTByFilename) {
-          response = await vtService.uploadVTFile(file, user?.administradora_id);
+          response = await vtService.uploadVTFile(file, user?.administradora_ativa_id || user?.administradora_id || user?.administradora_ativa);
         } else {
-          response = await uploadService.uploadFile(file, user?.administradora_id);
+          response = await uploadService.uploadFile(file, user?.administradora_ativa_id || user?.administradora_id || user?.administradora_ativa);
         }
 
       } else {
@@ -2287,7 +2287,7 @@ export default function Importacao() {
 
         const payloadVT = {
           file_upload_id: data.file_upload_id || Number(lote.id?.replace('VT-', '')) || 228,
-          administradora_id: user?.administradora_id,
+          administradora_id: user?.administradora_ativa_id || user?.administradora_id || user?.administradora_ativa,
           tipo_processamento: 'VT',
           origem: 'importacao_vale_transporte',
           periodo_inicio: periodoInicio,
@@ -2338,7 +2338,7 @@ export default function Importacao() {
 
         const dadosParaEnvio = {
           file_upload_id: data.file_upload_id || Number(lote.id?.replace('IMP-', '')) || 228,
-          administradora_id: user?.administradora_id || dataToBackendSincronizado.administradora_id,
+          administradora_id: user?.administradora_ativa_id || user?.administradora_id || user?.administradora_ativa || dataToBackendSincronizado.administradora_id,
           condominios: dataToBackendSincronizado.condominios || [],
           summary: dataToBackendSincronizado.summary,
           movimentacoes_detalhada: dataToBackendSincronizado.movimentacoes_detalhada || [],

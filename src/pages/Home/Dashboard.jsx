@@ -93,11 +93,7 @@ const firstValidId = (...values) => {
 };
 
 const getAdministradoraIdFromUser = (user) =>
-  firstValidId(
-    user?.administradora_id,
-    user?.administradora,
-    user?.id_administradora
-  );
+  user?.administradora_ativa_id || user?.administradora_id || user?.administradora_ativa || null;
 
 const getAdministradoraIdsFromCondominio = (condominio) => {
   const ids = [];

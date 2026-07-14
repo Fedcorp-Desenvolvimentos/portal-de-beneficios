@@ -18,28 +18,24 @@ export const AuthProvider = ({ children }) => {
     const { loading, setLoading, setLoadingMessage } = useGlobal();
     const navigate = useNavigate();
 
-    // console.log("user - context", user)
-
     const login = useCallback(async (credentials) => {
         setLoadingMessage("Fazendo login...");
         setLoading(true);
         try {
-            // 1. Faz a requisição de login
             const response = await api.post('/api/users/login/', credentials);
-            // console.log('Login response:', response.data);
             localStorage.setItem('accessToken', response.data.access);
             if (response.data.refresh) {
                 localStorage.setItem('refreshToken', response.data.refresh);
             }
             const userResponse = await api.get('/api/users/me/');
-            // console.log('User data response:', userResponse.data);
             setUser(userResponse.data);
             setIsAuthenticated(true);
 
-            return {
-                success: true,
-                user: userResponse.data
-            };
+            if (userResponse.data?.administradora_ativa) {
+                localStorage.setItem('administradora_ativa_id', userResponse.data.administradora_ativa);
+            }
+
+            return { success: true, user: userResponse.data };
         } catch (error) {
             console.error("Login failed:", error.response?.data || error.message);
             localStorage.removeItem('accessToken');
@@ -62,28 +58,23 @@ export const AuthProvider = ({ children }) => {
         try {
             setLoading(true);
 
-            const response = await api.post('/api/users/google-login/', {
-                credential
-            });
-
+            const response = await api.post('/api/users/google-login/', { credential });
             localStorage.setItem('accessToken', response.data.access);
             if (response.data.refresh) {
                 localStorage.setItem('refreshToken', response.data.refresh);
             }
 
             const userResponse = await api.get('/api/users/me/');
-
             setUser(userResponse.data);
             setIsAuthenticated(true);
 
-            return {
-                success: true,
-                user: userResponse.data
-            };
+            if (userResponse.data?.administradora_ativa) {
+                localStorage.setItem('administradora_ativa_id', userResponse.data.administradora_ativa);
+            }
 
+            return { success: true, user: userResponse.data };
         } catch (error) {
             console.error(error);
-
             localStorage.removeItem('accessToken');
             setIsAuthenticated(false);
             setUser(null);
@@ -102,20 +93,54 @@ export const AuthProvider = ({ children }) => {
         setLoading(true);
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('administradora_ativa_id');
         setUser(null);
         setIsAuthenticated(false);
         navigate('/login');
         setLoading(false);
     }, [navigate]);
 
+    const setAdministradoraAtiva = useCallback(async (administradora) => {
+        if (!administradora?.id) return;
+
+        try {
+            await api.post('/api/users/set-administradora-ativa/', {
+                administradora_id: administradora.id,
+            });
+
+            localStorage.setItem('administradora_ativa_id', administradora.id);
+
+            const userResponse = await api.get('/api/users/me/');
+            setUser(userResponse.data);
+
+            return { success: true };
+        } catch (error) {
+            console.error('Erro ao alterar administradora ativa:', error);
+            return {
+                success: false,
+                error: error.response?.data?.detail || 'Erro ao alterar administradora'
+            };
+        }
+    }, []);
+
+    const refreshUser = useCallback(async () => {
+        try {
+            const userResponse = await api.get('/api/users/me/');
+            setUser(userResponse.data);
+            if (userResponse.data?.administradora_ativa) {
+                localStorage.setItem('administradora_ativa_id', userResponse.data.administradora_ativa);
+            }
+        } catch (error) {
+            console.error('Erro ao atualizar dados do usuario:', error);
+        }
+    }, []);
+
     useEffect(() => {
         const checkAuthStatus = async () => {
-            // Tenta obter o token do localStorage
             const token = localStorage.getItem('accessToken');
             const publicRoutes = ["/", "/login", "/recuperar-senha", "/resetar-senha", "/404"];
 
-            // Se não houver token, o usuário não está autenticado
-           if (!token) {
+            if (!token) {
                 setLoading(false);
                 setIsAuthenticated(false);
                 setIsCheckingAuth(false);
@@ -134,10 +159,10 @@ export const AuthProvider = ({ children }) => {
                 const response = await api.get('/api/users/me/');
                 setUser(response.data);
                 setIsAuthenticated(true);
+                if (response.data?.administradora_ativa) {
+                    localStorage.setItem('administradora_ativa_id', response.data.administradora_ativa);
+                }
             } catch (error) {
-                // Se a requisição falhar, o token é inválido/expirado
-               
-                // Remove o token inválido para evitar futuras requisições
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('refreshToken');
                 setUser(null);
@@ -158,6 +183,14 @@ export const AuthProvider = ({ children }) => {
 
     const isAuthenticatedCheck = () => isAuthenticated;
 
+    const administradoraAtiva = useMemo(() => {
+        if (!user) return null;
+        const activeId = user.administradora_ativa;
+        if (!activeId) return null;
+        const admins = user.administradoras_data || [];
+        return admins.find((a) => a.id === activeId) || null;
+    }, [user]);
+
     const authContextValue = useMemo(() => ({
         user,
         isAuthenticated,
@@ -166,7 +199,10 @@ export const AuthProvider = ({ children }) => {
         login,
         loginGoogle,
         logout,
-        isAuthenticatedCheck
+        isAuthenticatedCheck,
+        administradoraAtiva,
+        setAdministradoraAtiva,
+        refreshUser,
     }), [
         user,
         isAuthenticated,
@@ -174,7 +210,10 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         loginGoogle,
-        logout
+        logout,
+        administradoraAtiva,
+        setAdministradoraAtiva,
+        refreshUser,
     ]);
 
     return (

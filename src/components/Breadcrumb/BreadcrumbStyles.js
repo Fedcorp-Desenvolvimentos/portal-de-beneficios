@@ -392,3 +392,60 @@ export const MenuOverlay = styled.div`
   background: transparent;
   z-index: 999;
 `;
+
+export const AdminSectionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  svg {
+    color: #2463eb;
+  }
+`;
+
+export const AdminOption = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 16px;
+  background: ${props => props.$active ? '#eff6ff' : 'none'};
+  border: none;
+  text-align: left;
+  font-size: 13px;
+  color: ${props => props.$active ? '#1e40af' : '#475569'};
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: ${props => props.$active ? '#eff6ff' : '#f8fafc'};
+  }
+`;
+
+export const AdminCheckbox = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid ${props => props.$checked ? '#2463eb' : '#cbd5e1'};
+  background: ${props => props.$checked ? '#2463eb' : 'white'};
+  color: white;
+  flex-shrink: 0;
+  transition: all 0.15s;
+`;
+
+export const AdminOptionLabel = styled.span`
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
