@@ -151,6 +151,42 @@ export const S = {
     }
   `,
 
+  DateFilter: styled.div`
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px 10px;
+    transition: border-color 0.15s;
+
+    &:focus-within {
+      border-color: var(--accent);
+    }
+
+    span {
+      font-size: 13px;
+      color: var(--sub);
+      white-space: nowrap;
+    }
+
+    .datepicker-custom {
+      border: 0;
+      outline: 0;
+      background: transparent;
+      font-family: var(--font);
+      font-size: 13px;
+      color: var(--text);
+      width: 100px;
+      cursor: pointer;
+
+      &::placeholder {
+        color: var(--sub);
+      }
+    }
+  `,
+
   TableWrap: styled.div`
     background: var(--surface);
     border: 1px solid var(--border);
@@ -518,6 +554,19 @@ export const S = {
         color: var(--sub);
       `}
 
+    ${({ $variant }) =>
+      $variant === 'danger' &&
+      css`
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.3);
+
+        &:hover:not(:disabled) {
+          background: rgba(239, 68, 68, 0.08);
+          border-color: rgba(239, 68, 68, 0.4);
+          color: #dc2626;
+        }
+      `}
+
     ${({ $size }) =>
       $size === 'sm' &&
       css`
@@ -634,6 +683,23 @@ export const S = {
 
       &:hover:not(:disabled) {
         background: #1d4ed8;
+      }
+    }
+
+    &.danger {
+      color: #ef4444;
+
+      svg {
+        color: #ef4444;
+      }
+
+      &:hover:not(:disabled) {
+        background: rgba(239, 68, 68, 0.08);
+        color: #dc2626;
+
+        svg {
+          color: #dc2626;
+        }
       }
     }
   `,

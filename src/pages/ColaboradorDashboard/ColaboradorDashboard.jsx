@@ -21,6 +21,7 @@ import { BiSpreadsheet } from 'react-icons/bi'
 import { faturamentoService } from '../../services/faturamentoService'
 import { entebenService } from '../../services/entebenService'
 import PageLayout from '../../Layouts/PageLayout/PageLayout'
+import DatePickerWrapper from '../../components/DatePicker/DatePickerWrapper'
 import { S } from './ColaboradorDashboardStyles'
 
 // ============================================
@@ -670,6 +671,8 @@ export default function ColaboradorDashboard() {
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('todos')
+  const [dataCreditoInicio, setDataCreditoInicio] = useState('')
+  const [dataCreditoFim, setDataCreditoFim] = useState('')
   const [pedidos, setPedidos] = useState([])
   const [loading, setLoading] = useState(true)
   const [downloadingId, setDownloadingId] = useState(null)
@@ -812,7 +815,7 @@ export default function ColaboradorDashboard() {
   const filtered = useMemo(() => {
     const q = norm(search)
 
-    return pedidos.filter((p) => {
+    const result = pedidos.filter((p) => {
       const hay = norm(
         [
           p.id,
@@ -827,9 +830,33 @@ export default function ColaboradorDashboard() {
         ].join(' ')
       )
 
-      return (!q || hay.includes(q)) && (statusFilter === 'todos' || p.status === statusFilter)
+      const matchSearch = !q || hay.includes(q)
+      const matchStatus = statusFilter === 'todos' ? p.status !== 'cancelado' : p.status === statusFilter
+      const matchDataInicio = !dataCreditoInicio || (p.dataRecebimento && p.dataRecebimento >= dataCreditoInicio)
+      const matchDataFim = !dataCreditoFim || (p.dataRecebimento && p.dataRecebimento <= dataCreditoFim)
+
+      return matchSearch && matchStatus && matchDataInicio && matchDataFim
     })
-  }, [pedidos, search, statusFilter])
+
+    result.sort((a, b) => {
+      const parseDate = (s) => {
+        if (!s) return Infinity
+        const v = String(s).trim()
+        if (v.includes('/')) {
+          const [d, m, y] = v.split('/')
+          return new Date(Number(y), Number(m) - 1, Number(d)).getTime()
+        }
+        const parts = v.split('-')
+        if (parts.length === 3) {
+          return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).getTime()
+        }
+        return Infinity
+      }
+      return parseDate(a.dataRecebimento) - parseDate(b.dataRecebimento)
+    })
+
+    return result
+  }, [pedidos, search, statusFilter, dataCreditoInicio, dataCreditoFim])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
 
@@ -840,7 +867,7 @@ export default function ColaboradorDashboard() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [search, statusFilter])
+  }, [search, statusFilter, dataCreditoInicio, dataCreditoFim])
 
   async function handleDownload(pedido) {
     if (pedido.status === 'cancelado') {
@@ -1668,6 +1695,23 @@ export default function ColaboradorDashboard() {
         ) : (
           <S.ActionStatus>Compra indisponível</S.ActionStatus>
         )}
+
+        {p.status !== 'cancelado' && (
+          <S.ActionItem
+            type="button"
+            className="danger"
+            onClick={() => {
+              setCancelPedido(p)
+              setCancelReason('')
+              setCancelError('')
+              setCancelOpen(true)
+              closeActionsMenu()
+            }}
+          >
+            <FiTrash2 size={14} />
+            <span>Cancelar pedido</span>
+          </S.ActionItem>
+        )}
       </>
     )
   }
@@ -1731,6 +1775,29 @@ export default function ColaboradorDashboard() {
                 <option value="comprado">Comprado</option>
                 <option value="cancelado">Cancelados</option>
               </S.Select>
+
+              <S.DateFilter>
+                <FiCalendar size={15} />
+
+                <DatePickerWrapper
+                  value={dataCreditoInicio}
+                  onChange={setDataCreditoInicio}
+                  placeholderText="Inicio"
+                  maxDate={dataCreditoFim || undefined}
+                />
+
+                <DatePickerWrapper
+                  value={dataCreditoFim}
+                  onChange={setDataCreditoFim}
+                  placeholderText="Fim"
+                  minDate={dataCreditoInicio || undefined}
+                />
+                {(dataCreditoInicio || dataCreditoFim) && (
+                  <S.SearchClear onClick={() => { setDataCreditoInicio(''); setDataCreditoFim('') }}>
+                    <FiX size={14} />
+                  </S.SearchClear>
+                )}
+              </S.DateFilter>
             </S.Filters>
 
             <S.TableWrap>
@@ -1752,6 +1819,7 @@ export default function ColaboradorDashboard() {
                         <th>Excel</th>
                         <th>Docs</th>
                         <th>Compra</th>
+                        <th></th>
                       </>
                     )}
                   </tr>
@@ -1760,7 +1828,7 @@ export default function ColaboradorDashboard() {
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <S.Empty colSpan={isSmallScreen ? 8 : 10}>
+                      <S.Empty colSpan={isSmallScreen ? 8 : 11}>
                         Nenhum pedido encontrado.
                       </S.Empty>
                     </tr>
@@ -1887,6 +1955,23 @@ export default function ColaboradorDashboard() {
                                 <span style={{ color: '#22c55e', fontSize: 12 }}>TXT gerado ✓</span>
                               ) : (
                                 <span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>
+                              )}
+                            </td>
+
+                            <td>
+                              {p.status !== 'cancelado' && (
+                                <S.Btn
+                                  $variant="danger"
+                                  onClick={() => {
+                                    setCancelPedido(p)
+                                    setCancelReason('')
+                                    setCancelError('')
+                                    setCancelOpen(true)
+                                  }}
+                                  title="Cancelar pedido"
+                                >
+                                  <FiTrash2 size={14} />
+                                </S.Btn>
                               )}
                             </td>
                           </>
