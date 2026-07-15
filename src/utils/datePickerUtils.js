@@ -32,22 +32,79 @@ export function formatDateInput(date) {
 }
 
 /**
- * Adiciona dias a uma data string YYYY-MM-DD
+ * Verifica se a data cai em fim de semana (sábado=6 ou domingo=0)
+ */
+export function isWeekend(value) {
+  const date = typeof value === 'string' ? parseDateInput(value) : value
+  if (!date) return false
+  const day = date.getDay()
+  return day === 0 || day === 6
+}
+
+/**
+ * Se a data cair em fim de semana, avança para a segunda-feira (próximo dia útil)
+ */
+export function proximoDiaUtil(value) {
+  const date = typeof value === 'string' ? parseDateInput(value) : value
+  if (!date) return value
+
+  while (date.getDay() === 0 || date.getDay() === 6) {
+    date.setDate(date.getDate() + 1)
+  }
+  return date
+}
+
+/**
+ * Se a data cair em fim de semana, volta para a sexta-feira (dia útil anterior)
+ */
+export function diaUtilAnterior(value) {
+  const date = typeof value === 'string' ? parseDateInput(value) : value
+  if (!date) return value
+
+  while (date.getDay() === 0 || date.getDay() === 6) {
+    date.setDate(date.getDate() - 1)
+  }
+  return date
+}
+
+/**
+ * Adiciona N dias úteis a uma data string YYYY-MM-DD.
+ * Pula sábados e domingos ao contar.
+ * Ex: Sexta + 4 dias úteis = Quinta (pula sáb, dom, seg, ter, qua)
  */
 export function addDaysToDateInput(value, days) {
   const date = parseDateInput(value)
   if (!date) return ''
 
-  date.setDate(date.getDate() + Number(days || 0))
+  let remaining = Number(days || 0)
+  while (remaining > 0) {
+    date.setDate(date.getDate() + 1)
+    if (date.getDay() !== 0 && date.getDay() !== 6) {
+      remaining--
+    }
+  }
 
   return formatDateInput(date)
 }
 
 /**
- * Subtrai dias de uma data string YYYY-MM-DD
+ * Subtrai N dias úteis de uma data string YYYY-MM-DD.
+ * Pula sábados e domingos ao contar.
+ * Ex: Quinta - 4 dias úteis = Segunda (pula qua, ter, seg, dom, sáb)
  */
 export function subtractDaysFromDateInput(value, days) {
-  return addDaysToDateInput(value, -Number(days || 0))
+  const date = parseDateInput(value)
+  if (!date) return ''
+
+  let remaining = Number(days || 0)
+  while (remaining > 0) {
+    date.setDate(date.getDate() - 1)
+    if (date.getDay() !== 0 && date.getDay() !== 6) {
+      remaining--
+    }
+  }
+
+  return formatDateInput(date)
 }
 
 /**
@@ -89,12 +146,12 @@ export function getTodayDateInput() {
 }
 
 /**
- * Obtém data de vencimento (data atual + X dias)
+ * Obtém data de vencimento (data atual + X dias, ajustada para dia útil)
  */
 export function getDueDateInput(daysToAdd = 1) {
   const today = new Date()
   today.setDate(today.getDate() + Number(daysToAdd))
-  return formatDateInput(today)
+  return formatDateInput(proximoDiaUtil(today))
 }
 
 /**

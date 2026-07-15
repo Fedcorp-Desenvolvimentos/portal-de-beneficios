@@ -182,7 +182,7 @@ export const faturamentoService = {
     return faturamentoService.importarDocumentos(payload)
   },
 
-  async listarPedidosFuncionario(page = 1, limit = 20) {
+  async listarPedidosFuncionario(page = 1, limit = 500) {
     const response = await api.get('/api/beneficios/importacoes/', {
       params: { page, limit },
     })

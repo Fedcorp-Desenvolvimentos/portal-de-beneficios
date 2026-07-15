@@ -167,7 +167,7 @@ export const S = {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
-    min-width: 1080px;
+    min-width: 1180px;
     font-size: 13px;
 
     thead th {
@@ -199,36 +199,41 @@ export const S = {
 
     th:nth-child(1),
     td:nth-child(1) {
-      width: 130px;
+      width: 120px;
     }
 
     th:nth-child(2),
     td:nth-child(2) {
-      width: 260px;
+      width: 220px;
     }
 
     th:nth-child(3),
     td:nth-child(3) {
-      width: 115px;
+      width: 100px;
     }
 
     th:nth-child(4),
     td:nth-child(4) {
-      width: 105px;
+      width: 95px;
     }
 
     th:nth-child(5),
     td:nth-child(5) {
-      width: 120px;
+      width: 100px;
     }
 
     th:nth-child(6),
     td:nth-child(6) {
-      width: 145px;
+      width: 110px;
     }
 
     th:nth-child(7),
     td:nth-child(7) {
+      width: 130px;
+    }
+
+    th:nth-child(8),
+    td:nth-child(8) {
       width: 58px;
       min-width: 58px;
       max-width: 58px;
@@ -237,8 +242,8 @@ export const S = {
       padding-right: 6px;
     }
 
-    th:nth-child(8),
-    td:nth-child(8) {
+    th:nth-child(9),
+    td:nth-child(9) {
       width: 96px;
       min-width: 96px;
       max-width: 96px;
@@ -248,8 +253,8 @@ export const S = {
       white-space: nowrap;
     }
 
-    th:nth-child(9),
-    td:nth-child(9) {
+    th:nth-child(10),
+    td:nth-child(10) {
       width: 104px;
       min-width: 104px;
       max-width: 104px;
@@ -258,7 +263,7 @@ export const S = {
       padding-right: 8px;
     }
 
-    td:nth-child(7) > button {
+    td:nth-child(8) > button {
       min-width: 36px;
       width: 36px;
       height: 32px;
@@ -266,14 +271,14 @@ export const S = {
       justify-content: center;
     }
 
-    td:nth-child(8) > div {
+    td:nth-child(9) > div {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
     }
 
-    td:nth-child(8) > button {
+    td:nth-child(9) > button {
       min-width: 82px;
       width: auto;
       height: 32px;
@@ -282,14 +287,14 @@ export const S = {
       white-space: nowrap;
     }
 
-    td:nth-child(8) > div:has(button + button) > button {
+    td:nth-child(9) > div:has(button + button) > button {
       min-width: 36px;
       width: 36px;
       height: 32px;
       padding: 0;
     }
 
-    td:nth-child(9) > button {
+    td:nth-child(10) > button {
       min-width: 82px;
       padding-left: 10px;
       padding-right: 10px;
@@ -310,43 +315,48 @@ export const S = {
 
       th:nth-child(1),
       td:nth-child(1) {
-        width: 13%;
+        width: 12%;
       }
 
       th:nth-child(2),
       td:nth-child(2) {
-        width: 26%;
+        width: 22%;
       }
 
       th:nth-child(3),
       td:nth-child(3) {
-        width: 12%;
+        width: 10%;
       }
 
       th:nth-child(4),
       td:nth-child(4) {
-        width: 11%;
+        width: 10%;
       }
 
       th:nth-child(5),
       td:nth-child(5) {
-        width: 13%;
+        width: 10%;
       }
 
       th:nth-child(6),
       td:nth-child(6) {
-        width: 15%;
+        width: 12%;
       }
 
       th:nth-child(7),
       td:nth-child(7) {
+        width: 14%;
+      }
+
+      th:nth-child(8),
+      td:nth-child(8) {
         width: 10%;
         min-width: 0;
         max-width: none;
         text-align: center;
       }
 
-      td:nth-child(7) button {
+      td:nth-child(8) button {
         min-width: unset;
         width: auto;
         height: auto;
@@ -367,7 +377,7 @@ export const S = {
   `,
 
   AdminCell: styled.td`
-    max-width: 260px;
+    max-width: 220px;
     min-width: 0;
   `,
 

@@ -546,6 +546,7 @@ const extrairResumoPedido = (pedidoApi) => {
     canceladoEm: pedidoApi.data_cancelamento || null,
     motivoCancelamento: pedidoApi.motivo_cancelamento || '',
     compradoEm: pedidoApi.data_compra || pedidoApi.data_comprado || null,
+    dataRecebimento: pedidoApi.data_recebimento || null,
     condominios,
     raw: pedidoApi,
   }
@@ -593,6 +594,9 @@ const SkeletonTableRow = () => (
       <S.SkeletonLine $width="70px" $height="14px" />
     </td>
     <td>
+      <S.SkeletonLine $width="80px" $height="14px" />
+    </td>
+    <td>
       <S.SkeletonLine $width="80px" $height="18px" />
     </td>
     <td>
@@ -619,6 +623,7 @@ const SkeletonTable = () => (
           <th>Administradora</th>
           <th>Vencimento</th>
           <th>Competência</th>
+          <th>Data Crédito</th>
           <th>Valor</th>
           <th>Status</th>
           <th>Excel</th>
@@ -1736,6 +1741,7 @@ export default function ColaboradorDashboard() {
                     <th>Administradora</th>
                     <th>Vencimento</th>
                     <th>Competência</th>
+                    <th>Data Crédito</th>
                     <th>Valor</th>
                     <th>Status</th>
 
@@ -1754,7 +1760,7 @@ export default function ColaboradorDashboard() {
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <S.Empty colSpan={isSmallScreen ? 7 : 9}>
+                      <S.Empty colSpan={isSmallScreen ? 8 : 10}>
                         Nenhum pedido encontrado.
                       </S.Empty>
                     </tr>
@@ -1784,6 +1790,8 @@ export default function ColaboradorDashboard() {
                         </td>
 
                         <td style={{ fontSize: 13 }}>{p.mesUtilizacao}</td>
+
+                        <td style={{ fontSize: 13 }}>{fmtDate(p.dataRecebimento)}</td>
 
                         <td style={{ fontWeight: 600, color: '#16a34a' }}>
                           {fmtMoney(p.valorTotal)}

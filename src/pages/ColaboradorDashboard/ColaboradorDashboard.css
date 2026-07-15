@@ -1010,201 +1010,207 @@
     word-break: break-word;
 }
 
-/* Ajuste real da tabela do Dashboard:
-   Pedido | Administradora | Vencimento | Competência | Valor | Status | Excel | Docs | Compra */
+/* Tabela do Dashboard:
+   Pedido | Administradora | Vencimento | Competência | Data crédito |
+   Valor | Status | Excel | Docs | Compra */
 
 .cf-table-wrap {
-    overflow-x: auto;
+    width: 100%;
+    overflow-x: hidden;
 }
 
 .cf-table {
     width: 100%;
+    min-width: 0;
     border-collapse: collapse;
     table-layout: fixed;
-    min-width: 1180px;
+}
+
+.cf-table thead th {
+    padding: 12px 8px;
+    font-size: 9px;
+    letter-spacing: .07em;
+}
+
+.cf-table tbody td {
+    padding: 12px 8px;
+    font-size: 12px;
 }
 
 /* Pedido */
 .cf-table th:nth-child(1),
 .cf-table td:nth-child(1) {
-    width: 140px;
+    width: 9%;
 }
 
 /* Administradora */
 .cf-table th:nth-child(2),
 .cf-table td:nth-child(2) {
-    width: 330px;
+    width: 18%;
 }
 
 /* Vencimento */
 .cf-table th:nth-child(3),
 .cf-table td:nth-child(3) {
-    width: 120px;
+    width: 9%;
 }
 
 /* Competência */
 .cf-table th:nth-child(4),
 .cf-table td:nth-child(4) {
-    width: 115px;
+    width: 8%;
+}
+
+/* Data crédito */
+.cf-table th:nth-child(5),
+.cf-table td:nth-child(5) {
+    width: 9%;
 }
 
 /* Valor */
-.cf-table th:nth-child(5),
-.cf-table td:nth-child(5) {
-    width: 130px;
+.cf-table th:nth-child(6),
+.cf-table td:nth-child(6) {
+    width: 10%;
 }
 
 /* Status */
-.cf-table th:nth-child(6),
-.cf-table td:nth-child(6) {
-    width: 155px;
+.cf-table th:nth-child(7),
+.cf-table td:nth-child(7) {
+    width: 10%;
 }
 
 /* Excel */
-.cf-table th:nth-child(7),
-.cf-table td:nth-child(7) {
-    width: 62px;
-    min-width: 62px;
-    max-width: 62px;
+.cf-table th:nth-child(8),
+.cf-table td:nth-child(8) {
+    width: 6%;
     text-align: center;
-    padding-left: 6px;
-    padding-right: 6px;
 }
 
 /* Docs */
-.cf-table th:nth-child(8),
-.cf-table td:nth-child(8) {
-    width: 86px;
-    min-width: 86px;
-    max-width: 86px;
+.cf-table th:nth-child(9),
+.cf-table td:nth-child(9) {
+    width: 8%;
     text-align: center;
-    padding-left: 6px;
-    padding-right: 6px;
-    white-space: nowrap;
 }
 
 /* Compra */
-.cf-table th:nth-child(9),
-.cf-table td:nth-child(9) {
-    width: 104px;
-    min-width: 104px;
-    max-width: 104px;
+.cf-table th:nth-child(10),
+.cf-table td:nth-child(10) {
+    width: 13%;
     text-align: center;
-    padding-left: 6px;
-    padding-right: 10px;
 }
 
-/* Centraliza os botões das colunas Excel, Docs e Compra */
-.cf-table td:nth-child(7),
-.cf-table td:nth-child(8),
-.cf-table td:nth-child(9) {
-    vertical-align: middle;
+/* Evita que textos longos estourem as colunas */
+.cf-table th,
+.cf-table td {
+    min-width: 0;
+    overflow: hidden;
 }
 
-.cf-table td:nth-child(7) .cf-btn,
-.cf-table td:nth-child(8) .cf-btn,
-.cf-table td:nth-child(9) .cf-btn {
-    justify-content: center;
-}
-
-/* Botão pequeno de download/visualizar/reprocessar */
-.cf-table td:nth-child(7) .cf-btn-sm,
-.cf-table td:nth-child(8) .cf-btn-sm {
-    min-width: 36px;
-    width: 36px;
-    height: 32px;
-    padding: 0;
-}
-
-/* Quando Docs tiver dois botões lado a lado */
-.cf-table td:nth-child(8)>div,
-.cf-table td:nth-child(8) .cf-actions,
-.cf-table td:nth-child(8) .cf-doc-actions {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-}
-
-/* Botão Gerar TXT */
-.cf-table td:nth-child(9) .cf-btn {
-    min-width: 82px;
-    padding-left: 10px;
-    padding-right: 10px;
-}
-
-/* Administradora */
 .cf-admin-cell {
-    width: 100%;
-    max-width: 300px;
+    width: auto;
+    max-width: none;
     min-width: 0;
 }
 
 .cf-admin-name {
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1.35;
-    color: var(--text);
+    font-size: 11px;
+    line-height: 1.3;
     display: -webkit-box;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.cf-table td:nth-child(3),
+.cf-table td:nth-child(4),
+.cf-table td:nth-child(5),
+.cf-table td:nth-child(6) {
+    white-space: nowrap;
+}
+
+.cf-table td:nth-child(8) .cf-btn,
+.cf-table td:nth-child(9) .cf-btn {
+    min-width: 34px;
+    width: 34px;
+    height: 30px;
+    padding: 0;
+    justify-content: center;
+}
+
+.cf-table td:nth-child(9)>div,
+.cf-table td:nth-child(9) .cf-actions,
+.cf-table td:nth-child(9) .cf-doc-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.cf-table td:nth-child(10) .cf-btn {
+    min-width: 78px;
+    padding: 6px 8px;
+    font-size: 10px;
+    white-space: nowrap;
+    justify-content: center;
+}
+
+.cf-table td:nth-child(7) .cf-badge,
+.cf-table td:nth-child(7) select {
+    max-width: 100%;
+    font-size: 10px;
+    padding-left: 7px;
+    padding-right: 7px;
 }
 
 @media (max-width: 1440px) {
-    .cf-table {
-        min-width: 1120px;
+    .cf-table thead th {
+        padding: 10px 6px;
+        font-size: 8px;
     }
 
-    .cf-table th:nth-child(1),
-    .cf-table td:nth-child(1) {
-        width: 130px;
+    .cf-table tbody td {
+        padding: 10px 6px;
+        font-size: 11px;
     }
 
-    .cf-table th:nth-child(2),
-    .cf-table td:nth-child(2) {
-        width: 300px;
+    .cf-id-main {
+        font-size: 11px;
     }
 
-    .cf-table th:nth-child(3),
-    .cf-table td:nth-child(3) {
-        width: 115px;
+    .cf-id-sub,
+    .cf-inline {
+        font-size: 10px;
     }
 
-    .cf-table th:nth-child(4),
-    .cf-table td:nth-child(4) {
-        width: 105px;
+    .cf-admin-name {
+        font-size: 10px;
     }
 
-    .cf-table th:nth-child(5),
-    .cf-table td:nth-child(5) {
-        width: 120px;
+    .cf-table td:nth-child(8) .cf-btn,
+    .cf-table td:nth-child(9) .cf-btn {
+        min-width: 30px;
+        width: 30px;
+        height: 28px;
     }
 
-    .cf-table th:nth-child(6),
-    .cf-table td:nth-child(6) {
-        width: 145px;
-    }
-
-    .cf-table th:nth-child(7),
-    .cf-table td:nth-child(7) {
-        width: 58px;
-        min-width: 58px;
-        max-width: 58px;
-    }
-
-    .cf-table th:nth-child(8),
-    .cf-table td:nth-child(8) {
-        width: 82px;
-        min-width: 82px;
-        max-width: 82px;
-    }
-
-    .cf-table th:nth-child(9),
-    .cf-table td:nth-child(9) {
-        width: 100px;
-        min-width: 100px;
-        max-width: 100px;
+    .cf-table td:nth-child(10) .cf-btn {
+        min-width: 70px;
+        padding: 5px 6px;
+        font-size: 9px;
     }
 }
+
+@media (max-width: 1100px) {
+    .cf-table-wrap {
+        overflow-x: auto;
+    }
+
+    .cf-table {
+        min-width: 1050px;
+    }
+}
+
+/* arquivo com ajuste final */
