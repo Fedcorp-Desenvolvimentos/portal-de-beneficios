@@ -24,7 +24,7 @@ const PrivateRoute = ({ allowedRoles = [], children }) => {
     ''
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
-    return <Navigate to="/nao-autorizado" replace />
+    return <Navigate to="/404" replace />
   }
 
   if (children) return children

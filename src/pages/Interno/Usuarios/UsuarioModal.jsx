@@ -176,6 +176,41 @@ const Button = styled.button`
   `}
 `;
 
+const CheckboxGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 4px;
+`;
+
+const CheckboxLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  transition: background 0.15s;
+
+  &:hover {
+    background: var(--color-bg-tertiary);
+  }
+`;
+
+const CheckboxInput = styled.input`
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+`;
+
 const TIPOS = {
   dev: 'Desenvolvedor',
   // fin: 'Financeiro Fedcorp',
@@ -201,7 +236,7 @@ export default function UsuarioModal({
     username: '',
     email: '',
     tipo: (tiposPermitidos && tiposPermitidos.length === 1) ? tiposPermitidos[0] : 'adm',
-    administradora: null
+    administradoras: []
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -209,18 +244,19 @@ export default function UsuarioModal({
   useEffect(() => {
     if (isOpen) {
       if (usuario) {
+        const admIds = usuario.administradoras || (usuario.administradora_id ? [usuario.administradora_id] : []);
         setFormData({
           username: usuario.username || '',
           email: usuario.email || '',
           tipo: usuario.tipo || 'adm',
-          administradora: usuario.administradora_id || administradoraId || null,
+          administradoras: admIds,
         });
       } else {
         setFormData({
           username: '',
           email: '',
           tipo: (tiposPermitidos && tiposPermitidos.length === 1) ? tiposPermitidos[0] : 'adm',
-          administradora: administradoraId || null,
+          administradoras: administradoraId ? [administradoraId] : [],
         });
       }
       setError('');
@@ -246,13 +282,8 @@ export default function UsuarioModal({
         username: formData.username.trim(),
         email: formData.email.trim(),
         tipo: formData.tipo,
+        administradoras: formData.administradoras,
       };
-
-      if (!usuario) {
-        dadosParaEnvio.administradora = formData.administradora;
-      } else if (formData.administradora !== (usuario.administradora_id || null)) {
-        dadosParaEnvio.administradora = formData.administradora;
-      }
 
       if (!dadosParaEnvio.username) throw new Error('Nome de usuário é obrigatório');
       if (!dadosParaEnvio.email) throw new Error('Email é obrigatório');
@@ -325,19 +356,34 @@ export default function UsuarioModal({
           </FormGroup>
 
           <FormGroup>
-            <label>Administradora</label>
-            <select
-              name="administradora"
-              value={formData.administradora || ''}
-              onChange={handleChange}
-            >
-              <option value="">Nenhuma</option>
-              {administradoras.map(adm => (
-                <option key={adm.id} value={adm.id}>
-                  {adm.razao_social || adm.nome_fantasia || adm.nome || `ADM ${adm.id}`}
-                </option>
-              ))}
-            </select>
+            <label>Administradora(s)</label>
+            <CheckboxGroup>
+              {administradoras.map(adm => {
+                const checked = formData.administradoras.includes(adm.id);
+                return (
+                  <CheckboxLabel key={adm.id}>
+                    <CheckboxInput
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData(prev => ({
+                            ...prev,
+                            administradoras: [...prev.administradoras, adm.id]
+                          }));
+                        } else {
+                          setFormData(prev => ({
+                            ...prev,
+                            administradoras: prev.administradoras.filter(id => id !== adm.id)
+                          }));
+                        }
+                      }}
+                    />
+                    {adm.razao_social || adm.nome_fantasia || adm.nome || `ADM ${adm.id}`}
+                  </CheckboxLabel>
+                );
+              })}
+            </CheckboxGroup>
           </FormGroup>
 
           <ModalFooter>

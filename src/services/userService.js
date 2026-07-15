@@ -118,7 +118,7 @@ export const userService = {
                 username: dados.username,
                 email: dados.email,
                 tipo: dados.tipo,
-                administradora: dados.administradora || null
+                administradoras: dados.administradoras || (dados.administradora ? [dados.administradora] : [])
             };
             const response = await api.post('/api/users/register/', payload);
             return response.data;
@@ -140,9 +140,9 @@ export const userService = {
                 nome: dados.username !== undefined ? dados.username : usuarioAtual.username,
                 email: dados.email !== undefined ? dados.email : usuarioAtual.email,
                 tipo: dados.tipo !== undefined ? dados.tipo : usuarioAtual.tipo,
-                administradora: dados.administradora !== undefined
-                    ? dados.administradora
-                    : usuarioAtual.administradora_id,
+                administradoras: dados.administradoras !== undefined
+                    ? dados.administradoras
+                    : (usuarioAtual.administradoras || (usuarioAtual.administradora_id ? [usuarioAtual.administradora_id] : [])),
             };
 
             if (dados.password && dados.password.trim() !== '') {

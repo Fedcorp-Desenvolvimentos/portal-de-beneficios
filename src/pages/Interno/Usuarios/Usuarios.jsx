@@ -71,7 +71,9 @@ export default function Usuarios() {
 
   const getAdministradoraId = (user) => {
     return (
+      user?.administradora_ativa_id ||
       user?.administradora_id ||
+      user?.administradora_ativa ||
       user?.administradora ||
       user?.administradora?.id ||
       null

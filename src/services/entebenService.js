@@ -121,10 +121,11 @@ export const entebenService = {
     }
   },
 
-  getImportacoes: async () => {
+  getImportacoes: async (page = 1, limit = 100) => {
     try {
-      const response = await api.get('/api/beneficios/importacoes/')
-      // console.log("Importações recebidas:", response.data)
+      const response = await api.get('/api/beneficios/importacoes/', {
+        params: { page, limit },
+      })
       return response.data
     } catch (error) {
       console.error('Erro ao buscar importações:', error)

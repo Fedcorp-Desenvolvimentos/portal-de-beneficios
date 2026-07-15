@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiMenu, FiChevronDown, FiLogOut, FiHome, FiChevronRight, FiUsers, FiUserPlus, FiClock, FiCalendar } from 'react-icons/fi';
-import { FaHistory, FaRegUser } from "react-icons/fa";
+import { FiMenu, FiChevronDown, FiLogOut, FiHome, FiChevronRight, FiUsers, FiUserPlus, FiClock, FiCalendar, FiCheck } from 'react-icons/fi';
+import { FaHistory, FaRegUser, FaBuilding } from "react-icons/fa";
 import { useAuth } from '../../context/AuthContext';
 import { getAccessLevelLabel, getAccessLevelColor, ACCESS_LEVELS } from '../../utils/accessLevels';
 import { formatarData, formatTempo } from '../../utils/formatar_data';
@@ -10,7 +10,7 @@ import * as S from './BreadcrumbStyles';
 function Breadcrumb({ onToggleSidebar, sidebarOpen, className }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, administradoraAtiva, setAdministradoraAtiva } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -64,38 +64,31 @@ function Breadcrumb({ onToggleSidebar, sidebarOpen, className }) {
     const pathSegments = location.pathname.split('/').filter(segment => segment);
     let breadcrumbItems = [];
     let currentPath = '';
-    
+
     if (location.pathname !== '/home') {
       breadcrumbItems.push({ label: 'Home', icon: <FiHome size={14} />, path: '/home' });
     }
-    
+
     pathSegments.forEach((segment, index) => {
       currentPath += `/${segment}`;
       if (segment === 'home' && index === 0) return;
       let label = routeNames[currentPath] || segment.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase());
       breadcrumbItems.push({ label, path: currentPath });
     });
-    
+
     return breadcrumbItems;
   };
-
-  const canManageUsers = () =>
-    user?.tipo === ACCESS_LEVELS.ADM ||
-    user?.tipo === ACCESS_LEVELS.DESENVOLVEDOR;
-
-  const canRegisterUsers = () =>
-    user?.tipo === ACCESS_LEVELS.ADM ||
-    user?.tipo === ACCESS_LEVELS.DESENVOLVEDOR;
-
-  const canViewHistory = () =>
-    user?.tipo === ACCESS_LEVELS.ADM ||
-    user?.tipo === ACCESS_LEVELS.DESENVOLVEDOR ||
-    user?.tipo === ACCESS_LEVELS.CLIENTE;
 
   const handleLogout = () => {
     logout();
     navigate('/login');
     setShowUserMenu(false);
+  };
+
+  const handleSelectAdmin = async (admin) => {
+    if (admin.id !== administradoraAtiva?.id) {
+      await setAdministradoraAtiva(admin);
+    }
   };
 
   const breadcrumbItems = getBreadcrumb();
@@ -112,13 +105,12 @@ function Breadcrumb({ onToggleSidebar, sidebarOpen, className }) {
   const accessLevelLabel = getAccessLevelLabel(user?.tipo);
   const accessLevelColor = getAccessLevelColor(user?.tipo);
 
-  // Formatação melhorada para data e hora
   const formatDateDetailed = (date) => {
-    const options = { 
-      weekday: 'short', 
-      day: '2-digit', 
-      month: 'short', 
-      year: 'numeric' 
+    const options = {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
     };
     return date.toLocaleDateString('pt-BR', options);
   };
@@ -129,6 +121,8 @@ function Breadcrumb({ onToggleSidebar, sidebarOpen, className }) {
     const seconds = date.getSeconds().toString().padStart(2, '0');
     return `${hours}:${minutes}:${seconds}`;
   };
+
+  const hasMultipleAdmins = user?.administradoras_data && user.administradoras_data.length > 1;
 
   return (
     <S.Nav className={className} $sidebarOpen={sidebarOpen}>
@@ -194,33 +188,37 @@ function Breadcrumb({ onToggleSidebar, sidebarOpen, className }) {
                   </div>
                 </S.DropdownUserInfo>
               </S.DropdownHeader>
-              
+
+              {hasMultipleAdmins && (
+                <>
+                  <S.Divider />
+                  <S.AdminSectionHeader>
+                    <FaBuilding size={12} />
+                    <span>Administradora</span>
+                  </S.AdminSectionHeader>
+                  {user.administradoras_data.map((admin) => (
+                    <S.AdminOption
+                      key={admin.id}
+                      $active={administradoraAtiva?.id === admin.id}
+                      onClick={() => handleSelectAdmin(admin)}
+                    >
+                      <S.AdminCheckbox $checked={administradoraAtiva?.id === admin.id}>
+                        {administradoraAtiva?.id === admin.id && <FiCheck size={10} />}
+                      </S.AdminCheckbox>
+                      <S.AdminOptionLabel>{admin.razao_social}</S.AdminOptionLabel>
+                    </S.AdminOption>
+                  ))}
+                </>
+              )}
+
               <S.Divider />
-              
+
               <S.DropdownItem onClick={() => { navigate('/minha-conta'); setShowUserMenu(false); }}>
                 <S.DropdownIcon><FaRegUser /></S.DropdownIcon> Minha Conta
               </S.DropdownItem>
 
-              {/* {canManageUsers() && (
-                <S.DropdownItem onClick={() => { navigate('/gerenciar-usuarios'); setShowUserMenu(false); }}>
-                  <S.DropdownIcon><FiUsers /></S.DropdownIcon> Gerenciar Usuários
-                </S.DropdownItem>
-              )}
-
-              {canRegisterUsers() && (
-                <S.DropdownItem onClick={() => { navigate('/cadastro'); setShowUserMenu(false); }}>
-                  <S.DropdownIcon><FiUserPlus /></S.DropdownIcon> Cadastrar Usuários
-                </S.DropdownItem>
-              )}
-
-              {canViewHistory() && (
-                <S.DropdownItem onClick={() => { navigate('/historico'); setShowUserMenu(false); }}>
-                  <S.DropdownIcon><FaHistory /></S.DropdownIcon> Histórico
-                </S.DropdownItem>
-              )} */}
-              
               <S.Divider />
-              
+
               <S.DropdownItem $logout onClick={handleLogout}>
                 <S.DropdownIcon><FiLogOut /></S.DropdownIcon> Sair
               </S.DropdownItem>

@@ -34,6 +34,14 @@ function normalizarValorDecimal(value) {
 }
 
 function getAdministradoraIdFromUser(user) {
+  if (user?.administradora_ativa_id || user?.administradora_ativa) {
+    return user.administradora_ativa_id || user.administradora_ativa;
+  }
+
+  if (Array.isArray(user?.administradoras) && user.administradoras.length > 0) {
+    return user.administradoras;
+  }
+
   return (
     user?.administradora_id ||
     user?.administradora?.id ||
@@ -44,6 +52,12 @@ function getAdministradoraIdFromUser(user) {
 }
 
 function getAdministradoraNomeFromUser(user) {
+  if (user?.administradora_ativa_id || user?.administradora_ativa) {
+    const adminsData = user?.administradoras_data || [];
+    const active = adminsData.find(a => a.id === (user.administradora_ativa_id || user.administradora_ativa));
+    if (active) return active.razao_social || active.nome_fantasia || '';
+  }
+
   return (
     user?.administradora_nome ||
     user?.nome_administradora ||
@@ -724,8 +738,7 @@ export default function MinhaAdministradora() {
       const payload = {
         ...dados,
         tipo: tipoFinal,
-        administradora: dados.administradora || administradoraId,
-        administradora_id: dados.administradora_id || administradoraId,
+        administradoras: dados.administradoras || (dados.administradora ? [dados.administradora] : [administradoraId]),
       };
 
       if (usuarioSelecionado) {

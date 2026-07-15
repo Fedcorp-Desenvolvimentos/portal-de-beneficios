@@ -73,6 +73,10 @@ const formatarCPF = (cpf) => {
 const getAdministradoraIdFromUser = (user) => {
   if (!user) return null
 
+  if (user?.administradora_ativa_id || user?.administradora_ativa) {
+    return user.administradora_ativa_id || user.administradora_ativa
+  }
+
   if (Array.isArray(user?.administradoras) && user.administradoras.length > 0) {
     return user.administradoras
       .map((adm) => adm?.id || adm?.administradora_id || adm)

@@ -7,6 +7,7 @@ import {
   baixarModeloBeneficios,
 } from '../../utils/modelo_planilha.js';
 import { useLoading } from '../../hooks/useLoading';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 import { isNovaPlanilhaValeTransporte, parseNovaPlanilhaValeTransporte } from '../../utils/parser_nova_planilha';
 import { detectarTipoArquivo, isValeTransporteFile } from '../../utils/detectorTipoArquivo';
@@ -42,6 +43,7 @@ export default function FileUpload({ onUpload }) {
   const [modelosOpen, setModelosOpen] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
   const { startLoading, stopLoading } = useLoading();
+  const { user } = useAuth();
 
   const handlePick = () => inputRef.current?.click();
 
@@ -240,7 +242,7 @@ export default function FileUpload({ onUpload }) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!validarArquivo(file)) return;
-    const userAdministradoraId = localStorage.getItem('administradora_id') || '1';
+    const userAdministradoraId = user?.administradora_ativa_id || user?.administradora_id || user?.administradora_ativa || null;
     processUpload(file, userAdministradoraId);
   };
 
@@ -249,7 +251,7 @@ export default function FileUpload({ onUpload }) {
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
     if (!validarArquivo(file)) return;
-    const userAdministradoraId = localStorage.getItem('administradora_id') || '1';
+    const userAdministradoraId = user?.administradora_ativa_id || user?.administradora_id || user?.administradora_ativa || null;
     processUpload(file, userAdministradoraId);
   };
 

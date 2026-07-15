@@ -1137,6 +1137,43 @@ function subtractDaysFromDateInput(value, days) {
   return formatDateInput(date)
 }
 
+function subtractBusinessDays(value, businessDays) {
+  const date = parseDateInput(value)
+  if (!date || !businessDays) return value || ''
+
+  let remaining = Number(businessDays)
+  while (remaining > 0) {
+    date.setDate(date.getDate() - 1)
+    const dayOfWeek = date.getDay()
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      remaining--
+    }
+  }
+  return formatDateInput(date)
+}
+
+function addBusinessDays(value, businessDays) {
+  const date = parseDateInput(value)
+  if (!date || !businessDays) return value || ''
+
+  let remaining = Number(businessDays)
+  while (remaining > 0) {
+    date.setDate(date.getDate() + 1)
+    const dayOfWeek = date.getDay()
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      remaining--
+    }
+  }
+  return formatDateInput(date)
+}
+
+function isWeekend(value) {
+  const date = parseDateInput(value)
+  if (!date) return false
+  const day = date.getDay()
+  return day === 0 || day === 6
+}
+
 function isAfterDateInput(dateA, dateB) {
   const parsedA = parseDateInput(dateA)
   const parsedB = parseDateInput(dateB)
@@ -1218,7 +1255,7 @@ export default function Importacao() {
   const [campoDataReferenciaVT, setCampoDataReferenciaVT] = useState(null)
 
   const carregarRegraValor = async () => {
-    const administradoraId = user?.administradora_id
+    const administradoraId = user?.administradora_ativa_id || user?.administradora_id || user?.administradora_ativa;
 
     if (!administradoraId) return
 
@@ -1249,7 +1286,7 @@ export default function Importacao() {
 
   useEffect(() => {
     carregarRegraValor()
-  }, [user?.administradora_id])
+  }, [user?.administradora_ativa_id, user?.administradora_id, user?.administradora_ativa])
 
   const abrirModalRegraValor = async () => {
     await carregarRegraValor()
@@ -1257,7 +1294,7 @@ export default function Importacao() {
   }
 
   const salvarRegraValor = async () => {
-    const administradoraId = user?.administradora_id
+    const administradoraId = user?.administradora_ativa_id || user?.administradora_id || user?.administradora_ativa;
     const valorLimite = Number(formRegraValor.valor_limite)
 
     if (!administradoraId) {
@@ -1332,9 +1369,9 @@ export default function Importacao() {
           file.name.toLowerCase().includes('vale_transporte');
 
         if (isVTByFilename) {
-          response = await vtService.uploadVTFile(file, user?.administradora_id);
+          response = await vtService.uploadVTFile(file, user?.administradora_ativa_id || user?.administradora_id || user?.administradora_ativa);
         } else {
-          response = await uploadService.uploadFile(file, user?.administradora_id);
+          response = await uploadService.uploadFile(file, user?.administradora_ativa_id || user?.administradora_id || user?.administradora_ativa);
         }
 
       } else {
@@ -1642,24 +1679,43 @@ export default function Importacao() {
     const vencimento = formEnvio.vencimento
     const dias = isValeTransporte ? 8 : (regraValor?.d_mais ?? 1)
 
-    if (campoDataReferenciaVT === 'vencimento' && vencimento) {
-      return {
-        recebimentoBeneficio: addDaysToDateInput(vencimento, dias),
-        vencimento,
+    if (isValeTransporte) {
+      if (campoDataReferenciaVT === 'vencimento' && vencimento) {
+        return {
+          recebimentoBeneficio: addDaysToDateInput(vencimento, dias),
+          vencimento,
+        }
       }
-    }
-
-    if (recebimento) {
-      return {
-        recebimentoBeneficio: recebimento,
-        vencimento: subtractDaysFromDateInput(recebimento, dias),
+      if (recebimento) {
+        return {
+          recebimentoBeneficio: recebimento,
+          vencimento: subtractDaysFromDateInput(recebimento, dias),
+        }
       }
-    }
-
-    if (vencimento) {
-      return {
-        recebimentoBeneficio: addDaysToDateInput(vencimento, dias),
-        vencimento,
+      if (vencimento) {
+        return {
+          recebimentoBeneficio: addDaysToDateInput(vencimento, dias),
+          vencimento,
+        }
+      }
+    } else {
+      if (campoDataReferenciaVT === 'vencimento' && vencimento) {
+        return {
+          recebimentoBeneficio: addBusinessDays(vencimento, dias),
+          vencimento,
+        }
+      }
+      if (recebimento) {
+        return {
+          recebimentoBeneficio: recebimento,
+          vencimento: subtractBusinessDays(recebimento, dias),
+        }
+      }
+      if (vencimento) {
+        return {
+          recebimentoBeneficio: addBusinessDays(vencimento, dias),
+          vencimento,
+        }
       }
     }
 
@@ -1699,7 +1755,7 @@ export default function Importacao() {
     setFormEnvio((prev) => ({
       ...prev,
       recebimentoBeneficio: value,
-      vencimento: value ? subtractDaysFromDateInput(value, regraValor?.d_mais ?? 1) : '',
+      vencimento: value ? subtractBusinessDays(value, regraValor?.d_mais ?? 1) : '',
     }))
   }
 
@@ -1708,11 +1764,19 @@ export default function Importacao() {
 
     setCampoDataReferenciaVT(value ? 'vencimento' : null)
 
-    setFormEnvio((prev) => ({
-      ...prev,
-      vencimento: value,
-      recebimentoBeneficio: value ? addDaysToDateInput(value, dias) : '',
-    }))
+    if (isValeTransporte) {
+      setFormEnvio((prev) => ({
+        ...prev,
+        vencimento: value,
+        recebimentoBeneficio: value ? addDaysToDateInput(value, dias) : '',
+      }))
+    } else {
+      setFormEnvio((prev) => ({
+        ...prev,
+        vencimento: value,
+        recebimentoBeneficio: value ? addBusinessDays(value, dias) : '',
+      }))
+    }
   }
 
   const limparDatasBeneficio = () => {
@@ -1724,6 +1788,18 @@ export default function Importacao() {
       recebimentoBeneficio: '',
     }))
   }
+
+  const dMais = isValeTransporte ? 8 : (regraValor?.d_mais ?? 1)
+
+  const vencimentoMinimo = formEnvio.recebimentoBeneficio
+    ? subtractBusinessDays(formEnvio.recebimentoBeneficio, dMais)
+    : ''
+
+  const recebimentoMaximo = formEnvio.vencimento
+    ? addBusinessDays(formEnvio.vencimento, dMais)
+    : ''
+
+  const minDateMesAtual = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
 
   const validarDatasEnvio = () => {
     const datas = sincronizarDatasEnvio()
@@ -2304,7 +2380,7 @@ export default function Importacao() {
 
         const payloadVT = {
           file_upload_id: data.file_upload_id || Number(lote.id?.replace('VT-', '')) || 228,
-          administradora_id: user?.administradora_id,
+          administradora_id: user?.administradora_ativa_id || user?.administradora_id || user?.administradora_ativa,
           tipo_processamento: 'VT',
           origem: 'importacao_vale_transporte',
           periodo_inicio: periodoInicio,
@@ -2355,7 +2431,7 @@ export default function Importacao() {
 
         const dadosParaEnvio = {
           file_upload_id: data.file_upload_id || Number(lote.id?.replace('IMP-', '')) || 228,
-          administradora_id: user?.administradora_id || dataToBackendSincronizado.administradora_id,
+          administradora_id: user?.administradora_ativa_id || user?.administradora_id || user?.administradora_ativa || dataToBackendSincronizado.administradora_id,
           condominios: dataToBackendSincronizado.condominios || [],
           summary: dataToBackendSincronizado.summary,
           movimentacoes_detalhada: dataToBackendSincronizado.movimentacoes_detalhada || [],
@@ -2825,8 +2901,8 @@ export default function Importacao() {
                   onChange={handleRecebimentoBeneficioChange}
                   required={campoDataReferenciaVT !== 'vencimento'}
                   disabled={enviandoLote || recebimentoCalculadoAutomaticamente}
-                  minDate={new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)}
-                  filterDate={(date) => date.getDay() !== 0 && date.getDay() !== 6}
+                  minDate={minDateMesAtual}
+                  maxDate={recebimentoMaximo || undefined}
                 />
               </label>
             </div>
@@ -2839,8 +2915,7 @@ export default function Importacao() {
                   onChange={handleVencimentoChange}
                   required={campoDataReferenciaVT !== 'recebimento'}
                   disabled={enviandoLote || vencimentoCalculadoAutomaticamente}
-                  minDate={new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)}
-                  filterDate={(date) => date.getDay() !== 0 && date.getDay() !== 6}
+                  minDate={vencimentoMinimo || minDateMesAtual}
                 />
 
                 {!campoDataReferenciaVT && !formEnvio.recebimentoBeneficio && !formEnvio.vencimento && (

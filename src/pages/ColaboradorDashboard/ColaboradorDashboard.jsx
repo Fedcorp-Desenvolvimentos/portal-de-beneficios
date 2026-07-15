@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react'
-import { useOutletContext } from 'react-router-dom'
+import { useOutletContext, Navigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import { useSnackbar } from 'notistack'
 import {
   FiDownload,
@@ -249,6 +250,13 @@ const getPrimeiraMovimentacaoPedido = (pedidoApi) => {
 const getTipoBeneficioPedido = (pedidoApi) => {
   const primeiraMovimentacao = getPrimeiraMovimentacaoPedido(pedidoApi)
 
+  const modelo = normalizeBeneficioText(pedidoApi?.modelo_importacao)
+  if (modelo) {
+    if (modelo.includes('VT')) return 'Vale Transporte'
+    if (modelo.includes('AUTO') || modelo.includes('COMBUSTIVEL')) return 'Vale Combustível'
+    if (modelo.includes('VR') || modelo.includes('BENEFICIO')) return 'Alimentação/Refeição'
+  }
+
   const codigoRaw =
     firstValueFromObject(pedidoApi, [
       'beneficio_alterado_para_codigo',
@@ -348,20 +356,6 @@ const getTipoBeneficioPedido = (pedidoApi) => {
   }
 
   if (descricao.includes('ALIMENTACAO') || descricao.includes('REFEICAO')) {
-    return 'Alimentação/Refeição'
-  }
-
-  const modelo = normalizeBeneficioText(pedidoApi?.modelo_importacao)
-
-  if (modelo.includes('VT')) {
-    return 'Vale Transporte'
-  }
-
-  if (modelo.includes('AUTO') || modelo.includes('COMBUSTIVEL')) {
-    return 'Vale Combustível'
-  }
-
-  if (modelo.includes('VR')) {
     return 'Alimentação/Refeição'
   }
 
@@ -656,6 +650,15 @@ const SkeletonPagination = () => (
 // COMPONENTE PRINCIPAL
 // ============================================
 export default function ColaboradorDashboard() {
+  const { user } = useAuth()
+  const userRole = user?.tipo || user?.tipo_usuario || user?.role || user?.perfil
+
+  const admRoles = ['adm', 'cli', 'dep', 'fin']
+
+  if (admRoles.includes(userRole)) {
+    return <Navigate to="/home" replace />
+  }
+
   const { enqueueSnackbar } = useSnackbar()
   const outletContext = useOutletContext()
   const sidebarWidth = outletContext?.withSidebar ? 240 : 62

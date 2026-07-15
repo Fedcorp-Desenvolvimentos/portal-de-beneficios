@@ -124,50 +124,14 @@ const getCompetencia = (item) => {
   return '—';
 };
 
-const getCondominiosImportacao = (item) => {
-  if (Array.isArray(item?.condominios)) return item.condominios;
-  if (Array.isArray(item?.dados_requisicao?.condominios)) return item.dados_requisicao.condominios;
-  return [];
-};
-
-const getFuncionariosImportacao = (item) =>
-  getCondominiosImportacao(item).flatMap((condo) =>
-    Array.isArray(condo?.funcionarios) ? condo.funcionarios : []
-  );
-
-const getMovimentacoesImportacao = (item) =>
-  getFuncionariosImportacao(item).flatMap((func) =>
-    Array.isArray(func?.movimentacoes) ? func.movimentacoes : []
-  );
 
 const getValorTotal = (item) => {
-  const movimentacoesDiretas =
-    item?.movimentacoes_detalhada ||
-    item?.dados_requisicao?.movimentacoes_detalhada ||
-    item?.data_to_backend?.movimentacoes_detalhada ||
-    [];
-
-  const totalMovimentacoesDiretas = Array.isArray(movimentacoesDiretas)
-    ? movimentacoesDiretas.reduce((sum, mov) => {
-      return sum + Number(mov?.valor_recarga_bene || mov?.valor_total || mov?.valor || 0);
-    }, 0)
-    : 0;
-
-  const totalMovimentacoesAninhadas = getMovimentacoesImportacao(item).reduce(
-    (sum, mov) => sum + Number(mov?.valor || mov?.valor_total || mov?.valor_recarga_bene || 0),
-    0
-  );
-
   return Number(
-    totalMovimentacoesDiretas ||
-    totalMovimentacoesAninhadas ||
     item?.valor_total ||
     item?.total ||
     item?.valor_total_beneficios ||
     item?.summary?.valor_total_beneficios ||
     item?.summary?.valor_total ||
-    item?.dados_requisicao?.summary?.valor_total_beneficios ||
-    item?.dados_requisicao?.summary?.valor_total ||
     item?.dados_requisicao?.valor_total_beneficios ||
     item?.dados_requisicao?.valor_total ||
     item?.dados_requisicao?.total ||
@@ -407,7 +371,8 @@ export default function Faturamento() {
             `Registros processados: ${item.registros_processados || 0}`,
             `Vigência: ${formatDateBR(item.vigencia_inicio)} até ${formatDateBR(item.vigencia_fim)}`,
             `Vencimento: ${formatDateBR(item.data_vencimento)}`,
-          ],
+            item.data_recebimento ? `Recebimento: ${formatDateBR(item.data_recebimento)}` : null,
+          ].filter(Boolean),
         };
       })
       .filter((group) => {
