@@ -5,6 +5,7 @@ const shimmer = keyframes`
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
@@ -194,7 +195,7 @@ export const S = {
     overflow-x: auto;
     overflow-y: visible;
 
-    @media (max-width: 1280px) {
+    @media (max-width: 1600px) {
       overflow: visible;
     }
   `,
@@ -337,46 +338,60 @@ export const S = {
       justify-content: center;
     }
 
-    @media (max-width: 1280px) {
+    @media (max-width: 1600px) {
+      width: 100%;
       min-width: 0;
+      table-layout: fixed;
 
       thead th {
-        padding: 12px 8px;
-        font-size: 9px;
+        padding: 11px 6px;
+        font-size: 8px;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       tbody td {
-        padding: 12px 8px;
+        padding: 11px 6px;
+        font-size: 11px;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       th:nth-child(1),
       td:nth-child(1) {
-        width: 12%;
+        width: 13%;
       }
 
       th:nth-child(2),
       td:nth-child(2) {
-        width: 22%;
+        width: 20%;
       }
 
       th:nth-child(3),
       td:nth-child(3) {
-        width: 10%;
+        width: 12%;
+        white-space: nowrap;
       }
 
       th:nth-child(4),
       td:nth-child(4) {
         width: 10%;
+        white-space: nowrap;
       }
 
       th:nth-child(5),
       td:nth-child(5) {
-        width: 10%;
+        width: 12%;
+        white-space: nowrap;
       }
 
       th:nth-child(6),
       td:nth-child(6) {
-        width: 12%;
+        width: 11%;
+        white-space: nowrap;
       }
 
       th:nth-child(7),
@@ -386,17 +401,71 @@ export const S = {
 
       th:nth-child(8),
       td:nth-child(8) {
-        width: 10%;
+        width: 8%;
         min-width: 0;
         max-width: none;
+        overflow: visible;
         text-align: center;
       }
 
       td:nth-child(8) button {
-        min-width: unset;
+        min-width: 0;
         width: auto;
-        height: auto;
-        padding: unset;
+        height: 34px;
+        padding: 0 8px;
+      }
+    }
+
+    @media (max-width: 1366px) {
+      thead th {
+        padding: 10px 4px;
+        font-size: 7px;
+        letter-spacing: 0.02em;
+      }
+
+      tbody td {
+        padding: 10px 4px;
+        font-size: 10px;
+      }
+
+      th:nth-child(1),
+      td:nth-child(1) {
+        width: 13%;
+      }
+
+      th:nth-child(2),
+      td:nth-child(2) {
+        width: 19%;
+      }
+
+      th:nth-child(3),
+      td:nth-child(3) {
+        width: 12%;
+      }
+
+      th:nth-child(4),
+      td:nth-child(4) {
+        width: 10%;
+      }
+
+      th:nth-child(5),
+      td:nth-child(5) {
+        width: 12%;
+      }
+
+      th:nth-child(6),
+      td:nth-child(6) {
+        width: 11%;
+      }
+
+      th:nth-child(7),
+      td:nth-child(7) {
+        width: 14%;
+      }
+
+      th:nth-child(8),
+      td:nth-child(8) {
+        width: 9%;
       }
     }
   `,
@@ -433,9 +502,34 @@ export const S = {
   Inline: styled.div`
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     color: var(--sub);
     font-size: 13px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    svg {
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 1600px) {
+      gap: 4px;
+      font-size: 11px;
+    }
+
+    @media (max-width: 1366px) {
+      gap: 3px;
+      font-size: 10px;
+
+      svg {
+        width: 12px;
+        height: 12px;
+      }
+    }
   `,
 
   Empty: styled.td`
@@ -446,8 +540,15 @@ export const S = {
   `,
 
   StatusSelect: styled.div`
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+
     select {
-      padding: 6px 10px;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      padding: 6px 26px 6px 9px;
       border-radius: 20px;
       font-size: 11px;
       font-weight: 600;
@@ -497,9 +598,24 @@ export const S = {
     }};
       cursor: pointer;
       transition: all 0.15s;
+      text-overflow: ellipsis;
 
       &:focus {
         outline: none;
+      }
+    }
+
+    @media (max-width: 1600px) {
+      select {
+        padding: 6px 22px 6px 8px;
+        font-size: 10px;
+      }
+    }
+
+    @media (max-width: 1366px) {
+      select {
+        padding: 5px 19px 5px 6px;
+        font-size: 9px;
       }
     }
   `,
@@ -587,26 +703,31 @@ export const S = {
     display: flex;
     justify-content: center;
     width: 100%;
+    overflow: visible;
   `,
 
   ActionsMenuButton: styled.button`
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    min-width: 92px;
-    height: 36px;
-    padding: 0 12px;
+    gap: 4px;
+    min-width: 78px;
+    height: 34px;
+    padding: 0 8px;
     border-radius: 10px;
     border: 1px solid var(--border);
     background: #ffffff;
     color: var(--text);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     font-family: var(--font);
     cursor: pointer;
+    white-space: nowrap;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    transition:
+      background 0.15s,
+      border-color 0.15s,
+      box-shadow 0.15s;
 
     svg {
       flex-shrink: 0;
@@ -617,14 +738,34 @@ export const S = {
       border-color: var(--border2);
       box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
     }
+
+    @media (max-width: 1440px) {
+      min-width: 68px;
+      height: 32px;
+      padding: 0 5px;
+      font-size: 10px;
+      gap: 3px;
+    }
+
+    @media (max-width: 1366px) {
+      min-width: 62px;
+      height: 30px;
+      padding: 0 4px;
+      font-size: 9px;
+
+      svg {
+        width: 13px;
+        height: 13px;
+      }
+    }
   `,
 
   ActionsDropdown: styled.div`
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    z-index: 100;
-    width: 230px;
+    z-index: 1000;
+    width: min(230px, calc(100vw - 32px));
     padding: 8px;
     border-radius: 14px;
     border: 1px solid var(--border);
@@ -632,6 +773,15 @@ export const S = {
     box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
     display: grid;
     gap: 4px;
+
+    @media (max-width: 1440px) {
+      width: 220px;
+    }
+
+    @media (max-width: 640px) {
+      right: 0;
+      width: min(220px, calc(100vw - 24px));
+    }
   `,
 
   ActionItem: styled.button`
@@ -845,7 +995,10 @@ export const S = {
     align-items: center;
     justify-content: center;
     padding: 16px;
-    padding-left: ${props => props.$sidebarWidth != null ? `calc(${props.$sidebarWidth}px + 16px)` : '16px'};
+    padding-left: ${(props) =>
+      props.$sidebarWidth != null
+        ? `calc(${props.$sidebarWidth}px + 16px)`
+        : '16px'};
     z-index: 9999;
     backdrop-filter: blur(2px);
 
