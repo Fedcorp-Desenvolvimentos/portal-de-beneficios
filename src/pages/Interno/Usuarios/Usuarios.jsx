@@ -46,6 +46,8 @@ export default function Usuarios() {
   const [userToDelete, setUserToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [reenviandoEmailId, setReenviandoEmailId] = useState(null);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailToResend, setEmailToResend] = useState(null);
 
   const getTipoLabel = (tipo) => {
     const tipos = {
@@ -156,23 +158,34 @@ export default function Usuarios() {
     }
   };
 
-  const handleReenviarEmail = async (email, username) => {
-    if (window.confirm(`Deseja reenviar o e-mail de boas-vindas para "${username}"?`)) {
-      setReenviandoEmailId(email);
-      try {
-        const result = await userService.reenviarEmailBoasVindas(email);
-        if (result.success) {
-          enqueueSnackbar('E-mail reenviado com sucesso!', { variant: 'success' });
-        } else {
-          enqueueSnackbar(result.error || 'Erro ao reenviar e-mail', { variant: 'error' });
-        }
-      } catch (error) {
-        console.error('Erro ao reenviar e-mail:', error);
-        enqueueSnackbar('Erro ao reenviar e-mail', { variant: 'error' });
-      } finally {
-        setReenviandoEmailId(null);
+  const handleReenviarEmail = (email, username) => {
+    setEmailToResend({ email, username });
+    setShowEmailModal(true);
+  };
+
+  const confirmarReenvioEmail = async () => {
+    if (!emailToResend) return;
+    setReenviandoEmailId(emailToResend.email);
+    setShowEmailModal(false);
+    try {
+      const result = await userService.reenviarEmailBoasVindas(emailToResend.email);
+      if (result.success) {
+        enqueueSnackbar('E-mail reenviado com sucesso!', { variant: 'success' });
+      } else {
+        enqueueSnackbar(result.error || 'Erro ao reenviar e-mail', { variant: 'error' });
       }
+    } catch (error) {
+      console.error('Erro ao reenviar e-mail:', error);
+      enqueueSnackbar('Erro ao reenviar e-mail', { variant: 'error' });
+    } finally {
+      setReenviandoEmailId(null);
+      setEmailToResend(null);
     }
+  };
+
+  const fecharModalEmail = () => {
+    setShowEmailModal(false);
+    setEmailToResend(null);
   };
 
   const handleVincular = async (userId) => {
@@ -394,6 +407,20 @@ export default function Usuarios() {
               <S.ModalActions>
                 <S.ModalCancelBtn onClick={fecharModalExclusao}>Cancelar</S.ModalCancelBtn>
                 <S.ModalDeleteBtn onClick={confirmarExclusao}>Excluir</S.ModalDeleteBtn>
+              </S.ModalActions>
+            </S.ModalContent>
+          </S.ModalOverlay>
+        )}
+
+        {showEmailModal && emailToResend && (
+          <S.ModalOverlay>
+            <S.ModalContent>
+              <S.ModalTitle>Reenviar e-mail de boas-vindas</S.ModalTitle>
+              <S.ModalText>Um novo e-mail com credenciais de acesso será enviado para:</S.ModalText>
+              <S.ModalUser>{emailToResend.email}</S.ModalUser>
+              <S.ModalActions>
+                <S.ModalCancelBtn onClick={fecharModalEmail}>Cancelar</S.ModalCancelBtn>
+                <S.ModalDeleteBtn onClick={confirmarReenvioEmail}>Enviar</S.ModalDeleteBtn>
               </S.ModalActions>
             </S.ModalContent>
           </S.ModalOverlay>
