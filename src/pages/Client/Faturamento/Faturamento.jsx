@@ -376,6 +376,10 @@ export default function Faturamento() {
         };
       })
       .filter((group) => {
+        const normalizedStatus = normalizeStatus(group.status);
+
+        if (normalizedStatus === 'comprado') return false;
+
         const textoBusca = [
           group.importacaoLabel,
           group.key,
@@ -389,7 +393,7 @@ export default function Faturamento() {
           .toLowerCase();
 
         const matchSearch = !query || textoBusca.includes(query);
-        const matchStatus = !filtroStatus || normalizeStatus(group.status) === filtroStatus;
+        const matchStatus = !filtroStatus || normalizedStatus === filtroStatus;
         const matchCompetencia = !filtroCompetencia || group.competencia === filtroCompetencia;
         const matchVigencia = !filtroVigencia || group.dataVigenciaInicio === filtroVigencia;
         const matchVencimento = !filtroVencimento || group.dataVencimento === filtroVencimento;
