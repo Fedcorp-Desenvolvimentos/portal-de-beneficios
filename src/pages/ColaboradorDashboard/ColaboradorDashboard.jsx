@@ -808,7 +808,7 @@ export default function ColaboradorDashboard() {
   const [openActionsId, setOpenActionsId] = useState(null)
   const [isSmallScreen, setIsSmallScreen] = useState(false)
 
-  const itemsPerPage = 10
+  const itemsPerPage = 50
   const fileRef = useRef(null)
 
   useEffect(() => {
