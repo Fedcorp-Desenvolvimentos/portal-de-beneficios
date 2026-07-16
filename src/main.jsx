@@ -26,6 +26,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <ScrollToTop />
             <SnackbarProvider
               maxSnack={3}
+              autoHideDuration={2000}
               anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
           >
             <App />
