@@ -184,19 +184,22 @@ const CheckboxGroup = styled.div`
   overflow-y: auto;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 4px;
+  padding: 8px;
+  background: var(--color-bg-primary);
 `;
 
 const CheckboxLabel = styled.label`
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
+  gap: 16px;
+  padding: 10px 12px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
   color: var(--color-text-primary);
   transition: background 0.15s;
+  min-height: 40px;
+  overflow: hidden;
 
   &:hover {
     background: var(--color-bg-tertiary);
@@ -204,11 +207,14 @@ const CheckboxLabel = styled.label`
 `;
 
 const CheckboxInput = styled.input`
-  width: 16px;
+  width: 16px !important;
+  min-width: 16px;
   height: 16px;
   accent-color: var(--color-primary);
   cursor: pointer;
   flex-shrink: 0;
+  margin: 0;
+  margin-right: 4px;
 `;
 
 const TIPOS = {
@@ -246,7 +252,7 @@ export default function UsuarioModal({
       if (usuario) {
         const admIds = usuario.administradoras || (usuario.administradora_id ? [usuario.administradora_id] : []);
         setFormData({
-          username: usuario.username || '',
+          username: usuario.nome || usuario.username || '',
           email: usuario.email || '',
           tipo: usuario.tipo || 'adm',
           administradoras: admIds,
