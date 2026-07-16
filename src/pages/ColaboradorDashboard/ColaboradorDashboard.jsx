@@ -83,6 +83,71 @@ const fmtMoney = (value) =>
     currency: 'BRL',
   })
 
+const parseSortableDate = (value) => {
+  if (!value) return null
+
+  const raw = String(value).trim()
+  if (!raw || raw === '-') return null
+
+  const datePart = raw.includes('T') ? raw.split('T')[0] : raw
+
+  if (datePart.includes('/')) {
+    const [day, month, year] = datePart.split('/').map(Number)
+
+    if (day && month && year) {
+      return new Date(year, month - 1, day).getTime()
+    }
+  }
+
+  if (datePart.includes('-')) {
+    const [first, second, third] = datePart.split('-').map(Number)
+
+    if (String(datePart.split('-')[0] || '').length === 4) {
+      if (first && second && third) {
+        return new Date(first, second - 1, third).getTime()
+      }
+    } else if (first && second && third) {
+      return new Date(third, second - 1, first).getTime()
+    }
+  }
+
+  const timestamp = new Date(raw).getTime()
+  return Number.isNaN(timestamp) ? null : timestamp
+}
+
+const parseSortableMonthYear = (value) => {
+  if (!value) return null
+
+  const raw = String(value).trim()
+  if (!raw || raw === '-') return null
+
+  const brMatch = raw.match(/^(0?[1-9]|1[0-2])\/(\d{4})$/)
+  if (brMatch) {
+    const [, month, year] = brMatch
+    return Number(year) * 12 + Number(month)
+  }
+
+  const isoMatch = raw.match(/^(\d{4})-(0?[1-9]|1[0-2])$/)
+  if (isoMatch) {
+    const [, year, month] = isoMatch
+    return Number(year) * 12 + Number(month)
+  }
+
+  return parseSortableDate(raw)
+}
+
+const compareNullableValues = (valueA, valueB, direction, compareFn) => {
+  const aMissing = valueA === null || valueA === undefined || valueA === ''
+  const bMissing = valueB === null || valueB === undefined || valueB === ''
+
+  if (aMissing && bMissing) return 0
+  if (aMissing) return 1
+  if (bMissing) return -1
+
+  const result = compareFn(valueA, valueB)
+  return direction === 'asc' ? result : -result
+}
+
 const norm = (s) =>
   (s || '')
     .toString()
@@ -628,6 +693,7 @@ const SkeletonTable = () => (
           <th>Valor</th>
           <th>Status</th>
           <th>Excel</th>
+          <th>Dados</th>
           <th>Docs</th>
           <th>Compra</th>
         </tr>
@@ -725,9 +791,18 @@ export default function ColaboradorDashboard() {
 
   const [statusChanging, setStatusChanging] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [sortConfig, setSortConfig] = useState({
+    key: 'dataRecebimento',
+    direction: 'asc',
+  })
 
   const [boletoModalOpen, setBoletoModalOpen] = useState(false)
   const [boletoPedido, setBoletoPedido] = useState(null)
+
+  const [importDataOpen, setImportDataOpen] = useState(false)
+  const [importDataPedido, setImportDataPedido] = useState(null)
+  const [importDataLoading, setImportDataLoading] = useState(false)
+  const [importDataInfo, setImportDataInfo] = useState(null)
   const [selectedCondominios, setSelectedCondominios] = useState(new Set())
 
   const [openActionsId, setOpenActionsId] = useState(null)
@@ -839,24 +914,81 @@ export default function ColaboradorDashboard() {
     })
 
     result.sort((a, b) => {
-      const parseDate = (s) => {
-        if (!s) return Infinity
-        const v = String(s).trim()
-        if (v.includes('/')) {
-          const [d, m, y] = v.split('/')
-          return new Date(Number(y), Number(m) - 1, Number(d)).getTime()
-        }
-        const parts = v.split('-')
-        if (parts.length === 3) {
-          return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).getTime()
-        }
-        return Infinity
+      const { key, direction } = sortConfig
+
+      if (key === 'id') {
+        return compareNullableValues(
+          Number(a.id),
+          Number(b.id),
+          direction,
+          (valueA, valueB) => valueA - valueB
+        )
       }
-      return parseDate(a.dataRecebimento) - parseDate(b.dataRecebimento)
+
+      if (key === 'nomeAdministradora') {
+        return compareNullableValues(
+          a.nomeAdministradora,
+          b.nomeAdministradora,
+          direction,
+          (valueA, valueB) =>
+            String(valueA).localeCompare(String(valueB), 'pt-BR', {
+              sensitivity: 'base',
+              numeric: true,
+            })
+        )
+      }
+
+      if (key === 'dataVencimento' || key === 'dataRecebimento') {
+        return compareNullableValues(
+          parseSortableDate(a[key]),
+          parseSortableDate(b[key]),
+          direction,
+          (valueA, valueB) => valueA - valueB
+        )
+      }
+
+      if (key === 'mesUtilizacao') {
+        return compareNullableValues(
+          parseSortableMonthYear(a.mesUtilizacao),
+          parseSortableMonthYear(b.mesUtilizacao),
+          direction,
+          (valueA, valueB) => valueA - valueB
+        )
+      }
+
+      if (key === 'valorTotal') {
+        return compareNullableValues(
+          Number(a.valorTotal),
+          Number(b.valorTotal),
+          direction,
+          (valueA, valueB) => valueA - valueB
+        )
+      }
+
+      if (key === 'status') {
+        return compareNullableValues(
+          statusLabel[a.status] || a.status,
+          statusLabel[b.status] || b.status,
+          direction,
+          (valueA, valueB) =>
+            String(valueA).localeCompare(String(valueB), 'pt-BR', {
+              sensitivity: 'base',
+            })
+        )
+      }
+
+      return 0
     })
 
     return result
-  }, [pedidos, search, statusFilter, dataCreditoInicio, dataCreditoFim])
+  }, [
+    pedidos,
+    search,
+    statusFilter,
+    dataCreditoInicio,
+    dataCreditoFim,
+    sortConfig,
+  ])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
 
@@ -867,7 +999,7 @@ export default function ColaboradorDashboard() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [search, statusFilter, dataCreditoInicio, dataCreditoFim])
+  }, [search, statusFilter, dataCreditoInicio, dataCreditoFim, sortConfig])
 
   async function handleDownload(pedido) {
     if (pedido.status === 'cancelado') {
@@ -885,19 +1017,7 @@ export default function ColaboradorDashboard() {
         `pedido-${pedido.id}.xlsx`
       )
 
-      setPedidos((prev) =>
-        prev.map((item) =>
-          item.id === pedido.id
-            ? {
-              ...item,
-              status: 'em_faturamento',
-              emFaturamentoEm: new Date().toISOString(),
-            }
-            : item
-        )
-      )
-
-      showToast(`O pedido ${pedido.id} foi movido para "Em faturamento".`, {
+      showToast(`Planilha do pedido ${pedido.id} baixada com sucesso.`, {
         variant: 'success',
       })
     } catch (error) {
@@ -1507,6 +1627,36 @@ export default function ColaboradorDashboard() {
     setDocsPedido(null)
   }
 
+  async function openImportDataModal(pedido) {
+    if (!pedido?.id) {
+      showToast('Pedido inválido.', { variant: 'error' })
+      return
+    }
+
+    setImportDataPedido(pedido)
+    setImportDataOpen(true)
+    setImportDataLoading(true)
+    setImportDataInfo(null)
+
+    try {
+      const data = await faturamentoService.buscarMovimentacoesImportacao(pedido.id)
+      setImportDataInfo(data)
+    } catch (error) {
+      console.error('Erro ao buscar dados da importação:', error)
+      showToast('Não foi possível carregar os dados da importação.', { variant: 'error' })
+      setImportDataOpen(false)
+      setImportDataPedido(null)
+    } finally {
+      setImportDataLoading(false)
+    }
+  }
+
+  function closeImportDataModal() {
+    setImportDataOpen(false)
+    setImportDataPedido(null)
+    setImportDataInfo(null)
+  }
+
   async function baixarDocumentoFaturamento(pedido, tipo = '') {
     const faturamentoId = pedido?.downloadId || pedido?.faturamento_id || pedido?.id
 
@@ -1615,6 +1765,57 @@ export default function ColaboradorDashboard() {
   ])
 
 
+  const handleSort = (key) => {
+    setSortConfig((current) => ({
+      key,
+      direction:
+        current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+    }))
+  }
+
+  const renderSortableHeader = (label, key) => {
+    const isActive = sortConfig.key === key
+    const directionLabel = sortConfig.direction === 'asc' ? 'crescente' : 'decrescente'
+
+    return (
+      <button
+        type="button"
+        onClick={() => handleSort(key)}
+        title={
+          isActive
+            ? `Ordenação ${directionLabel}. Clique para inverter.`
+            : `Ordenar ${label.toLowerCase()}`
+        }
+        style={{
+          appearance: 'none',
+          border: 0,
+          background: 'transparent',
+          color: 'inherit',
+          font: 'inherit',
+          fontWeight: 'inherit',
+          padding: 0,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          cursor: 'pointer',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        <span>{label}</span>
+        <span
+          aria-hidden="true"
+          style={{
+            fontSize: 11,
+            lineHeight: 1,
+            opacity: isActive ? 1 : 0.35,
+          }}
+        >
+          {isActive ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
+        </span>
+      </button>
+    )
+  }
+
   const closeActionsMenu = () => {
     setOpenActionsId(null)
   }
@@ -1636,6 +1837,17 @@ export default function ColaboradorDashboard() {
         >
           <FiDownload size={14} />
           <span>Baixar Excel</span>
+        </S.ActionItem>
+
+        <S.ActionItem
+          type="button"
+          onClick={() => {
+            openImportDataModal(p)
+            closeActionsMenu()
+          }}
+        >
+          <FiInfo size={14} />
+          <span>Dados da importação</span>
         </S.ActionItem>
 
         {isFaturadoOuComprado ? (
@@ -1804,19 +2016,70 @@ export default function ColaboradorDashboard() {
               <S.Table>
                 <thead>
                   <tr>
-                    <th>Pedido</th>
-                    <th>Administradora</th>
-                    <th>Vencimento</th>
-                    <th>Competência</th>
-                    <th>Data Crédito</th>
-                    <th>Valor</th>
-                    <th>Status</th>
+                    <th aria-sort={sortConfig.key === 'id' ? sortConfig.direction : 'none'}>
+                      {renderSortableHeader('Pedido', 'id')}
+                    </th>
+                    <th
+                      aria-sort={
+                        sortConfig.key === 'nomeAdministradora'
+                          ? sortConfig.direction
+                          : 'none'
+                      }
+                    >
+                      {renderSortableHeader('Administradora', 'nomeAdministradora')}
+                    </th>
+                    <th
+                      aria-sort={
+                        sortConfig.key === 'dataVencimento'
+                          ? sortConfig.direction
+                          : 'none'
+                      }
+                    >
+                      {renderSortableHeader('Vencimento', 'dataVencimento')}
+                    </th>
+                    <th
+                      aria-sort={
+                        sortConfig.key === 'mesUtilizacao'
+                          ? sortConfig.direction
+                          : 'none'
+                      }
+                    >
+                      {renderSortableHeader('Competência', 'mesUtilizacao')}
+                    </th>
+                    <th
+                      aria-sort={
+                        sortConfig.key === 'dataRecebimento'
+                          ? sortConfig.direction
+                          : 'none'
+                      }
+                    >
+                      {renderSortableHeader('Data Crédito', 'dataRecebimento')}
+                    </th>
+                    <th
+                      aria-sort={
+                        sortConfig.key === 'valorTotal'
+                          ? sortConfig.direction
+                          : 'none'
+                      }
+                    >
+                      {renderSortableHeader('Valor', 'valorTotal')}
+                    </th>
+                    <th
+                      aria-sort={
+                        sortConfig.key === 'status'
+                          ? sortConfig.direction
+                          : 'none'
+                      }
+                    >
+                      {renderSortableHeader('Status', 'status')}
+                    </th>
 
                     {isSmallScreen ? (
                       <th>Ações</th>
                     ) : (
                       <>
                         <th>Excel</th>
+                        <th>Dados</th>
                         <th>Docs</th>
                         <th>Compra</th>
                         <th></th>
@@ -1828,7 +2091,7 @@ export default function ColaboradorDashboard() {
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <S.Empty colSpan={isSmallScreen ? 8 : 11}>
+                      <S.Empty colSpan={isSmallScreen ? 8 : 12}>
                         Nenhum pedido encontrado.
                       </S.Empty>
                     </tr>
@@ -1908,6 +2171,15 @@ export default function ColaboradorDashboard() {
                                 title="Baixar planilha de faturamento"
                               >
                                 <FiDownload size={14} />
+                              </S.Btn>
+                            </td>
+
+                            <td>
+                              <S.Btn
+                                onClick={() => openImportDataModal(p)}
+                                title="Ver dados da importação"
+                              >
+                                <FiInfo size={14} />
                               </S.Btn>
                             </td>
 
@@ -2062,6 +2334,78 @@ export default function ColaboradorDashboard() {
                 ))}
               </S.Timeline>
             </S.ModalBody>
+          </S.Modal>
+        </S.Overlay>
+      )}
+
+      {/* Modal de Dados da Importação */}
+      {importDataOpen && importDataPedido && (
+        <S.Overlay
+          onMouseDown={(e) =>
+            e.target === e.currentTarget && !importDataLoading && closeImportDataModal()
+          }
+        >
+          <S.Modal style={{ maxWidth: 600 }}>
+            <S.ModalHeader>
+              <div>
+                <S.ModalTitle>Dados da Importação</S.ModalTitle>
+                <S.ModalSub>
+                  Pedido {importDataPedido.id} · {importDataPedido.nomeAdministradora || importDataPedido.nomeCondominio}
+                </S.ModalSub>
+              </div>
+
+              <S.ModalClose onClick={closeImportDataModal} disabled={importDataLoading}>
+                <FiX size={18} />
+              </S.ModalClose>
+            </S.ModalHeader>
+
+            <S.ModalBody>
+              {importDataLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '32px 0' }}>
+                  <span style={{ color: 'var(--sub)', fontSize: 13 }}>Carregando dados...</span>
+                </div>
+              ) : importDataInfo ? (
+                <>
+                  <S.InfoGrid>
+
+
+                    <div className="info-item">
+                      <span className="info-label">Data de Importação</span>
+                      <span className="info-value">{fmtDate(importDataInfo.importacao?.data_importacao)}</span>
+                    </div>
+
+                    <div className="info-item full-width">
+                      <span className="info-label">Usuário Responsável</span>
+                      <span className="info-value">{importDataInfo.importacao?.nome_usuario || '-'}</span>
+                    </div>
+                  </S.InfoGrid>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--sub)', fontSize: 13 }}>
+                  Nenhum dado encontrado.
+                </div>
+              )}
+            </S.ModalBody>
+
+            <S.ModalFooter>
+              <S.Btn
+                onClick={() => {
+                  const s3Url = importDataInfo?.importacao?.arquivo_s3
+                  if (s3Url) {
+                    window.open(s3Url, '_blank')
+                  } else {
+                    showToast('Arquivo original não disponível.', { variant: 'warning' })
+                  }
+                }}
+                disabled={!importDataInfo?.importacao?.arquivo_s3}
+              >
+                <FiDownload size={14} />
+                Baixar planilha original
+              </S.Btn>
+              <S.Btn onClick={closeImportDataModal} disabled={importDataLoading}>
+                Fechar
+              </S.Btn>
+            </S.ModalFooter>
           </S.Modal>
         </S.Overlay>
       )}
