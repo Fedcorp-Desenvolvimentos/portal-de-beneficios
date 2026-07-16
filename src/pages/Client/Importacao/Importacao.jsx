@@ -2890,7 +2890,6 @@ export default function Importacao() {
                   onChange={(value) => setFormEnvio(prev => ({ ...prev, periodoInicio: value }))}
                   placeholderText="Selecione a data"
                   disabled={enviandoLote}
-                  filterDate={(date) => date.getDay() !== 0 && date.getDay() !== 6}
                   required
                 />
               </label>
@@ -2903,7 +2902,6 @@ export default function Importacao() {
                   placeholderText="Selecione a data"
                   minDate={formEnvio.periodoInicio}
                   disabled={enviandoLote}
-                  filterDate={(date) => date.getDay() !== 0 && date.getDay() !== 6}
                   required
                 />
               </label>
