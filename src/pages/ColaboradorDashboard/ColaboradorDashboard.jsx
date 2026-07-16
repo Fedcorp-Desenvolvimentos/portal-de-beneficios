@@ -813,7 +813,7 @@ export default function ColaboradorDashboard() {
 
   useEffect(() => {
     const checkScreen = () => {
-      setIsSmallScreen(window.innerWidth <= 1280)
+      setIsSmallScreen(window.innerWidth <= 1600)
     }
 
     checkScreen()
@@ -2098,7 +2098,7 @@ export default function ColaboradorDashboard() {
                   ) : (
                     paginatedPedidos.map((p) => (
                       <tr key={p.id}>
-                        <td>
+                        <td data-label="Pedido">
                           <S.IdMain>Pedido #{p.id}</S.IdMain>
                           <S.IdSub>{p.tipoBeneficio}</S.IdSub>
 
@@ -2109,26 +2109,26 @@ export default function ColaboradorDashboard() {
                           )}
                         </td>
 
-                        <S.AdminCell>
+                        <S.AdminCell data-label="Administradora">
                           <S.AdminName>{p.nomeAdministradora}</S.AdminName>
                         </S.AdminCell>
 
-                        <td>
+                        <td data-label="Vencimento">
                           <S.Inline>
                             <FiCalendar size={14} />
                             {fmtDate(p.dataVencimento)}
                           </S.Inline>
                         </td>
 
-                        <td style={{ fontSize: 13 }}>{p.mesUtilizacao}</td>
+                        <td data-label="Competência" style={{ fontSize: 13 }}>{p.mesUtilizacao}</td>
 
-                        <td style={{ fontSize: 13 }}>{fmtDate(p.dataRecebimento)}</td>
+                        <td data-label="Data Crédito" style={{ fontSize: 13 }}>{fmtDate(p.dataRecebimento)}</td>
 
-                        <td style={{ fontWeight: 600, color: '#16a34a' }}>
+                        <td data-label="Valor" style={{ fontWeight: 600, color: '#16a34a' }}>
                           {fmtMoney(p.valorTotal)}
                         </td>
 
-                        <td>
+                        <td data-label="Status">
                           <S.StatusSelect $status={p.status}>
                             <select
                               value={p.status}
@@ -2145,7 +2145,7 @@ export default function ColaboradorDashboard() {
                         </td>
 
                         {isSmallScreen ? (
-                          <td>
+                          <td data-label="Ações">
                             <S.ActionsMenuWrap data-actions-menu>
                               <S.ActionsMenuButton
                                 type="button"
@@ -2164,7 +2164,7 @@ export default function ColaboradorDashboard() {
                           </td>
                         ) : (
                           <>
-                            <td>
+                            <td data-label="Excel">
                               <S.Btn
                                 onClick={() => handleDownload(p)}
                                 disabled={downloadingId === p.id || p.status === 'cancelado'}
@@ -2174,7 +2174,7 @@ export default function ColaboradorDashboard() {
                               </S.Btn>
                             </td>
 
-                            <td>
+                            <td data-label="Dados">
                               <S.Btn
                                 onClick={() => openImportDataModal(p)}
                                 title="Ver dados da importação"
@@ -2183,7 +2183,7 @@ export default function ColaboradorDashboard() {
                               </S.Btn>
                             </td>
 
-                            <td>
+                            <td data-label="Docs">
                               {['faturado', 'comprado'].includes(p.status) ? (
                                 <S.RowActions>
                                   <S.Btn
@@ -2212,7 +2212,7 @@ export default function ColaboradorDashboard() {
                               )}
                             </td>
 
-                            <td>
+                            <td data-label="Compra">
                               {p.status === 'faturado' ? (
                                 <S.Btn
                                   $variant="primary"
@@ -2230,7 +2230,7 @@ export default function ColaboradorDashboard() {
                               )}
                             </td>
 
-                            <td>
+                            <td data-label="">
                               {p.status !== 'cancelado' && (
                                 <S.Btn
                                   $variant="danger"

@@ -6,7 +6,7 @@ import UsuarioModal from './UsuarioModal.jsx';
 import PageLayout from '../../../Layouts/PageLayout/PageLayout.jsx';
 import { S } from './UsuariosStyles';
 import SearchableSelect from './SearchableSelect';
-import { PencilLine, Trash2, Unlink } from 'lucide-react';
+import { PencilLine, Trash2, Unlink, Mail } from 'lucide-react';
 
 const SkeletonTable = () => (
   <S.SkeletonTable>
@@ -45,6 +45,7 @@ export default function Usuarios() {
 
   const [userToDelete, setUserToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [reenviandoEmailId, setReenviandoEmailId] = useState(null);
 
   const getTipoLabel = (tipo) => {
     const tipos = {
@@ -106,12 +107,16 @@ export default function Usuarios() {
   };
 
   useEffect(() => {
-    const loadData = async () => {
-      startLoading('Carregando dados...');
-      await Promise.all([carregarUsuarios(), carregarAdministradoras()]);
-      stopLoading();
-    };
-    loadData();
+    const timer = setTimeout(() => {
+      const loadData = async () => {
+        startLoading('Carregando dados...');
+        await Promise.all([carregarUsuarios(), carregarAdministradoras()]);
+        stopLoading();
+      };
+      loadData();
+    }, 400);
+
+    return () => clearTimeout(timer);
   }, [filtroAdm, searchNome]);
 
   const handleDelete = (id, username) => {
@@ -147,6 +152,25 @@ export default function Usuarios() {
       } catch (error) {
         console.error('Erro ao desvincular:', error);
         enqueueSnackbar('Erro ao desvincular', { variant: 'error' });
+      }
+    }
+  };
+
+  const handleReenviarEmail = async (email, username) => {
+    if (window.confirm(`Deseja reenviar o e-mail de boas-vindas para "${username}"?`)) {
+      setReenviandoEmailId(email);
+      try {
+        const result = await userService.reenviarEmailBoasVindas(email);
+        if (result.success) {
+          enqueueSnackbar('E-mail reenviado com sucesso!', { variant: 'success' });
+        } else {
+          enqueueSnackbar(result.error || 'Erro ao reenviar e-mail', { variant: 'error' });
+        }
+      } catch (error) {
+        console.error('Erro ao reenviar e-mail:', error);
+        enqueueSnackbar('Erro ao reenviar e-mail', { variant: 'error' });
+      } finally {
+        setReenviandoEmailId(null);
       }
     }
   };
@@ -324,6 +348,14 @@ export default function Usuarios() {
                           <S.Actions>
                             <S.ActionBtn $variant="edit" onClick={() => handleEditar(user)} title="Editar">
                               <PencilLine size={14} />
+                            </S.ActionBtn>
+                            <S.ActionBtn
+                              $variant="link"
+                              onClick={() => handleReenviarEmail(user.email, user.username || user.nome)}
+                              title="Reenviar e-mail de boas-vindas"
+                              disabled={reenviandoEmailId === user.email}
+                            >
+                              <Mail size={14} />
                             </S.ActionBtn>
                             {possuiAdministradora && (
                               <S.ActionBtn $variant="unlink-actions" onClick={() => handleDesvincular(user.id, user.username)} title="Desvincular">

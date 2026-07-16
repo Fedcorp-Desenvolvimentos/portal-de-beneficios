@@ -319,6 +319,25 @@ export const userService = {
             };
         }
     },
+
+    /**
+     * Reenvia o e-mail de boas-vindas para um usuário.
+     */
+    reenviarEmailBoasVindas: async (email) => {
+        try {
+            const response = await api.post('/api/users/reenviar-email-boas-vindas/', { email });
+            return {
+                success: true,
+                data: response.data
+            };
+        } catch (error) {
+            console.error('❌ Erro ao reenviar e-mail:', error);
+            return {
+                success: false,
+                error: error.response?.data?.detail || error.response?.data?.message || 'Erro ao reenviar e-mail.'
+            };
+        }
+    },
 };
 
 // Exportações

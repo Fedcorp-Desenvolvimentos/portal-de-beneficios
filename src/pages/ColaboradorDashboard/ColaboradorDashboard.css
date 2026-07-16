@@ -1165,7 +1165,7 @@
     padding-right: 7px;
 }
 
-@media (max-width: 1440px) {
+@media (max-width: 1600px) {
     .cf-table thead th {
         padding: 10px 6px;
         font-size: 8px;
@@ -1214,3 +1214,31 @@
 }
 
 /* arquivo com ajuste final */
+
+/* Notebooks de 14 e 16 polegadas:
+   a tabela usa a coluna unica de Acoes renderizada pelo JSX. */
+@media (max-width: 1600px) {
+    .cf-table-wrap {
+        overflow: visible;
+    }
+
+    .cf-table {
+        min-width: 0;
+        table-layout: fixed;
+    }
+
+    .cf-table th:last-child,
+    .cf-table td:last-child {
+        overflow: visible;
+    }
+
+    .cf-actions-menu-wrap {
+        position: relative;
+        overflow: visible;
+    }
+
+    .cf-actions-dropdown {
+        z-index: 1000;
+        width: min(230px, calc(100vw - 32px));
+    }
+}

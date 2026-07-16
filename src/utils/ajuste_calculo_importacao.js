@@ -53,7 +53,7 @@ export function atualizarDataToBackend(loteAtual, dataToBackendOriginal) {
               ...funcionario,
               nome: funcionarioAtualizado.nome_funcionario || funcionario.nome,
               cpf: funcionarioAtualizado.cpf,
-              matricula: funcionarioAtualizado.matricula || funcionario.matricula || '',
+              matricula: (funcionarioAtualizado.matricula || funcionario.matricula || '').slice(0, 50),
               departamento: funcionarioAtualizado.departamento || funcionario.departamento || 'CONDOMINIO',
               funcao: funcionarioAtualizado.funcao || funcionario.funcao || '',
               data_nascimento: funcionarioAtualizado.data_nascimento || funcionario.data_nascimento || '',
