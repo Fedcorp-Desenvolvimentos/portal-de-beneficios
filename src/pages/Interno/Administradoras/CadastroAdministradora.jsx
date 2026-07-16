@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { criarAdministradora, consultarPessoaPorCNPJ } from '../../../services/administradoraService.js'
+import { taxaConfigService } from '../../../services/taxaConfigService.js'
 import { PRODUTOS_TAXA, PERCENTUAIS_TAXA, getLabelPercentual } from '../../../constants/produtos'
 import { useAuth } from '../../../context/AuthContext.jsx'
 import './Administradoras.css'
@@ -145,13 +146,6 @@ export default function CadastroAdministradora() {
       
       const taxaPadraoNum = form.taxa_tipo === 'padrao' && form.taxa_padrao !== '' ? Number(form.taxa_padrao) : null
 
-      const taxaProdutos = form.taxa_ativa && form.taxa_tipo === 'produto'
-        ? form.taxa_config.map((item) => ({
-            codigo: item.codigo,
-            valor: item.valor !== '' ? Number(item.valor) : null,
-          }))
-        : []
-
       const formData = {
         cnpj: cnpjLimpo,
         razao_social: form.razao_social,
@@ -160,15 +154,39 @@ export default function CadastroAdministradora() {
         ativo: form.ativo,
         cartao_admin: cartaoAdminBoolean,
         d_mais: form.d_mais !== '' ? Number(form.d_mais) : null,
-        taxa_ativa: form.taxa_ativa,
-        taxa_tipo: form.taxa_ativa ? form.taxa_tipo : null,
-        taxa_padrao: taxaPadraoNum,
-        taxa_config: taxaProdutos,
+        taxa_padrao_tipo: form.taxa_ativa && form.taxa_tipo === 'padrao' && taxaPadraoNum !== null ? 'PERC' : 'PERC',
+        taxa_padrao_valor: form.taxa_ativa && form.taxa_tipo === 'padrao' && taxaPadraoNum !== null ? taxaPadraoNum : 0,
       }
       
-      //console.log('📤 Enviando dados:', JSON.stringify(formData, null, 2))
-      
-      await criarAdministradora(formData)
+      const result = await criarAdministradora(formData)
+      const administradoraId = result?.id
+
+      if (administradoraId && form.taxa_ativa && form.taxa_tipo === 'produto') {
+        const vinculos = await taxaConfigService.listarVinculos({ administradora: administradoraId })
+        const vinculosList = Array.isArray(vinculos) ? vinculos : vinculos?.results || []
+
+        for (const vinculo of vinculosList) {
+          for (const item of form.taxa_config) {
+            if (item.valor !== '' && item.valor !== null && item.valor !== undefined) {
+              const produtoExistente = PRODUTOS_TAXA.find(p => p.codigo === item.codigo)
+              if (produtoExistente) {
+                try {
+                  await taxaConfigService.criar({
+                    vinculo: vinculo.id,
+                    produto: null,
+                    taxa_tipo: 'PERC',
+                    taxa_valor: Number(item.valor),
+                    ativo: true,
+                  })
+                } catch (e) {
+                  console.warn('Erro ao criar taxa config:', e)
+                }
+              }
+            }
+          }
+        }
+      }
+
       navigate('/interno/administradoras')
     } catch (error) {
       console.error('❌ Erro:', error)

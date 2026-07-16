@@ -9,6 +9,7 @@ import {
   atualizarRegraValorAdministradora,
   criarRegraValorAdministradora,
 } from '../../../services/administradoraService.js';
+import { taxaConfigService } from '../../../services/taxaConfigService.js';
 import { userService } from '../../../services/userService.js';
 import PageLayout from '../../../Layouts/PageLayout/PageLayout.jsx';
 import { useLoading } from '../../../hooks/useLoading.js';
@@ -437,6 +438,20 @@ export default function MinhaAdministradora() {
   const [usuarioToDelete, setUsuarioToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  const [taxasConfig, setTaxasConfig] = useState([]);
+  const [loadingTaxas, setLoadingTaxas] = useState(false);
+  const [modalTaxaOpen, setModalTaxaOpen] = useState(false);
+  const [taxaSelecionada, setTaxaSelecionada] = useState(null);
+  const [taxaForm, setTaxaForm] = useState({
+    vinculo: '',
+    produto: '',
+    taxa_tipo: 'PERC',
+    taxa_valor: '',
+    ativo: true,
+  });
+  const [vinculos, setVinculos] = useState([]);
+  const [salvandoTaxa, setSalvandoTaxa] = useState(false);
+
   const { startLoading, stopLoading } = useLoading();
 
   const administradoraId = getAdministradoraIdFromUser(user);
@@ -474,6 +489,7 @@ export default function MinhaAdministradora() {
     carregarUsuarios();
     carregarAdministradoras();
     carregarRegraValor();
+    carregarTaxasConfig();
   }, [administradoraId]);
 
   const carregarAdministradoras = async () => {
@@ -574,6 +590,22 @@ export default function MinhaAdministradora() {
     }
   };
 
+  const carregarTaxasConfig = async () => {
+    try {
+      setLoadingTaxas(true);
+      const data = await taxaConfigService.listar({ administradora: administradoraId });
+      setTaxasConfig(Array.isArray(data) ? data : data?.results || []);
+
+      const vinculosData = await taxaConfigService.listarVinculos({ administradora: administradoraId });
+      setVinculos(Array.isArray(vinculosData) ? vinculosData : vinculosData?.results || []);
+    } catch (error) {
+      console.error('❌ Erro ao carregar taxas:', error);
+      setTaxasConfig([]);
+    } finally {
+      setLoadingTaxas(false);
+    }
+  };
+
   const abrirModalRegraValor = async () => {
     setModalRegraValorOpen(true);
     await carregarRegraValor();
@@ -582,6 +614,80 @@ export default function MinhaAdministradora() {
   const fecharModalRegraValor = () => {
     if (salvandoRegraValor) return;
     setModalRegraValorOpen(false);
+  };
+
+  const abrirModalTaxa = (taxa = null) => {
+    if (taxa) {
+      setTaxaSelecionada(taxa);
+      setTaxaForm({
+        vinculo: taxa.vinculo || '',
+        produto: taxa.produto || '',
+        taxa_tipo: taxa.taxa_tipo || 'PERC',
+        taxa_valor: taxa.taxa_valor || '',
+        ativo: taxa.ativo !== false,
+      });
+    } else {
+      setTaxaSelecionada(null);
+      setTaxaForm({
+        vinculo: '',
+        produto: '',
+        taxa_tipo: 'PERC',
+        taxa_valor: '',
+        ativo: true,
+      });
+    }
+    setModalTaxaOpen(true);
+  };
+
+  const fecharModalTaxa = () => {
+    setModalTaxaOpen(false);
+    setTaxaSelecionada(null);
+  };
+
+  const handleSalvarTaxa = async () => {
+    try {
+      setSalvandoTaxa(true);
+
+      if (!taxaForm.vinculo) {
+        enqueueSnackbar('Selecione um vínculo', { variant: 'warning' });
+        return;
+      }
+
+      const payload = {
+        vinculo: Number(taxaForm.vinculo),
+        produto: taxaForm.produto ? Number(taxaForm.produto) : null,
+        taxa_tipo: taxaForm.taxa_tipo,
+        taxa_valor: parseFloat(taxaForm.taxa_valor) || 0,
+        ativo: taxaForm.ativo,
+      };
+
+      if (taxaSelecionada?.id) {
+        await taxaConfigService.atualizar(taxaSelecionada.id, payload);
+        enqueueSnackbar('Taxa atualizada com sucesso!', { variant: 'success' });
+      } else {
+        await taxaConfigService.criar(payload);
+        enqueueSnackbar('Taxa criada com sucesso!', { variant: 'success' });
+      }
+
+      fecharModalTaxa();
+      await carregarTaxasConfig();
+    } catch (error) {
+      const msg = error?.response?.data?.detail || 'Erro ao salvar taxa';
+      enqueueSnackbar(msg, { variant: 'error' });
+    } finally {
+      setSalvandoTaxa(false);
+    }
+  };
+
+  const handleExcluirTaxa = async (taxa) => {
+    if (!window.confirm(`Deseja excluir esta configuração de taxa?`)) return;
+    try {
+      await taxaConfigService.remover(taxa.id);
+      enqueueSnackbar('Taxa removida com sucesso', { variant: 'success' });
+      await carregarTaxasConfig();
+    } catch (error) {
+      enqueueSnackbar('Erro ao remover taxa', { variant: 'error' });
+    }
   };
 
   const handleSalvarRegraValor = async () => {
@@ -897,6 +1003,70 @@ export default function MinhaAdministradora() {
             <S.Card>
               <S.CardHeader>
                 <div>
+                  <h2>Configuração de Taxas</h2>
+                  <p>Gerencie as taxas de administração por vínculo e produto.</p>
+                </div>
+
+                <S.Button $variant="primary" onClick={() => abrirModalTaxa()}>
+                  + Nova Taxa
+                </S.Button>
+              </S.CardHeader>
+
+              {loadingTaxas ? (
+                <p style={{ padding: 16, color: '#64748b' }}>Carregando taxas...</p>
+              ) : taxasConfig.length === 0 ? (
+                <p style={{ padding: 16, color: '#94a3b8' }}>Nenhuma configuração de taxa cadastrada.</p>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                    <thead>
+                      <tr>
+                        <th style={{ background: '#f8fafc', padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>Vínculo</th>
+                        <th style={{ background: '#f8fafc', padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>Produto</th>
+                        <th style={{ background: '#f8fafc', padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>Tipo</th>
+                        <th style={{ background: '#f8fafc', padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>Valor</th>
+                        <th style={{ background: '#f8fafc', padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>Status</th>
+                        <th style={{ background: '#f8fafc', padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {taxasConfig.map((t) => (
+                        <tr key={t.id}>
+                          <td style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9' }}>{t.condominio_nome || t.condominio_cnpj || t.vinculo_display || `Vínculo ${t.vinculo}`}</td>
+                          <td style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9' }}>{t.produto_nome || 'Todos'}</td>
+                          <td style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9' }}>
+                            <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: t.taxa_tipo === 'PERC' ? '#eff6ff' : '#fef3c7', color: t.taxa_tipo === 'PERC' ? '#2563eb' : '#d97706' }}>
+                              {t.taxa_tipo === 'PERC' ? 'Percentual' : 'Fixo'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9', fontWeight: 600 }}>
+                            {t.taxa_tipo === 'PERC' ? `${t.taxa_valor}%` : `R$ ${Number(t.taxa_valor).toFixed(2)}`}
+                          </td>
+                          <td style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9' }}>
+                            <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: t.ativo ? '#dcfce7' : '#f1f5f9', color: t.ativo ? '#16a34a' : '#64748b' }}>
+                              {t.ativo ? 'Ativo' : 'Inativo'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9' }}>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <button onClick={() => abrirModalTaxa(t)} style={{ border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', color: '#64748b', cursor: 'pointer', padding: '6px 8px' }}>Editar</button>
+                              <button onClick={() => taxaConfigService.atualizarParcial(t.id, { ativo: !t.ativo }).then(() => carregarTaxasConfig())} style={{ border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', color: '#64748b', cursor: 'pointer', padding: '6px 8px' }}>
+                                {t.ativo ? 'Desativar' : 'Ativar'}
+                              </button>
+                              <button onClick={() => handleExcluirTaxa(t)} style={{ border: '1px solid #fecaca', borderRadius: 8, background: '#fff', color: '#ef4444', cursor: 'pointer', padding: '6px 8px' }}>Excluir</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </S.Card>
+
+            <S.Card>
+              <S.CardHeader>
+                <div>
                   <h2>Usuários Vinculados</h2>
                   <p>Gerencie os usuários que têm acesso a esta administradora.</p>
                 </div>
@@ -946,6 +1116,98 @@ export default function MinhaAdministradora() {
           setD_mais={setD_mais}
           podeVerDmais={user?.tipo === 'fat' || user?.tipo === 'dev'}
         />
+
+        {modalTaxaOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(15, 23, 42, 0.65)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              padding: 16,
+            }}
+          >
+            <div
+              style={{
+                width: '100%',
+                maxWidth: 500,
+                background: '#fff',
+                borderRadius: 16,
+                padding: 24,
+                boxShadow: '0 24px 80px rgba(15, 23, 42, 0.25)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', marginBottom: 20 }}>
+                <div>
+                  <h2 style={{ margin: 0 }}>{taxaSelecionada ? 'Editar Taxa' : 'Nova Taxa'}</h2>
+                  <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: 14 }}>Configure a taxa de administração por condomínio.</p>
+                </div>
+                <button type="button" onClick={fecharModalTaxa} disabled={salvandoTaxa} style={{ border: 0, background: 'transparent', fontSize: 24, cursor: salvandoTaxa ? 'not-allowed' : 'pointer', lineHeight: 1 }}>×</button>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600, color: '#475569' }}>Condomínio *</label>
+                <select value={taxaForm.vinculo} onChange={(e) => setTaxaForm(prev => ({ ...prev, vinculo: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 14 }}>
+                  <option value="">Selecione o condomínio...</option>
+                  {vinculos.map((v) => (
+                    <option key={v.id} value={v.id}>{v.condominio_nome || v.condominio_cnpj || `Vínculo ${v.id}`}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600, color: '#475569' }}>Tipo da Taxa *</label>
+                <select value={taxaForm.taxa_tipo} onChange={(e) => setTaxaForm(prev => ({ ...prev, taxa_tipo: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 14 }}>
+                  <option value="PERC">Percentual (%)</option>
+                  <option value="FIXO">Valor Fixo (R$)</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600, color: '#475569' }}>Valor da Taxa *</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="number"
+                    value={taxaForm.taxa_valor}
+                    onChange={(e) => setTaxaForm(prev => ({ ...prev, taxa_valor: e.target.value }))}
+                    placeholder={taxaForm.taxa_tipo === 'PERC' ? 'Ex: 3.5' : 'Ex: 5.00'}
+                    step="0.01"
+                    min="0"
+                    max={taxaForm.taxa_tipo === 'PERC' ? '100' : undefined}
+                    style={{
+                      width: '100%',
+                      padding: '10px 40px 10px 12px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: 8,
+                      fontSize: 14,
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 13, pointerEvents: 'none' }}>
+                    {taxaForm.taxa_tipo === 'PERC' ? '%' : 'R$'}
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#0f172a', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={taxaForm.ativo} onChange={(e) => setTaxaForm(prev => ({ ...prev, ativo: e.target.checked }))} style={{ width: 16, accentColor: '#2563eb' }} />
+                  Configuração ativa
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, borderTop: '1px solid #eaeaea', paddingTop: 16 }}>
+                <button type="button" onClick={fecharModalTaxa} disabled={salvandoTaxa} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 14, fontWeight: 500, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#f1f5f9', color: '#475569' }}>Cancelar</button>
+                <button type="button" onClick={handleSalvarTaxa} disabled={salvandoTaxa} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 14, fontWeight: 500, cursor: 'pointer', border: 'none', background: '#2563eb', color: '#fff' }}>
+                  {salvandoTaxa ? 'Salvando...' : taxaSelecionada ? 'Atualizar' : 'Criar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showDeleteModal && usuarioToDelete && (
           <div
