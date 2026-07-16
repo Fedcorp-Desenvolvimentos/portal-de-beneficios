@@ -181,7 +181,7 @@ export default function FileUpload({ onUpload }) {
           uploadResult?.error ||
           'Erro ao processar o arquivo.';
         setMessage(msgErro);
-        enqueueSnackbar(msgErro, { variant: 'error', persist: true });
+        enqueueSnackbar(msgErro, { variant: 'error' });
       } else {
         setStatus('sucesso');
         setMessage(uploadResult.detail || uploadResult.message || 'Arquivo processado com sucesso.');
@@ -199,7 +199,7 @@ export default function FileUpload({ onUpload }) {
         error.message ||
         'Erro desconhecido ao processar o arquivo.';
       setMessage(errorMsg);
-      enqueueSnackbar(errorMsg, { variant: 'error', persist: true });
+      enqueueSnackbar(errorMsg, { variant: 'error' });
     } finally {
       stopLoading();
     }
