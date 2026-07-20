@@ -26,7 +26,7 @@ export function atualizarDataToBackend(loteAtual, dataToBackendOriginal) {
     dataToBackendAtualizado.condominios.forEach(condominio => {
       if (condominio.funcionarios && Array.isArray(condominio.funcionarios)) {
         // Para cada funcionário no condomínio, atualizar com dados do lote
-        condominio.funcionarios = condominio.funcionarios.map(funcionario => {
+          condominio.funcionarios = condominio.funcionarios.map(funcionario => {
           const funcionarioAtualizado = funcionariosAtualizados[funcionario.cpf];
           
           if (funcionarioAtualizado) {
@@ -63,10 +63,16 @@ export function atualizarDataToBackend(loteAtual, dataToBackendOriginal) {
             };
           }
           
-          return funcionario;
-        });
+          // Funcionário não está no lote (foi excluído) - remover do payload
+          return null;
+        }).filter(Boolean);
       }
     });
+    
+    // Remover condomínios que ficaram sem funcionários
+    dataToBackendAtualizado.condominios = dataToBackendAtualizado.condominios.filter(
+      (condominio) => condominio.funcionarios && condominio.funcionarios.length > 0
+    );
   }
   
   // RECALCULAR SUMMARY
