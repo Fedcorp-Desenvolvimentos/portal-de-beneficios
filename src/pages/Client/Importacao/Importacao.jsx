@@ -2449,8 +2449,13 @@ export default function Importacao() {
           return
         }
 
-        const loteComAjustes = lote
-        const dataToBackendSincronizado = prepararDadosParaEnvio(loteComAjustes, data.data_to_backend)
+        const loteAtivo = {
+          ...lote,
+          rows: lote.rows.filter(
+            (r) => !lote.excluidosPorColab?.has(getNomeColaborador(r))
+          ),
+        }
+        const dataToBackendSincronizado = prepararDadosParaEnvio(loteAtivo, data.data_to_backend)
 
         const vencimentoFormatado = datasEnvio.vencimento || reviewData.vencimento || ''
 
