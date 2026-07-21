@@ -2402,6 +2402,20 @@ export default function ColaboradorDashboard() {
                 <FiDownload size={14} />
                 Baixar planilha original
               </S.Btn>
+              <S.Btn
+                onClick={() => {
+                  const s3Url = importDataInfo?.importacao?.arquivo_s3_editado
+                  if (s3Url) {
+                    window.open(s3Url, '_blank')
+                  } else {
+                    showToast('Arquivo editado não disponível.', { variant: 'warning' })
+                  }
+                }}
+                disabled={!importDataInfo?.importacao?.arquivo_s3_editado}
+              >
+                <FiDownload size={14} />
+                Baixar planilha editada
+              </S.Btn>
               <S.Btn onClick={closeImportDataModal} disabled={importDataLoading}>
                 Fechar
               </S.Btn>
