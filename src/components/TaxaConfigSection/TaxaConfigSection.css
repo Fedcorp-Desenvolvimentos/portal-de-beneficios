@@ -90,6 +90,10 @@
   width: 140px;
 }
 
+.taxa-input-small {
+  width: 100px;
+}
+
 .taxa-produtos-list {
   display: flex;
   flex-direction: column;

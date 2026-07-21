@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSnackbar } from 'notistack';
 import styled from 'styled-components';
 import { taxaConfigService } from '../../../services/taxaConfigService';
@@ -164,6 +164,51 @@ const PERCENTUAIS = [
   { value: '10', label: '10%' },
 ];
 
+const SearchWrapper = styled.div`
+  position: relative;
+`;
+
+const SearchDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 999;
+`;
+
+const SearchOption = styled.button`
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: ${({ $selected }) => ($selected ? '#eff6ff' : 'transparent')};
+  text-align: left;
+  font-size: 14px;
+  font-family: inherit;
+  color: ${({ $selected }) => ($selected ? '#2563eb' : '#0f172a')};
+  font-weight: ${({ $selected }) => ($selected ? '600' : '400')};
+  cursor: pointer;
+  transition: background 0.1s;
+
+  &:hover {
+    background: ${({ $selected }) => ($selected ? '#eff6ff' : '#f8fafc')};
+  }
+`;
+
+const SearchEmpty = styled.div`
+  padding: 10px 12px;
+  color: #94a3b8;
+  font-size: 13px;
+  text-align: center;
+`;
+
 export default function TaxaConfigModal({
   isOpen,
   onClose,
@@ -181,6 +226,9 @@ export default function TaxaConfigModal({
     taxa_valor: '',
     ativo: true,
   });
+  const [produtoSearch, setProdutoSearch] = useState('');
+  const [produtoDropdownOpen, setProdutoDropdownOpen] = useState(false);
+  const produtoWrapperRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -201,8 +249,35 @@ export default function TaxaConfigModal({
           ativo: true,
         });
       }
+      setProdutoSearch('');
+      setProdutoDropdownOpen(false);
     }
   }, [taxa, isOpen]);
+
+  useEffect(() => {
+    if (!produtoDropdownOpen) {
+      const selected = (produtos || []).find((p) => String(p.codigo_produto) === String(formData.produto));
+      setProdutoSearch(selected ? `${selected.nome} (${selected.codigo_produto})` : '');
+    }
+  }, [produtoDropdownOpen, formData.produto, produtos]);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (produtoWrapperRef.current && !produtoWrapperRef.current.contains(e.target)) {
+        setProdutoDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const produtosFiltrados = produtoSearch
+    ? (produtos || []).filter(
+        (p) =>
+          p.nome.toLowerCase().includes(produtoSearch.toLowerCase()) ||
+          String(p.codigo_produto).includes(produtoSearch)
+      )
+    : (produtos || []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -277,20 +352,52 @@ export default function TaxaConfigModal({
             </select>
           </FormGroup>
 
-          <FormGroup>
+          <FormGroup ref={produtoWrapperRef}>
             <label>Produto (vazio = todos)</label>
-            <select
-              name="produto"
-              value={formData.produto}
-              onChange={handleChange}
-            >
-              <option value="">Todos os produtos</option>
-              {(produtos || []).map((p) => (
-                <option key={p.codigo_produto} value={p.codigo_produto}>
-                  {p.nome} ({p.codigo_produto})
-                </option>
-              ))}
-            </select>
+            <input
+              type="text"
+              value={produtoDropdownOpen ? produtoSearch : (formData.produto ? `${(produtos || []).find((p) => String(p.codigo_produto) === String(formData.produto))?.nome || ''} (${formData.produto})` : '')}
+              onChange={(e) => {
+                setProdutoSearch(e.target.value);
+                setProdutoDropdownOpen(true);
+              }}
+              onFocus={() => setProdutoDropdownOpen(true)}
+              placeholder="Buscar produto..."
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setProdutoDropdownOpen(false);
+              }}
+            />
+            {produtoDropdownOpen && (
+              <SearchDropdown>
+                <SearchOption
+                  $selected={!formData.produto}
+                  onClick={() => {
+                    setFormData((prev) => ({ ...prev, produto: '' }));
+                    setProdutoSearch('');
+                    setProdutoDropdownOpen(false);
+                  }}
+                >
+                  Todos os produtos
+                </SearchOption>
+                {produtosFiltrados.length === 0 ? (
+                  <SearchEmpty>Nenhum resultado</SearchEmpty>
+                ) : (
+                  produtosFiltrados.map((p) => (
+                    <SearchOption
+                      key={p.codigo_produto}
+                      $selected={String(formData.produto) === String(p.codigo_produto)}
+                      onClick={() => {
+                        setFormData((prev) => ({ ...prev, produto: p.codigo_produto }));
+                        setProdutoSearch(`${p.nome} (${p.codigo_produto})`);
+                        setProdutoDropdownOpen(false);
+                      }}
+                    >
+                      {p.nome} ({p.codigo_produto})
+                    </SearchOption>
+                  ))
+                )}
+              </SearchDropdown>
+            )}
           </FormGroup>
 
           <FormGroup>

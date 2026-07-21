@@ -271,19 +271,28 @@ export default function TaxaConfigSection({
                   <span className="taxa-produto-nome">
                     {PRODUTOS_TAXA.find((p) => p.codigo === item.codigo)?.nome || item.codigo}
                   </span>
-                  <select
-                    value={item.valor}
-                    onChange={(e) => handleTaxaProdutoChange(item.codigo, e.target.value)}
-                    disabled={disabled}
-                    className="taxa-select taxa-select-small"
-                  >
-                    <option value="">Não possui taxa</option>
-                    {PERCENTUAIS_TAXA.filter((opt) => opt.value !== '').map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="taxa-input-with-suffix">
+                    <input
+                      type="number"
+                      value={item.valor}
+                      onChange={(e) => handleTaxaProdutoChange(item.codigo, e.target.value)}
+                      disabled={disabled}
+                      className="taxa-input taxa-input-small"
+                      placeholder="0"
+                      step="0.1"
+                      min="0"
+                      max="100"
+                      list={`percentuais-produto-${item.codigo}`}
+                    />
+                    <span className="taxa-input-suffix">%</span>
+                    <datalist id={`percentuais-produto-${item.codigo}`}>
+                      {PERCENTUAIS_TAXA.filter((opt) => opt.value !== '').map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </datalist>
+                  </div>
                 </div>
               ))}
             </div>
