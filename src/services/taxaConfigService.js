@@ -8,7 +8,7 @@ export const taxaConfigService = {
    */
   async listar(params = {}) {
     try {
-      const response = await api.get('/api/taxas-config/', { params });
+      const response = await api.get('/api/entidades/taxas-config/', { params });
       return response.data;
     } catch (error) {
       console.error('Erro ao listar taxas:', error);
@@ -21,7 +21,7 @@ export const taxaConfigService = {
    */
   async buscarPorId(id) {
     try {
-      const response = await api.get(`/api/taxas-config/${id}/`);
+      const response = await api.get(`/api/entidades/taxas-config/${id}/`);
       return response.data;
     } catch (error) {
       console.error(`Erro ao buscar taxa ${id}:`, error);
@@ -35,7 +35,7 @@ export const taxaConfigService = {
    */
   async criar(dados) {
     try {
-      const response = await api.post('/api/taxas-config/', dados);
+      const response = await api.post('/api/entidades/taxas-config/', dados);
       return response.data;
     } catch (error) {
       console.error('Erro ao criar taxa:', error);
@@ -50,7 +50,7 @@ export const taxaConfigService = {
    */
   async atualizar(id, dados) {
     try {
-      const response = await api.put(`/api/taxas-config/${id}/`, dados);
+      const response = await api.put(`/api/entidades/taxas-config/${id}/`, dados);
       return response.data;
     } catch (error) {
       console.error(`Erro ao atualizar taxa ${id}:`, error);
@@ -65,7 +65,7 @@ export const taxaConfigService = {
    */
   async atualizarParcial(id, dados) {
     try {
-      const response = await api.patch(`/api/taxas-config/${id}/`, dados);
+      const response = await api.patch(`/api/entidades/taxas-config/${id}/`, dados);
       return response.data;
     } catch (error) {
       console.error(`Erro ao atualizar taxa ${id}:`, error);
@@ -79,7 +79,7 @@ export const taxaConfigService = {
    */
   async remover(id) {
     try {
-      await api.delete(`/api/taxas-config/${id}/`);
+      await api.delete(`/api/entidades/taxas-config/${id}/`);
       return true;
     } catch (error) {
       console.error(`Erro ao remover taxa ${id}:`, error);
@@ -107,7 +107,7 @@ export const taxaConfigService = {
    */
   async listarVinculos(params = {}) {
     try {
-      const response = await api.get('/api/vinculos/', { params });
+      const response = await api.get('/api/entidades/vinculos/', { params });
       return response.data;
     } catch (error) {
       console.error('Erro ao listar vinculos:', error);

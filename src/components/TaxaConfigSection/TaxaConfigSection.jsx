@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { taxaConfigService } from '../../services/taxaConfigService.js'
 import { PRODUTOS_TAXA, PERCENTUAIS_TAXA } from '../../constants/produtos'
 import './TaxaConfigSection.css'
@@ -31,12 +31,40 @@ export default function TaxaConfigSection({
   const [taxaCondSelecionada, setTaxaCondSelecionada] = useState(null)
   const [taxaCondForm, setTaxaCondForm] = useState(initialTaxaCondForm)
   const [salvandoTaxaCond, setSalvandoTaxaCond] = useState(false)
+  const [produtoSearch, setProdutoSearch] = useState('')
+  const [produtoDropdownOpen, setProdutoDropdownOpen] = useState(false)
+  const produtoWrapperRef = useRef(null)
 
   useEffect(() => {
     if (isEditing && administradoraId) {
       carregarTaxasCondominio()
     }
   }, [administradoraId, isEditing])
+
+  useEffect(() => {
+    if (!produtoDropdownOpen) {
+      const selected = PRODUTOS_TAXA.find((p) => p.codigo === taxaCondForm.produto)
+      setProdutoSearch(selected ? selected.nome : '')
+    }
+  }, [produtoDropdownOpen, taxaCondForm.produto])
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (produtoWrapperRef.current && !produtoWrapperRef.current.contains(e.target)) {
+        setProdutoDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const produtosFiltrados = produtoSearch
+    ? PRODUTOS_TAXA.filter(
+        (p) =>
+          p.nome.toLowerCase().includes(produtoSearch.toLowerCase()) ||
+          p.codigo.includes(produtoSearch)
+      )
+    : PRODUTOS_TAXA
 
   const carregarTaxasCondominio = async () => {
     try {
@@ -377,20 +405,55 @@ export default function TaxaConfigSection({
                 </select>
               </div>
 
-              <div className="taxa-modal-field">
+              <div className="taxa-modal-field" ref={produtoWrapperRef} style={{ position: 'relative' }}>
                 <label>Produto (Opcional)</label>
-                <select
-                  value={taxaCondForm.produto}
-                  onChange={(e) => setTaxaCondForm((prev) => ({ ...prev, produto: e.target.value }))}
+                <input
+                  type="text"
+                  value={produtoDropdownOpen ? produtoSearch : (PRODUTOS_TAXA.find((p) => p.codigo === taxaCondForm.produto)?.nome || '')}
+                  onChange={(e) => {
+                    setProdutoSearch(e.target.value)
+                    setProdutoDropdownOpen(true)
+                  }}
+                  onFocus={() => setProdutoDropdownOpen(true)}
+                  placeholder="Buscar produto..."
                   disabled={salvandoTaxaCond}
-                >
-                  <option value="">Todos os produtos</option>
-                  {PRODUTOS_TAXA.map((p) => (
-                    <option key={p.codigo} value={p.codigo}>
-                      {p.nome}
-                    </option>
-                  ))}
-                </select>
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') setProdutoDropdownOpen(false)
+                  }}
+                />
+                {produtoDropdownOpen && (
+                  <div className="taxa-search-dropdown">
+                    <button
+                      type="button"
+                      className="taxa-search-option"
+                      onClick={() => {
+                        setTaxaCondForm((prev) => ({ ...prev, produto: '' }))
+                        setProdutoSearch('')
+                        setProdutoDropdownOpen(false)
+                      }}
+                    >
+                      Todos os produtos
+                    </button>
+                    {produtosFiltrados.length === 0 ? (
+                      <div className="taxa-search-empty">Nenhum resultado</div>
+                    ) : (
+                      produtosFiltrados.map((p) => (
+                        <button
+                          key={p.codigo}
+                          type="button"
+                          className={`taxa-search-option${taxaCondForm.produto === p.codigo ? ' selected' : ''}`}
+                          onClick={() => {
+                            setTaxaCondForm((prev) => ({ ...prev, produto: p.codigo }))
+                            setProdutoSearch(p.nome)
+                            setProdutoDropdownOpen(false)
+                          }}
+                        >
+                          {p.nome} ({p.codigo})
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="taxa-modal-field">
