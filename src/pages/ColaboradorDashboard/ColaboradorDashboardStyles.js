@@ -204,7 +204,7 @@ export const S = {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
-    min-width: 1180px;
+    min-width: 1244px;
     font-size: 13px;
 
     thead th {
@@ -236,27 +236,27 @@ export const S = {
 
     th:nth-child(1),
     td:nth-child(1) {
-      width: 120px;
+      width: 130px;
     }
 
     th:nth-child(2),
     td:nth-child(2) {
-      width: 220px;
+      width: 240px;
     }
 
     th:nth-child(3),
     td:nth-child(3) {
-      width: 100px;
+      width: 110px;
     }
 
     th:nth-child(4),
     td:nth-child(4) {
-      width: 95px;
+      width: 100px;
     }
 
     th:nth-child(5),
     td:nth-child(5) {
-      width: 100px;
+      width: 110px;
     }
 
     th:nth-child(6),
@@ -266,41 +266,64 @@ export const S = {
 
     th:nth-child(7),
     td:nth-child(7) {
-      width: 130px;
+      width: 110px;
     }
 
     th:nth-child(8),
     td:nth-child(8) {
-      width: 58px;
-      min-width: 58px;
-      max-width: 58px;
+      width: 120px;
+    }
+
+    th:nth-child(9),
+    td:nth-child(9) {
+      width: 60px;
+      min-width: 60px;
+      max-width: 60px;
       text-align: center;
       padding-left: 6px;
       padding-right: 6px;
     }
 
-    th:nth-child(9),
-    td:nth-child(9) {
-      width: 96px;
-      min-width: 96px;
-      max-width: 96px;
+    th:nth-child(10),
+    td:nth-child(10) {
+      width: 100px;
+      min-width: 100px;
+      max-width: 100px;
       text-align: center;
       padding-left: 6px;
       padding-right: 6px;
       white-space: nowrap;
     }
 
-    th:nth-child(10),
-    td:nth-child(10) {
-      width: 104px;
-      min-width: 104px;
-      max-width: 104px;
+    th:nth-child(11),
+    td:nth-child(11) {
+      width: 110px;
+      min-width: 110px;
+      max-width: 110px;
       text-align: center;
       padding-left: 6px;
       padding-right: 8px;
     }
 
-    td:nth-child(8) > button {
+    th:nth-child(12),
+    td:nth-child(12) {
+      width: 44px;
+      min-width: 44px;
+      max-width: 44px;
+      text-align: center;
+      padding-left: 4px;
+      padding-right: 4px;
+    }
+
+    td:nth-child(12) > button {
+      min-width: 32px;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      justify-content: center;
+    }
+
+    td:nth-child(9) > button {
       min-width: 36px;
       width: 36px;
       height: 32px;
@@ -308,14 +331,14 @@ export const S = {
       justify-content: center;
     }
 
-    td:nth-child(9) > div {
+    td:nth-child(10) > div {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
     }
 
-    td:nth-child(9) > button {
+    td:nth-child(10) > button {
       min-width: 82px;
       width: auto;
       height: 32px;
@@ -324,14 +347,14 @@ export const S = {
       white-space: nowrap;
     }
 
-    td:nth-child(9) > div:has(button + button) > button {
+    td:nth-child(10) > div:has(button + button) > button {
       min-width: 36px;
       width: 36px;
       height: 32px;
       padding: 0;
     }
 
-    td:nth-child(10) > button {
+    td:nth-child(11) > button {
       min-width: 82px;
       padding-left: 10px;
       padding-right: 10px;
@@ -362,7 +385,7 @@ export const S = {
 
       th:nth-child(1),
       td:nth-child(1) {
-        width: 13%;
+        width: 11%;
       }
 
       th:nth-child(2),
@@ -372,47 +395,61 @@ export const S = {
 
       th:nth-child(3),
       td:nth-child(3) {
-        width: 12%;
+        width: 9%;
         white-space: nowrap;
       }
 
       th:nth-child(4),
       td:nth-child(4) {
-        width: 10%;
+        width: 8%;
         white-space: nowrap;
       }
 
       th:nth-child(5),
       td:nth-child(5) {
-        width: 12%;
+        width: 9%;
         white-space: nowrap;
       }
 
       th:nth-child(6),
       td:nth-child(6) {
-        width: 11%;
+        width: 9%;
         white-space: nowrap;
       }
 
       th:nth-child(7),
       td:nth-child(7) {
-        width: 14%;
+        width: 9%;
+        white-space: nowrap;
       }
 
       th:nth-child(8),
       td:nth-child(8) {
-        width: 8%;
+        width: 10%;
+      }
+
+      th:nth-child(9),
+      td:nth-child(9) {
+        width: 5%;
         min-width: 0;
         max-width: none;
         overflow: visible;
         text-align: center;
       }
 
-      td:nth-child(8) button {
+      td:nth-child(9) button {
         min-width: 0;
         width: auto;
         height: 34px;
         padding: 0 8px;
+      }
+
+      th:nth-child(13),
+      td:nth-child(13) {
+        width: 4%;
+        min-width: 0;
+        max-width: none;
+        text-align: center;
       }
     }
 
@@ -430,7 +467,7 @@ export const S = {
 
       th:nth-child(1),
       td:nth-child(1) {
-        width: 13%;
+        width: 11%;
       }
 
       th:nth-child(2),
@@ -440,32 +477,42 @@ export const S = {
 
       th:nth-child(3),
       td:nth-child(3) {
-        width: 12%;
+        width: 9%;
       }
 
       th:nth-child(4),
       td:nth-child(4) {
-        width: 10%;
+        width: 8%;
       }
 
       th:nth-child(5),
       td:nth-child(5) {
-        width: 12%;
+        width: 9%;
       }
 
       th:nth-child(6),
       td:nth-child(6) {
-        width: 11%;
+        width: 9%;
       }
 
       th:nth-child(7),
       td:nth-child(7) {
-        width: 14%;
+        width: 9%;
       }
 
       th:nth-child(8),
       td:nth-child(8) {
+        width: 10%;
+      }
+
+      th:nth-child(9),
+      td:nth-child(9) {
         width: 9%;
+      }
+
+      th:nth-child(13),
+      td:nth-child(13) {
+        width: 4%;
       }
     }
   `,

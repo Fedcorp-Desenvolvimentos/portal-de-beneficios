@@ -606,6 +606,40 @@
   color: #64748b;
 }
 
+.op-kanban-card-info {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.op-kanban-card-info span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.op-kanban-card-actions {
+  margin-top: 8px;
+}
+
+.op-kanban-move-select {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  color: #475569;
+  background: #fff;
+  cursor: pointer;
+  outline: none;
+}
+
+.op-kanban-move-select:focus {
+  border-color: #6366f1;
+}
+
 .op-kanban-empty {
   margin: 0;
   min-height: 74px;

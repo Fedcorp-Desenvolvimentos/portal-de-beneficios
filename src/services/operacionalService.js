@@ -5,7 +5,14 @@ const unwrap = (response) => response.data;
 
 export const operacionalFaturaService = {
   async getAll() {
-    const response = await api.get('/api/operacional/faturas/');
+    const response = await api.get('/api/beneficios/kanban/faturas/');
+    return response;
+  },
+
+  async move(id, status) {
+    const response = await api.patch(`/api/beneficios/kanban/${id}/move/`, {
+      status,
+    });
     return response;
   },
 
@@ -142,7 +149,7 @@ export const operacionalFaturaService = {
 
 export const operacionalBoletoService = {
   async getAll() {
-    const response = await api.get('/api/operacional/boletos/');
+    const response = await api.get('/api/beneficios/kanban/boletos/');
     return response;
   },
 
