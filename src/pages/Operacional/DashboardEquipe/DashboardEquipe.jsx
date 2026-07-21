@@ -65,9 +65,10 @@ export default function DashboardEquipe() {
 
       try {
         const response = await operacionalFaturaService.getAll();
-        const data = response?.data;
+        const raw = response?.data;
+        const data = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
 
-        setFaturas(Array.isArray(data) ? data : []);
+        setFaturas(data);
         setAnimateKpis(animate);
         setLoaded(true);
       } catch (error) {

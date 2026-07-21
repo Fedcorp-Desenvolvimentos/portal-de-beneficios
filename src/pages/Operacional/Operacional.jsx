@@ -217,11 +217,12 @@ function normalizeList(data) {
   return [];
 }
 
-function OperacionalKanban({ faturas }) {
+function OperacionalKanban({ faturas, onMoveFatura }) {
   const [search, setSearch] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const [responsavelFilter, setResponsavelFilter] = useState('');
+  const [movingId, setMovingId] = useState(null);
 
   const responsaveis = useMemo(() => {
     const map = new Map();
@@ -413,8 +414,34 @@ function OperacionalKanban({ faturas }) {
                             </span>
                           </div>
 
+                          {fatura.vencimento && (
+                            <div className="op-kanban-card-info">
+                              <span>Venc: {fmtDate(fatura.vencimento)}</span>
+                              {fatura.recebimento && (
+                                <span>Receb: {fmtDate(fatura.recebimento)}</span>
+                              )}
+                            </div>
+                          )}
+
                           <div className="op-kanban-card-uploader">
                             {getUploaderName(fatura)}
+                          </div>
+
+                          <div className="op-kanban-card-actions">
+                            <select
+                              className="op-kanban-move-select"
+                              value={column.key}
+                              onChange={(e) => {
+                                if (onMoveFatura && e.target.value !== column.key) {
+                                  onMoveFatura(id, e.target.value);
+                                }
+                              }}
+                            >
+                              <option value="faturado">Faturado</option>
+                              <option value="atrasado">Confirmar Pagamento</option>
+                              <option value="aprovado">Boleto VR Enviado</option>
+                              <option value="pago">Pago</option>
+                            </select>
                           </div>
                         </article>
                       );
@@ -917,6 +944,15 @@ export default function Operacional({ view }) {
     </button>
   );
 
+  const handleMoveFatura = useCallback(async (faturaId, newStatus) => {
+    try {
+      await operacionalFaturaService.move(faturaId, newStatus);
+      await carregar();
+    } catch (error) {
+      console.error('Erro ao mover fatura:', error);
+    }
+  }, [carregar]);
+
   const topNavAction =
     resolvedView === 'dashboard' || resolvedView === 'faturas'
       ? uploadAction
@@ -935,7 +971,7 @@ export default function Operacional({ view }) {
           ) : (
             <>
               {resolvedView === 'kanban' && (
-                <OperacionalKanban faturas={faturas} />
+                <OperacionalKanban faturas={faturas} onMoveFatura={handleMoveFatura} />
               )}
 
               {resolvedView === 'faturas' && (
