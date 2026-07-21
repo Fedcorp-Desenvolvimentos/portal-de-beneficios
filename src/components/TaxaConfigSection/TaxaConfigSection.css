@@ -1,0 +1,457 @@
+.taxa-section {
+  margin-top: 1.5rem;
+}
+
+.taxa-options {
+  margin-top: 8px;
+}
+
+.taxa-padrao-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.taxa-padrao-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.taxa-select {
+  height: 34px;
+  border-radius: 6px;
+  border: 0.5px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 0 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  min-width: 140px;
+}
+
+.taxa-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.taxa-input {
+  height: 34px;
+  border-radius: 6px;
+  border: 0.5px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 0 32px 0 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100px;
+  box-sizing: border-box;
+}
+
+.taxa-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.taxa-input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.taxa-input-with-suffix {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.taxa-input-with-suffix .taxa-input {
+  padding-right: 32px;
+}
+
+.taxa-input-suffix {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.taxa-select-small {
+  min-width: 140px;
+  width: 140px;
+}
+
+.taxa-produtos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 0.5px solid #e2e8f0;
+}
+
+.taxa-produto-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.taxa-produto-row + .taxa-produto-row {
+  border-top: 0.5px solid #e2e8f0;
+  padding-top: 10px;
+}
+
+.taxa-produto-nome {
+  font-size: 13px;
+  font-weight: 500;
+  color: #0f172a;
+  flex: 1;
+}
+
+/* Taxa por condomínio */
+.taxa-condominio-section {
+  margin-top: 12px;
+}
+
+.taxa-condominio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.taxa-condominio-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.btn-add-taxa {
+  font-size: 12px;
+  padding: 6px 12px;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.btn-add-taxa:hover {
+  background: #1d4ed8;
+}
+
+.btn-add-taxa:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.taxa-empty {
+  color: #94a3b8;
+  font-size: 13px;
+  margin: 0;
+}
+
+.taxa-condominio-table-wrapper {
+  overflow-x: auto;
+}
+
+.taxa-condominio-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.taxa-condominio-table th {
+  background: #f8fafc;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #64748b;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.taxa-condominio-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.taxa-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.badge-perc {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.badge-fixo {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.taxa-valor-cell {
+  font-weight: 600;
+}
+
+.taxa-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.taxa-status.ativo {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.taxa-status.inativo {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.taxa-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.taxa-btn-action {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 11px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.taxa-btn-action:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.taxa-btn-action.danger {
+  border-color: #fecaca;
+  color: #ef4444;
+}
+
+.taxa-btn-action.danger:hover {
+  background: #fef2f2;
+}
+
+/* Modal */
+.taxa-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.taxa-modal {
+  width: 100%;
+  max-width: 500px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.25);
+}
+
+.taxa-modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.taxa-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.taxa-modal-header p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.taxa-modal-close {
+  border: 0;
+  background: transparent;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+  color: #64748b;
+  padding: 0;
+}
+
+.taxa-modal-close:disabled {
+  cursor: not-allowed;
+}
+
+.taxa-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.taxa-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.taxa-modal-field > label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.taxa-modal-field select,
+.taxa-modal-field input[type='number'] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  background: #fff;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.taxa-modal-field select:focus,
+.taxa-modal-field input[type='number']:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.taxa-modal-field select:disabled,
+.taxa-modal-field input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.taxa-modal-field .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.taxa-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid #eaeaea;
+  padding-top: 16px;
+  margin-top: 8px;
+}
+
+.taxa-modal-footer .btn-secondary {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+  background: #f1f5f9;
+  color: #475569;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.taxa-modal-footer .btn-primary {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.taxa-modal-footer button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Searchable dropdown */
+.taxa-search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 999;
+}
+
+.taxa-search-option {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  color: #0f172a;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.taxa-search-option:hover {
+  background: #f8fafc;
+}
+
+.taxa-search-option.selected {
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.taxa-search-empty {
+  padding: 10px 12px;
+  color: #94a3b8;
+  font-size: 13px;
+  text-align: center;
+}
