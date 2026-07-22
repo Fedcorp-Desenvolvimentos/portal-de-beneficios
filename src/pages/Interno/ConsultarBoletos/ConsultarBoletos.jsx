@@ -23,6 +23,9 @@ const fmtDate = (s) => {
 const STATUS_BADGE = {
   PAGO: 'pago',
   PENDENTE_PAGAMENTO: 'pendente',
+  PENDING: 'pendente',
+  PROCESSING: 'pendente',
+  FAILED: 'falhou',
 }
 
 export default function ConsultarBoletos() {
