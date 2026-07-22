@@ -9,6 +9,8 @@
 /**
  * ATUALIZA O DATA_TO_BACKEND COM OS VALORES ATUAIS DO LOTE
  */
+const arredondar = (v) => Math.round(v * 100) / 100
+
 export function atualizarDataToBackend(loteAtual, dataToBackendOriginal) {
   // Criar uma cópia profunda
   const dataToBackendAtualizado = JSON.parse(JSON.stringify(dataToBackendOriginal));
@@ -24,6 +26,13 @@ export function atualizarDataToBackend(loteAtual, dataToBackendOriginal) {
   // ATUALIZAR CONDOMÍNIOS - Substituir completamente os funcionários
   if (dataToBackendAtualizado.condominios && Array.isArray(dataToBackendAtualizado.condominios)) {
     dataToBackendAtualizado.condominios.forEach(condominio => {
+      // Arredondar valor_condo para evitar exceeded max_digits no Django
+      if (typeof condominio.valor_condo === 'number') {
+        condominio.valor_condo = arredondar(condominio.valor_condo)
+      } else if (typeof condominio.valor_condo === 'string') {
+        condominio.valor_condo = arredondar(parseFloat(condominio.valor_condo) || 0)
+      }
+
       if (condominio.funcionarios && Array.isArray(condominio.funcionarios)) {
         // Para cada funcionário no condomínio, atualizar com dados do lote
           condominio.funcionarios = condominio.funcionarios.map(funcionario => {
@@ -43,7 +52,7 @@ export function atualizarDataToBackend(loteAtual, dataToBackendOriginal) {
                 movimentacoesAtualizadas.push({
                   produto: beneficio.nome || beneficio.produto || '',
                   codigo_produto: beneficio.codigo || '',
-                  valor: typeof beneficio.valor === 'number' ? beneficio.valor : parseFloat(beneficio.valor) || 0
+                  valor: arredondar(typeof beneficio.valor === 'number' ? beneficio.valor : parseFloat(beneficio.valor) || 0)
                 });
               });
             }
@@ -57,7 +66,7 @@ export function atualizarDataToBackend(loteAtual, dataToBackendOriginal) {
               departamento: funcionarioAtualizado.departamento || funcionario.departamento || 'CONDOMINIO',
               funcao: funcionarioAtualizado.funcao || funcionario.funcao || '',
               data_nascimento: funcionarioAtualizado.data_nascimento || funcionario.data_nascimento || '',
-              valor_bene: valorTotal,
+              valor_bene: arredondar(valorTotal),
               // ⭐⭐⭐ USAR movimentacoes (não beneficios) com os valores atualizados ⭐⭐⭐
               movimentacoes: movimentacoesAtualizadas
             };
@@ -115,7 +124,7 @@ export function atualizarDataToBackend(loteAtual, dataToBackendOriginal) {
     loteAtual.rows.forEach(funcionario => {
       if (funcionario.beneficios && Array.isArray(funcionario.beneficios)) {
         funcionario.beneficios.forEach(beneficio => {
-          const valor = typeof beneficio.valor === 'number' ? beneficio.valor : parseFloat(beneficio.valor) || 0;
+          const valor = arredondar(typeof beneficio.valor === 'number' ? beneficio.valor : parseFloat(beneficio.valor) || 0);
           if (valor > 0) {  // Só incluir se valor > 0
             novasMovimentacoes.push({
               nome_funcionario: funcionario.nome_funcionario,

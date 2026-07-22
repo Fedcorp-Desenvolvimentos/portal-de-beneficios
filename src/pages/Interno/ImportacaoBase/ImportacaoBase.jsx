@@ -3,7 +3,7 @@ import { FiUpload, FiSearch, FiX, FiCheck } from 'react-icons/fi'
 import { toast } from 'react-toastify'
 
 import { listarTodasAdministradoras } from '../../../services/administradoraService.js'
-import { uploadService } from '../../../services/uploadService.js'
+import { entebenService } from '../../../services/entebenService.js'
 import PageLayout from '../../../Layouts/PageLayout/PageLayout.jsx'
 
 import './ImportacaoBase.css'
@@ -139,6 +139,46 @@ export default function ImportacaoBase() {
     setShowDropdown(false)
   }
 
+  const handleExcluirBase = async () => {
+    if (!selectedAdmin) return
+
+    const adminId = getIdAdm(selectedAdmin)
+    const nomeAdm = getNomeAdm(selectedAdmin)
+
+    if (!window.confirm(`Excluir toda a base de condomínios e funcionários de "${nomeAdm}"?`)) {
+      return
+    }
+
+    setUploading(true)
+    setUploadResult(null)
+
+    try {
+      const response = await entebenService.excluirBase(adminId)
+
+      setUploadResult({
+        success: true,
+        message: response?.detail || 'Base excluída com sucesso.',
+        data: response,
+      })
+
+      toast.success(response?.detail || 'Base excluída com sucesso.')
+    } catch (error) {
+      console.error('ImportacaoBase - erro ao excluir base:', error)
+
+      const msg = error.response?.data?.detail || 'Erro ao excluir base.'
+
+      setUploadResult({
+        success: false,
+        message: msg,
+        data: error.response?.data,
+      })
+
+      toast.error(msg)
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const handleFileChange = async (event) => {
     const file = event.target.files?.[0]
 
@@ -168,47 +208,21 @@ export default function ImportacaoBase() {
       console.log('ImportacaoBase - administradora selecionada:', selectedAdmin)
       console.log('ImportacaoBase - arquivo selecionado:', file)
 
-      const response = await uploadService.uploadFile(file, administradoraId)
+      const response = await entebenService.importarBase(file, administradoraId)
 
-      console.log('ImportacaoBase - retorno upload:', response)
+      console.log('ImportacaoBase - retorno importação:', response)
 
-      const payload = response?.data ?? response
+      const msg = response?.detail || 'Base importada com sucesso.'
 
-      const errosInternos = payload?.data_to_backend?.errors
-      const temErros = Array.isArray(errosInternos) && errosInternos.length > 0
-      const statusErro = payload?.status === 'ERRO'
+      setUploadResult({
+        success: true,
+        message: msg,
+        data: response,
+      })
 
-      if (statusErro || temErros) {
-        const msg =
-          (Array.isArray(errosInternos) ? errosInternos.join('; ') : null) ||
-          payload?.detail ||
-          payload?.error ||
-          payload?.message ||
-          'Erro ao processar arquivo.'
-
-        setUploadResult({
-          success: false,
-          message: msg,
-          data: payload,
-        })
-
-        toast.error(msg)
-      } else {
-        const msg =
-          payload?.detail ||
-          payload?.message ||
-          'Arquivo processado com sucesso.'
-
-        setUploadResult({
-          success: true,
-          message: msg,
-          data: payload,
-        })
-
-        toast.success(msg)
-      }
+      toast.success(msg)
     } catch (error) {
-      console.error('ImportacaoBase - erro upload:', error)
+      console.error('ImportacaoBase - erro importação:', error)
 
       const data = error.response?.data
 
@@ -217,7 +231,7 @@ export default function ImportacaoBase() {
         data?.error ||
         data?.message ||
         error.message ||
-        'Erro ao fazer upload.'
+        'Erro ao importar base.'
 
       setUploadResult({
         success: false,
@@ -331,6 +345,15 @@ export default function ImportacaoBase() {
                   <span>CNPJ: {getCnpjAdm(selectedAdmin)}</span>
                 )}
               </div>
+
+              <button
+                className="ib-delete-base-btn"
+                onClick={handleExcluirBase}
+                disabled={uploading}
+                title="Excluir base importada desta administradora"
+              >
+                Excluir Base
+              </button>
             </div>
           )}
         </div>
@@ -424,37 +447,35 @@ export default function ImportacaoBase() {
 
                   <p>{uploadResult.message}</p>
 
-                  {uploadResult.data?.linhas_com_erro?.length > 0 && (
-                    <details className="ib-error-details">
-                      <summary>
-                        Ver detalhes dos erros ({uploadResult.data.linhas_com_erro.length})
-                      </summary>
-
-                      <div className="ib-error-list">
-                        {uploadResult.data.linhas_com_erro.map((erro, index) => (
-                          <div key={index} className="ib-error-item">
-                            <strong>Linha {erro.linha}:</strong>{' '}
-                            {erro.tipo_erro || 'Erro'}
-
-                            {erro.dados?.campos_ausentes?.length > 0 && (
-                              <ul>
-                                {erro.dados.campos_ausentes.map((campo, campoIndex) => (
-                                  <li key={campoIndex}>{campo}</li>
-                                ))}
-                              </ul>
-                            )}
+                  {uploadResult.success && uploadResult.data && (
+                    <div className="ib-import-summary">
+                      {uploadResult.data.condominios_criados > 0 && (
+                        <p>Condomínios criados: <strong>{uploadResult.data.condominios_criados}</strong></p>
+                      )}
+                      {uploadResult.data.condominios_atualizados > 0 && (
+                        <p>Condomínios atualizados: <strong>{uploadResult.data.condominios_atualizados}</strong></p>
+                      )}
+                      {uploadResult.data.funcionarios_criados > 0 && (
+                        <p>Funcionários criados: <strong>{uploadResult.data.funcionarios_criados}</strong></p>
+                      )}
+                      {uploadResult.data.funcionarios_atualizados > 0 && (
+                        <p>Funcionários atualizados: <strong>{uploadResult.data.funcionarios_atualizados}</strong></p>
+                      )}
+                      {uploadResult.data.total_erros > 0 && (
+                        <details className="ib-error-details">
+                          <summary>Ver erros ({uploadResult.data.total_erros})</summary>
+                          <div className="ib-error-list">
+                            {uploadResult.data.erros.map((erro, index) => (
+                              <div key={index} className="ib-error-item">{erro}</div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </details>
+                        </details>
+                      )}
+                    </div>
                   )}
 
-                  {uploadResult.data?.data_to_backend?.errors?.length > 0 && (
-                    <div className="ib-errors-gerais">
-                      {uploadResult.data.data_to_backend.errors.map((erro, index) => (
-                        <p key={index}>{erro}</p>
-                      ))}
-                    </div>
+                  {!uploadResult.success && uploadResult.data?.detail && (
+                    <p className="ib-error-text">{uploadResult.data.detail}</p>
                   )}
                 </div>
               </div>

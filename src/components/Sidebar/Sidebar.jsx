@@ -81,7 +81,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       path: "/home",
       label: "Início",
       icon: <FaHome />,
-      allowed: ["adm", "dep", "dev"],
+      allowed: ["adm", "dep", "dev", "fat"],
     },
     {
       path: "/dashboard",
@@ -93,7 +93,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       path: "/importacao",
       label: "Upload",
       icon: <FaFileUpload />,
-      allowed: ["adm", "dep", "dev"],
+      allowed: ["adm", "dep", "dev", "fat"],
     },
     {
       path: "/faturamento",
@@ -123,7 +123,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       path: "/colaboradores/acompanhamento",
       label: "Acompanhamento",
       icon: <FaChartLine />,
-      allowed: ["adm", "dep", "dev"],
+      allowed: ["adm", "dep", "dev", "fat"],
     },
     {
       path: "/interno/administradoras",
@@ -132,10 +132,16 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       allowed: ["dev", "fat"],
     },
     {
+      path: "/interno/consultar-boletos",
+      label: "Consultar Boletos",
+      icon: <FaReceipt />,
+      allowed: ["dev", "fat", "adm"],
+    },
+    {
       path: "/interno/minha-administradora",
       label: "Minha Administradora",
       icon: <FaBuilding />,
-      allowed: ["adm", "dep", "dev"],
+      allowed: ["adm", "dep", "dev", "fat"],
     },
   ];
 

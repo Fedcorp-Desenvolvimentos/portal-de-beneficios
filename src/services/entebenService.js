@@ -327,4 +327,30 @@ export const entebenService = {
 
     return response.data
   },
+
+  importarBase: async (file, administradoraId = null) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (administradoraId) {
+      formData.append('administradora_id', administradoraId)
+    }
+
+    const response = await api.post('/api/beneficios/importar-base/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+
+    return response.data
+  },
+
+  excluirBase: async (administradoraId) => {
+    const response = await api.delete(`/api/beneficios/excluir-base/${administradoraId}/`)
+    return response.data
+  },
+
+  listarBoletos: async (params = {}) => {
+    const response = await api.get('/api/beneficios/boletos/', { params })
+    return response.data
+  },
 }

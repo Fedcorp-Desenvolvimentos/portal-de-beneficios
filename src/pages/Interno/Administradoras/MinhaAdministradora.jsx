@@ -802,7 +802,7 @@ export default function MinhaAdministradora() {
                   </S.Button>
                 )}
 
-                {tipoUsuarioLogado === 'dev' && (
+                {(tipoUsuarioLogado === 'dev' || tipoUsuarioLogado === 'fat') && (
                   <S.Button
                     $variant="primary"
                     onClick={() =>

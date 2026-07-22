@@ -2489,6 +2489,26 @@ export default function Importacao() {
           modelo_importacao: "VR-BENEFICIOS",
         }
 
+        const r2 = (v) => Math.round(v * 100) / 100
+        if (dadosParaEnvio.condominios) {
+          dadosParaEnvio.condominios.forEach((c) => {
+            if (typeof c.valor_condo === 'number') c.valor_condo = r2(c.valor_condo)
+            else if (typeof c.valor_condo === 'string') c.valor_condo = r2(parseFloat(c.valor_condo) || 0)
+            if (c.funcionarios) {
+              c.funcionarios.forEach((f) => {
+                if (typeof f.valor_bene === 'number') f.valor_bene = r2(f.valor_bene)
+                else if (typeof f.valor_bene === 'string') f.valor_bene = r2(parseFloat(f.valor_bene) || 0)
+                if (f.movimentacoes) {
+                  f.movimentacoes.forEach((m) => {
+                    if (typeof m.valor === 'number') m.valor = r2(m.valor)
+                    else if (typeof m.valor === 'string') m.valor = r2(parseFloat(m.valor) || 0)
+                  })
+                }
+              })
+            }
+          })
+        }
+
         // console.log("Payload Benefícios:", dadosParaEnvio)
 
         const dadosParaEnvioFinal = benedettiConvertido
