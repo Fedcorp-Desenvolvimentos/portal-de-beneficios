@@ -126,6 +126,66 @@
   background: #f8fafc;
 }
 
+.cb-row-pai {
+  cursor: pointer;
+}
+
+.cb-row-pai:hover td {
+  background: #f1f5f9;
+}
+
+.cb-expand-icon {
+  display: inline-block;
+  font-size: 10px;
+  color: #94a3b8;
+  transition: transform 0.2s;
+}
+
+.cb-expand-icon.open {
+  transform: rotate(90deg);
+}
+
+.cb-sub-row td {
+  padding: 0 !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+  background: #fafbfc;
+}
+
+.cb-sub-table-wrap {
+  padding: 8px 16px 12px 40px;
+}
+
+.cb-sub-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.cb-sub-table th {
+  background: #f1f5f9;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #64748b;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.cb-sub-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.cb-sub-empty {
+  padding: 16px 40px;
+  color: #94a3b8;
+  font-size: 13px;
+  text-align: center;
+}
+
 .cb-valor {
   font-weight: 600;
   color: #16a34a;
@@ -149,6 +209,11 @@
   color: #d97706;
 }
 
+.cb-badge.falhou {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
 .cb-pagination {
   display: flex;
   justify-content: space-between;
@@ -168,22 +233,24 @@
 
 .cb-pagination-btns button {
   padding: 6px 14px;
-  border: 1px solid #e2e8f0;
+  border: none;
   border-radius: 6px;
-  background: #fff;
+  background: #3b82f6;
+  color: #fff;
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .cb-pagination-btns button:hover:not(:disabled) {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
+  background: #2563eb;
 }
 
 .cb-pagination-btns button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  background: #93c5fd;
 }
 
 @media (max-width: 768px) {
