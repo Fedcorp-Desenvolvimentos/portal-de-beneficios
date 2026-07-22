@@ -47,6 +47,7 @@ import {
 import './Operacional.css';
 
 const STATUS_LABEL = {
+  enviar_compra: 'Enviar para compra',
   faturado: 'Faturado',
   atrasado: 'Confirmar pagamento',
   aprovado: 'Boleto VR enviado',
@@ -58,9 +59,11 @@ const STATUS_COLUMNS = [
   { key: 'atrasado', label: STATUS_LABEL.atrasado },
   { key: 'aprovado', label: STATUS_LABEL.aprovado },
   { key: 'pago', label: STATUS_LABEL.pago },
+  { key: 'enviar_compra', label: STATUS_LABEL.enviar_compra },
 ];
 
 const KANBAN_STATUS_CLASS = {
+  enviar_compra: 'kanban-status-enviar-compra',
   faturado: 'kanban-status-faturado',
   atrasado: 'kanban-status-atrasado',
   aprovado: 'kanban-status-aprovado',
@@ -318,6 +321,7 @@ function SortableCard({ fatura, columnKey, onMoveFatura }) {
           }}
           onPointerDown={(e) => e.stopPropagation()}
         >
+          <option value="enviar_compra">Enviar para compra</option>
           <option value="faturado">Faturado</option>
           <option value="atrasado">Confirmar Pagamento</option>
           <option value="aprovado">Boleto VR Enviado</option>
