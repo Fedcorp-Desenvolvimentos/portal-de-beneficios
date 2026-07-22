@@ -1173,14 +1173,14 @@ export default function ColaboradorDashboard() {
   }
 
   function openImport(pedido, options = {}) {
-    const { refazendo = false } = options
+    const { refazendo = false, modoAdicionar = false } = options
 
     if (pedido.status === 'cancelado') {
       showToast('Este pedido está cancelado.', { variant: 'info' })
       return
     }
 
-    if (!refazendo && pedido.status === 'comprado') {
+    if (!refazendo && !modoAdicionar && pedido.status === 'comprado') {
       showToast('Este pedido já foi comprado. Use "Refazer" para reenviar documentos.', {
         variant: 'info',
       })
@@ -1192,7 +1192,7 @@ export default function ColaboradorDashboard() {
       refazendo,
     })
     setDocs([])
-    setUploadMode('substituir')
+    setUploadMode(modoAdicionar ? 'adicionar' : 'substituir')
     setImportOpen(true)
   }
 
@@ -1874,13 +1874,13 @@ export default function ColaboradorDashboard() {
             <S.ActionItem
               type="button"
               onClick={() => {
-                requestRefazerFaturamento(p)
+                openImport(p, { refazendo: true })
                 closeActionsMenu()
               }}
               disabled={p.status === 'cancelado' || refazendoId === p.id}
             >
               <FiRefreshCw size={14} />
-              <span>Refazer faturamento</span>
+              <span>Gerenciar documentos</span>
             </S.ActionItem>
           </>
         ) : (
@@ -2213,9 +2213,9 @@ export default function ColaboradorDashboard() {
                                   </S.Btn>
 
                                   <S.Btn
-                                    onClick={() => requestRefazerFaturamento(p)}
+                                    onClick={() => openImport(p, { refazendo: true })}
                                     disabled={p.status === 'cancelado' || refazendoId === p.id}
-                                    title="Refazer faturamento e reenviar documentos"
+                                    title="Gerenciar documentos"
                                   >
                                     <FiRefreshCw size={14} />
                                   </S.Btn>
@@ -2537,7 +2537,7 @@ export default function ColaboradorDashboard() {
             <S.ModalHeader>
               <div>
                 <S.ModalTitle>
-                  {selectedPedido.refazendo ? 'Reenviar documentos' : 'Importar documentos'}
+                  {selectedPedido.refazendo ? 'Reenviar documentos' : uploadMode === 'adicionar' ? 'Incluir novos documentos' : 'Importar documentos'}
                 </S.ModalTitle>
 
                 <S.ModalSub>
@@ -2551,7 +2551,7 @@ export default function ColaboradorDashboard() {
             </S.ModalHeader>
 
             <S.ModalBody>
-              {selectedPedido.status === 'faturado' && !selectedPedido.refazendo && (
+              {selectedPedido.status === 'faturado' && (
                 <div style={{ display: 'flex', gap: 16, marginBottom: 16, padding: '12px 16px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: uploadMode === 'substituir' ? '#1e293b' : '#64748b' }}>
                     <input
@@ -2659,7 +2659,9 @@ export default function ColaboradorDashboard() {
                   ? `Enviando ${uploadProgress}%`
                   : selectedPedido.refazendo
                     ? 'Reenviar documentos'
-                    : 'Enviar documentos'}
+                    : uploadMode === 'adicionar'
+                      ? 'Incluir documentos'
+                      : 'Enviar documentos'}
               </S.Btn>
             </S.ModalFooter>
           </S.Modal>

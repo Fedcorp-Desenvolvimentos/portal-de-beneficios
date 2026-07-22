@@ -195,6 +195,7 @@ export default function ConsultarBoletos() {
                           <tr className="cb-sub-row">
                             <td colSpan={8}>
                               <div className="cb-sub-table-wrap">
+                                <div className="cb-sub-label">Boletos da fatura ({boletosList.length})</div>
                                 <table className="cb-sub-table">
                                   <thead>
                                     <tr>
