@@ -481,7 +481,7 @@
 
 .op-kanban-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  grid-template-columns: repeat(5, minmax(220px, 1fr));
   gap: 16px;
   align-items: start;
   width: 100%;
@@ -606,6 +606,60 @@
   color: #64748b;
 }
 
+.op-kanban-card-info {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.op-kanban-card-info span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.op-kanban-card-actions {
+  margin-top: 8px;
+}
+
+.op-kanban-move-select {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  color: #475569;
+  background: #fff;
+  cursor: pointer;
+  outline: none;
+}
+
+.op-kanban-move-select:focus {
+  border-color: #6366f1;
+}
+
+.op-kanban-droppable {
+  min-height: 100px;
+  transition: background 0.2s;
+  border-radius: 12px;
+}
+
+.op-kanban-droppable.over {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.op-kanban-card.dragging {
+  opacity: 0.4;
+}
+
+.op-kanban-card-overlay {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  transform: rotate(3deg);
+  cursor: grabbing;
+}
+
 .op-kanban-empty {
   margin: 0;
   min-height: 74px;
@@ -622,6 +676,11 @@
 .kanban-status-faturado {
   --kanban-color: #6366f1;
   --kanban-soft: #f4f3ff;
+}
+
+.kanban-status-enviar-compra {
+  --kanban-color: #f59e0b;
+  --kanban-soft: #fffbeb;
 }
 
 .kanban-status-atrasado {

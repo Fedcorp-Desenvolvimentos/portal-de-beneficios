@@ -663,6 +663,9 @@ const SkeletonTableRow = () => (
       <S.SkeletonLine $width="80px" $height="14px" />
     </td>
     <td>
+      <S.SkeletonLine $width="80px" $height="14px" />
+    </td>
+    <td>
       <S.SkeletonLine $width="80px" $height="18px" />
     </td>
     <td>
@@ -670,6 +673,9 @@ const SkeletonTableRow = () => (
     </td>
     <td>
       <S.SkeletonLine $width="50px" $height="28px" $borderRadius="6px" />
+    </td>
+    <td>
+      <S.SkeletonLine $width="70px" $height="28px" $borderRadius="6px" />
     </td>
     <td>
       <S.SkeletonLine $width="70px" $height="28px" $borderRadius="6px" />
@@ -690,6 +696,7 @@ const SkeletonTable = () => (
           <th>Vencimento</th>
           <th>Competência</th>
           <th>Data Crédito</th>
+          <th>Importação</th>
           <th>Valor</th>
           <th>Status</th>
           <th>Excel</th>
@@ -2057,6 +2064,15 @@ export default function ColaboradorDashboard() {
                     </th>
                     <th
                       aria-sort={
+                        sortConfig.key === 'dataImportacao'
+                          ? sortConfig.direction
+                          : 'none'
+                      }
+                    >
+                      {renderSortableHeader('Importação', 'dataImportacao')}
+                    </th>
+                    <th
+                      aria-sort={
                         sortConfig.key === 'valorTotal'
                           ? sortConfig.direction
                           : 'none'
@@ -2123,6 +2139,8 @@ export default function ColaboradorDashboard() {
                         <td data-label="Competência" style={{ fontSize: 13 }}>{p.mesUtilizacao}</td>
 
                         <td data-label="Data Crédito" style={{ fontSize: 13 }}>{fmtDate(p.dataRecebimento)}</td>
+
+                        <td data-label="Importação" style={{ fontSize: 13 }}>{fmtDate(p.dataImportacao)}</td>
 
                         <td data-label="Valor" style={{ fontWeight: 600, color: '#16a34a' }}>
                           {fmtMoney(p.valorTotal)}
@@ -2220,8 +2238,7 @@ export default function ColaboradorDashboard() {
                                   disabled={downloadingId === p.id}
                                   title="Selecionar boletos para gerar TXT de compra"
                                 >
-                                  <FiFileText size={14} />
-                                  {downloadingId === p.id ? 'Gerando…' : 'Gerar TXT'}
+                                  {downloadingId === p.id ? 'Gerando…' : <FiDownload size={14} />}
                                 </S.Btn>
                               ) : p.status === 'comprado' ? (
                                 <span style={{ color: '#22c55e', fontSize: 12 }}>TXT gerado ✓</span>
