@@ -755,6 +755,7 @@ export default function ColaboradorDashboard() {
   const [docs, setDocs] = useState([])
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadMode, setUploadMode] = useState('substituir')
 
   const [docsOpen, setDocsOpen] = useState(false)
   const [docsPedido, setDocsPedido] = useState(null)
@@ -1186,18 +1187,12 @@ export default function ColaboradorDashboard() {
       return
     }
 
-    if (!refazendo && pedido.status === 'faturado') {
-      showToast('Este pedido já foi faturado. Use "Refazer" para reenviar documentos.', {
-        variant: 'info',
-      })
-      return
-    }
-
     setSelectedPedido({
       ...pedido,
       refazendo,
     })
     setDocs([])
+    setUploadMode('substituir')
     setImportOpen(true)
   }
 
@@ -1502,13 +1497,16 @@ export default function ColaboradorDashboard() {
     }
 
     const isRefazendoPedido = selectedPedido?.refazendo
+    const isAdicionando = uploadMode === 'adicionar' && selectedPedido?.status === 'faturado'
 
     setConfirmFinalize({
       open: true,
-      title: isRefazendoPedido ? 'Confirmar reenvio de documentos' : 'Confirmar importação',
+      title: isRefazendoPedido ? 'Confirmar reenvio de documentos' : isAdicionando ? 'Confirmar inclusão de novos documentos' : 'Confirmar importação',
       message: isRefazendoPedido
         ? 'Ao reenviar a documentação, os documentos anteriores deste pedido poderão ser substituídos e o pedido voltará para faturado. Deseja continuar?'
-        : 'Ao importar a documentação, o pedido ficará disponível para o funcionário. Deseja continuar?',
+        : isAdicionando
+          ? 'Os novos documentos serão adicionados aos existentes. Documentos já processados não serão substituídos. Deseja continuar?'
+          : 'Ao importar a documentação, o pedido ficará disponível para o funcionário. Deseja continuar?',
       onConfirm: async () => {
         setConfirmFinalize({
           open: false,
@@ -1560,6 +1558,7 @@ export default function ColaboradorDashboard() {
           arquivoBoleto,
           arquivoNotaDebito,
           arquivoNotaFiscal,
+          mode: uploadMode,
         },
         (percent) => setUploadProgress(percent)
       )
@@ -1589,7 +1588,9 @@ export default function ColaboradorDashboard() {
       showToast(
         selectedPedido.refazendo
           ? `Documentos reenviados para o pedido ${selectedPedido.id}.`
-          : `Documentos enviados para ${selectedPedido.id}.`,
+          : uploadMode === 'adicionar'
+            ? `Novos documentos incluídos no pedido ${selectedPedido.id}.`
+            : `Documentos enviados para ${selectedPedido.id}.`,
         {
           variant: 'success',
         }
@@ -2550,6 +2551,33 @@ export default function ColaboradorDashboard() {
             </S.ModalHeader>
 
             <S.ModalBody>
+              {selectedPedido.status === 'faturado' && !selectedPedido.refazendo && (
+                <div style={{ display: 'flex', gap: 16, marginBottom: 16, padding: '12px 16px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: uploadMode === 'substituir' ? '#1e293b' : '#64748b' }}>
+                    <input
+                      type="radio"
+                      name="uploadMode"
+                      value="substituir"
+                      checked={uploadMode === 'substituir'}
+                      onChange={() => setUploadMode('substituir')}
+                      disabled={uploading}
+                    />
+                    Substituir documentos
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: uploadMode === 'adicionar' ? '#1e293b' : '#64748b' }}>
+                    <input
+                      type="radio"
+                      name="uploadMode"
+                      value="adicionar"
+                      checked={uploadMode === 'adicionar'}
+                      onChange={() => setUploadMode('adicionar')}
+                      disabled={uploading}
+                    />
+                    Incluir novos documentos
+                  </label>
+                </div>
+              )}
+
               <S.Dropzone
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {

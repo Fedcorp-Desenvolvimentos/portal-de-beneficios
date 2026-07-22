@@ -20,6 +20,14 @@ const fmtDate = (s) => {
   return d.toLocaleDateString('pt-BR')
 }
 
+const STATUS_BADGE = {
+  PENDING: 'pendente',
+  PROCESSING: 'pendente',
+  COMPLETED: 'pago',
+  FATURADO: 'pago',
+  FAILED: 'falhou',
+}
+
 export default function ConsultarBoletos() {
   const { user } = useAuth()
   const administradoraId = user?.administradora_ativa?.id || user?.administradora_id
@@ -33,15 +41,13 @@ export default function ConsultarBoletos() {
   const [total, setTotal] = useState(0)
 
   const carregarBoletos = useCallback(async () => {
-    if (!administradoraId) return
-
     setLoading(true)
     try {
       const params = {
-        administradora_id: administradoraId,
         page,
         limit: 20,
       }
+      if (administradoraId) params.administradora_id = administradoraId
       if (statusFilter) params.status = statusFilter
 
       const response = await entebenService.listarBoletos(params)
@@ -49,7 +55,7 @@ export default function ConsultarBoletos() {
       setTotalPages(response?.pages || 1)
       setTotal(response?.total || 0)
     } catch (error) {
-      console.error('Erro ao carregar boletos:', error)
+      console.error('Erro ao carregar faturas:', error)
       setBoletos([])
     } finally {
       setLoading(false)
@@ -67,25 +73,30 @@ export default function ConsultarBoletos() {
   const boletosFiltrados = boletos.filter((b) => {
     if (!search) return true
     const term = search.toLowerCase()
+    const condominios = b.condominios || []
     return (
-      (b.nome_cobrado || '').toLowerCase().includes(term) ||
-      (b.cnpj_cobrado || '').includes(term) ||
-      (b.documento || '').toLowerCase().includes(term) ||
-      (b.fatura || '').toLowerCase().includes(term)
+      (b.administradora_nome || '').toLowerCase().includes(term) ||
+      (b.importacao_id && String(b.importacao_id).includes(term)) ||
+      (b.id && String(b.id).includes(term)) ||
+      condominios.some(
+        (c) =>
+          (c.condominio_nome || '').toLowerCase().includes(term) ||
+          (c.condominio_cnpj || '').includes(term)
+      )
     )
   })
 
   const resumo = {
     total: boletos.length,
-    pagos: boletos.filter((b) => b.baixa).length,
-    pendentes: boletos.filter((b) => !b.baixa).length,
-    valorTotal: boletos.reduce((s, b) => s + (b.valor || 0), 0),
-    valorPago: boletos.filter((b) => b.baixa).reduce((s, b) => s + (b.valor || 0), 0),
-    valorPendente: boletos.filter((b) => !b.baixa).reduce((s, b) => s + (b.valor || 0), 0),
+    pagos: boletos.filter((b) => STATUS_BADGE[b.status] === 'pago').length,
+    pendentes: boletos.filter((b) => STATUS_BADGE[b.status] === 'pendente').length,
+    valorTotal: boletos.reduce((s, b) => s + (b.valor_total || 0), 0),
+    valorPago: boletos.filter((b) => STATUS_BADGE[b.status] === 'pago').reduce((s, b) => s + (b.valor_total || 0), 0),
+    valorPendente: boletos.filter((b) => STATUS_BADGE[b.status] === 'pendente').reduce((s, b) => s + (b.valor_total || 0), 0),
   }
 
   return (
-    <PageLayout title="Consulta de Boletos" subtitle="Consulte boletos gerados, pagos e pendentes">
+    <PageLayout title="Consulta de Faturas" subtitle="Consulte faturas geradas, pagas e pendentes">
       <div className="cb-container">
         <div className="cb-resumo">
           <div className="cb-resumo-card">
@@ -108,7 +119,7 @@ export default function ConsultarBoletos() {
         <div className="cb-filters">
           <input
             type="search"
-            placeholder="Buscar por nome, CNPJ, documento..."
+            placeholder="Buscar por condomínio, CNPJ..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="cb-search"
@@ -125,48 +136,53 @@ export default function ConsultarBoletos() {
         </div>
 
         {loading ? (
-          <div className="cb-loading">Carregando boletos...</div>
+          <div className="cb-loading">Carregando faturas...</div>
         ) : boletosFiltrados.length === 0 ? (
-          <div className="cb-empty">Nenhum boleto encontrado.</div>
+          <div className="cb-empty">Nenhuma fatura encontrada.</div>
         ) : (
           <>
             <div className="cb-table-wrap">
               <table className="cb-table">
                 <thead>
                   <tr>
+                    <th>Fatura</th>
+                    <th>Administradora</th>
                     <th>Condomínio</th>
                     <th>CNPJ</th>
-                    <th>Documento</th>
-                    <th>Fatura</th>
-                    <th>Vencimento</th>
+                    <th>Competência</th>
                     <th>Valor</th>
                     <th>Status</th>
-                    <th>Data Pagamento</th>
+                    <th>Vencimento</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {boletosFiltrados.map((b) => (
-                    <tr key={b.id}>
-                      <td>{b.nome_cobrado || '-'}</td>
-                      <td>{b.cnpj_cobrado || '-'}</td>
-                      <td>{b.documento || '-'}</td>
-                      <td>{b.fatura || '-'}</td>
-                      <td>{fmtDate(b.vencimento)}</td>
-                      <td className="cb-valor">{fmtMoney(b.valor)}</td>
-                      <td>
-                        <span className={`cb-badge ${b.baixa ? 'pago' : 'pendente'}`}>
-                          {b.baixa ? 'Pago' : 'Pendente'}
-                        </span>
-                      </td>
-                      <td>{fmtDate(b.dt_baixa)}</td>
-                    </tr>
-                  ))}
+                  {boletosFiltrados.map((b) => {
+                    const badge = STATUS_BADGE[b.status] || 'pendente'
+                    const docs = b.condominios || []
+                    const primeiroDoc = docs[0] || {}
+                    return (
+                      <tr key={b.id}>
+                        <td>FAT-{b.id}</td>
+                        <td>{b.administradora_nome || '-'}</td>
+                        <td>{primeiroDoc.condominio_nome || (docs.length > 1 ? `${docs.length} condomínios` : '-')}</td>
+                        <td>{primeiroDoc.condominio_cnpj || '-'}</td>
+                        <td>{fmtDate(b.competencia)}</td>
+                        <td className="cb-valor">{fmtMoney(b.valor_total)}</td>
+                        <td>
+                          <span className={`cb-badge ${badge}`}>
+                            {b.status_display || b.status}
+                          </span>
+                        </td>
+                        <td>{fmtDate(b.data_vencimento)}</td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
 
             <div className="cb-pagination">
-              <span>Página {page} de {totalPages} ({total} boletos)</span>
+              <span>Página {page} de {totalPages} ({total} faturas)</span>
               <div className="cb-pagination-btns">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
