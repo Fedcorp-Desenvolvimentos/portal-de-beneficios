@@ -151,11 +151,13 @@ export const faturamentoService = {
     arquivoBoleto,
     arquivoNotaDebito,
     arquivoNotaFiscal = null,
+    mode = 'substituir',
   }) {
     const formData = new FormData()
 
     formData.append('importacao_id', importacaoId)
     formData.append('competencia', competencia)
+    formData.append('mode', mode)
 
     if (arquivoBoleto) {
       formData.append('arquivo_boleto', arquivoBoleto)

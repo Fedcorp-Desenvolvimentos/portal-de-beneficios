@@ -246,7 +246,28 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  min-width: 0;
+}
+
+.ib-delete-base-btn {
+  padding: 6px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fff;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ib-delete-base-btn:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+.ib-delete-base-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .ib-selected-admin-info strong {
@@ -482,6 +503,30 @@
   font-weight: 700;
   color: #2563eb;
   cursor: pointer;
+}
+
+.ib-import-summary {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+}
+
+.ib-import-summary p {
+  margin: 4px 0;
+  font-size: 13px;
+  color: #166534;
+}
+
+.ib-import-summary strong {
+  color: #15803d;
+}
+
+.ib-error-text {
+  margin-top: 8px;
+  color: #dc2626;
+  font-size: 13px;
 }
 
 .ib-error-details {

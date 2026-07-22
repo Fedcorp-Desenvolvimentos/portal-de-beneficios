@@ -51,6 +51,7 @@ import MinhaConta from '../pages/MinhaConta/MinhaConta'
 import AcompanhamentoFaturados from '../pages/Interno/AcompanhamentoFaturados/AcompanhamentoFaturados'
 import BoletosVR from '../pages/Interno/BoletosVR/BoletosVR'
 import Operacional from '../pages/Operacional/Operacional'
+import ConsultarBoletos from '../pages/Interno/ConsultarBoletos/ConsultarBoletos'
 
 const AppRouter = () => {
   const { isAuthenticated, user } = useAuth()
@@ -190,7 +191,7 @@ const AppRouter = () => {
             <Route
               path="/colaborador/importacaoDocs"
               element={
-                <PrivateRouter allowedRoles={['dev', 'colaborador_fedcorp']}>
+                <PrivateRouter allowedRoles={['dev', 'fat', 'colaborador_fedcorp']}>
                   <ImportacaoDocs />
                 </PrivateRouter>
               }
@@ -236,6 +237,16 @@ const AppRouter = () => {
             <Route
               path="/interno/usuarios"
               element={<Usuarios />}
+            />
+
+            {/* Consultar Boletos */}
+            <Route
+              path="/interno/consultar-boletos"
+              element={
+                <PrivateRouter allowedRoles={['dev', 'fat', 'adm']}>
+                  <ConsultarBoletos />
+                </PrivateRouter>
+              }
             />
 
 
