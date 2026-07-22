@@ -19,16 +19,18 @@ const buscarCondominios = async (params = {}) => {
 }
 
 export const entebenService = {
-  getCondominios: async (cnpjOuParams = '', page = 1) => {
+  getCondominios: async (paramsOrSearch = '', page = 1, pageSize = 10) => {
   try {
     let params = {}
 
-    if (typeof cnpjOuParams === 'object' && cnpjOuParams !== null) {
-      params = { ...cnpjOuParams }
+    if (typeof paramsOrSearch === 'object' && paramsOrSearch !== null) {
+      params = { ...paramsOrSearch }
     } else {
-      if (cnpjOuParams) params.cnpj = cnpjOuParams
-      if (page > 1) params.page = page
+      if (paramsOrSearch) params.search = paramsOrSearch
     }
+
+    if (page > 1) params.page = page
+    if (pageSize !== 10) params.page_size = pageSize
 
     return await buscarCondominios(params)
   } catch (error) {
@@ -312,6 +314,60 @@ export const entebenService = {
       return response.data
     } catch (error) {
       console.error('Erro ao buscar produtos/benefícios:', error)
+      throw error
+    }
+  },
+
+  getTaxasConfig: async (params = {}) => {
+    try {
+      const response = await api.get('/api/entidades/taxas-config/', {
+        params: limparParams(params),
+      })
+      return response.data
+    } catch (error) {
+      console.error('Erro ao buscar taxas:', error)
+      throw error
+    }
+  },
+
+  createTaxaConfig: async (data) => {
+    try {
+      const response = await api.post('/api/entidades/taxas-config/', data)
+      return response.data
+    } catch (error) {
+      console.error('Erro ao criar taxa:', error)
+      throw error
+    }
+  },
+
+  updateTaxaConfig: async (id, data) => {
+    try {
+      const response = await api.patch(`/api/entidades/taxas-config/${id}/`, data)
+      return response.data
+    } catch (error) {
+      console.error('Erro ao atualizar taxa:', error)
+      throw error
+    }
+  },
+
+  deleteTaxaConfig: async (id) => {
+    try {
+      const response = await api.delete(`/api/entidades/taxas-config/${id}/`)
+      return response.data
+    } catch (error) {
+      console.error('Erro ao excluir taxa:', error)
+      throw error
+    }
+  },
+
+  getVinculosCondominio: async (params = {}) => {
+    try {
+      const response = await api.get('/api/entidades/vinculos/', {
+        params: limparParams(params),
+      })
+      return response.data
+    } catch (error) {
+      console.error('Erro ao buscar vínculos:', error)
       throw error
     }
   },

@@ -103,7 +103,7 @@ export default function TaxaConfigSection({
       setTaxaCondSelecionada(taxa)
       setTaxaCondForm({
         vinculo: taxa.vinculo || '',
-        produto: taxa.produto || '',
+        produto: taxa.produto_codigo || '',
         taxa_tipo: taxa.taxa_tipo || 'PERC',
         taxa_valor: taxa.taxa_valor || '',
         ativo: taxa.ativo !== false,

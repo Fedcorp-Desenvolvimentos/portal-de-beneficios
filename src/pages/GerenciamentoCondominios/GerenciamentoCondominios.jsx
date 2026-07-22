@@ -19,6 +19,8 @@ import {
   User,
   Link,
   Unlink,
+  Percent,
+  DollarSign,
 } from 'lucide-react'
 
 import './GerenciamentoCondominios.css'
@@ -588,6 +590,170 @@ function ModalColaborador({ open, condominio, form, onChange, onSave, onCancel }
   )
 }
 
+function ModalTaxas({
+  open,
+  condominio,
+  taxas,
+  produtos,
+  loading,
+  form,
+  onChange,
+  onSave,
+  onDelete,
+  onClose,
+}) {
+  if (!open) return null
+
+  const produtosOptions = produtos || []
+
+  return (
+    <div className="cfg-modal-backdrop" onClick={onClose}>
+      <div
+        className="cfg-modal cfg-taxas-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-head">
+          <div className="modal-title">
+            <Percent className="ico brand" />
+            <h3>Taxas de {condominio?.nome}</h3>
+          </div>
+
+          <button className="icon-btn" onClick={onClose}>
+            <X className="ico" />
+          </button>
+        </div>
+
+        <div className="modal-body">
+          <div className="cfg-info-box">
+            Configure taxas específicas para este condomínio. Se deixar o
+            produto vazio, a taxa aplicará a todos os produtos.
+          </div>
+
+          <div className="cfg-taxas-form">
+            <div className="field">
+              <label>Produto</label>
+              <select
+                name="produto"
+                value={form.produto || ''}
+                onChange={onChange}
+              >
+                <option value="">Todos os produtos</option>
+                {produtosOptions.map((p) => (
+                  <option key={p.id || p.codigo_produto} value={p.id}>
+                    {p.nome || p.codigo_produto}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="field">
+              <label>Tipo</label>
+              <select
+                name="taxa_tipo"
+                value={form.taxa_tipo || 'PERC'}
+                onChange={onChange}
+              >
+                <option value="PERC">Percentual (%)</option>
+                <option value="FIXO">Valor Fixo (R$)</option>
+              </select>
+            </div>
+
+            <div className="field">
+              <label>Valor</label>
+              <input
+                type="number"
+                step="0.01"
+                name="taxa_valor"
+                value={form.taxa_valor || ''}
+                onChange={onChange}
+                placeholder={form.taxa_tipo === 'PERC' ? 'Ex: 2.5' : 'Ex: 10.00'}
+              />
+            </div>
+
+            <div className="field cfg-taxa-ativo">
+              <label>
+                <input
+                  type="checkbox"
+                  name="ativo"
+                  checked={form.ativo !== false}
+                  onChange={onChange}
+                />
+                Ativo
+              </label>
+            </div>
+
+            <button className="btn btn-primary" onClick={onSave} disabled={loading}>
+              <Save className="ico" />
+              {form.id ? 'Atualizar taxa' : 'Adicionar taxa'}
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="empty-funcionarios">
+              <div className="spinner" />
+              <p>Carregando taxas...</p>
+            </div>
+          ) : taxas.length === 0 ? (
+            <div className="empty-funcionarios">
+              <Percent className="ico xl muted" />
+              <p>Nenhuma taxa configurada para este condomínio.</p>
+            </div>
+          ) : (
+            <div className="cfg-taxas-list">
+              {taxas.map((taxa) => (
+                <div key={taxa.id} className="cfg-taxa-card">
+                  <div className="cfg-taxa-info">
+                    <div className="cfg-taxa-produto">
+                      {taxa.produto_nome || taxa.produto_codigo || 'Todos os produtos'}
+                    </div>
+                    <div className="cfg-taxa-valor">
+                      {taxa.taxa_tipo === 'PERC' ? (
+                        <>
+                          <Percent className="ico sm" /> {taxa.taxa_valor}%
+                        </>
+                      ) : (
+                        <>
+                          <DollarSign className="ico sm" /> R$ {taxa.taxa_valor}
+                        </>
+                      )}
+                      {!taxa.ativo && (
+                        <span className="cfg-badge-inativo">Inativo</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="cfg-taxa-actions">
+                    <button
+                      className="icon-btn cfg-table-action blue"
+                      onClick={() => onChange({ target: { name: 'editar', value: taxa } })}
+                      title="Editar"
+                    >
+                      <Pencil className="ico" />
+                    </button>
+                    <button
+                      className="icon-btn cfg-table-action red"
+                      onClick={() => onDelete(taxa)}
+                      title="Excluir"
+                    >
+                      <Trash2 className="ico" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="modal-actions">
+          <button className="btn btn-primary" onClick={onClose}>
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 function ModalConfirm({ open, nome, onConfirm, onCancel }) {
   if (!open) return null
 
@@ -721,6 +887,23 @@ export default function ConfiguracaoCondominios() {
     email: '',
   })
 
+  const [taxasModal, setTaxasModal] = useState({
+    open: false,
+    condominio: null,
+    taxas: [],
+    loading: false,
+  })
+
+  const [produtos, setProdutos] = useState([])
+
+  const [taxaForm, setTaxaForm] = useState({
+    id: null,
+    produto: '',
+    taxa_tipo: 'PERC',
+    taxa_valor: '',
+    ativo: true,
+  })
+
   const toastTimer = useRef(null)
 
   useEffect(() => {
@@ -736,30 +919,16 @@ export default function ConfiguracaoCondominios() {
     try {
       setLoadingCondominios(true)
 
-      const response = await entebenService.getCondominios(cnpj, page)
-      const results = toArray(response)
-      const administradoraId = getAdministradoraIdFromUser(user)
+      const response = await entebenService.getCondominios(cnpj, page, itensPorPagina)
 
-      const condominiosFiltrados = isUsuarioGlobal
-        ? results
-        : results.filter((condominio) => {
-          if (!administradoraId) return false
+      // Resposta paginada do DRF: { count, next, previous, results }
+      const results = Array.isArray(response?.results)
+        ? response.results
+        : toArray(response)
+      const total = response?.count || results.length
 
-          const admCondominio = getAdministradoraIdFromCondominio(condominio)
-
-          const idsUsuario = Array.isArray(administradoraId)
-            ? administradoraId.map(String)
-            : [String(administradoraId)]
-
-          if (Array.isArray(admCondominio)) {
-            return admCondominio.some((id) => idsUsuario.includes(String(id)))
-          }
-
-          return idsUsuario.includes(String(admCondominio))
-        })
-
-      setCondominios(condominiosFiltrados)
-      setTotalCondominios(condominiosFiltrados.length)
+      setCondominios(results)
+      setTotalCondominios(total)
       setErroCondominios('')
     } catch (err) {
       console.error('Erro ao carregar condomínios:', err)
@@ -1019,6 +1188,150 @@ export default function ConfiguracaoCondominios() {
     setColaboradorForm((prev) => ({ ...prev, [name]: value }))
   }
 
+  const carregarProdutos = async () => {
+    try {
+      const response = await entebenService.getBeneficios()
+      setProdutos(toArray(response))
+    } catch (err) {
+      console.error('Erro ao carregar produtos:', err)
+    }
+  }
+
+  const abrirModalTaxas = async (condominio) => {
+    setTaxasModal({
+      open: true,
+      condominio,
+      taxas: [],
+      loading: true,
+    })
+    setTaxaForm({
+      id: null,
+      produto: '',
+      taxa_tipo: 'PERC',
+      taxa_valor: '',
+      ativo: true,
+    })
+
+    await carregarProdutos()
+    await carregarTaxas(condominio.cnpj)
+  }
+
+  const carregarTaxas = async (cnpj) => {
+    try {
+      setTaxasModal((prev) => ({ ...prev, loading: true }))
+      const response = await entebenService.getTaxasConfig({ condominio: cnpj })
+      const taxas = Array.isArray(response?.results)
+        ? response.results
+        : toArray(response)
+      setTaxasModal((prev) => ({ ...prev, taxas, loading: false }))
+    } catch (err) {
+      console.error('Erro ao carregar taxas:', err)
+      showToast('Erro ao carregar taxas', 'danger')
+      setTaxasModal((prev) => ({ ...prev, loading: false }))
+    }
+  }
+
+  const handleTaxaChange = (e) => {
+    const { name, value, type, checked } = e.target
+
+    if (name === 'editar') {
+      const taxa = value
+      setTaxaForm({
+        id: taxa.id,
+        produto: taxa.produto || '',
+        taxa_tipo: taxa.taxa_tipo || 'PERC',
+        taxa_valor: taxa.taxa_valor || '',
+        ativo: taxa.ativo !== false,
+      })
+      return
+    }
+
+    setTaxaForm((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }))
+  }
+
+  const salvarTaxa = async () => {
+    if (!taxaForm.taxa_valor || Number(taxaForm.taxa_valor) < 0) {
+      showToast('Informe um valor de taxa válido', 'danger')
+      return
+    }
+
+    setLoadingAction(true)
+
+    try {
+      const payload = {
+        taxa_tipo: taxaForm.taxa_tipo,
+        taxa_valor: Number(taxaForm.taxa_valor),
+        ativo: taxaForm.ativo,
+      }
+
+      if (taxaForm.id) {
+        await entebenService.updateTaxaConfig(taxaForm.id, payload)
+        showToast('Taxa atualizada com sucesso!')
+      } else {
+        // Descobre o vínculo do condomínio com a administradora ativa
+        const vinculos = await entebenService.getVinculosCondominio({
+          condominio: taxasModal.condominio?.cnpj,
+        })
+        const vinculosList = Array.isArray(vinculos?.results)
+          ? vinculos.results
+          : toArray(vinculos)
+
+        const administradoraId = getAdministradoraIdFromUser(user)
+        const vinculo = vinculosList.find(
+          (v) => String(v.administradora) === String(administradoraId)
+        ) || vinculosList[0]
+
+        if (!vinculo) {
+          showToast('Condomínio não possui vínculo com administradora', 'danger')
+          setLoadingAction(false)
+          return
+        }
+
+        payload.vinculo = vinculo.id
+        if (taxaForm.produto) {
+          payload.produto = taxaForm.produto
+        }
+
+        await entebenService.createTaxaConfig(payload)
+        showToast('Taxa cadastrada com sucesso!')
+      }
+
+      await carregarTaxas(taxasModal.condominio?.cnpj)
+      setTaxaForm({
+        id: null,
+        produto: '',
+        taxa_tipo: 'PERC',
+        taxa_valor: '',
+        ativo: true,
+      })
+    } catch (err) {
+      console.error('Erro ao salvar taxa:', err)
+      showToast('Erro ao salvar taxa', 'danger')
+    } finally {
+      setLoadingAction(false)
+    }
+  }
+
+  const excluirTaxa = async (taxa) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta taxa?')) return
+
+    setLoadingAction(true)
+
+    try {
+      await entebenService.deleteTaxaConfig(taxa.id)
+      await carregarTaxas(taxasModal.condominio?.cnpj)
+      showToast('Taxa excluída com sucesso')
+    } catch (err) {
+      console.error('Erro ao excluir taxa:', err)
+      showToast('Erro ao excluir taxa', 'danger')
+    } finally {
+      setLoadingAction(false)
+    }
+  }
+
   const funcionariosDisponiveis = useMemo(() => {
     return todosFuncionarios.filter((func) => {
       if (!func.condominio) return true
@@ -1162,6 +1475,16 @@ export default function ConfiguracaoCondominios() {
                           >
                             <Pencil className="ico" />
                           </button>
+
+                          {isUsuarioGlobal && (
+                            <button
+                              className="icon-btn cfg-table-action blue"
+                              onClick={() => abrirModalTaxas(cond)}
+                              title="Taxas"
+                            >
+                              <Percent className="ico" />
+                            </button>
+                          )}
 
                           <button
                             className="icon-btn cfg-table-action red"
@@ -1480,6 +1803,21 @@ export default function ConfiguracaoCondominios() {
           nome={confirm.nome}
           onConfirm={handleExcluir}
           onCancel={() => setConfirm({ open: false, id: null, nome: '' })}
+        />
+
+        <ModalTaxas
+          open={taxasModal.open}
+          condominio={taxasModal.condominio}
+          taxas={taxasModal.taxas}
+          produtos={produtos}
+          loading={taxasModal.loading}
+          form={taxaForm}
+          onChange={handleTaxaChange}
+          onSave={salvarTaxa}
+          onDelete={excluirTaxa}
+          onClose={() =>
+            setTaxasModal({ open: false, condominio: null, taxas: [], loading: false })
+          }
         />
 
         <div className={`cfg-toast-wrap ${toast.open ? 'show' : ''}`}>
