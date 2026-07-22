@@ -71,14 +71,6 @@ export const operacionalFaturaService = {
     return response;
   },
 
-  async move(id, status) {
-    const response = await api.patch(`/api/operacional/faturas/${id}/move/`, {
-      status,
-    });
-
-    return response;
-  },
-
   async enviarContasPagar(id, formaPagemento) {
     const response = await api.post(
       `/api/operacional/faturas/${id}/enviar-contas-pagar/`,
