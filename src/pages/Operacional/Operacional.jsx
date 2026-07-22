@@ -7,9 +7,24 @@ import {
   FaReceipt,
   FaSyncAlt,
   FaSearch,
-FaSlidersH,
+  FaSlidersH,
 } from 'react-icons/fa';
 import { useLocation } from 'react-router-dom';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+  useDroppable,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 import TopNav from './TopNav/TopNav';
 import DashboardEquipe from './DashboardEquipe/DashboardEquipe';
@@ -217,12 +232,112 @@ function normalizeList(data) {
   return [];
 }
 
+function DroppableColumn({ id, children }) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`op-kanban-droppable${isOver ? ' over' : ''}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SortableCard({ fatura, columnKey, onMoveFatura }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: getFaturaId(fatura) });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 999 : 'auto',
+  };
+
+  const coEstipulantes = getCoEstipulantes(fatura);
+  const id = getFaturaId(fatura);
+
+  return (
+    <article
+      ref={setNodeRef}
+      style={style}
+      className={`op-kanban-card${isDragging ? ' dragging' : ''}`}
+      {...attributes}
+      {...listeners}
+    >
+      <div className="op-kanban-card-title">
+        {getFaturaEstipulanteName(fatura)}
+      </div>
+
+      <div className="op-kanban-card-sub">
+        {getFaturaNum(fatura)}
+      </div>
+
+      <div className="op-kanban-card-value">
+        {formatBRL(getFaturaTotal(fatura))}
+      </div>
+
+      <div className="op-kanban-card-footer">
+        <span>
+          Vence {fmtDate(getFirstDueDate(fatura))}
+        </span>
+        <span>
+          {getPaidCount(fatura)}/{coEstipulantes.length} pagos
+        </span>
+      </div>
+
+      {fatura.vencimento && (
+        <div className="op-kanban-card-info">
+          <span>Venc: {fmtDate(fatura.vencimento)}</span>
+          {fatura.recebimento && (
+            <span>Receb: {fmtDate(fatura.recebimento)}</span>
+          )}
+        </div>
+      )}
+
+      <div className="op-kanban-card-uploader">
+        {getUploaderName(fatura)}
+      </div>
+
+      <div className="op-kanban-card-actions">
+        <select
+          className="op-kanban-move-select"
+          value={columnKey}
+          onChange={(e) => {
+            if (onMoveFatura && e.target.value !== columnKey) {
+              onMoveFatura(id, e.target.value);
+            }
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <option value="faturado">Faturado</option>
+          <option value="atrasado">Confirmar Pagamento</option>
+          <option value="aprovado">Boleto VR Enviado</option>
+          <option value="pago">Pago</option>
+        </select>
+      </div>
+    </article>
+  );
+}
+
 function OperacionalKanban({ faturas, onMoveFatura }) {
   const [search, setSearch] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const [responsavelFilter, setResponsavelFilter] = useState('');
-  const [movingId, setMovingId] = useState(null);
+  const [activeId, setActiveId] = useState(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
 
   const responsaveis = useMemo(() => {
     const map = new Map();
@@ -306,7 +421,45 @@ function OperacionalKanban({ faturas, onMoveFatura }) {
     return grouped;
   }, [filteredFaturas]);
 
+  const handleDragStart = useCallback((event) => {
+    setActiveId(event.active.id);
+  }, []);
+
+  const handleDragEnd = useCallback((event) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over) return;
+
+    const activeFatura = faturas.find((f) => getFaturaId(f) === active.id);
+    if (!activeFatura) return;
+
+    const columnKeys = STATUS_COLUMNS.map((c) => c.key);
+    let targetColumn = over.id;
+
+    if (!columnKeys.includes(targetColumn)) {
+      const overFatura = faturas.find((f) => getFaturaId(f) === over.id);
+      if (overFatura) {
+        targetColumn = computeStatus(overFatura);
+      }
+    }
+
+    const currentStatus = computeStatus(activeFatura);
+
+    if (targetColumn !== currentStatus && onMoveFatura) {
+      onMoveFatura(active.id, targetColumn);
+    }
+  }, [faturas, onMoveFatura]);
+
+  const activeFatura = activeId ? faturas.find((f) => getFaturaId(f) === activeId) : null;
+
   return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
     <div className="op-kanban-page">
       <div className="op-kanban-toolbar">
         <div className="op-kanban-search">
@@ -363,6 +516,8 @@ function OperacionalKanban({ faturas, onMoveFatura }) {
       <div className="op-kanban-grid">
         {STATUS_COLUMNS.map((column) => {
           const statusClass = KANBAN_STATUS_CLASS[column.key] || '';
+          const columnFaturas = groups[column.key];
+          const columnIds = columnFaturas.map((f) => getFaturaId(f));
 
           return (
             <section
@@ -379,85 +534,55 @@ function OperacionalKanban({ faturas, onMoveFatura }) {
                 </div>
 
                 <span className="op-kanban-count">
-                  {groups[column.key].length}
+                  {columnFaturas.length}
                 </span>
               </header>
 
-              <div className="op-kanban-column-body">
-                {groups[column.key].length ? (
-                  <div className="op-kanban-card-list">
-                    {groups[column.key].map((fatura) => {
-                      const coEstipulantes = getCoEstipulantes(fatura);
-                      const id = getFaturaId(fatura);
-
-                      return (
-                        <article key={id} className="op-kanban-card">
-                          <div className="op-kanban-card-title">
-                            {getFaturaEstipulanteName(fatura)}
-                          </div>
-
-                          <div className="op-kanban-card-sub">
-                            {getFaturaNum(fatura)}
-                          </div>
-
-                          <div className="op-kanban-card-value">
-                            {formatBRL(getFaturaTotal(fatura))}
-                          </div>
-
-                          <div className="op-kanban-card-footer">
-                            <span>
-                              Vence {fmtDate(getFirstDueDate(fatura))}
-                            </span>
-
-                            <span>
-                              {getPaidCount(fatura)}/{coEstipulantes.length} pagos
-                            </span>
-                          </div>
-
-                          {fatura.vencimento && (
-                            <div className="op-kanban-card-info">
-                              <span>Venc: {fmtDate(fatura.vencimento)}</span>
-                              {fatura.recebimento && (
-                                <span>Receb: {fmtDate(fatura.recebimento)}</span>
-                              )}
-                            </div>
-                          )}
-
-                          <div className="op-kanban-card-uploader">
-                            {getUploaderName(fatura)}
-                          </div>
-
-                          <div className="op-kanban-card-actions">
-                            <select
-                              className="op-kanban-move-select"
-                              value={column.key}
-                              onChange={(e) => {
-                                if (onMoveFatura && e.target.value !== column.key) {
-                                  onMoveFatura(id, e.target.value);
-                                }
-                              }}
-                            >
-                              <option value="faturado">Faturado</option>
-                              <option value="atrasado">Confirmar Pagamento</option>
-                              <option value="aprovado">Boleto VR Enviado</option>
-                              <option value="pago">Pago</option>
-                            </select>
-                          </div>
-                        </article>
-                      );
-                    })}
+              <DroppableColumn id={column.key}>
+                <SortableContext items={columnIds} strategy={verticalListSortingStrategy}>
+                  <div className="op-kanban-column-body">
+                    {columnFaturas.length ? (
+                      <div className="op-kanban-card-list">
+                        {columnFaturas.map((fatura) => (
+                          <SortableCard
+                            key={getFaturaId(fatura)}
+                            fatura={fatura}
+                            columnKey={column.key}
+                            onMoveFatura={onMoveFatura}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="op-kanban-empty">
+                        Nenhuma fatura
+                      </p>
+                    )}
                   </div>
-                ) : (
-                  <p className="op-kanban-empty">
-                    Nenhuma fatura
-                  </p>
-                )}
-              </div>
+                </SortableContext>
+              </DroppableColumn>
             </section>
           );
         })}
       </div>
+
+      <DragOverlay>
+        {activeFatura ? (
+          <article className="op-kanban-card op-kanban-card-overlay">
+            <div className="op-kanban-card-title">
+              {getFaturaEstipulanteName(activeFatura)}
+            </div>
+            <div className="op-kanban-card-sub">
+              {getFaturaNum(activeFatura)}
+            </div>
+            <div className="op-kanban-card-value">
+              {formatBRL(getFaturaTotal(activeFatura))}
+            </div>
+          </article>
+        ) : null}
+      </DragOverlay>
+
     </div>
+    </DndContext>
   );
 }
 
