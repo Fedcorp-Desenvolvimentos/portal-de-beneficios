@@ -257,6 +257,7 @@ export const S = {
     th:nth-child(5),
     td:nth-child(5) {
       width: 110px;
+      color: #dc2626;
     }
 
     th:nth-child(6),
