@@ -10,6 +10,7 @@ import {
   FiArchive,
 } from 'react-icons/fi';
 
+import { useAuth } from '../../../context/AuthContext';
 import { entebenService } from '../../../services/entebenService';
 import PageLayout from '../../../Layouts/PageLayout/PageLayout';
 import { S } from './FaturamentoStyles';
@@ -71,7 +72,14 @@ const getStatusLabel = (status) => {
     aguardando_faturamento: 'Aguardando faturamento',
     aguardandofaturamento: 'Aguardando faturamento',
 
+    aprovado: 'Aprovado',
     faturado: 'Faturado',
+
+    confirmar_pagamento: 'Confirmar Pagamento',
+    boleto_vr_enviado: 'Boleto VR Enviado',
+    pago: 'Pago',
+    comprado: 'Comprado',
+    cancelado: 'Cancelado',
   };
 
   if (labels[normalized]) {
@@ -98,7 +106,7 @@ const getStatusVariant = (status) => {
   }
 
   if (normalized === 'failed') return 'danger';
-  if (normalized === 'processing' || normalized === 'aguardando_faturamento') return 'warning';
+  if (normalized === 'processing' || normalized === 'aguardando_faturamento' || normalized === 'aprovado') return 'warning';
   return 'info';
 };
 
@@ -198,6 +206,7 @@ const SkeletonCard = () => (
 // COMPONENTE PRINCIPAL
 // ============================================
 export default function Faturamento() {
+  const { user } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -379,6 +388,7 @@ export default function Faturamento() {
         const normalizedStatus = normalizeStatus(group.status);
 
         if (normalizedStatus === 'comprado') return false;
+        if (user?.tipo === 'adm' && normalizedStatus === 'aprovado') return false;
 
         const textoBusca = [
           group.importacaoLabel,

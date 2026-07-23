@@ -1,0 +1,260 @@
+.pc-container {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pc-header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pc-btn-novo {
+  padding: 10px 20px;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pc-btn-novo:hover {
+  background: #2563eb;
+}
+
+.pc-form {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pc-form h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.pc-form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.pc-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.pc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pc-field-full {
+  grid-column: 1 / -1;
+}
+
+.pc-field-wide {
+  grid-column: span 2;
+}
+
+.pc-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.pc-field input,
+.pc-field select,
+.pc-field textarea {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.pc-field input:focus,
+.pc-field select:focus,
+.pc-field textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.pc-field textarea {
+  resize: vertical;
+}
+
+.pc-radio-group {
+  display: flex;
+  gap: 20px;
+}
+
+.pc-radio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.pc-radio input[type="radio"] {
+  accent-color: #3b82f6;
+}
+
+.pc-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.pc-btn-cancelar {
+  padding: 10px 20px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pc-btn-cancelar:hover {
+  background: #e2e8f0;
+}
+
+.pc-btn-enviar {
+  padding: 10px 20px;
+  background: #22c55e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pc-btn-enviar:hover:not(:disabled) {
+  background: #16a34a;
+}
+
+.pc-btn-enviar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pc-table-wrap {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.pc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.pc-table th {
+  background: #f8fafc;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #64748b;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.pc-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.pc-table tbody tr:hover td {
+  background: #f8fafc;
+}
+
+.pc-valor {
+  font-weight: 600;
+  color: #16a34a;
+}
+
+.pc-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.pc-badge.pendente {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.pc-badge.analise {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.pc-badge.aprovado {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.pc-badge.enviado {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+.pc-badge.recusado {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.pc-badge.cancelado {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.pc-loading,
+.pc-empty {
+  text-align: center;
+  padding: 48px 16px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .pc-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pc-field-wide {
+    grid-column: span 1;
+  }
+
+  .pc-radio-group {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
