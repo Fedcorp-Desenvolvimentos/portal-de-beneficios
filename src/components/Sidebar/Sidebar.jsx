@@ -10,6 +10,7 @@ import {
   FaFileUpload,
   FaFileInvoiceDollar,
   FaReceipt,
+  FaCreditCard,
 } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import * as S from "./SidebarStyles";
@@ -138,6 +139,12 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       allowed: ["dev", "fat", "adm"],
     },
     {
+      path: "/pedidos-cartao",
+      label: "Pedidos de Cartão",
+      icon: <FaCreditCard />,
+      allowed: ["adm"],
+    },
+    {
       path: "/interno/minha-administradora",
       label: "Minha Administradora",
       icon: <FaBuilding />,
@@ -247,6 +254,11 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
                     path: "/operacional/analises",
                     label: "Análises",
                     icon: <FaChartLine />,
+                  },
+                  {
+                    path: "/operacional/pedidos-cartao",
+                    label: "Pedidos de Cartão",
+                    icon: <FaCreditCard />,
                   },
                 ].map((item) => {
                   const isActive = item.exact

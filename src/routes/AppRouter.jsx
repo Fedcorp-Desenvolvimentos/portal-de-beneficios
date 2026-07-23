@@ -52,6 +52,8 @@ import AcompanhamentoFaturados from '../pages/Interno/AcompanhamentoFaturados/Ac
 import BoletosVR from '../pages/Interno/BoletosVR/BoletosVR'
 import Operacional from '../pages/Operacional/Operacional'
 import ConsultarBoletos from '../pages/Interno/ConsultarBoletos/ConsultarBoletos'
+import PedidoCartao from '../pages/Interno/PedidoCartao/PedidoCartao'
+import PedidosCartaoOperacional from '../pages/Operacional/PedidosCartao/PedidosCartaoOperacional'
 
 const AppRouter = () => {
   const { isAuthenticated, user } = useAuth()
@@ -255,6 +257,26 @@ const AppRouter = () => {
               path="/colaboradores/acompanhamento"
               element={
                 <AcompanhamentoFaturados />
+              }
+            />
+
+            { /* Pedidos de Cartão - Administradora */}
+            <Route
+              path="/pedidos-cartao"
+              element={
+                <PrivateRouter allowedRoles={['adm']}>
+                  <PedidoCartao />
+                </PrivateRouter>
+              }
+            />
+
+            { /* Pedidos de Cartão - Operacional */}
+            <Route
+              path="/operacional/pedidos-cartao"
+              element={
+                <PrivateRouter allowedRoles={['fat', 'dev']}>
+                  <PedidosCartaoOperacional />
+                </PrivateRouter>
               }
             />
 

@@ -28,6 +28,7 @@ const STATUS_BADGE = {
   PENDING: 'pendente',
   PROCESSING: 'pendente',
   AGUARDANDO_FATURAMENTO: 'pendente',
+  APROVADO: 'pendente',
   CONFIRMAR_PAGAMENTO: 'pendente',
   BOLETO_VR_ENVIADO: 'pago',
   COMPRADO: 'pago',
