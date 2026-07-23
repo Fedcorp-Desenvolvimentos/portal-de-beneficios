@@ -22,9 +22,16 @@ const fmtDate = (s) => {
 
 const STATUS_BADGE = {
   PAGO: 'pago',
+  COMPLETED: 'pago',
+  FATURADO: 'pago',
   PENDENTE_PAGAMENTO: 'pendente',
   PENDING: 'pendente',
   PROCESSING: 'pendente',
+  AGUARDANDO_FATURAMENTO: 'pendente',
+  CONFIRMAR_PAGAMENTO: 'pendente',
+  BOLETO_VR_ENVIADO: 'pago',
+  COMPRADO: 'pago',
+  CANCELADO: 'falhou',
   FAILED: 'falhou',
 }
 
