@@ -606,6 +606,19 @@ function ModalTaxas({
 
   const produtosOptions = produtos || []
 
+  const tiposOptions = useMemo(() => {
+    const seen = new Set()
+    return produtosOptions
+      .filter((p) => p.tipo)
+      .map((p) => ({ value: p.tipo, label: p.tipo_display || p.tipo }))
+      .filter((t) => {
+        if (seen.has(t.value)) return false
+        seen.add(t.value)
+        return true
+      })
+      .sort((a, b) => a.label.localeCompare(b.label))
+  }, [produtosOptions])
+
   return (
     <div className="cfg-modal-backdrop" onClick={onClose}>
       <div
@@ -625,22 +638,23 @@ function ModalTaxas({
 
         <div className="modal-body">
           <div className="cfg-info-box">
-            Configure taxas específicas para este condomínio. Se deixar o
-            produto vazio, a taxa aplicará a todos os produtos.
+            Configure taxas específicas para este condomínio. Selecione um tipo
+            de produto para aplicar a todos os produtos daquele tipo, ou deixe
+            vazio para aplicar a todos os produtos.
           </div>
 
           <div className="cfg-taxas-form">
             <div className="field">
-              <label>Produto</label>
+              <label>Tipo de produto</label>
               <select
-                name="produto"
-                value={form.produto || ''}
+                name="tipo"
+                value={form.tipo || ''}
                 onChange={onChange}
               >
                 <option value="">Todos os produtos</option>
-                {produtosOptions.map((p) => (
-                  <option key={p.id || p.codigo_produto} value={p.id}>
-                    {p.nome || p.codigo_produto}
+                {tiposOptions.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
                   </option>
                 ))}
               </select>
@@ -704,7 +718,7 @@ function ModalTaxas({
                 <div key={taxa.id} className="cfg-taxa-card">
                   <div className="cfg-taxa-info">
                     <div className="cfg-taxa-produto">
-                      {taxa.produto_nome || taxa.produto_codigo || 'Todos os produtos'}
+                      {taxa.tipo_display || taxa.produto_nome || taxa.produto_codigo || 'Todos os produtos'}
                     </div>
                     <div className="cfg-taxa-valor">
                       {taxa.taxa_tipo === 'PERC' ? (
@@ -899,6 +913,7 @@ export default function ConfiguracaoCondominios() {
   const [taxaForm, setTaxaForm] = useState({
     id: null,
     produto: '',
+    tipo: '',
     taxa_tipo: 'PERC',
     taxa_valor: '',
     ativo: true,
@@ -1207,6 +1222,7 @@ export default function ConfiguracaoCondominios() {
     setTaxaForm({
       id: null,
       produto: '',
+      tipo: '',
       taxa_tipo: 'PERC',
       taxa_valor: '',
       ativo: true,
@@ -1236,13 +1252,31 @@ export default function ConfiguracaoCondominios() {
 
     if (name === 'editar') {
       const taxa = value
+      const tipoFromProduto = taxa.produto
+        ? produtos.find(
+            (p) =>
+              String(p.codigo_produto) === String(taxa.produto) ||
+              String(p.id) === String(taxa.produto)
+          )?.tipo
+        : null
+
       setTaxaForm({
         id: taxa.id,
-        produto: taxa.produto || '',
+        produto: taxa.tipo ? '' : taxa.produto || '',
+        tipo: taxa.tipo || tipoFromProduto || '',
         taxa_tipo: taxa.taxa_tipo || 'PERC',
         taxa_valor: taxa.taxa_valor || '',
         ativo: taxa.ativo !== false,
       })
+      return
+    }
+
+    if (name === 'tipo') {
+      setTaxaForm((prev) => ({
+        ...prev,
+        tipo: value,
+        produto: '',
+      }))
       return
     }
 
@@ -1268,6 +1302,17 @@ export default function ConfiguracaoCondominios() {
       }
 
       if (taxaForm.id) {
+        if (taxaForm.tipo) {
+          payload.tipo = taxaForm.tipo
+          payload.produto = null
+        } else if (taxaForm.produto) {
+          payload.produto = taxaForm.produto
+          payload.tipo = null
+        } else {
+          payload.tipo = null
+          payload.produto = null
+        }
+
         await entebenService.updateTaxaConfig(taxaForm.id, payload)
         showToast('Taxa atualizada com sucesso!')
       } else {
@@ -1291,8 +1336,15 @@ export default function ConfiguracaoCondominios() {
         }
 
         payload.vinculo = vinculo.id
-        if (taxaForm.produto) {
+        if (taxaForm.tipo) {
+          payload.tipo = taxaForm.tipo
+          payload.produto = null
+        } else if (taxaForm.produto) {
           payload.produto = taxaForm.produto
+          payload.tipo = null
+        } else {
+          payload.tipo = null
+          payload.produto = null
         }
 
         await entebenService.createTaxaConfig(payload)
@@ -1303,6 +1355,7 @@ export default function ConfiguracaoCondominios() {
       setTaxaForm({
         id: null,
         produto: '',
+        tipo: '',
         taxa_tipo: 'PERC',
         taxa_valor: '',
         ativo: true,
