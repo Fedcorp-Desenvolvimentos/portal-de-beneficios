@@ -2508,6 +2508,12 @@ export default function Importacao() {
             }
           })
         }
+        if (dadosParaEnvio.movimentacoes_detalhada) {
+          dadosParaEnvio.movimentacoes_detalhada.forEach((m) => {
+            if (typeof m.valor_recarga_bene === 'number') m.valor_recarga_bene = r2(m.valor_recarga_bene)
+            else if (typeof m.valor_recarga_bene === 'string') m.valor_recarga_bene = r2(parseFloat(m.valor_recarga_bene) || 0)
+          })
+        }
 
         // console.log("Payload Benefícios:", dadosParaEnvio)
 
