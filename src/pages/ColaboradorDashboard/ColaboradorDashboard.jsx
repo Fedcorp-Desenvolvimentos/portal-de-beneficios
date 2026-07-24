@@ -15,6 +15,7 @@ import {
   FiRefreshCw,
   FiEye,
   FiMoreVertical,
+  FiChevronRight,
 } from 'react-icons/fi'
 import { BiSpreadsheet } from 'react-icons/bi'
 
@@ -23,6 +24,7 @@ import { entebenService } from '../../services/entebenService'
 import PageLayout from '../../Layouts/PageLayout/PageLayout'
 import DatePickerWrapper from '../../components/DatePicker/DatePickerWrapper'
 import { S } from './ColaboradorDashboardStyles'
+import './ColaboradorDashboard.css'
 
 // ============================================
 // UTILITÁRIOS
@@ -571,6 +573,7 @@ const normalizarCondominiosCompra = (pedido) => {
       _valor: Number(boleto?.valor || 0),
       _vencimento: boleto?.vencimento || '',
       _baixa: Boolean(boleto?.baixa),
+      _dtBaixa: boleto?.dt_baixa || null,
       _funcionarios: funcionarios,
       _movimentacaoIds: movimentacaoIds,
     }
@@ -658,6 +661,9 @@ const SkeletonFilters = () => (
 
 const SkeletonTableRow = () => (
   <tr>
+    <td style={{ width: 40 }}>
+      <S.SkeletonLine $width="24px" $height="24px" $borderRadius="6px" />
+    </td>
     <td>
       <S.SkeletonLine $width="80px" $height="18px" $marginBottom="6px" />
       <S.SkeletonLine $width="100px" $height="12px" />
@@ -703,6 +709,7 @@ const SkeletonTable = () => (
     <S.Table>
       <thead>
         <tr>
+          <th style={{ width: 40 }}></th>
           <th>Pedido</th>
           <th>Administradora</th>
           <th>Vencimento</th>
@@ -827,6 +834,11 @@ export default function ColaboradorDashboard() {
 
   const [openActionsId, setOpenActionsId] = useState(null)
   const [isSmallScreen, setIsSmallScreen] = useState(false)
+
+  const [expandedPedidoId, setExpandedPedidoId] = useState(null)
+  const [expandedBoletos, setExpandedBoletos] = useState([])
+  const [expandedLoading, setExpandedLoading] = useState(false)
+  const [fullyPaidIds, setFullyPaidIds] = useState(new Set())
 
   const itemsPerPage = 50
   const fileRef = useRef(null)
@@ -1353,6 +1365,45 @@ export default function ColaboradorDashboard() {
     setBoletoModalOpen(false)
     setBoletoPedido(null)
     setSelectedCondominios(new Set())
+  }
+
+  async function togglePedidoExpand(pedido) {
+    if (expandedPedidoId === pedido.id) {
+      setExpandedPedidoId(null)
+      setExpandedBoletos([])
+      return
+    }
+
+    setExpandedPedidoId(pedido.id)
+    setExpandedLoading(true)
+    setExpandedBoletos([])
+
+    try {
+      const selectData = await faturamentoService.buscarDadosSelecaoImportacao(pedido.id)
+      const normalized = normalizarCondominiosCompra({
+        ...pedido,
+        selectData,
+        condominios: selectData?.condominios || [],
+        boletos: selectData?.boletos || [],
+      })
+      setExpandedBoletos(normalized)
+
+      if (normalized.length > 0 && normalized.every((b) => b._baixa)) {
+        setFullyPaidIds((prev) => new Set([...prev, pedido.id]))
+      } else {
+        setFullyPaidIds((prev) => {
+          const next = new Set(prev)
+          next.delete(pedido.id)
+          return next
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao buscar boletos:', error)
+      showToast('Não foi possível carregar os boletos deste pedido.', { variant: 'error' })
+      setExpandedPedidoId(null)
+    } finally {
+      setExpandedLoading(false)
+    }
   }
 
   function toggleCondominio(index) {
@@ -1953,6 +2004,7 @@ export default function ColaboradorDashboard() {
     <PageLayout
       title="Dashboard do Colaborador"
       subtitle="Gerencie seus pedidos de faturamento, acompanhe o status e importe documentos."
+      className="dashboard-wide"
     >
       <S.Root>
         {loading ? (
@@ -2038,6 +2090,7 @@ export default function ColaboradorDashboard() {
               <S.Table>
                 <thead>
                   <tr>
+                    <th style={{ width: 40 }}></th>
                     <th aria-sort={sortConfig.key === 'id' ? sortConfig.direction : 'none'}>
                       {renderSortableHeader('Pedido', 'id')}
                     </th>
@@ -2122,13 +2175,29 @@ export default function ColaboradorDashboard() {
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <S.Empty colSpan={isSmallScreen ? 8 : 12}>
+                      <S.Empty colSpan={isSmallScreen ? 9 : 13}>
                         Nenhum pedido encontrado.
                       </S.Empty>
                     </tr>
                   ) : (
                     paginatedPedidos.map((p) => (
-                      <tr key={p.id}>
+                      <React.Fragment key={p.id}>
+                      <tr className={fullyPaidIds.has(p.id) ? 'cf-row-fully-paid' : ''}>
+                        <td style={{ width: 40, textAlign: 'center' }}>
+                          <S.ExpandBtn
+                            type="button"
+                            onClick={() => togglePedidoExpand(p)}
+                            title={expandedPedidoId === p.id ? 'Recolher boletos' : 'Ver boletos'}
+                          >
+                            <FiChevronRight
+                              size={14}
+                              style={{
+                                transform: expandedPedidoId === p.id ? 'rotate(90deg)' : 'none',
+                                transition: 'transform 0.2s',
+                              }}
+                            />
+                          </S.ExpandBtn>
+                        </td>
                         <td data-label="Pedido">
                           <S.IdMain>Pedido #{p.id}</S.IdMain>
                           <S.IdSub>{p.tipoBeneficio}</S.IdSub>
@@ -2179,7 +2248,7 @@ export default function ColaboradorDashboard() {
                         </td>
 
                         {isSmallScreen ? (
-                          <td data-label="Ações">
+                          <td data-label="Ações" className="cd-actions-td">
                             <S.ActionsMenuWrap data-actions-menu>
                               <S.ActionsMenuButton
                                 type="button"
@@ -2282,6 +2351,59 @@ export default function ColaboradorDashboard() {
                           </>
                         )}
                       </tr>
+
+                      {expandedPedidoId === p.id && (
+                        <tr className="cf-expand-row">
+                          <td colSpan={isSmallScreen ? 9 : 13}>
+                            <div className="cf-expand-content">
+                              {expandedLoading ? (
+                                <div className="cf-expand-loading">Carregando boletos...</div>
+                              ) : expandedBoletos.length === 0 ? (
+                                <div className="cf-expand-empty">Nenhum boleto encontrado para este pedido.</div>
+                              ) : (
+                                <>
+                                  <div className="cf-expand-header">
+                                    Boletos ({expandedBoletos.length}) —{' '}
+                                    {expandedBoletos.filter((b) => b._baixa).length} pago(s),{' '}
+                                    {expandedBoletos.filter((b) => !b._baixa).length} pendente(s)
+                                  </div>
+                                  <table className="cf-expand-table">
+                                    <thead>
+                                      <tr>
+                                        <th>Condomínio</th>
+                                        <th>CNPJ</th>
+                                        <th>Documento</th>
+                                        <th>Vencimento</th>
+                                        <th>Valor</th>
+                                        <th>Status</th>
+                                        <th>Data Pagamento</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {expandedBoletos.map((bl, idx) => (
+                                        <tr key={bl._key || idx}>
+                                          <td>{bl._nome}</td>
+                                          <td>{bl._cnpjOriginal}</td>
+                                          <td>{bl._documento}</td>
+                                          <td>{fmtDate(bl._vencimento)}</td>
+                                          <td className="cf-expand-valor">{fmtMoney(bl._valor)}</td>
+                                          <td>
+                                            <span className={`cf-expand-badge ${bl._baixa ? 'pago' : 'pendente'}`}>
+                                              {bl._baixa ? 'Pago' : 'Pendente'}
+                                            </span>
+                                          </td>
+                                          <td>{bl._dtBaixa ? fmtDate(bl._dtBaixa) : '-'}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      </React.Fragment>
                     ))
                   )}
                 </tbody>

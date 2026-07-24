@@ -1242,3 +1242,127 @@
         width: min(230px, calc(100vw - 32px));
     }
 }
+
+/* ============================================
+   EXPAND ROW - Boletos do Pedido
+   ============================================ */
+
+.cf-expand-row td {
+    padding: 0 !important;
+    border-bottom: 2px solid #e2e8f0 !important;
+    background: #f8fafc;
+}
+
+.cf-expand-content {
+    padding: 16px 20px 20px 52px;
+}
+
+.cf-expand-header {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #475569;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+    padding: 4px 10px;
+    background: #e2e8f0;
+    border-radius: 6px;
+}
+
+.cf-expand-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12px;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.cf-expand-table th {
+    background: #f1f5f9;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #475569;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.cf-expand-table td {
+    padding: 10px 14px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    vertical-align: middle;
+    color: #334155;
+    background: transparent !important;
+}
+
+.cf-expand-table tbody tr:last-child td {
+    border-bottom: none !important;
+}
+
+.cf-expand-table tbody tr:hover td {
+    background: #f8fafc !important;
+}
+
+.cf-expand-valor {
+    font-weight: 600 !important;
+    color: #0f172a !important;
+}
+
+.cf-expand-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.cf-expand-badge.pago {
+    background: #dcfce7 !important;
+    color: #16a34a !important;
+}
+
+.cf-expand-badge.pendente {
+    background: #fef3c7 !important;
+    color: #d97706 !important;
+}
+
+.cf-expand-loading,
+.cf-expand-empty {
+    text-align: center;
+    padding: 24px;
+    color: #94a3b8;
+    font-size: 13px;
+    font-style: italic;
+}
+
+/* ============================================
+   DESTAQUE - Todos boletos pagos
+   ============================================ */
+
+.cf-row-fully-paid > td {
+    background: #eff6ff !important;
+}
+
+.cf-row-fully-paid:hover > td {
+    background: #dbeafe !important;
+}
+
+/* ============================================
+   TELAS GRANDES (1920px+) - Dashboard Wide
+   ============================================ */
+
+@media (min-width: 1920px) {
+    .dashboard-wide {
+        max-width: 1800px;
+    }
+}
