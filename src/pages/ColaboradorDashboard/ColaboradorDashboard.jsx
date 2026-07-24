@@ -166,6 +166,7 @@ const statusMap = {
   EM_FATURAMENTO: 'em_faturamento',
   FATURADO: 'faturado',
   COMPRADO: 'comprado',
+  PAGO_PARCIALMENTE: 'pago_parcialmente',
   CANCELADO: 'cancelado',
 }
 
@@ -178,6 +179,7 @@ const statusLabel = {
   em_faturamento: 'Em faturamento',
   faturado: 'Faturado',
   comprado: 'Comprado',
+  pago_parcialmente: 'Pago Parcialmente',
   cancelado: 'Cancelado',
 }
 
@@ -186,6 +188,7 @@ const statusRank = {
   em_faturamento: 2,
   faturado: 3,
   comprado: 4,
+  pago_parcialmente: 5,
   cancelado: 99,
 }
 
@@ -220,6 +223,12 @@ const timelineSteps = [
     description: 'Arquivo enviado para provedora de compra.',
     minRank: 4,
   },
+  {
+    key: 'pago_parcialmente',
+    title: 'Pago Parcialmente',
+    description: 'Pagamento parcial registrado.',
+    minRank: 5,
+  },
 ]
 
 const getTimelineItems = (pedido) => {
@@ -236,7 +245,9 @@ const getTimelineItems = (pedido) => {
             ? pedido?.emFaturamentoEm
             : step.key === 'comprado'
               ? pedido?.compradoEm
-              : pedido?.faturadoEm,
+              : step.key === 'pago_parcialmente'
+                ? pedido?.pagoParcialmenteEm
+                : pedido?.faturadoEm,
     done: rankAtual >= step.minRank,
     current: pedido?.status === step.key,
   }))
@@ -612,6 +623,7 @@ const extrairResumoPedido = (pedidoApi) => {
     canceladoEm: pedidoApi.data_cancelamento || null,
     motivoCancelamento: pedidoApi.motivo_cancelamento || '',
     compradoEm: pedidoApi.data_compra || pedidoApi.data_comprado || null,
+    pagoParcialmenteEm: pedidoApi.data_pago_parcialmente || null,
     dataRecebimento: pedidoApi.data_recebimento || null,
     condominios,
     raw: pedidoApi,
@@ -890,6 +902,7 @@ export default function ColaboradorDashboard() {
       emFat: pedidos.filter((p) => p.status === 'em_faturamento').length,
       faturados: pedidos.filter((p) => p.status === 'faturado').length,
       comprado: pedidos.filter((p) => p.status === 'comprado').length,
+      pagoParcialmente: pedidos.filter((p) => p.status === 'pago_parcialmente').length,
       cancelados: pedidos.filter((p) => p.status === 'cancelado').length,
     }),
     [pedidos]
@@ -1180,7 +1193,7 @@ export default function ColaboradorDashboard() {
       return
     }
 
-    if (!refazendo && !modoAdicionar && pedido.status === 'comprado') {
+    if (!refazendo && !modoAdicionar && ['comprado', 'pago_parcialmente'].includes(pedido.status)) {
       showToast('Este pedido já foi comprado. Use "Refazer" para reenviar documentos.', {
         variant: 'info',
       })
@@ -1206,7 +1219,7 @@ export default function ColaboradorDashboard() {
       return
     }
 
-    if (!['faturado', 'comprado'].includes(pedido.status)) {
+    if (!['faturado', 'comprado', 'pago_parcialmente'].includes(pedido.status)) {
       showToast('Só é possível refazer pedidos faturados ou comprados.', {
         variant: 'warning',
       })
@@ -1829,9 +1842,9 @@ export default function ColaboradorDashboard() {
   }
 
   const renderAcoesPedido = (p) => {
-    const isFaturadoOuComprado = ['faturado', 'comprado'].includes(p.status)
+    const isFaturadoOuComprado = ['faturado', 'comprado', 'pago_parcialmente'].includes(p.status)
     const podeGerarTxt = p.status === 'faturado'
-    const jaComprado = p.status === 'comprado'
+    const jaComprado = ['comprado', 'pago_parcialmente'].includes(p.status)
 
     return (
       <>
@@ -1993,6 +2006,7 @@ export default function ColaboradorDashboard() {
                 <option value="em_faturamento">Em faturamento</option>
                 <option value="faturado">Faturados</option>
                 <option value="comprado">Comprado</option>
+                <option value="pago_parcialmente">Pago Parcialmente</option>
                 <option value="cancelado">Cancelados</option>
               </S.Select>
 
@@ -2158,6 +2172,7 @@ export default function ColaboradorDashboard() {
                               <option value="em_faturamento">Em faturamento</option>
                               <option value="faturado">Faturado</option>
                               <option value="comprado">Comprado</option>
+                              <option value="pago_parcialmente">Pago Parcialmente</option>
                               <option value="cancelado">Cancelar</option>
                             </select>
                           </S.StatusSelect>
@@ -2203,7 +2218,7 @@ export default function ColaboradorDashboard() {
                             </td>
 
                             <td data-label="Docs">
-                              {['faturado', 'comprado'].includes(p.status) ? (
+                              {['faturado', 'comprado', 'pago_parcialmente'].includes(p.status) ? (
                                 <S.RowActions>
                                   <S.Btn
                                     onClick={() => abrirDocsImportados(p)}
@@ -2241,7 +2256,7 @@ export default function ColaboradorDashboard() {
                                 >
                                   {downloadingId === p.id ? 'Gerando…' : <FiDownload size={14} />}
                                 </S.Btn>
-                              ) : p.status === 'comprado' ? (
+                              ) : ['comprado', 'pago_parcialmente'].includes(p.status) ? (
                                 <span style={{ color: '#22c55e', fontSize: 12 }}>TXT gerado ✓</span>
                               ) : (
                                 <span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>
