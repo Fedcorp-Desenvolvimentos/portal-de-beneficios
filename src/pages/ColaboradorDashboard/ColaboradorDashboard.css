@@ -1336,6 +1336,12 @@
     color: #d97706 !important;
 }
 
+.cf-expand-badge.cancelado {
+    background: #f1f5f9 !important;
+    color: #64748b !important;
+    text-decoration: line-through;
+}
+
 .cf-expand-loading,
 .cf-expand-empty {
     text-align: center;

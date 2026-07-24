@@ -21,6 +21,7 @@ import { BiSpreadsheet } from 'react-icons/bi'
 
 import { faturamentoService } from '../../services/faturamentoService'
 import { entebenService } from '../../services/entebenService'
+import { resolveBoletoDisplayStatus } from '../../utils/boletoStatus'
 import PageLayout from '../../Layouts/PageLayout/PageLayout'
 import DatePickerWrapper from '../../components/DatePicker/DatePickerWrapper'
 import { S } from './ColaboradorDashboardStyles'
@@ -2364,8 +2365,11 @@ export default function ColaboradorDashboard() {
                                 <>
                                   <div className="cf-expand-header">
                                     Boletos ({expandedBoletos.length}) —{' '}
-                                    {expandedBoletos.filter((b) => b._baixa).length} pago(s),{' '}
-                                    {expandedBoletos.filter((b) => !b._baixa).length} pendente(s)
+                                    {expandedBoletos.filter((b) => resolveBoletoDisplayStatus(b).variant === 'pago').length} pago(s),{' '}
+                                    {expandedBoletos.filter((b) => resolveBoletoDisplayStatus(b).variant === 'pendente').length} pendente(s){' '}
+                                    {expandedBoletos.filter((b) => resolveBoletoDisplayStatus(b).variant === 'cancelado').length > 0 && (
+                                      <>, {expandedBoletos.filter((b) => resolveBoletoDisplayStatus(b).variant === 'cancelado').length} cancelado(s)</>
+                                    )}
                                   </div>
                                   <table className="cf-expand-table">
                                     <thead>
@@ -2380,21 +2384,24 @@ export default function ColaboradorDashboard() {
                                       </tr>
                                     </thead>
                                     <tbody>
-                                      {expandedBoletos.map((bl, idx) => (
-                                        <tr key={bl._key || idx}>
-                                          <td>{bl._nome}</td>
-                                          <td>{bl._cnpjOriginal}</td>
-                                          <td>{bl._documento}</td>
-                                          <td>{fmtDate(bl._vencimento)}</td>
-                                          <td className="cf-expand-valor">{fmtMoney(bl._valor)}</td>
-                                          <td>
-                                            <span className={`cf-expand-badge ${bl._baixa ? 'pago' : 'pendente'}`}>
-                                              {bl._baixa ? 'Pago' : 'Pendente'}
-                                            </span>
-                                          </td>
-                                          <td>{bl._dtBaixa ? fmtDate(bl._dtBaixa) : '-'}</td>
-                                        </tr>
-                                      ))}
+                                      {expandedBoletos.map((bl, idx) => {
+                                        const displayStatus = resolveBoletoDisplayStatus(bl)
+                                        return (
+                                          <tr key={bl._key || idx}>
+                                            <td>{bl._nome}</td>
+                                            <td>{bl._cnpjOriginal}</td>
+                                            <td>{bl._documento}</td>
+                                            <td>{fmtDate(bl._vencimento)}</td>
+                                            <td className="cf-expand-valor">{fmtMoney(bl._valor)}</td>
+                                            <td>
+                                              <span className={`cf-expand-badge ${displayStatus.variant}`}>
+                                                {displayStatus.label}
+                                              </span>
+                                            </td>
+                                            <td>{bl._dtBaixa ? fmtDate(bl._dtBaixa) : '-'}</td>
+                                          </tr>
+                                        )
+                                      })}
                                     </tbody>
                                   </table>
                                 </>
