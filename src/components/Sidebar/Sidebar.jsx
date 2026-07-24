@@ -138,12 +138,12 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       icon: <FaReceipt />,
       allowed: ["dev", "fat", "adm"],
     },
-    {
-      path: "/pedidos-cartao",
-      label: "Pedidos de Cartão",
-      icon: <FaCreditCard />,
-      allowed: ["adm"],
-    },
+    // {
+    //   path: "/pedidos-cartao",
+    //   label: "Pedidos de Cartão",
+    //   icon: <FaCreditCard />,
+    //   allowed: ["adm"],
+    // },
     {
       path: "/interno/minha-administradora",
       label: "Minha Administradora",
@@ -255,11 +255,11 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
                     label: "Análises",
                     icon: <FaChartLine />,
                   },
-                  {
-                    path: "/operacional/pedidos-cartao",
-                    label: "Pedidos de Cartão",
-                    icon: <FaCreditCard />,
-                  },
+                  // {
+                  //   path: "/operacional/pedidos-cartao",
+                  //   label: "Pedidos de Cartão",
+                  //   icon: <FaCreditCard />,
+                  // },
                 ].map((item) => {
                   const isActive = item.exact
                     ? location.pathname === item.path
