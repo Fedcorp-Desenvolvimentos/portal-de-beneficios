@@ -65,16 +65,14 @@ const isOverdue = (dateValue, paidAt) => {
 };
 
 const getFaturaStatus = (fatura) => {
-  if (fatura?.manualStatus === 'pago') return 'pago';
-
   const coestipulantes = fatura?.coEstipulantes || [];
-  if (!coestipulantes.length) return 'faturado';
+  if (!coestipulantes.length) return fatura?.manualStatus || 'faturado';
+
+  if (coestipulantes.some((item) => isOverdue(item.dueDate, item.paidAt))) return 'atrasado';
+
+  if (fatura?.manualStatus === 'pago') return 'pago';
   if (coestipulantes.every((item) => item.paidAt)) return 'pago';
   if (coestipulantes.every((item) => item.sentToCP)) return 'aprovado';
-  if (coestipulantes.some((item) => isOverdue(item.dueDate, item.paidAt))) {
-    return 'atrasado';
-  }
-
   return 'faturado';
 };
 

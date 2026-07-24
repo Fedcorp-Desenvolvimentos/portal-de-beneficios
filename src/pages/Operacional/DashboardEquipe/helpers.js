@@ -183,34 +183,24 @@ export function getDueDate(item) {
 }
 
 export function computeStatus(fatura) {
-  const manualStatus = getManualStatus(fatura);
-
-  if (manualStatus) {
-    return manualStatus;
-  }
-
   const cos = getCoEstipulantes(fatura);
 
   if (!cos.length) {
-    return 'faturado';
+    const manualStatus = getManualStatus(fatura);
+    return manualStatus || 'faturado';
   }
 
   const allSentToCP = cos.every((item) => getSentToCP(item));
   const allPaid = cos.every((item) => Boolean(getPaidAt(item)));
   const hasOverdue = cos.some((item) => isVerificar(getDueDate(item), getPaidAt(item)));
 
-  if (allPaid && allSentToCP) {
-    return 'pago';
-  }
+  if (hasOverdue) return 'atrasado';
 
-  if (allSentToCP) {
-    return 'aprovado';
-  }
+  const manualStatus = getManualStatus(fatura);
+  if (manualStatus) return manualStatus;
 
-  if (hasOverdue) {
-    return 'atrasado';
-  }
-
+  if (allPaid && allSentToCP) return 'pago';
+  if (allSentToCP) return 'aprovado';
   return 'faturado';
 }
 
