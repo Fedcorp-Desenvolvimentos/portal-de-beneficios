@@ -5,6 +5,7 @@ import { FaHistory, FaRegUser, FaBuilding } from "react-icons/fa";
 import { useAuth } from '../../context/AuthContext';
 import { getAccessLevelLabel, getAccessLevelColor, ACCESS_LEVELS } from '../../utils/accessLevels';
 import { formatarData, formatTempo } from '../../utils/formatar_data';
+import NotificationBell from '../NotificationBell/NotificationBell';
 import * as S from './BreadcrumbStyles';
 
 function Breadcrumb({ onToggleSidebar, sidebarOpen, className }) {
@@ -159,6 +160,8 @@ function Breadcrumb({ onToggleSidebar, sidebarOpen, className }) {
             <S.Time>{formatTimeDetailed(currentTime)}</S.Time>
           </S.TimeWrapper>
         </S.DateTimeContainer>
+
+        <NotificationBell />
 
         <S.UserContainer ref={dropdownRef}>
           <S.UserButton onClick={() => setShowUserMenu(!showUserMenu)}>
