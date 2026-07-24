@@ -234,83 +234,96 @@ export const S = {
       background: var(--color-bg-tertiary);
     }
 
-    th:nth-child(1),
-    td:nth-child(1) {
-      width: 130px;
-    }
+      th:nth-child(1),
+      td:nth-child(1) {
+        width: 4%;
+        padding-right: 0;
+      }
 
     th:nth-child(2),
     td:nth-child(2) {
-      width: 240px;
+      width: 200px;
     }
 
     th:nth-child(3),
     td:nth-child(3) {
-      width: 110px;
+      width: 130px;
     }
 
     th:nth-child(4),
     td:nth-child(4) {
-      width: 100px;
+      width: 90px;
     }
 
     th:nth-child(5),
     td:nth-child(5) {
-      width: 110px;
+      width: 95px;
       color: #dc2626;
     }
 
     th:nth-child(6),
     td:nth-child(6) {
-      width: 110px;
+      width: 90px;
     }
 
     th:nth-child(7),
     td:nth-child(7) {
-      width: 110px;
+      width: 90px;
     }
 
     th:nth-child(8),
     td:nth-child(8) {
-      width: 120px;
+      width: 100px;
     }
 
     th:nth-child(9),
     td:nth-child(9) {
-      width: 60px;
-      min-width: 60px;
-      max-width: 60px;
-      text-align: center;
-      padding-left: 6px;
-      padding-right: 6px;
+      width: 150px;
+      min-width: 150px;
+      max-width: 150px;
     }
 
     th:nth-child(10),
     td:nth-child(10) {
-      width: 100px;
-      min-width: 100px;
-      max-width: 100px;
+      width: 44px;
+      min-width: 44px;
+      max-width: 44px;
       text-align: center;
-      padding-left: 6px;
-      padding-right: 6px;
-      white-space: nowrap;
+      padding-left: 4px;
+      padding-right: 4px;
+    }
+
+    td:nth-child(10) > button {
+      min-width: 32px;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      justify-content: center;
     }
 
     th:nth-child(11),
     td:nth-child(11) {
-      width: 110px;
-      min-width: 110px;
-      max-width: 110px;
+      width: 44px;
+      min-width: 44px;
+      max-width: 44px;
       text-align: center;
-      padding-left: 6px;
-      padding-right: 8px;
+      padding-left: 4px;
+      padding-right: 4px;
+    }
+
+    td:nth-child(11) > button {
+      min-width: 32px;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      justify-content: center;
     }
 
     th:nth-child(12),
     td:nth-child(12) {
-      width: 44px;
-      min-width: 44px;
-      max-width: 44px;
+      width: 72px;
+      min-width: 72px;
+      max-width: 72px;
       text-align: center;
       padding-left: 4px;
       padding-right: 4px;
@@ -324,51 +337,59 @@ export const S = {
       justify-content: center;
     }
 
-    td:nth-child(9) > button {
-      min-width: 36px;
-      width: 36px;
-      height: 32px;
-      padding: 0;
-      justify-content: center;
-    }
-
-    td:nth-child(10) > div {
+    td:nth-child(12) > div {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 4px;
     }
 
-    td:nth-child(10) > button {
-      min-width: 82px;
-      width: auto;
-      height: 32px;
-      padding: 0 12px;
-      justify-content: center;
+    th:nth-child(13),
+    td:nth-child(13) {
+      width: 110px;
+      min-width: 110px;
+      text-align: center;
       white-space: nowrap;
+      padding-left: 16px;
     }
 
-    td:nth-child(10) > div:has(button + button) > button {
+    td:nth-child(13) > button {
       min-width: 36px;
       width: 36px;
       height: 32px;
       padding: 0;
+      justify-content: center;
     }
 
-    td:nth-child(11) > button {
-      min-width: 82px;
-      padding-left: 10px;
-      padding-right: 10px;
+    td:nth-child(13) > span {
+      white-space: nowrap;
+    }
+
+    th:nth-child(14),
+    td:nth-child(14) {
+      width: 44px;
+      min-width: 44px;
+      max-width: 44px;
+      text-align: center;
+      padding-left: 4px;
+      padding-right: 4px;
+    }
+
+    td:nth-child(14) > button {
+      min-width: 32px;
+      width: 32px;
+      height: 32px;
+      padding: 0;
       justify-content: center;
     }
 
     @media (max-width: 1600px) {
       width: 100%;
       min-width: 0;
-      table-layout: fixed;
+      table-layout: auto;
 
       thead th {
-        padding: 11px 6px;
+        padding: 11px 4px;
         font-size: 8px;
         letter-spacing: 0.04em;
         white-space: nowrap;
@@ -377,65 +398,64 @@ export const S = {
       }
 
       tbody td {
-        padding: 11px 6px;
+        padding: 10px 4px;
         font-size: 11px;
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
       }
 
+      tbody td.cd-actions-td {
+        overflow: visible;
+      }
+
       th:nth-child(1),
       td:nth-child(1) {
-        width: 11%;
+        width: 24px;
+        min-width: 24px;
+        max-width: 24px;
+        padding: 10px 0 10px 4px;
       }
 
       th:nth-child(2),
       td:nth-child(2) {
-        width: 20%;
+        padding-left: 2px;
       }
 
       th:nth-child(3),
       td:nth-child(3) {
-        width: 9%;
         white-space: nowrap;
       }
 
       th:nth-child(4),
       td:nth-child(4) {
-        width: 8%;
         white-space: nowrap;
       }
 
       th:nth-child(5),
       td:nth-child(5) {
-        width: 9%;
         white-space: nowrap;
       }
 
       th:nth-child(6),
       td:nth-child(6) {
-        width: 9%;
         white-space: nowrap;
       }
 
       th:nth-child(7),
       td:nth-child(7) {
-        width: 9%;
         white-space: nowrap;
       }
 
       th:nth-child(8),
       td:nth-child(8) {
-        width: 10%;
       }
 
       th:nth-child(9),
       td:nth-child(9) {
-        width: 5%;
         min-width: 0;
         max-width: none;
         overflow: visible;
-        text-align: center;
       }
 
       td:nth-child(9) button {
@@ -445,9 +465,37 @@ export const S = {
         padding: 0 8px;
       }
 
+      th:nth-child(10),
+      td:nth-child(10) {
+        min-width: 0;
+        max-width: none;
+        text-align: center;
+      }
+
+      th:nth-child(11),
+      td:nth-child(11) {
+        min-width: 0;
+        max-width: none;
+        text-align: center;
+      }
+
+      th:nth-child(12),
+      td:nth-child(12) {
+        min-width: 0;
+        max-width: none;
+        text-align: center;
+      }
+
       th:nth-child(13),
       td:nth-child(13) {
-        width: 4%;
+        min-width: 0;
+        max-width: none;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      th:nth-child(14),
+      td:nth-child(14) {
         min-width: 0;
         max-width: none;
         text-align: center;
@@ -456,64 +504,22 @@ export const S = {
 
     @media (max-width: 1366px) {
       thead th {
-        padding: 10px 4px;
+        padding: 10px 3px;
         font-size: 7px;
         letter-spacing: 0.02em;
       }
 
       tbody td {
-        padding: 10px 4px;
+        padding: 8px 3px;
         font-size: 10px;
       }
 
       th:nth-child(1),
       td:nth-child(1) {
-        width: 11%;
-      }
-
-      th:nth-child(2),
-      td:nth-child(2) {
-        width: 19%;
-      }
-
-      th:nth-child(3),
-      td:nth-child(3) {
-        width: 9%;
-      }
-
-      th:nth-child(4),
-      td:nth-child(4) {
-        width: 8%;
-      }
-
-      th:nth-child(5),
-      td:nth-child(5) {
-        width: 9%;
-      }
-
-      th:nth-child(6),
-      td:nth-child(6) {
-        width: 9%;
-      }
-
-      th:nth-child(7),
-      td:nth-child(7) {
-        width: 9%;
-      }
-
-      th:nth-child(8),
-      td:nth-child(8) {
-        width: 10%;
-      }
-
-      th:nth-child(9),
-      td:nth-child(9) {
-        width: 9%;
-      }
-
-      th:nth-child(13),
-      td:nth-child(13) {
-        width: 4%;
+        width: 24px;
+        min-width: 24px;
+        max-width: 24px;
+        padding: 8px 0 8px 3px;
       }
     }
   `,
@@ -1668,6 +1674,26 @@ export const S = {
     height: ${({ $height }) => $height || '18px'};
     border-radius: ${({ $borderRadius }) => $borderRadius || '4px'};
     ${skeletonBackground}
+  `,
+
+  ExpandBtn: styled.button`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: #f1f5f9;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.15s;
+    flex-shrink: 0;
+
+    &:hover {
+      background: #e2e8f0;
+      color: #334155;
+    }
   `,
 };
 
