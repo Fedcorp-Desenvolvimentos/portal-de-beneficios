@@ -1339,7 +1339,7 @@
 .cf-expand-badge.cancelado {
     background: #fee2e2 !important;
     color: #dc2626 !important;
-    text-decoration: line-through;
+    text-decoration: none;
 }
 
 .cf-expand-loading,

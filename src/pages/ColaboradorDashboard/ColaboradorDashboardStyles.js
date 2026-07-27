@@ -253,12 +253,17 @@ export const S = {
     th:nth-child(4),
     td:nth-child(4) {
       width: 90px;
+      color: #dc2626 !important;
+    }
+
+    th:nth-child(4) > *,
+    td:nth-child(4) > * {
+      color: #dc2626 !important;
     }
 
     th:nth-child(5),
     td:nth-child(5) {
       width: 95px;
-      color: #dc2626;
     }
 
     th:nth-child(6),
