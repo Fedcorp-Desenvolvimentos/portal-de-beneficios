@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../../../context/AuthContext'
 import { entebenService } from '../../../services/entebenService'
+import { resolveBoletoDisplayStatus } from '../../../utils/boletoStatus'
 import PageLayout from '../../../Layouts/PageLayout/PageLayout'
 import './ConsultarBoletos.css'
 
@@ -227,9 +228,14 @@ export default function ConsultarBoletos() {
                                         <td>{fmtDate(bl.vencimento)}</td>
                                         <td className="cb-valor">{fmtMoney(bl.valor)}</td>
                                         <td>
-                                          <span className={`cb-badge ${bl.baixa ? 'pago' : 'pendente'}`}>
-                                            {bl.baixa ? 'Pago' : 'Pendente'}
-                                          </span>
+                                          {(() => {
+                                            const ds = resolveBoletoDisplayStatus(bl)
+                                            return (
+                                              <span className={`cb-badge ${ds.variant}`}>
+                                                {ds.label}
+                                              </span>
+                                            )
+                                          })()}
                                         </td>
                                         <td>{fmtDate(bl.dt_baixa)}</td>
                                       </tr>
