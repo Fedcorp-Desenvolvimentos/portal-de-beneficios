@@ -171,6 +171,7 @@ const statusMap = {
   COMPRADO: 'comprado',
   PAGO_PARCIALMENTE: 'pago_parcialmente',
   CANCELADO: 'cancelado',
+  PENDING: 'pendente',
 }
 
 const normalizarStatus = (status) => {
