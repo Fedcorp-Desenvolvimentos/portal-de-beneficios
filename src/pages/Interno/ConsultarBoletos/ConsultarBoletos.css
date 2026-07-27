@@ -260,6 +260,12 @@
   color: #dc2626;
 }
 
+.cb-badge.cancelado {
+  background: #fee2e2;
+  color: #dc2626;
+  text-decoration: line-through;
+}
+
 .cb-pagination {
   display: flex;
   justify-content: space-between;

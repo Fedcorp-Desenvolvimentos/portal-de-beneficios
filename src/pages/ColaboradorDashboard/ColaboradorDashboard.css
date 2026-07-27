@@ -1337,8 +1337,8 @@
 }
 
 .cf-expand-badge.cancelado {
-    background: #f1f5f9 !important;
-    color: #64748b !important;
+    background: #fee2e2 !important;
+    color: #dc2626 !important;
     text-decoration: line-through;
 }
 

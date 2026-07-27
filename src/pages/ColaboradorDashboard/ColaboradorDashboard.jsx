@@ -575,6 +575,7 @@ const normalizarCondominiosCompra = (pedido) => {
       _vencimento: boleto?.vencimento || '',
       _baixa: Boolean(boleto?.baixa),
       _dtBaixa: boleto?.dt_baixa || null,
+      _status: boleto?.status || null,
       _funcionarios: funcionarios,
       _movimentacaoIds: movimentacaoIds,
     }

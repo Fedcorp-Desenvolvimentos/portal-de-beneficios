@@ -119,6 +119,7 @@ const isStatusConcluido = (status) => {
     'concluido',
     'concluído',
     'faturado',
+    'pago_parcialmente',
   ].includes(normalized);
 };
 
