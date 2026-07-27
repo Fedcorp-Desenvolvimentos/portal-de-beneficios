@@ -106,27 +106,7 @@ export default function FaturaFilterPanel({
         </select>
       </div>
 
-      <div className="filter-group">
-        <select
-          className="filtro-select"
-          id="filtroResponsavel"
-          value={filters.uploaderId || ''}
-          onChange={(event) =>
-            onChange({
-              ...filters,
-              uploaderId: event.target.value,
-            })
-          }
-        >
-          <option value="">Todos os responsáveis</option>
 
-          {uploaders.map(([id, name]) => (
-            <option key={id} value={id}>
-              {name}
-            </option>
-          ))}
-        </select>
-      </div>
     </div>
   );
 }

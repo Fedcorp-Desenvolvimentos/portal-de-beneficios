@@ -226,13 +226,13 @@ export default function DashboardEquipe() {
             <h3 className="section-title">Faturas Gravadas</h3>
 
             <button
-              className={`btn-filter-toggle${filterPanelOpen ? ' active' : ''}`}
-              id="btnToggleFiltros"
-              title="Filtrar"
               type="button"
-              onClick={() => setFilterPanelOpen((value) => !value)}
+              className={`filter-toggle-btn${filterPanelOpen ? ' active' : ''}`}
+              onClick={() => setFilterPanelOpen((prev) => !prev)}
+              title={filterPanelOpen ? 'Fechar filtros' : 'Abrir filtros'}
             >
-              <FaSlidersH />
+              <FaSlidersH size={14} />
+              Filtros
             </button>
           </div>
 

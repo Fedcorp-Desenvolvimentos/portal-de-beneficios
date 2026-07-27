@@ -464,128 +464,117 @@ function OperacionalKanban({ faturas, onMoveFatura }) {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-    <div className="op-kanban-page">
-      <div className="op-kanban-toolbar">
-        <div className="op-kanban-search">
-          <FaSearch />
+      <div className="op-kanban-page">
+        <div className="op-kanban-toolbar">
+          <div className="op-kanban-search">
+            <FaSearch />
 
-          <input
-            type="search"
-            placeholder="Buscar fatura..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
+            <input
+              type="search"
+              placeholder="Buscar fatura..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </div>
+
+          <button
+            className={`op-kanban-filter-btn${filtersOpen ? ' active' : ''}`}
+            type="button"
+            title="Filtros"
+            onClick={() => setFiltersOpen((value) => !value)}
+          >
+            <FaSlidersH />
+          </button>
         </div>
 
-        <button
-          className={`op-kanban-filter-btn${filtersOpen ? ' active' : ''}`}
-          type="button"
-          title="Filtros"
-          onClick={() => setFiltersOpen((value) => !value)}
-        >
-          <FaSlidersH />
-        </button>
-      </div>
-
-      {filtersOpen && (
-        <div className="op-kanban-filters">
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-          >
-            <option value="">Todos os status</option>
-            <option value="faturado">Faturado</option>
-            <option value="atrasado">Confirmar Pagamento</option>
-            <option value="aprovado">Boleto VR Enviado</option>
-            <option value="pago">Pago</option>
-          </select>
-
-          <select
-            value={responsavelFilter}
-            onChange={(event) => setResponsavelFilter(event.target.value)}
-          >
-            <option value="">Todos os responsáveis</option>
-
-            {responsaveis.map((responsavel) => (
-              <option key={responsavel} value={responsavel}>
-                {responsavel}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      <div className="op-kanban-divider" />
-
-      <div className="op-kanban-grid">
-        {STATUS_COLUMNS.map((column) => {
-          const statusClass = KANBAN_STATUS_CLASS[column.key] || '';
-          const columnFaturas = groups[column.key];
-          const columnIds = columnFaturas.map((f) => getFaturaId(f));
-
-          return (
-            <section
-              key={column.key}
-              className={`op-kanban-column ${statusClass}`}
+        {filtersOpen && (
+          <div className="op-kanban-filters">
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
             >
-              <header className="op-kanban-column-header">
-                <div className="op-kanban-title-wrap">
-                  <span className="op-kanban-dot" />
+              <option value="">Todos os status</option>
+              <option value="faturado">Faturado</option>
+              <option value="atrasado">Confirmar Pagamento</option>
+              <option value="aprovado">Boleto VR Enviado</option>
+              <option value="pago">Pago</option>
+            </select>
 
-                  <strong className="op-kanban-title">
-                    {column.label}
-                  </strong>
-                </div>
 
-                <span className="op-kanban-count">
-                  {columnFaturas.length}
-                </span>
-              </header>
+          </div>
+        )}
 
-              <DroppableColumn id={column.key}>
-                <SortableContext items={columnIds} strategy={verticalListSortingStrategy}>
-                  <div className="op-kanban-column-body">
-                    {columnFaturas.length ? (
-                      <div className="op-kanban-card-list">
-                        {columnFaturas.map((fatura) => (
-                          <SortableCard
-                            key={getFaturaId(fatura)}
-                            fatura={fatura}
-                            columnKey={column.key}
-                            onMoveFatura={onMoveFatura}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="op-kanban-empty">
-                        Nenhuma fatura
-                      </p>
-                    )}
+        <div className="op-kanban-divider" />
+
+        <div className="op-kanban-grid">
+          {STATUS_COLUMNS.map((column) => {
+            const statusClass = KANBAN_STATUS_CLASS[column.key] || '';
+            const columnFaturas = groups[column.key];
+            const columnIds = columnFaturas.map((f) => getFaturaId(f));
+
+            return (
+              <section
+                key={column.key}
+                className={`op-kanban-column ${statusClass}`}
+              >
+                <header className="op-kanban-column-header">
+                  <div className="op-kanban-title-wrap">
+                    <span className="op-kanban-dot" />
+
+                    <strong className="op-kanban-title">
+                      {column.label}
+                    </strong>
                   </div>
-                </SortableContext>
-              </DroppableColumn>
-            </section>
-          );
-        })}
+
+                  <span className="op-kanban-count">
+                    {columnFaturas.length}
+                  </span>
+                </header>
+
+                <DroppableColumn id={column.key}>
+                  <SortableContext items={columnIds} strategy={verticalListSortingStrategy}>
+                    <div className="op-kanban-column-body">
+                      {columnFaturas.length ? (
+                        <div className="op-kanban-card-list">
+                          {columnFaturas.map((fatura) => (
+                            <SortableCard
+                              key={getFaturaId(fatura)}
+                              fatura={fatura}
+                              columnKey={column.key}
+                              onMoveFatura={onMoveFatura}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="op-kanban-empty">
+                          Nenhuma fatura
+                        </p>
+                      )}
+                    </div>
+                  </SortableContext>
+                </DroppableColumn>
+              </section>
+            );
+          })}
+        </div>
+
+        <DragOverlay>
+          {activeFatura ? (
+            <article className="op-kanban-card op-kanban-card-overlay">
+              <div className="op-kanban-card-title">
+                {getFaturaEstipulanteName(activeFatura)}
+              </div>
+              <div className="op-kanban-card-sub">
+                {getFaturaNum(activeFatura)}
+              </div>
+              <div className="op-kanban-card-value">
+                {formatBRL(getFaturaTotal(activeFatura))}
+              </div>
+            </article>
+          ) : null}
+        </DragOverlay>
+
       </div>
-
-      <DragOverlay>
-        {activeFatura ? (
-          <article className="op-kanban-card op-kanban-card-overlay">
-            <div className="op-kanban-card-title">
-              {getFaturaEstipulanteName(activeFatura)}
-            </div>
-            <div className="op-kanban-card-sub">
-              {getFaturaNum(activeFatura)}
-            </div>
-            <div className="op-kanban-card-value">
-              {formatBRL(getFaturaTotal(activeFatura))}
-            </div>
-          </article>
-        ) : null}
-      </DragOverlay>
-
-    </div>
     </DndContext>
   );
 }

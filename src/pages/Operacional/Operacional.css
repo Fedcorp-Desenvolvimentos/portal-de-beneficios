@@ -113,6 +113,19 @@
   display: flex; align-items: center; gap: 7px;
 }
 
+.filter-toggle-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px;
+  border: 1px solid var(--op-border); border-radius: 6px;
+  background: var(--op-surface);
+  font-family: inherit; font-size: .78rem; font-weight: 500;
+  color: var(--op-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-toggle-btn:hover { border-color: var(--op-accent); color: var(--op-text); }
+.filter-toggle-btn.active { background: var(--op-accent); color: #fff; border-color: var(--op-accent); }
+
 .drop-zone {
   background: var(--op-surface);
   border: 1.5px dashed var(--op-border);
