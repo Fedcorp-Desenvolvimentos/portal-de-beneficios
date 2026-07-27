@@ -878,10 +878,19 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
     if (campoLocked === name && value) return
 
     if (name === 'recebimentoBeneficio') {
+      let vencimentoCalc = isComplete ? subtractDaysFromDateInput(value, 1) : ''
+      if (vencimentoCalc) {
+        const vencDate = parseDateInput(vencimentoCalc)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        if (vencDate && vencDate.getTime() < today.getTime()) {
+          vencimentoCalc = subtractDaysFromDateInput(value, 1)
+        }
+      }
       setForm((prev) => ({
         ...prev,
         recebimentoBeneficio: value,
-        vencimento: isComplete ? subtractDaysFromDateInput(value, 1) : '',
+        vencimento: vencimentoCalc,
       }))
       setCampoLocked(isComplete ? 'vencimento' : null)
       return
@@ -911,6 +920,15 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
 
     if (!form.competencia) return 'Preencha a competência.'
     if (!form.vencimento.trim()) return 'Preencha o vencimento.'
+
+    if (form.vencimento) {
+      const vencDate = parseDateInput(form.vencimento)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      if (vencDate && vencDate.getTime() < today.getTime()) {
+        return 'A data de vencimento não pode estar no passado.'
+      }
+    }
 
     return ''
   }
