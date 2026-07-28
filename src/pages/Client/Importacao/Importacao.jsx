@@ -1190,6 +1190,9 @@ function getWednesdayBeforeWeekend(dateStr) {
 function calcularVencimentoParaRecebimento(recebimento, dMais) {
   if (!recebimento) return ''
 
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
   const wednesdayBefore = getWednesdayBeforeWeekend(recebimento)
 
   if (wednesdayBefore) {
@@ -1197,14 +1200,26 @@ function calcularVencimentoParaRecebimento(recebimento, dMais) {
     const wednesdayDate = parseDateInput(wednesdayBefore)
     const vencimentoRegraDate = parseDateInput(vencimentoPelaRegra)
 
-    if (vencimentoRegraDate && wednesdayDate && vencimentoRegraDate.getTime() < wednesdayDate.getTime()) {
-      return vencimentoPelaRegra
+    const vencBase = vencimentoRegraDate && wednesdayDate && vencimentoRegraDate.getTime() < wednesdayDate.getTime()
+      ? vencimentoPelaRegra
+      : wednesdayBefore
+
+    const vencDate = parseDateInput(vencBase)
+    if (vencDate && vencDate.getTime() < today.getTime()) {
+      return subtractBusinessDays(recebimento, 1)
     }
 
-    return wednesdayBefore
+    return vencBase
   }
 
-  return subtractBusinessDays(recebimento, dMais)
+  const vencimentoCalculado = subtractBusinessDays(recebimento, dMais)
+  const vencimentoDate = parseDateInput(vencimentoCalculado)
+
+  if (vencimentoDate && vencimentoDate.getTime() < today.getTime()) {
+    return subtractBusinessDays(recebimento, 1)
+  }
+
+  return vencimentoCalculado
 }
 
 function isAfterDateInput(dateA, dateB) {
@@ -1776,10 +1791,20 @@ export default function Importacao() {
     if (isValeTransporte) {
       setCampoDataReferenciaVT(value ? 'recebimento' : null)
 
+      let vencCalc = value ? subtractDaysFromDateInput(value, 8) : ''
+      if (vencCalc) {
+        const vencDate = parseDateInput(vencCalc)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        if (vencDate && vencDate.getTime() < today.getTime()) {
+          vencCalc = subtractDaysFromDateInput(value, 1)
+        }
+      }
+
       setFormEnvio((prev) => ({
         ...prev,
         recebimentoBeneficio: value,
-        vencimento: value ? subtractDaysFromDateInput(value, 8) : '',
+        vencimento: vencCalc,
       }))
 
       return
@@ -1856,6 +1881,16 @@ export default function Importacao() {
     if (!datas.recebimentoBeneficio) {
       toast.warning('Informe a data de recebimento do benefício.')
       return false
+    }
+
+    if (datas.vencimento) {
+      const vencDate = parseDateInput(datas.vencimento)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      if (vencDate && vencDate.getTime() < today.getTime()) {
+        toast.warning('A data de vencimento não pode estar no passado.')
+        return false
+      }
     }
 
     return true

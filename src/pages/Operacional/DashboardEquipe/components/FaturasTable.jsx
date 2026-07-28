@@ -356,28 +356,7 @@ function CoRows({ coEstipulantes, faturaId, manualStatus, onTogglePago }) {
         <td className="co-credito">{fmtDate(getCoDataCredito(item))}</td>
         <td>{statusBadge}</td>
 
-        <td>
-          {showBtn && (
-            <button
-              type="button"
-              className={`btn-toggle-pago ${pago ? 'btn-desfazer' : 'btn-pagar'}`}
-              onClick={(event) => {
-                event.stopPropagation();
-                onTogglePago(faturaId, idx);
-              }}
-            >
-              {pago ? (
-                <>
-                  <FaUndo /> Desfazer
-                </>
-              ) : (
-                <>
-                  <FaCheck /> Pago
-                </>
-              )}
-            </button>
-          )}
-        </td>
+
       </tr>
     );
   });
@@ -558,38 +537,7 @@ function FaturaRow({
                   <th>Vencimento</th>
                   <th>Dt. Crédito</th>
                   <th>Status</th>
-                  <th className="th-action">
-                    <div className="th-action-btns">
-                      {status !== 'pago' && totalPago < totalCount && (
-                        <button
-                          className="btn-pagar-todos"
-                          type="button"
-                          disabled={pagandoTodos}
-                          onClick={handlePagarTodos}
-                        >
-                          {pagandoTodos ? (
-                            <>
-                              <FaSpinner className="fa-spin" /> Aguarde...
-                            </>
-                          ) : (
-                            <>
-                              <FaCheckDouble /> Marcar todos
-                            </>
-                          )}
-                        </button>
-                      )}
 
-                      {hasPaidNotSent && (
-                        <button
-                          className="btn-enviar-cp"
-                          type="button"
-                          onClick={handleAbrirBoleto}
-                        >
-                          Upload boleto VR
-                        </button>
-                      )}
-                    </div>
-                  </th>
                 </tr>
               </thead>
 

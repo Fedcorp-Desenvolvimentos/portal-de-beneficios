@@ -171,6 +171,7 @@ const statusMap = {
   COMPRADO: 'comprado',
   PAGO_PARCIALMENTE: 'pago_parcialmente',
   CANCELADO: 'cancelado',
+  PENDING: 'pendente',
 }
 
 const normalizarStatus = (status) => {
@@ -184,6 +185,7 @@ const statusLabel = {
   comprado: 'Comprado',
   pago_parcialmente: 'Pago Parcialmente',
   cancelado: 'Cancelado',
+  pendente: 'Pendente',
 }
 
 const statusRank = {
@@ -2062,6 +2064,7 @@ export default function ColaboradorDashboard() {
                 <option value="comprado">Comprado</option>
                 <option value="pago_parcialmente">Pago Parcialmente</option>
                 <option value="cancelado">Cancelados</option>
+                <option value="pendente">Pendentes</option>
               </S.Select>
 
               <S.DateFilter>
@@ -2245,6 +2248,7 @@ export default function ColaboradorDashboard() {
                               <option value="comprado">Comprado</option>
                               <option value="pago_parcialmente">Pago Parcialmente</option>
                               <option value="cancelado">Cancelar</option>
+                              <option value="pendente">Pendente</option>
                             </select>
                           </S.StatusSelect>
                         </td>

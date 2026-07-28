@@ -624,6 +624,8 @@ export const S = {
           return '#f0fdf4';
         case 'pago_parcialmente':
           return '#f5f3ff';
+        case 'pendente':
+          return '#fff7ed';
         default:
           return '#f0fdf4';
       }
@@ -641,6 +643,8 @@ export const S = {
           return '#bbf7d0';
         case 'pago_parcialmente':
           return '#ddd6fe';
+        case 'pendente':
+          return '#fed7aa';
         default:
           return '#bbf7d0';
       }
@@ -657,6 +661,8 @@ export const S = {
           return '#16a34a';
         case 'pago_parcialmente':
           return '#7c3aed';
+        case 'pendente':
+          return '#ea580c';
         default:
           return '#16a34a';
       }
