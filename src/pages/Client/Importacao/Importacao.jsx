@@ -1268,6 +1268,7 @@ export default function Importacao() {
     totalFuncionarios: 0,
     totalMovimentacoes: 0,
     valorTotalBeneficios: 0,
+      valorTotalFaturamento: 0,
     periodoInicio: '',
     periodoFim: '',
     competenciaMes: '',
@@ -1609,6 +1610,7 @@ export default function Importacao() {
         totalFuncionarios: 0,
         totalMovimentacoes: 0,
         valorTotalBeneficios: 0,
+      valorTotalFaturamento: 0,
         periodoInicio: '',
         periodoFim: '',
         competenciaMes: '',
@@ -2170,6 +2172,7 @@ export default function Importacao() {
       totalFuncionarios: 0,
       totalMovimentacoes: 0,
       valorTotalBeneficios: 0,
+      valorTotalFaturamento: 0,
       periodoInicio: '',
       periodoFim: '',
       competenciaMes: '',
@@ -2295,6 +2298,7 @@ export default function Importacao() {
 
     let totalMovimentacoes = 0
     let valorTotalBeneficios = 0
+    let valorTotalTaxa = 0
 
     if (isValeTransporte) {
       totalMovimentacoes = data?.summary?.total_movimentacoes || lote.rows.length;
@@ -2305,11 +2309,16 @@ export default function Importacao() {
         const valor = getValorRow(row)
         valorTotalBeneficios += valor
 
+        const taxa = Number(row?.taxa || 0)
+        valorTotalTaxa += valor * (taxa / 100)
+
         if (row.beneficios && Array.isArray(row.beneficios)) {
           totalMovimentacoes += row.beneficios.length
         }
       })
     }
+
+    const valorTotalFaturamento = valorTotalBeneficios + valorTotalTaxa
 
     const hoje = new Date()
     const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0')
@@ -2319,6 +2328,7 @@ export default function Importacao() {
       totalFuncionarios: linhasValidadas.length,
       totalMovimentacoes,
       valorTotalBeneficios,
+      valorTotalFaturamento,
       periodoInicio: formEnvio.periodoInicio || `2026-04-01`,
       periodoFim: formEnvio.periodoFim || `2026-04-30`,
       competenciaMes: formEnvio.competenciaMes || mesAtual,
@@ -2556,14 +2566,21 @@ export default function Importacao() {
     }, 0)
   }, [rowsAtivas])
 
-  const totalFaturamento = useMemo(() => {
-    let total = 0
+  const { valorTotalBeneficiosCalc, valorTotalFaturamentoCalc } = useMemo(() => {
+    let totalBeneficios = 0
+    let totalTaxa = 0
 
     linhasValidadas.forEach((row) => {
-      total += getValorRow(row)
+      const valor = getValorRow(row)
+      totalBeneficios += valor
+      const taxa = Number(row?.taxa || 0)
+      totalTaxa += valor * (taxa / 100)
     })
 
-    return total
+    return {
+      valorTotalBeneficiosCalc: totalBeneficios,
+      valorTotalFaturamentoCalc: totalBeneficios + totalTaxa,
+    }
   }, [linhasValidadas, lote.rows])
 
   return (
@@ -2578,8 +2595,13 @@ export default function Importacao() {
           </div>
 
           <div className="importacao-card faturamento">
+            <h3>Total dos Benefícios</h3>
+            <p className="valor">{formatCurrency(valorTotalBeneficiosCalc)}</p>
+          </div>
+
+          <div className="importacao-card faturamento">
             <h3>Faturamento dos Benefícios</h3>
-            <p className="valor">{formatCurrency(totalFaturamento)}</p>
+            <p className="valor">{formatCurrency(valorTotalFaturamentoCalc)}</p>
           </div>
         </div>
 
@@ -2716,12 +2738,14 @@ export default function Importacao() {
             </div>
 
             <div className="tabela-wrapper">
-              <table className="tabela-importacao">
+               <table className="tabela-importacao">
                 <thead>
                   <tr>
                     <th>Condomínio</th>
                     <th>Colaborador</th>
+                    <th>Produtos</th>
                     <th className="col-valor">Valor</th>
+                    <th className="col-taxa">Taxa (%)</th>
                     <th className="col-status">Status</th>
                     <th className="col-acoes">Ações</th>
                   </tr>
@@ -2730,7 +2754,7 @@ export default function Importacao() {
                 <tbody>
                   {linhasExibidas.length === 0 ? (
                     <tr>
-                      <td colSpan={5} style={{ textAlign: 'center', padding: '24px' }}>
+                      <td colSpan={7} style={{ textAlign: 'center', padding: '24px' }}>
                         {buscaNomePreview ? 'Nenhum colaborador encontrado com esse nome.' :
                           filterOnlyErrors ? 'Nenhuma linha com erro encontrada.' :
                             filterOnlyBlocked ? 'Nenhuma linha bloqueada encontrada.' :
@@ -2752,11 +2776,26 @@ export default function Importacao() {
                           <td>{getCondominio(r)}</td>
                           <td>{nomeColaborador}</td>
 
+                          <td className="col-produtos">
+                            {r.beneficios?.length > 0
+                              ? r.beneficios.map((b, i) => (
+                                  <span key={i} className="tag tag-produto">
+                                    {getNomeProduto(b)}
+                                  </span>
+                                ))
+                              : <span className="tag tag-default">—</span>
+                            }
+                          </td>
+
                           <td className="col-valor">
                             R${' '}
                             {Number(valorExibicao).toLocaleString('pt-BR', {
                               minimumFractionDigits: 2,
                             })}
+                          </td>
+
+                          <td className="col-taxa">
+                            {r.taxa != null && r.taxa > 0 ? `${r.taxa}%` : '—'}
                           </td>
 
                           <td className="col-status">
@@ -3140,9 +3179,16 @@ export default function Importacao() {
               </div>
 
               <div className="review-card review-card-highlight">
-                <span className="review-label">Valor total dos benefícios</span>
+                <span className="review-label">Total dos benefícios</span>
                 <strong className="review-value">
                   {formatCurrency(reviewData.valorTotalBeneficios)}
+                </strong>
+              </div>
+
+              <div className="review-card review-card-highlight">
+                <span className="review-label">Faturamento dos benefícios</span>
+                <strong className="review-value">
+                  {formatCurrency(reviewData.valorTotalFaturamento)}
                 </strong>
               </div>
             </div>
