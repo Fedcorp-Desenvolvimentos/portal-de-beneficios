@@ -204,7 +204,7 @@ export const S = {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
-    min-width: 1244px;
+    min-width: 1100px;
     font-size: 13px;
 
     thead th {
@@ -247,28 +247,30 @@ export const S = {
 
     th:nth-child(3),
     td:nth-child(3) {
-      width: 130px;
+      width: 100px;
+      min-width: 100px;
+      text-align: center;
     }
 
     th:nth-child(4),
     td:nth-child(4) {
-      width: 90px;
-      color: #dc2626 !important;
-    }
-
-    th:nth-child(4) > *,
-    td:nth-child(4) > * {
-      color: #dc2626 !important;
+      width: 130px;
     }
 
     th:nth-child(5),
     td:nth-child(5) {
-      width: 95px;
+      width: 90px;
+      color: #dc2626 !important;
+    }
+
+    th:nth-child(5) > *,
+    td:nth-child(5) > * {
+      color: #dc2626 !important;
     }
 
     th:nth-child(6),
     td:nth-child(6) {
-      width: 90px;
+      width: 95px;
     }
 
     th:nth-child(7),
@@ -278,114 +280,33 @@ export const S = {
 
     th:nth-child(8),
     td:nth-child(8) {
-      width: 100px;
+      width: 90px;
     }
 
     th:nth-child(9),
     td:nth-child(9) {
+      width: 100px;
+    }
+
+    th:nth-child(10),
+    td:nth-child(10) {
       width: 150px;
       min-width: 150px;
       max-width: 150px;
     }
 
-    th:nth-child(10),
-    td:nth-child(10) {
-      width: 44px;
-      min-width: 44px;
-      max-width: 44px;
-      text-align: center;
-      padding-left: 4px;
-      padding-right: 4px;
-    }
-
-    td:nth-child(10) > button {
-      min-width: 32px;
-      width: 32px;
-      height: 32px;
-      padding: 0;
-      justify-content: center;
-    }
-
     th:nth-child(11),
     td:nth-child(11) {
-      width: 44px;
-      min-width: 44px;
-      max-width: 44px;
+      width: 110px;
+      min-width: 110px;
       text-align: center;
-      padding-left: 4px;
-      padding-right: 4px;
-    }
-
-    td:nth-child(11) > button {
-      min-width: 32px;
-      width: 32px;
-      height: 32px;
-      padding: 0;
-      justify-content: center;
     }
 
     th:nth-child(12),
     td:nth-child(12) {
-      width: 72px;
-      min-width: 72px;
-      max-width: 72px;
+      width: 90px;
+      min-width: 90px;
       text-align: center;
-      padding-left: 4px;
-      padding-right: 4px;
-    }
-
-    td:nth-child(12) > button {
-      min-width: 32px;
-      width: 32px;
-      height: 32px;
-      padding: 0;
-      justify-content: center;
-    }
-
-    td:nth-child(12) > div {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-    }
-
-    th:nth-child(13),
-    td:nth-child(13) {
-      width: 110px;
-      min-width: 110px;
-      text-align: center;
-      white-space: nowrap;
-      padding-left: 16px;
-    }
-
-    td:nth-child(13) > button {
-      min-width: 36px;
-      width: 36px;
-      height: 32px;
-      padding: 0;
-      justify-content: center;
-    }
-
-    td:nth-child(13) > span {
-      white-space: nowrap;
-    }
-
-    th:nth-child(14),
-    td:nth-child(14) {
-      width: 44px;
-      min-width: 44px;
-      max-width: 44px;
-      text-align: center;
-      padding-left: 4px;
-      padding-right: 4px;
-    }
-
-    td:nth-child(14) > button {
-      min-width: 32px;
-      width: 32px;
-      height: 32px;
-      padding: 0;
-      justify-content: center;
     }
 
     @media (max-width: 1600px) {
@@ -490,21 +411,6 @@ export const S = {
         max-width: none;
         text-align: center;
       }
-
-      th:nth-child(13),
-      td:nth-child(13) {
-        min-width: 0;
-        max-width: none;
-        text-align: center;
-        white-space: nowrap;
-      }
-
-      th:nth-child(14),
-      td:nth-child(14) {
-        min-width: 0;
-        max-width: none;
-        text-align: center;
-      }
     }
 
     @media (max-width: 1366px) {
@@ -596,6 +502,57 @@ export const S = {
     text-align: center;
     color: var(--sub);
     font-size: 13px;
+  `,
+
+  FaturaTag: styled.span`
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--mono);
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+
+    @media (max-width: 1600px) {
+      padding: 2px 6px;
+      font-size: 10px;
+    }
+
+    @media (max-width: 1366px) {
+      padding: 2px 5px;
+      font-size: 9px;
+    }
+  `,
+
+  ResponsavelTag: styled.span`
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: ${({ $mine }) => ($mine ? '#f0fdf4' : '#f8fafc')};
+    border: 1px solid ${({ $mine }) => ($mine ? '#bbf7d0' : '#e2e8f0')};
+    color: ${({ $mine }) => ($mine ? '#16a34a' : '#64748b')};
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    @media (max-width: 1600px) {
+      padding: 2px 6px;
+      font-size: 10px;
+      max-width: 90px;
+    }
+
+    @media (max-width: 1366px) {
+      padding: 2px 5px;
+      font-size: 9px;
+      max-width: 70px;
+    }
   `,
 
   StatusSelect: styled.div`

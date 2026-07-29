@@ -531,6 +531,9 @@ export default function Faturamento() {
                           <S.MainText>
                             <h2>{group.importacaoLabel}</h2>
                             <p>ID/Faturamento: {group.key}</p>
+                            {group.nome_administradora && (
+                              <p>Administradora: {group.nome_administradora}</p>
+                            )}
                           </S.MainText>
                         </S.CardMain>
 
