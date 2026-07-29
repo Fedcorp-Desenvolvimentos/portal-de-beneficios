@@ -634,6 +634,8 @@ const extrairResumoPedido = (pedidoApi) => {
     pagoParcialmenteEm: pedidoApi.data_pago_parcialmente || null,
     dataRecebimento: pedidoApi.data_recebimento || null,
     numeroFatura: pedidoApi.numero_fatura || '',
+    responsavelId: pedidoApi.responsavel || null,
+    responsavelNome: pedidoApi.responsavel_nome || '',
     condominios,
     raw: pedidoApi,
   }
@@ -1400,6 +1402,44 @@ export default function ColaboradorDashboard() {
     }
   }
 
+  async function handleMarcarResponsavel(pedido) {
+    try {
+      await faturamentoService.marcarResponsavel(pedido.id)
+      showToast('Pedido assumido com sucesso!', { variant: 'success' })
+      setPedidos((prev) =>
+        prev.map((p) =>
+          p.id === pedido.id
+            ? { ...p, responsavelId: user?.id, responsavelNome: user?.nome || user?.email }
+            : p
+        )
+      )
+    } catch (error) {
+      const detail = error?.response?.data?.detail
+      if (error?.response?.status === 409) {
+        showToast(detail || 'Pedido já está sendo processado por outro usuário.', { variant: 'warning' })
+      } else {
+        showToast(detail || 'Não foi possível assumir o pedido.', { variant: 'error' })
+      }
+    }
+  }
+
+  async function handleDesmarcarResponsavel(pedido) {
+    try {
+      await faturamentoService.desmarcarResponsavel(pedido.id)
+      showToast('Pedido liberado.', { variant: 'info' })
+      setPedidos((prev) =>
+        prev.map((p) =>
+          p.id === pedido.id
+            ? { ...p, responsavelId: null, responsavelNome: '' }
+            : p
+        )
+      )
+    } catch (error) {
+      const detail = error?.response?.data?.detail
+      showToast(detail || 'Não foi possível liberar o pedido.', { variant: 'error' })
+    }
+  }
+
   function toggleCondominio(index) {
     setSelectedCondominios((prev) => {
       const next = new Set(prev)
@@ -1890,16 +1930,46 @@ export default function ColaboradorDashboard() {
     const isFaturadoOuComprado = ['faturado', 'comprado', 'pago_parcialmente'].includes(p.status)
     const podeGerarTxt = p.status === 'faturado'
     const jaComprado = ['comprado', 'pago_parcialmente'].includes(p.status)
+    const souResponsavel = p.responsavelId === user?.id
+    const bloqueadoPorOutro = p.responsavelId && p.responsavelId !== user?.id
+    const podeEditar = !bloqueadoPorOutro && p.status !== 'cancelado'
 
     return (
       <>
+        {!p.responsavelId ? (
+          <S.ActionItem
+            type="button"
+            className="primary"
+            onClick={() => {
+              handleMarcarResponsavel(p)
+              closeActionsMenu()
+            }}
+          >
+            <FiCheckCircle size={14} />
+            <span>Assumir pedido</span>
+          </S.ActionItem>
+        ) : souResponsavel ? (
+          <S.ActionItem
+            type="button"
+            onClick={() => {
+              handleDesmarcarResponsavel(p)
+              closeActionsMenu()
+            }}
+          >
+            <FiRefreshCw size={14} />
+            <span>Liberar pedido</span>
+          </S.ActionItem>
+        ) : (
+          <S.ActionStatus>Bloqueado por {p.responsavelNome}</S.ActionStatus>
+        )}
+
         <S.ActionItem
           type="button"
           onClick={() => {
             handleDownload(p)
             closeActionsMenu()
           }}
-          disabled={downloadingId === p.id || p.status === 'cancelado'}
+          disabled={!podeEditar || downloadingId === p.id}
         >
           <FiDownload size={14} />
           <span>Baixar Excel</span>
@@ -1911,6 +1981,7 @@ export default function ColaboradorDashboard() {
             openImportDataModal(p)
             closeActionsMenu()
           }}
+          disabled={bloqueadoPorOutro}
         >
           <FiInfo size={14} />
           <span>Dados da importação</span>
@@ -1924,6 +1995,7 @@ export default function ColaboradorDashboard() {
                 abrirDocsImportados(p)
                 closeActionsMenu()
               }}
+              disabled={bloqueadoPorOutro}
             >
               <FiEye size={14} />
               <span>Ver documentos</span>
@@ -1935,7 +2007,7 @@ export default function ColaboradorDashboard() {
                 openImport(p, { refazendo: true })
                 closeActionsMenu()
               }}
-              disabled={p.status === 'cancelado' || refazendoId === p.id}
+              disabled={!podeEditar || refazendoId === p.id}
             >
               <FiRefreshCw size={14} />
               <span>Gerenciar documentos</span>
@@ -1948,7 +2020,7 @@ export default function ColaboradorDashboard() {
               openImport(p)
               closeActionsMenu()
             }}
-            disabled={p.status === 'cancelado'}
+            disabled={!podeEditar}
           >
             <BiSpreadsheet size={14} />
             <span>Importar documentos</span>
@@ -1963,7 +2035,7 @@ export default function ColaboradorDashboard() {
               openBoletoModal(p)
               closeActionsMenu()
             }}
-            disabled={downloadingId === p.id}
+            disabled={!podeEditar || downloadingId === p.id}
           >
             <FiFileText size={14} />
             <span>{downloadingId === p.id ? 'Gerando...' : 'Gerar TXT'}</span>
@@ -1974,7 +2046,7 @@ export default function ColaboradorDashboard() {
           <S.ActionStatus>Compra indisponível</S.ActionStatus>
         )}
 
-        {p.status !== 'cancelado' && (
+        {podeEditar && p.status !== 'cancelado' && (
           <S.ActionItem
             type="button"
             className="danger"
@@ -2089,6 +2161,7 @@ export default function ColaboradorDashboard() {
                     <th aria-sort={sortConfig.key === 'id' ? sortConfig.direction : 'none'}>
                       {renderSortableHeader('Pedido', 'id')}
                     </th>
+                    <th>Fatura</th>
                     <th
                       aria-sort={
                         sortConfig.key === 'nomeAdministradora'
@@ -2153,7 +2226,7 @@ export default function ColaboradorDashboard() {
                       {renderSortableHeader('Status', 'status')}
                     </th>
 
-                    <th>Fatura</th>
+                    <th>Responsável</th>
                     <th>Ações</th>
                   </tr>
                 </thead>
@@ -2161,7 +2234,7 @@ export default function ColaboradorDashboard() {
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <S.Empty colSpan={11}>
+                      <S.Empty colSpan={12}>
                         Nenhum pedido encontrado.
                       </S.Empty>
                     </tr>
@@ -2192,6 +2265,18 @@ export default function ColaboradorDashboard() {
                             <S.IdSub style={{ color: '#b91c1c' }}>
                               Motivo: {p.motivoCancelamento}
                             </S.IdSub>
+                          )}
+                        </td>
+
+                        <td data-label="Fatura">
+                          {['faturado', 'comprado', 'pago_parcialmente', 'pendente'].includes(p.status) ? (
+                            p.numeroFatura ? (
+                              <S.FaturaTag>{p.numeroFatura}</S.FaturaTag>
+                            ) : (
+                              <span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>
+                            )
+                          ) : (
+                            <span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>
                           )}
                         </td>
 
@@ -2234,12 +2319,12 @@ export default function ColaboradorDashboard() {
                           </S.StatusSelect>
                         </td>
 
-                        <td data-label="Fatura">
-                          {['faturado', 'comprado', 'pago_parcialmente', 'pendente'].includes(p.status) ? (
-                            p.numeroFatura ? (
-                              <S.FaturaTag>{p.numeroFatura}</S.FaturaTag>
+                        <td data-label="Responsável">
+                          {p.responsavelId ? (
+                            p.responsavelId === user?.id ? (
+                              <S.ResponsavelTag $mine>Você</S.ResponsavelTag>
                             ) : (
-                              <span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>
+                              <S.ResponsavelTag>{p.responsavelNome}</S.ResponsavelTag>
                             )
                           ) : (
                             <span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>
@@ -2267,7 +2352,7 @@ export default function ColaboradorDashboard() {
 
                       {expandedPedidoId === p.id && (
                         <tr className="cf-expand-row">
-                          <td colSpan={11}>
+                          <td colSpan={12}>
                             <div className="cf-expand-content">
                               {expandedLoading ? (
                                 <div className="cf-expand-loading">Carregando boletos...</div>

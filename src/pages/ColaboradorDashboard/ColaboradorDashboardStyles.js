@@ -247,28 +247,30 @@ export const S = {
 
     th:nth-child(3),
     td:nth-child(3) {
-      width: 130px;
+      width: 100px;
+      min-width: 100px;
+      text-align: center;
     }
 
     th:nth-child(4),
     td:nth-child(4) {
-      width: 90px;
-      color: #dc2626 !important;
-    }
-
-    th:nth-child(4) > *,
-    td:nth-child(4) > * {
-      color: #dc2626 !important;
+      width: 130px;
     }
 
     th:nth-child(5),
     td:nth-child(5) {
-      width: 95px;
+      width: 90px;
+      color: #dc2626 !important;
+    }
+
+    th:nth-child(5) > *,
+    td:nth-child(5) > * {
+      color: #dc2626 !important;
     }
 
     th:nth-child(6),
     td:nth-child(6) {
-      width: 90px;
+      width: 95px;
     }
 
     th:nth-child(7),
@@ -278,25 +280,30 @@ export const S = {
 
     th:nth-child(8),
     td:nth-child(8) {
-      width: 100px;
+      width: 90px;
     }
 
     th:nth-child(9),
     td:nth-child(9) {
+      width: 100px;
+    }
+
+    th:nth-child(10),
+    td:nth-child(10) {
       width: 150px;
       min-width: 150px;
       max-width: 150px;
     }
 
-    th:nth-child(10),
-    td:nth-child(10) {
-      width: 100px;
-      min-width: 100px;
+    th:nth-child(11),
+    td:nth-child(11) {
+      width: 110px;
+      min-width: 110px;
       text-align: center;
     }
 
-    th:nth-child(11),
-    td:nth-child(11) {
+    th:nth-child(12),
+    td:nth-child(12) {
       width: 90px;
       min-width: 90px;
       text-align: center;
@@ -393,6 +400,13 @@ export const S = {
 
       th:nth-child(11),
       td:nth-child(11) {
+        min-width: 0;
+        max-width: none;
+        text-align: center;
+      }
+
+      th:nth-child(12),
+      td:nth-child(12) {
         min-width: 0;
         max-width: none;
         text-align: center;
@@ -511,6 +525,33 @@ export const S = {
     @media (max-width: 1366px) {
       padding: 2px 5px;
       font-size: 9px;
+    }
+  `,
+
+  ResponsavelTag: styled.span`
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: ${({ $mine }) => ($mine ? '#f0fdf4' : '#f8fafc')};
+    border: 1px solid ${({ $mine }) => ($mine ? '#bbf7d0' : '#e2e8f0')};
+    color: ${({ $mine }) => ($mine ? '#16a34a' : '#64748b')};
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    @media (max-width: 1600px) {
+      padding: 2px 6px;
+      font-size: 10px;
+      max-width: 90px;
+    }
+
+    @media (max-width: 1366px) {
+      padding: 2px 5px;
+      font-size: 9px;
+      max-width: 70px;
     }
   `,
 
