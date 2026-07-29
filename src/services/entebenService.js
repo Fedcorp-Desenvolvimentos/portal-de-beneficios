@@ -123,7 +123,7 @@ export const entebenService = {
     }
   },
 
-  getImportacoes: async (page = 1, limit = 100) => {
+  getImportacoes: async (page = 1, limit = 500) => {
     try {
       const response = await api.get('/api/beneficios/importacoes/', {
         params: { page, limit },

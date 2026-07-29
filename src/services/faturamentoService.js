@@ -206,7 +206,7 @@ export const faturamentoService = {
     return pedidos.find((pedido) => String(pedido.id) === String(pedidoId)) || null
   },
 
-  async listarImportacoes(page = 1, limit = 100) {
+  async listarImportacoes(page = 1, limit = 500) {
     const response = await api.get('/api/beneficios/importacoes/', {
       params: { page, limit },
     })

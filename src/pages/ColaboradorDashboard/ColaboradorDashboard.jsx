@@ -887,7 +887,7 @@ export default function ColaboradorDashboard() {
   async function carregarPedidos() {
     try {
       setLoading(true)
-      const response = await faturamentoService.listarPedidosFuncionario()
+      const response = await faturamentoService.listarPedidosFuncionario(1, 500)
 
       let lista = []
 
