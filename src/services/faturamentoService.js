@@ -553,4 +553,26 @@ export const faturamentoService = {
     })
     return response.data
   },
+
+  async marcarResponsavel(importacaoId) {
+    if (!importacaoId) {
+      throw new Error('ID da importação não informado.')
+    }
+
+    const response = await api.patch(`/api/beneficios/importacoes/${importacaoId}/responsavel/`, {
+      acao: 'marcar',
+    })
+    return response.data
+  },
+
+  async desmarcarResponsavel(importacaoId) {
+    if (!importacaoId) {
+      throw new Error('ID da importação não informado.')
+    }
+
+    const response = await api.patch(`/api/beneficios/importacoes/${importacaoId}/responsavel/`, {
+      acao: 'desmarcar',
+    })
+    return response.data
+  },
 }
