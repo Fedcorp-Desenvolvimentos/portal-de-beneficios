@@ -108,34 +108,82 @@ const AppRouter = () => {
           <Route element={<MainLayout />}>
 
             {/* Dashboard */}
-            <Route path="/home" element={<Dashboard />} />
+            <Route
+              path="/home"
+              element={
+                <PrivateRouter allowedRoles={['adm', 'dep', 'dev', 'fat']}>
+                  <Dashboard />
+                </PrivateRouter>
+              }
+            />
 
             {/* Minha Conta */}
             <Route path="/minha-conta" element={<MinhaConta />} />
 
             {/* Client */}
-            <Route path="/importacao" element={<Importacao />} />
+            <Route
+              path="/importacao"
+              element={
+                <PrivateRouter allowedRoles={['adm', 'dep', 'dev', 'fat']}>
+                  <Importacao />
+                </PrivateRouter>
+              }
+            />
 
-            <Route path="/faturamento" element={<Faturamento />} />
+            <Route
+              path="/faturamento"
+              element={
+                <PrivateRouter allowedRoles={['fat', 'dev', 'adm', 'dep']}>
+                  <Faturamento />
+                </PrivateRouter>
+              }
+            />
 
-            <Route path="/faturamento/individual" element={<FaturamentoIndividual />} />
+            <Route
+              path="/faturamento/individual"
+              element={
+                <PrivateRouter allowedRoles={['fat', 'dev', 'adm', 'dep']}>
+                  <FaturamentoIndividual />
+                </PrivateRouter>
+              }
+            />
 
             <Route
               path="/faturamento/repetir"
-              element={<FaturamentoFormulario modo="repetir" />}
+              element={
+                <PrivateRouter allowedRoles={['fat', 'dev', 'adm', 'dep']}>
+                  <FaturamentoFormulario modo="repetir" />
+                </PrivateRouter>
+              }
             />
 
             <Route
               path="/faturamento/novo"
-              element={<FaturamentoFormulario modo="novo" />}
+              element={
+                <PrivateRouter allowedRoles={['fat', 'dev', 'adm', 'dep']}>
+                  <FaturamentoFormulario modo="novo" />
+                </PrivateRouter>
+              }
             />
 
-            <Route path="/pendentes" element={<Pendentes />} />
-            <Route path="/historico" element={<Historico />} />
+            <Route path="/pendentes" element={
+              <PrivateRouter allowedRoles={['adm', 'dep', 'dev', 'fat']}>
+                <Pendentes />
+              </PrivateRouter>
+            } />
+            <Route path="/historico" element={
+              <PrivateRouter allowedRoles={['adm', 'dep', 'dev', 'fat']}>
+                <Historico />
+              </PrivateRouter>
+            } />
 
             <Route
               path="/gerenciamento"
-              element={<GerenciamentoCondominios />}
+              element={
+                <PrivateRouter allowedRoles={['fat', 'adm', 'dev']}>
+                  <GerenciamentoCondominios />
+                </PrivateRouter>
+              }
             />
 
             <Route
@@ -149,45 +197,81 @@ const AppRouter = () => {
 
             <Route
               path="/relatorios"
-              element={<RelatoriosBeneficios />}
+              element={
+                <PrivateRouter allowedRoles={['fat', 'dev']}>
+                  <RelatoriosBeneficios />
+                </PrivateRouter>
+              }
             />
 
             <Route
               path="/boletos-vr"
-              element={<BoletosVR view="dashboard" />}
+              element={
+                <PrivateRouter allowedRoles={['fat', 'dev']}>
+                  <BoletosVR view="dashboard" />
+                </PrivateRouter>
+              }
             />
 
             <Route
               path="/boletos-vr/kanban"
-              element={<BoletosVR view="kanban" />}
+              element={
+                <PrivateRouter allowedRoles={['fat', 'dev']}>
+                  <BoletosVR view="kanban" />
+                </PrivateRouter>
+              }
             />
 
             <Route
               path="/boletos-vr/faturas"
-              element={<BoletosVR view="faturas" />}
+              element={
+                <PrivateRouter allowedRoles={['fat', 'dev']}>
+                  <BoletosVR view="faturas" />
+                </PrivateRouter>
+              }
             />
 
             <Route
               path="/boletos-vr/analises"
-              element={<BoletosVR view="analises" />}
+              element={
+                <PrivateRouter allowedRoles={['fat', 'dev']}>
+                  <BoletosVR view="analises" />
+                </PrivateRouter>
+              }
             />
 
             {/* Operacional */}
             <Route
               path="/operacional"
-              element={<Operacional view="dashboard" />}
+              element={
+                <PrivateRouter allowedRoles={['fat', 'dev']}>
+                  <Operacional view="dashboard" />
+                </PrivateRouter>
+              }
             />
             <Route
               path="/operacional/kanban"
-              element={<Operacional view="kanban" />}
+              element={
+                <PrivateRouter allowedRoles={['fat', 'dev']}>
+                  <Operacional view="kanban" />
+                </PrivateRouter>
+              }
             />
             <Route
               path="/operacional/faturas"
-              element={<Operacional view="faturas" />}
+              element={
+                <PrivateRouter allowedRoles={['fat', 'dev']}>
+                  <Operacional view="faturas" />
+                </PrivateRouter>
+              }
             />
             <Route
               path="/operacional/analises"
-              element={<Operacional view="analises" />}
+              element={
+                <PrivateRouter allowedRoles={['fat', 'dev']}>
+                  <Operacional view="analises" />
+                </PrivateRouter>
+              }
             />
 
             <Route
@@ -202,27 +286,47 @@ const AppRouter = () => {
             {/* Administradoras */}
             <Route
               path="/interno/administradoras"
-              element={<Administradoras />}
+              element={
+                <PrivateRouter allowedRoles={['dev', 'fat']}>
+                  <Administradoras />
+                </PrivateRouter>
+              }
             />
 
             <Route
               path="/interno/cadastrar-administradora"
-              element={<CadastroAdministradora />}
+              element={
+                <PrivateRouter allowedRoles={['dev', 'fat']}>
+                  <CadastroAdministradora />
+                </PrivateRouter>
+              }
             />
 
             <Route
               path="/interno/administradoras/:id"
-              element={<DetalhesAdministradora />}
+              element={
+                <PrivateRouter allowedRoles={['dev', 'fat']}>
+                  <DetalhesAdministradora />
+                </PrivateRouter>
+              }
             />
 
             <Route
               path="/interno/administradoras/editar/:id"
-              element={<EditarAdministradora />}
+              element={
+                <PrivateRouter allowedRoles={['dev', 'fat']}>
+                  <EditarAdministradora />
+                </PrivateRouter>
+              }
             />
 
             <Route
               path="/interno/minha-administradora"
-              element={<MinhaAdministradora />}
+              element={
+                <PrivateRouter allowedRoles={['adm', 'dep', 'dev', 'fat']}>
+                  <MinhaAdministradora />
+                </PrivateRouter>
+              }
             />
 
             {/* Importação de Base */}
@@ -238,7 +342,11 @@ const AppRouter = () => {
             {/* Usuários */}
             <Route
               path="/interno/usuarios"
-              element={<Usuarios />}
+              element={
+                <PrivateRouter allowedRoles={['dev', 'fat']}>
+                  <Usuarios />
+                </PrivateRouter>
+              }
             />
 
             {/* Consultar Boletos */}
@@ -256,7 +364,9 @@ const AppRouter = () => {
             <Route
               path="/colaboradores/acompanhamento"
               element={
-                <AcompanhamentoFaturados />
+                <PrivateRouter allowedRoles={['adm', 'dep', 'dev', 'fat']}>
+                  <AcompanhamentoFaturados />
+                </PrivateRouter>
               }
             />
 
