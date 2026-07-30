@@ -192,12 +192,7 @@ export const S = {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 14px;
-    overflow-x: auto;
-    overflow-y: visible;
-
-    @media (max-width: 1600px) {
-      overflow: visible;
-    }
+    overflow: visible;
   `,
 
   Table: styled.table`
@@ -224,6 +219,11 @@ export const S = {
       padding: 14px 10px;
       border-bottom: 1px solid var(--border);
       vertical-align: middle;
+    }
+
+    tbody td.cd-actions-td {
+      overflow: visible;
+      position: relative;
     }
 
     tbody tr:last-child td {
