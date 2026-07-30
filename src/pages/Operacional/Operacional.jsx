@@ -119,6 +119,10 @@ function getFaturaNum(fatura) {
   );
 }
 
+function getNumeroFaturaReal(fatura) {
+  return fatura?.numero_fatura_real || '';
+}
+
 function getFaturaCreatedAt(fatura) {
   return (
     fatura?.createdAt ||
@@ -282,6 +286,9 @@ function SortableCard({ fatura, columnKey, onMoveFatura }) {
 
       <div className="op-kanban-card-sub">
         {getFaturaNum(fatura)}
+        {getNumeroFaturaReal(fatura) && (
+          <span className="op-kanban-card-fatura"> Fat: {getNumeroFaturaReal(fatura)}</span>
+        )}
       </div>
 
       <div className="op-kanban-card-value">
@@ -297,36 +304,14 @@ function SortableCard({ fatura, columnKey, onMoveFatura }) {
         </span>
       </div>
 
-      {fatura.vencimento && (
+      {fatura.recebimento && (
         <div className="op-kanban-card-info">
-          <span>Venc: {fmtDate(fatura.vencimento)}</span>
-          {fatura.recebimento && (
-            <span>Receb: {fmtDate(fatura.recebimento)}</span>
-          )}
+          <span>Receb: {fmtDate(fatura.recebimento)}</span>
         </div>
       )}
 
       <div className="op-kanban-card-uploader">
         {getUploaderName(fatura)}
-      </div>
-
-      <div className="op-kanban-card-actions">
-        <select
-          className="op-kanban-move-select"
-          value={columnKey}
-          onChange={(e) => {
-            if (onMoveFatura && e.target.value !== columnKey) {
-              onMoveFatura(id, e.target.value);
-            }
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-        >
-          <option value="enviar_compra">Enviar para compra</option>
-          <option value="faturado">Faturado</option>
-          <option value="atrasado">Confirmar Pagamento</option>
-          <option value="aprovado">Boleto VR Enviado</option>
-          <option value="pago">Pago</option>
-        </select>
       </div>
     </article>
   );
@@ -566,6 +551,9 @@ function OperacionalKanban({ faturas, onMoveFatura }) {
               </div>
               <div className="op-kanban-card-sub">
                 {getFaturaNum(activeFatura)}
+                {getNumeroFaturaReal(activeFatura) && (
+                  <span className="op-kanban-card-fatura"> Fat: {getNumeroFaturaReal(activeFatura)}</span>
+                )}
               </div>
               <div className="op-kanban-card-value">
                 {formatBRL(getFaturaTotal(activeFatura))}
@@ -614,6 +602,12 @@ function OperacionalFaturas({ faturas }) {
                       <strong className="op-table-main-text">
                         {getFaturaNum(fatura)}
                       </strong>
+
+                      {getNumeroFaturaReal(fatura) && (
+                        <div className="op-table-main-text" style={{ color: '#2563eb', fontSize: '0.78rem' }}>
+                          Fat: {getNumeroFaturaReal(fatura)}
+                        </div>
+                      )}
 
                       <div className="op-table-muted-text">
                         {fmtDate(getFaturaCreatedAt(fatura))}
