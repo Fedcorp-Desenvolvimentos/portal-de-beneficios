@@ -132,12 +132,12 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       icon: <FaBuilding />,
       allowed: ["dev", "fat"],
     },
-    // {
-    //   path: "/interno/consultar-boletos",
-    //   label: "Consultar Boletos",
-    //   icon: <FaReceipt />,
-    //   allowed: ["dev", "fat", "adm"],
-    // },
+    {
+      path: "/interno/consultar-boletos",
+      label: "Consultar Boletos",
+      icon: <FaReceipt />,
+      allowed: ["dev", "fat", "adm"],
+    },
     // {
     //   path: "/pedidos-cartao",
     //   label: "Pedidos de Cartão",

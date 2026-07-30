@@ -406,7 +406,7 @@ export const entebenService = {
   },
 
   listarBoletos: async (params = {}) => {
-    const response = await api.get('/api/beneficios/boletos/', { params })
+    const response = await api.get('/api/beneficios/consulta-boletos/', { params })
     return response.data
   },
 }
