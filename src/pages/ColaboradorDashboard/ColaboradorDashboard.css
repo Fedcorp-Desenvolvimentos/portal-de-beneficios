@@ -1107,6 +1107,11 @@
     overflow: hidden;
 }
 
+.cf-table td.cd-actions-td {
+    overflow: visible;
+    position: relative;
+}
+
 .cf-admin-cell {
     width: auto;
     max-width: none;
