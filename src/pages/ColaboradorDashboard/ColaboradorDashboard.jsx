@@ -931,6 +931,7 @@ export default function ColaboradorDashboard() {
           p.cnpj,
           p.cidade,
           p.uf,
+          p.numeroFatura,
         ].join(' ')
       )
 
@@ -2259,7 +2260,6 @@ export default function ColaboradorDashboard() {
                         </td>
                         <td data-label="Pedido">
                           <S.IdMain>Pedido #{p.id}</S.IdMain>
-                          <S.IdSub>{p.tipoBeneficio}</S.IdSub>
 
                           {p.status === 'cancelado' && p.motivoCancelamento && (
                             <S.IdSub style={{ color: '#b91c1c' }}>
@@ -3191,15 +3191,15 @@ export default function ColaboradorDashboard() {
                             <td>
                               <strong>{condominio._nome}</strong>
 
-                              <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
-                                Documento: {condominio._documento}
+                              <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>
+                                Doc: {condominio._documento}
                               </div>
 
                               <div
                                 style={{
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   color: condominio._baixa ? '#16a34a' : '#dc2626',
-                                  marginTop: 2,
+                                  marginTop: 1,
                                   fontWeight: 700,
                                 }}
                               >
@@ -3207,15 +3207,15 @@ export default function ColaboradorDashboard() {
                               </div>
                             </td>
 
-                            <td style={{ color: '#64748b', fontSize: 13 }}>
+                            <td style={{ color: '#64748b', fontSize: 12 }}>
                               {condominio._cnpjOriginal}
                             </td>
 
-                            <td style={{ color: '#64748b', fontSize: 13 }}>
+                            <td style={{ color: '#64748b', fontSize: 12 }}>
                               {fmtDate(condominio._vencimento)}
                             </td>
 
-                            <td style={{ fontWeight: 700 }}>
+                            <td style={{ fontWeight: 700, fontSize: 12 }}>
                               {fmtMoney(condominio._valor)}
                             </td>
 

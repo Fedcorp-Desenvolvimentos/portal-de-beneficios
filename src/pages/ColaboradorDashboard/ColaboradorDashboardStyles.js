@@ -1155,14 +1155,14 @@ export const S = {
     width: 100%;
     min-width: 0;
     border-collapse: collapse;
-    table-layout: fixed;
+    table-layout: auto;
 
     thead th {
       position: sticky;
       top: 0;
       z-index: 2;
       background: #f8fafc;
-      padding: 12px 14px;
+      padding: 8px 10px;
       font-family: var(--mono);
       font-size: 10px;
       letter-spacing: 0.08em;
@@ -1175,10 +1175,16 @@ export const S = {
     }
 
     tbody td {
-      padding: 12px 14px;
-      font-size: 13px;
+      padding: 6px 10px;
+      font-size: 12px;
       border-bottom: 1px solid var(--border);
       vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    tbody td:nth-child(2) {
+      white-space: normal;
+      min-width: 140px;
     }
 
     tbody tr:last-child td {
@@ -1191,166 +1197,70 @@ export const S = {
 
     th:nth-child(1),
     td:nth-child(1) {
-      width: 52px;
-      text-align: center;
-    }
-
-    th:nth-child(2),
-    td:nth-child(2) {
-      width: auto;
-      min-width: 0;
-    }
-
-    th:nth-child(3),
-    td:nth-child(3) {
-      width: 170px;
-    }
-
-    th:nth-child(4),
-    td:nth-child(4) {
-      width: 130px;
-    }
-
-    th:nth-child(5),
-    td:nth-child(5) {
-      width: 130px;
-      text-align: right;
-    }
-
-    th:nth-child(6),
-    td:nth-child(6) {
-      width: 80px;
+      width: 36px;
       text-align: center;
     }
 
     td strong {
-      display: block;
-      max-width: 100%;
-      font-size: 13px;
+      font-size: 12px;
       line-height: 1.35;
       color: var(--text);
-      white-space: normal;
-      overflow-wrap: anywhere;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+      max-width: 200px;
     }
 
     input[type='checkbox'] {
-      width: 15px;
-      height: 15px;
+      width: 14px;
+      height: 14px;
       cursor: pointer;
     }
 
     @media (max-width: 1440px) {
       thead th {
-        padding: 11px 12px;
+        padding: 7px 8px;
       }
 
       tbody td {
-        padding: 11px 12px;
-      }
-
-      th:nth-child(1),
-      td:nth-child(1) {
-        width: 46px;
-      }
-
-      th:nth-child(3),
-      td:nth-child(3) {
-        width: 150px;
-      }
-
-      th:nth-child(4),
-      td:nth-child(4) {
-        width: 120px;
-      }
-
-      th:nth-child(5),
-      td:nth-child(5) {
-        width: 120px;
-      }
-
-      th:nth-child(6),
-      td:nth-child(6) {
-        width: 70px;
+        padding: 5px 8px;
       }
     }
 
     @media (max-width: 1280px) {
-      min-width: 720px;
+      min-width: 580px;
     }
 
     @media (max-width: 760px) {
-      min-width: 680px;
+      min-width: 500px;
 
       thead th {
         font-size: 9px;
-        padding: 10px;
+        padding: 6px 8px;
       }
 
       tbody td {
-        padding: 10px;
-        font-size: 12px;
-      }
-
-      th:nth-child(1),
-      td:nth-child(1) {
-        width: 42px;
-      }
-
-      th:nth-child(3),
-      td:nth-child(3) {
-        width: 145px;
-      }
-
-      th:nth-child(4),
-      td:nth-child(4) {
-        width: 110px;
-      }
-
-      th:nth-child(5),
-      td:nth-child(5) {
-        width: 115px;
-      }
-
-      th:nth-child(6),
-      td:nth-child(6) {
-        width: 64px;
+        padding: 5px 8px;
+        font-size: 11px;
       }
     }
 
     @media (max-width: 640px) {
-      table-layout: auto;
-
       thead th {
-        padding: 8px 10px;
+        padding: 6px 6px;
         font-size: 8px;
       }
 
       tbody td {
-        padding: 8px 10px;
+        padding: 4px 6px;
         font-size: 11px;
       }
 
-      th:nth-child(1),
-      td:nth-child(1) {
-        width: 38px;
-      }
-
-      th:nth-child(3),
-      td:nth-child(3) {
-        width: 120px;
-      }
-
-      th:nth-child(4),
-      td:nth-child(4) {
-        width: 90px;
-      }
-
-      th:nth-child(5),
-      td:nth-child(5) {
-        width: 100px;
-      }
-
       td strong {
+        max-width: 140px;
+      }
+    }
         font-size: 11px;
       }
     }
