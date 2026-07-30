@@ -1864,7 +1864,8 @@ export default function Importacao() {
       : addDaysToDateInput(formEnvio.vencimento, dMais + 4)
     : ''
 
-  const minDateMesAtual = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
+  const minDateRecebimento = obterDataVencimento(2)
+  const minDateVencimento = obterDataVencimento(1)
 
   const validarDatasEnvio = () => {
     const datas = sincronizarDatasEnvio()
@@ -3042,7 +3043,7 @@ export default function Importacao() {
                   onChange={handleRecebimentoBeneficioChange}
                   required={campoDataReferenciaVT !== 'vencimento'}
                   disabled={enviandoLote || recebimentoCalculadoAutomaticamente}
-                  minDate={minDateMesAtual}
+                  minDate={minDateRecebimento}
                   maxDate={recebimentoMaximo || undefined}
                 />
               </label>
@@ -3056,7 +3057,7 @@ export default function Importacao() {
                   onChange={handleVencimentoChange}
                   required={campoDataReferenciaVT !== 'recebimento'}
                   disabled={enviandoLote || vencimentoCalculadoAutomaticamente}
-                  minDate={vencimentoMinimo || minDateMesAtual}
+                  minDate={vencimentoMinimo || minDateVencimento}
                   filterDate={(date) => date.getDay() !== 0 && date.getDay() !== 6}
                 />
 

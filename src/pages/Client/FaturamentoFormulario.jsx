@@ -13,6 +13,7 @@ import {
 
 import { entebenService } from '../../services/entebenService'
 import DatePickerWrapper from '../../components/DatePicker/DatePickerWrapper'
+import { obterDataVencimento } from '../../utils/bloqueia_data'
 
 import '../../styles/FaturamentoFormulario.css'
 
@@ -1304,6 +1305,7 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
                     value={form.recebimentoBeneficio}
                     onChange={(value) => handleChange({ target: { name: 'recebimentoBeneficio', value } })}
                     disabled={campoLocked === 'recebimentoBeneficio'}
+                    minDate={obterDataVencimento(2)}
                     filterDate={(date) => date.getDay() !== 0 && date.getDay() !== 6}
                   />
                 </div>
@@ -1316,6 +1318,7 @@ export default function FaturamentoFormulario({ modo = 'novo' }) {
                     onChange={(value) => handleChange({ target: { name: 'vencimento', value } })}
                     required
                     disabled={campoLocked === 'vencimento'}
+                    minDate={obterDataVencimento(1)}
                     filterDate={(date) => date.getDay() !== 0 && date.getDay() !== 6}
                   />
 
