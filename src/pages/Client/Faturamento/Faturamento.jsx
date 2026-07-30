@@ -377,6 +377,7 @@ export default function Faturamento() {
           status,
           total,
           quantidadeBeneficios,
+          numeroFatura: item.numero_fatura || '',
           beneficios: [
             `Registros processados: ${item.registros_processados || 0}`,
             `Vigência: ${formatDateBR(item.vigencia_inicio)} até ${formatDateBR(item.vigencia_fim)}`,
@@ -398,6 +399,7 @@ export default function Faturamento() {
           group.competencia,
           group.status,
           group.nome_usuario,
+          group.numeroFatura,
           ...group.beneficios,
         ]
           .join(' ')
@@ -576,6 +578,12 @@ export default function Faturamento() {
                               {getStatusLabel(group.status)}
                               {group.faturamento_progresso != null && ` - ${group.faturamento_progresso}%`}
                             </S.Tag>
+
+                            {['faturado', 'comprado', 'pago_parcialmente'].includes(normalizeStatus(group.status)) && group.numeroFatura && (
+                              <S.Tag $variant="info">
+                                Fatura: {group.numeroFatura}
+                              </S.Tag>
+                            )}
 
                             {group.beneficios.map((beneficio, index) => (
                               <S.Tag key={`${beneficio}-${index}`} $variant="info">

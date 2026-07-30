@@ -596,6 +596,11 @@
   margin-bottom: 8px;
 }
 
+.op-kanban-card-fatura {
+  color: #2563eb;
+  font-weight: 600;
+}
+
 .op-kanban-card-value {
   font-size: 0.94rem;
   font-weight: 700;
