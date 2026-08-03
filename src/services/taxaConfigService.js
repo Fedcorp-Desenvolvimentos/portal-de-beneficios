@@ -31,7 +31,7 @@ export const taxaConfigService = {
 
   /**
    * Cria nova configuração de taxa
-   * @param {Object} dados - { vinculo, produto, taxa_tipo, taxa_valor, ativo }
+   * @param {Object} dados - { vinculo, produto, tipo, taxa_tipo, taxa_valor, ativo }
    */
   async criar(dados) {
     try {

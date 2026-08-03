@@ -167,7 +167,7 @@ export default function CadastroAdministradora() {
                 try {
                   await taxaConfigService.criar({
                     vinculo: vinculo.id,
-                    produto: Number(item.codigo),
+                    produto: item.codigo,
                     taxa_tipo: 'PERC',
                     taxa_valor: Number(item.valor),
                     ativo: true,

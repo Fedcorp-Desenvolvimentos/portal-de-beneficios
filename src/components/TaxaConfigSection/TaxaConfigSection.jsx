@@ -6,10 +6,24 @@ import './TaxaConfigSection.css'
 const initialTaxaCondForm = {
   vinculo: '',
   produto: '',
+  tipo: '',
   taxa_tipo: 'PERC',
   taxa_valor: '',
   ativo: true,
 }
+
+const TIPO_PRODUTO_CHOICES = [
+  { value: '', label: 'Selecione o tipo...' },
+  { value: 'ALIMENTACAO', label: 'Alimentação' },
+  { value: 'AUTO', label: 'Auto' },
+  { value: 'REFEICAO', label: 'Refeição' },
+  { value: 'MULTI_HOME_OFFICE', label: 'Multi - Home Office' },
+  { value: 'BOAS_FESTAS', label: 'Boas Festas' },
+  { value: 'MULTI_ALIMENTACAO', label: 'Multi - Alimentação' },
+  { value: 'MULTI_VR_VA', label: 'Multi - VR+VA' },
+  { value: 'MULTI_REFEICAO', label: 'Multi - Refeição' },
+  { value: 'MULTI_MOBILIDADE', label: 'Multi - Mobilidade' },
+]
 
 export default function TaxaConfigSection({
   administradoraId,
@@ -104,6 +118,7 @@ export default function TaxaConfigSection({
       setTaxaCondForm({
         vinculo: taxa.vinculo || '',
         produto: taxa.produto_codigo || '',
+        tipo: taxa.tipo || '',
         taxa_tipo: taxa.taxa_tipo || 'PERC',
         taxa_valor: taxa.taxa_valor || '',
         ativo: taxa.ativo !== false,
@@ -132,12 +147,18 @@ export default function TaxaConfigSection({
       return
     }
 
+    if (taxaCondForm.produto && taxaCondForm.tipo) {
+      alert('Selecione apenas o produto ou o tipo, não ambos.')
+      return
+    }
+
     try {
       setSalvandoTaxaCond(true)
 
       const payload = {
         vinculo: Number(taxaCondForm.vinculo),
-        produto: taxaCondForm.produto ? Number(taxaCondForm.produto) : null,
+        produto: taxaCondForm.produto ? taxaCondForm.produto : null,
+        tipo: taxaCondForm.tipo ? taxaCondForm.tipo : null,
         taxa_tipo: taxaCondForm.taxa_tipo,
         taxa_valor: parseFloat(taxaCondForm.taxa_valor) || 0,
         ativo: taxaCondForm.ativo,
@@ -333,7 +354,7 @@ export default function TaxaConfigSection({
                       {taxasCondominio.map((t) => (
                         <tr key={t.id}>
                           <td>{getVinculoDisplay(t)}</td>
-                          <td>{t.produto_nome || 'Todos'}</td>
+                          <td>{t.produto_nome || (t.tipo ? TIPO_PRODUTO_CHOICES.find((tp) => tp.value === t.tipo)?.label || t.tipo : 'Todos')}</td>
                           <td>
                             <span className={`taxa-badge ${t.taxa_tipo === 'PERC' ? 'badge-perc' : 'badge-fixo'}`}>
                               {t.taxa_tipo === 'PERC' ? '%' : 'R$'}
@@ -425,7 +446,7 @@ export default function TaxaConfigSection({
                   }}
                   onFocus={() => setProdutoDropdownOpen(true)}
                   placeholder="Buscar produto..."
-                  disabled={salvandoTaxaCond}
+                  disabled={salvandoTaxaCond || !!taxaCondForm.tipo}
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') setProdutoDropdownOpen(false)
                   }}
@@ -436,7 +457,7 @@ export default function TaxaConfigSection({
                       type="button"
                       className="taxa-search-option"
                       onClick={() => {
-                        setTaxaCondForm((prev) => ({ ...prev, produto: '' }))
+                        setTaxaCondForm((prev) => ({ ...prev, produto: '', tipo: '' }))
                         setProdutoSearch('')
                         setProdutoDropdownOpen(false)
                       }}
@@ -452,7 +473,7 @@ export default function TaxaConfigSection({
                           type="button"
                           className={`taxa-search-option${taxaCondForm.produto === p.codigo ? ' selected' : ''}`}
                           onClick={() => {
-                            setTaxaCondForm((prev) => ({ ...prev, produto: p.codigo }))
+                            setTaxaCondForm((prev) => ({ ...prev, produto: p.codigo, tipo: '' }))
                             setProdutoSearch(p.nome)
                             setProdutoDropdownOpen(false)
                           }}
@@ -463,6 +484,34 @@ export default function TaxaConfigSection({
                     )}
                   </div>
                 )}
+              </div>
+
+              <div className="taxa-modal-field">
+                <label>Tipo do Produto (Opcional)</label>
+                <select
+                  value={taxaCondForm.tipo}
+                  onChange={(e) => {
+                    const tipo = e.target.value
+                    setTaxaCondForm((prev) => ({
+                      ...prev,
+                      tipo,
+                      produto: tipo ? '' : prev.produto,
+                    }))
+                    if (tipo) {
+                      setProdutoSearch('')
+                    }
+                  }}
+                  disabled={salvandoTaxaCond || !!taxaCondForm.produto}
+                >
+                  {TIPO_PRODUTO_CHOICES.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <small className="helper-text">
+                  {taxaCondForm.produto ? 'Desmarque o produto para selecionar um tipo' : 'Tipo de produto para aplicar a taxa a todos do grupo'}
+                </small>
               </div>
 
               <div className="taxa-modal-field">

@@ -134,7 +134,7 @@ export default function EditarAdministradora() {
               if (existente) {
                 await taxaConfigService.atualizar(existente.id, {
                   vinculo: vinculo.id,
-                  produto: Number(produtoCodigo),
+                  produto: produtoCodigo,
                   taxa_tipo: 'PERC',
                   taxa_valor: valor,
                   ativo: true,
@@ -142,7 +142,7 @@ export default function EditarAdministradora() {
               } else {
                 await taxaConfigService.criar({
                   vinculo: vinculo.id,
-                  produto: Number(produtoCodigo),
+                  produto: produtoCodigo,
                   taxa_tipo: 'PERC',
                   taxa_valor: valor,
                   ativo: true,
