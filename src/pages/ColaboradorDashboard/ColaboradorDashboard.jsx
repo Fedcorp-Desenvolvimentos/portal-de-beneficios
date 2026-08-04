@@ -1621,22 +1621,22 @@ export default function ColaboradorDashboard() {
   async function handleUpload() {
     if (!docs.length || !selectedPedido?.id) return
 
-    const arquivoBoleto = docs.find((file) => {
+    const arquivosBoleto = docs.filter((file) => {
       const name = file.name.toLowerCase()
       return name.includes('boleto') || name.includes('recibo')
     })
 
-    const arquivoNotaDebito = docs.find((file) => {
+    const arquivosNotaDebito = docs.filter((file) => {
       const name = file.name.toLowerCase()
       return name.includes('debito') || name.includes('débito')
     })
 
-    const arquivoNotaFiscal = docs.find((file) => {
+    const arquivosNotaFiscal = docs.filter((file) => {
       const name = file.name.toLowerCase()
       return name.includes('fiscal') || name.includes('nota_fiscal') || name.includes('nf')
     })
 
-    if (!arquivoBoleto && !arquivoNotaDebito && !arquivoNotaFiscal) {
+    if (!arquivosBoleto.length && !arquivosNotaDebito.length && !arquivosNotaFiscal.length) {
       showToast('Envie boleto/recibo, nota de débito ou nota fiscal.', {
         variant: 'warning',
       })
@@ -1654,9 +1654,9 @@ export default function ColaboradorDashboard() {
             selectedPedido.competencia ||
             selectedPedido.dataVencimento ||
             selectedPedido.mesUtilizacao,
-          arquivoBoleto,
-          arquivoNotaDebito,
-          arquivoNotaFiscal,
+          arquivosBoleto,
+          arquivosNotaDebito,
+          arquivosNotaFiscal,
           mode: uploadMode,
         },
         (percent) => setUploadProgress(percent)
@@ -2605,59 +2605,98 @@ export default function ColaboradorDashboard() {
             </S.ModalHeader>
 
             <S.ModalBody>
-              <S.ConfirmMsg>
-                Baixe os documentos gerados/importados para este faturamento.
-              </S.ConfirmMsg>
+              {(() => {
+                const docsRaw = docsPedido.raw?.documentos || [];
+                const gruposDocs = [];
+                const seen = new Set();
 
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                  gap: 12,
-                  marginTop: 16,
-                }}
-              >
-                <S.Btn
-                  onClick={() => baixarDocumentoFaturamento(docsPedido, 'boleto-original/')}
-                  disabled={!!docDownloading}
-                >
-                  <FiDownload size={14} />
-                  {docDownloading === `${docsPedido.downloadId || docsPedido.id}-boleto-original/`
-                    ? 'Baixando...'
-                    : 'Boleto'}
-                </S.Btn>
+                for (const doc of docsRaw) {
+                  const key = `${doc.tipo}-${doc.numero_fatura || ''}`;
+                  if (!seen.has(key)) {
+                    seen.add(key);
+                    gruposDocs.push({
+                      tipo: doc.tipo,
+                      numeroFatura: doc.numero_fatura || '',
+                      count: docsRaw.filter(d => d.tipo === doc.tipo && (d.numero_fatura || '') === (doc.numero_fatura || '')).length,
+                    });
+                  }
+                }
 
-                <S.Btn
-                  onClick={() => baixarDocumentoFaturamento(docsPedido, 'nota-fiscal-original/')}
-                  disabled={!!docDownloading}
-                >
-                  <FiDownload size={14} />
-                  {docDownloading === `${docsPedido.downloadId || docsPedido.id}-nota-fiscal-original/`
-                    ? 'Baixando...'
-                    : 'NF'}
-                </S.Btn>
+                const routeMap = {
+                  boleto: 'boleto-original/',
+                  nota_fiscal: 'nota-fiscal-original/',
+                  nota_debito: 'nota-debito-original/',
+                };
+                const labelMap = {
+                  boleto: 'Boleto',
+                  nota_fiscal: 'Nota Fiscal',
+                  nota_debito: 'Nota Débito',
+                };
 
-                <S.Btn
-                  onClick={() => baixarDocumentoFaturamento(docsPedido, 'nota-debito-original/')}
-                  disabled={!!docDownloading}
-                >
-                  <FiDownload size={14} />
-                  {docDownloading === `${docsPedido.downloadId || docsPedido.id}-nota-debito-original/`
-                    ? 'Baixando...'
-                    : 'Nota Débito'}
-                </S.Btn>
+                return (
+                  <>
+                    <S.ConfirmMsg>
+                      {gruposDocs.length > 0
+                        ? `${gruposDocs.length} grupo(s) de documento(s) disponível(s) para download.`
+                        : 'Nenhum documento importado ainda.'}
+                    </S.ConfirmMsg>
 
-                <S.Btn
-                  $variant="primary"
-                  onClick={() => baixarDocumentoFaturamento(docsPedido, 'originais/')}
-                  disabled={!!docDownloading}
-                >
-                  <FiDownload size={14} />
-                  {docDownloading === `${docsPedido.downloadId || docsPedido.id}-originais/`
-                    ? 'Baixando...'
-                    : 'Baixar todos'}
-                </S.Btn>
-              </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
+                      {gruposDocs.map((grupo) => {
+                        const route = routeMap[grupo.tipo] || '';
+                        const label = labelMap[grupo.tipo] || grupo.tipo;
+                        const titulo = grupo.numeroFatura
+                          ? `${label} - Fatura ${grupo.numeroFatura}`
+                          : label;
+                        const downloadingKey = `${docsPedido.downloadId || docsPedido.id}-${route}`;
+                        return (
+                          <div
+                            key={`${grupo.tipo}-${grupo.numeroFatura}`}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '10px 14px',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: 8,
+                              gap: 12,
+                            }}
+                          >
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              <span style={{ fontWeight: 500, fontSize: 14 }}>{titulo}</span>
+                              <span style={{ fontSize: 12, color: '#718096' }}>
+                                {grupo.count} {grupo.count === 1 ? 'item' : 'itens'}
+                              </span>
+                            </div>
+                            <S.Btn
+                              onClick={() => baixarDocumentoFaturamento(docsPedido, route)}
+                              disabled={!!docDownloading}
+                            >
+                              <FiDownload size={14} />
+                              {docDownloading === downloadingKey ? 'Baixando...' : 'Baixar'}
+                            </S.Btn>
+                          </div>
+                        );
+                      })}
+
+                      {gruposDocs.length > 0 && (
+                        <div style={{ marginTop: 8 }}>
+                          <S.Btn
+                            $variant="primary"
+                            onClick={() => baixarDocumentoFaturamento(docsPedido, 'originais/')}
+                            disabled={!!docDownloading}
+                          >
+                            <FiDownload size={14} />
+                            {docDownloading === `${docsPedido.downloadId || docsPedido.id}-originais/`
+                              ? 'Baixando...'
+                              : 'Baixar todos'}
+                          </S.Btn>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </S.ModalBody>
 
             <S.ModalFooter>

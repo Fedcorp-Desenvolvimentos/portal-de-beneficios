@@ -151,6 +151,9 @@ export const faturamentoService = {
     arquivoBoleto,
     arquivoNotaDebito,
     arquivoNotaFiscal = null,
+    arquivosBoleto = [],
+    arquivosNotaDebito = [],
+    arquivosNotaFiscal = [],
     mode = 'substituir',
   }) {
     const formData = new FormData()
@@ -159,17 +162,21 @@ export const faturamentoService = {
     formData.append('competencia', competencia)
     formData.append('mode', mode)
 
-    if (arquivoBoleto) {
-      formData.append('arquivo_boleto', arquivoBoleto)
-    }
+    const boletos = arquivosBoleto.length ? arquivosBoleto : arquivoBoleto ? [arquivoBoleto] : []
+    const notasDebito = arquivosNotaDebito.length
+      ? arquivosNotaDebito
+      : arquivoNotaDebito
+        ? [arquivoNotaDebito]
+        : []
+    const notasFiscais = arquivosNotaFiscal.length
+      ? arquivosNotaFiscal
+      : arquivoNotaFiscal
+        ? [arquivoNotaFiscal]
+        : []
 
-    if (arquivoNotaDebito) {
-      formData.append('arquivo_nota_debito', arquivoNotaDebito)
-    }
-
-    if (arquivoNotaFiscal) {
-      formData.append('arquivo_nota_fiscal', arquivoNotaFiscal)
-    }
+    boletos.forEach((arquivo) => formData.append('arquivo_boleto', arquivo))
+    notasDebito.forEach((arquivo) => formData.append('arquivo_nota_debito', arquivo))
+    notasFiscais.forEach((arquivo) => formData.append('arquivo_nota_fiscal', arquivo))
 
     const response = await api.post('/api/upload/faturamento/upload/', formData, {
       headers: {
