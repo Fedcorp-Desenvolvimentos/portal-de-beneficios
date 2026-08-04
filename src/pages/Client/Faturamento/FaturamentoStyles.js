@@ -400,6 +400,143 @@ SummaryItem: styled.div`
     gap: 10px;
   `,
 
+  ImportedDocuments: styled.div`
+    padding: 14px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 14px;
+    background: var(--color-bg-tertiary);
+  `,
+
+  DocGroups: styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  `,
+
+  DocGroupRow: styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 10px;
+    background: var(--color-bg-primary);
+  `,
+
+  DocGroupInfo: styled.div`
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+
+    svg {
+      flex-shrink: 0;
+      color: var(--color-primary);
+    }
+
+    span {
+      white-space: nowrap;
+    }
+  `,
+
+  DocGroupCount: styled.span`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--color-info-bg);
+    color: #1e40af;
+    font-size: 11px;
+    font-weight: 700;
+  `,
+
+  DocGroupDownload: styled.button`
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-bg-primary);
+    color: var(--color-primary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover:not(:disabled) {
+      background: var(--color-primary);
+      color: #fff;
+      border-color: var(--color-primary);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  `,
+
+  DocumentList: styled.div`
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 8px;
+  `,
+
+  DocumentItem: styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 10px;
+    background: var(--color-bg-primary);
+  `,
+
+  DocumentInfo: styled.span`
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+
+    svg {
+      flex-shrink: 0;
+      color: var(--color-primary);
+    }
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  `,
+
+  DocumentLink: styled.a`
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    color: var(--color-primary);
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  `,
+
   Tag: styled.span`
     display: inline-flex;
     align-items: center;

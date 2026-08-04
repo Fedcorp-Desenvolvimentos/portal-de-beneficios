@@ -8,6 +8,7 @@ import {
   FiCalendar,
   FiCreditCard,
   FiArchive,
+  FiExternalLink,
 } from 'react-icons/fi';
 
 import { useAuth } from '../../../context/AuthContext';
@@ -353,9 +354,39 @@ export default function Faturamento() {
 
     return importacoes
       .map((item) => {
+        const documentos = Array.isArray(item.documentos) ? item.documentos : [];
+
+        const tiposUnicos = [...new Set(documentos.map((d) => d.tipo).filter(Boolean))];
+
+        const gruposDocs = [];
+        for (const tipo of tiposUnicos) {
+          const docsDoTipo = documentos.filter((d) => d.tipo === tipo);
+
+          const faturasDoTipo = [...new Set(docsDoTipo.map((d) => d.numero_fatura || '').filter(Boolean))];
+
+          for (const faturaNum of faturasDoTipo) {
+            const docsDoTipoFatura = faturaNum
+              ? docsDoTipo.filter((d) => d.numero_fatura === faturaNum)
+              : docsDoTipo;
+
+            gruposDocs.push({
+              tipo,
+              faturaNum,
+              count: docsDoTipoFatura.length,
+              docs: docsDoTipoFatura,
+            });
+          }
+        }
+
+        const faturasUnicas = [...new Set(documentos.map((d) => d.numero_fatura || '').filter(Boolean))];
+        const labelFatura = faturasUnicas.length === 1 && faturasUnicas[0]
+          ? `Fatura ${faturasUnicas[0]}`
+          : faturasUnicas.length > 1
+            ? `Faturas: ${faturasUnicas.join(', ')}`
+            : `Importação ${item.id}`;
+
         const key = item.id || item.faturamento_id || item.faturamento?.id;
         const downloadId = item.faturamento_id || item.faturamento?.id || item.id;
-        const label = `Importação ${item.id}`;
         const status = item.faturamento_status || item.status;
         const total = getValorTotal(item);
         const quantidadeBeneficios = getQuantidade(item);
@@ -368,7 +399,7 @@ export default function Faturamento() {
           ...item,
           key,
           downloadId,
-          importacaoLabel: label,
+          importacaoLabel: labelFatura,
           importacaoDate: formatDateBR(item.data_importacao),
           dataImportacao,
           dataVigenciaInicio,
@@ -377,7 +408,8 @@ export default function Faturamento() {
           status,
           total,
           quantidadeBeneficios,
-          numeroFatura: item.numero_fatura || '',
+          numeroFatura: faturasUnicas.length === 1 ? faturasUnicas[0] : '',
+          documentos: gruposDocs,
           beneficios: [
             `Registros processados: ${item.registros_processados || 0}`,
             `Vigência: ${formatDateBR(item.vigencia_inicio)} até ${formatDateBR(item.vigencia_fim)}`,
@@ -400,6 +432,7 @@ export default function Faturamento() {
           group.status,
           group.nome_usuario,
           group.numeroFatura,
+          ...group.documentos.map((grupo) => `${grupo.tipo} ${grupo.faturaNum}`.toLowerCase()),
           ...group.beneficios,
         ]
           .join(' ')
@@ -593,46 +626,48 @@ export default function Faturamento() {
                           </S.BenefitTags>
                         </div>
 
+                        {group.documentos.length > 0 && (
+                          <S.ImportedDocuments>
+                            <S.DocGroups>
+                              {group.documentos.map((grupo, idx) => {
+                                const routeMap = {
+                                  boleto: 'boleto-original/',
+                                  nota_fiscal: 'nota-fiscal-original/',
+                                  nota_debito: 'nota-debito-original/',
+                                };
+                                const labelMap = {
+                                  boleto: 'Boleto',
+                                  nota_fiscal: 'Nota Fiscal',
+                                  nota_debito: 'Nota Débito',
+                                };
+                                const route = routeMap[grupo.tipo] || '';
+                                const label = labelMap[grupo.tipo] || grupo.tipo;
+                                const titulo = grupo.faturaNum
+                                  ? `${label} - ${grupo.faturaNum}`
+                                  : label;
+                                return (
+                                  <S.DocGroupRow key={`${grupo.tipo}-${grupo.faturaNum}-${idx}`}>
+                                    <S.DocGroupInfo>
+                                      <FiFileText size={15} />
+                                      <span>{titulo}</span>
+                                      <S.DocGroupCount>{grupo.count} {grupo.count === 1 ? 'item' : 'itens'}</S.DocGroupCount>
+                                    </S.DocGroupInfo>
+                                    <S.DocGroupDownload
+                                      onClick={() => baixarDocumento(group.downloadId, route, group.nome_administradora)}
+                                      disabled={!podeBaixar}
+                                      title={!podeBaixar ? 'Disponível apenas quando o faturamento estiver concluído' : `Baixar ${label}s`}
+                                    >
+                                      <FiDownload size={13} />
+                                      Baixar
+                                    </S.DocGroupDownload>
+                                  </S.DocGroupRow>
+                                );
+                              })}
+                            </S.DocGroups>
+                          </S.ImportedDocuments>
+                        )}
+
                         <S.Docs>
-                          <S.Button
-                            disabled={!podeBaixar}
-                            title={
-                              !podeBaixar
-                                ? 'Documento disponível apenas quando o faturamento estiver concluído'
-                                : ''
-                            }
-                            onClick={() => baixarDocumento(group.downloadId, 'boleto-original/', group.nome_administradora)}
-                          >
-                            <FiDownload size={14} />
-                            Boleto
-                          </S.Button>
-
-                          <S.Button
-                            disabled={!podeBaixar}
-                            title={
-                              !podeBaixar
-                                ? 'Documento disponível apenas quando o faturamento estiver concluído'
-                                : ''
-                            }
-                            onClick={() => baixarDocumento(group.downloadId, 'nota-fiscal-original/', group.nome_administradora)}
-                          >
-                            <FiDownload size={14} />
-                            NF
-                          </S.Button>
-
-                          <S.Button
-                            disabled={!podeBaixar}
-                            title={
-                              !podeBaixar
-                                ? 'Documento disponível apenas quando o faturamento estiver concluído'
-                                : ''
-                            }
-                            onClick={() => baixarDocumento(group.downloadId, 'nota-debito-original/', group.nome_administradora)}
-                          >
-                            <FiDownload size={14} />
-                            Nota Débito
-                          </S.Button>
-
                           <S.Button
                             $variant="primary"
                             disabled={!podeBaixar}
