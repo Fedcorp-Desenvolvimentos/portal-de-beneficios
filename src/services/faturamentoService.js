@@ -582,4 +582,13 @@ export const faturamentoService = {
     })
     return response.data
   },
+
+  async reenviarEmail(importacaoId) {
+    if (!importacaoId) {
+      throw new Error('ID da importação não informado.')
+    }
+
+    const response = await api.post(`/api/beneficios/importacoes/${importacaoId}/reenviar-email/`)
+    return response.data
+  },
 }

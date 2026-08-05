@@ -16,6 +16,7 @@ import {
   FiEye,
   FiMoreVertical,
   FiChevronRight,
+  FiSend,
 } from 'react-icons/fi'
 import { BiSpreadsheet } from 'react-icons/bi'
 
@@ -1441,6 +1442,16 @@ export default function ColaboradorDashboard() {
     }
   }
 
+  async function handleReenviarEmail(pedido) {
+    try {
+      await faturamentoService.reenviarEmail(pedido.id)
+      showToast('E-mail de boleto reenviado.', { variant: 'success' })
+    } catch (error) {
+      const detail = error?.response?.data?.detail
+      showToast(detail || 'Não foi possível reenviar o e-mail.', { variant: 'error' })
+    }
+  }
+
   function toggleCondominio(index) {
     setSelectedCondominios((prev) => {
       const next = new Set(prev)
@@ -2000,6 +2011,18 @@ export default function ColaboradorDashboard() {
             >
               <FiEye size={14} />
               <span>Ver documentos</span>
+            </S.ActionItem>
+
+            <S.ActionItem
+              type="button"
+              onClick={() => {
+                handleReenviarEmail(p)
+                closeActionsMenu()
+              }}
+              disabled={bloqueadoPorOutro}
+            >
+              <FiSend size={14} />
+              <span>Reenviar e-mail</span>
             </S.ActionItem>
 
             <S.ActionItem
