@@ -1,13 +1,8 @@
 // src/services/api.js
 import axios from "axios";
 
-// Para apontar o front a um backend local, crie um arquivo `.env.local` na raiz
-// do projeto (já ignorado pelo git) com:
-//     VITE_API_URL=http://localhost:8000
-// Sem essa variável, o padrão é o backend de produção.
-export const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app'
+export const API_BASE_URL = 'https://vr-beneficios-backend-fedcorp-ju482.ondigitalocean.app'
+//export const API_BASE_URL = 'http://localhost:8000'
 
 const api = axios.create({
   baseURL: API_BASE_URL,

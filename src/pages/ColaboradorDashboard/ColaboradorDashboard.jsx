@@ -169,6 +169,12 @@ const statusMap = {
   AGUARDANDO_FATURAMENTO: 'aprovado',
   EM_FATURAMENTO: 'em_faturamento',
   FATURADO: 'faturado',
+  // Gravado por _disparar_email_boleto_cliente (upload/tasks.py) logo após o
+  // faturamento concluir. É um estado POSTERIOR a FATURADO: o pedido já foi
+  // faturado e o boleto já seguiu por e-mail. Sem esta entrada ele caía no
+  // fallback e aparecia como "Aprovado", como se o faturamento não tivesse
+  // acontecido — e os downloads de documento ficavam bloqueados.
+  BOLETO_VR_ENVIADO: 'faturado',
   COMPRADO: 'comprado',
   PAGO_PARCIALMENTE: 'pago_parcialmente',
   CANCELADO: 'cancelado',
@@ -176,7 +182,15 @@ const statusMap = {
 }
 
 const normalizarStatus = (status) => {
-  return statusMap[status] || statusMap[String(status || '').toUpperCase()] || 'aprovado'
+  const mapeado = statusMap[status] || statusMap[String(status || '').toUpperCase()]
+
+  if (!mapeado && status) {
+    // Não silencie: um status novo no backend sem entrada aqui vira "aprovado"
+    // e se disfarça de pedido não faturado.
+    console.warn(`[status] valor não mapeado vindo do backend: "${status}"`)
+  }
+
+  return mapeado || 'aprovado'
 }
 
 const statusLabel = {
@@ -188,6 +202,17 @@ const statusLabel = {
   cancelado: 'Cancelado',
   pendente: 'Pendente',
 }
+
+// Status iguais ou posteriores ao faturamento — um envio de documentos não pode
+// rebaixá-los. Atenção ao 'pendente': apesar do nome, é uma marcação manual de
+// "pagamento pendente" feita pelo operador, e não um estado inicial.
+const STATUS_POS_FATURAMENTO = [
+  'faturado',
+  'comprado',
+  'pago_parcialmente',
+  'pendente',
+  'cancelado',
+]
 
 const statusRank = {
   aprovado: 1,
@@ -1675,21 +1700,38 @@ export default function ColaboradorDashboard() {
 
       setUploadProgress(100)
 
-      await faturamentoService.alterarStatusPedido(
-        selectedPedido.id,
-        'faturado',
-        selectedPedido.refazendo ? 'Documentos reenviados no refaturamento' : undefined
-      )
+      // Caminho rápido: adianta o status para o usuário não esperar a task
+      // Celery. O backend refaz essa transição ao concluir o processamento, de
+      // forma condicional — se este PATCH falhar, o status não fica preso.
+      //
+      // Só avança quem ainda não passou do faturamento: um pedido já comprado,
+      // pago ou aguardando pagamento não pode ser rebaixado por um envio de
+      // documentos. Espelha STATUS_ANTERIORES_A_FATURADO em upload/tasks.py.
+      const deveAvancarStatus = !STATUS_POS_FATURAMENTO.includes(selectedPedido.status)
+
+      if (deveAvancarStatus) {
+        await faturamentoService.alterarStatusPedido(
+          selectedPedido.id,
+          'faturado',
+          selectedPedido.refazendo ? 'Documentos reenviados no refaturamento' : undefined
+        )
+      }
 
       setPedidos((prev) =>
         prev.map((item) =>
           item.id === selectedPedido.id
             ? {
               ...item,
-              status: 'faturado',
               importadoEm: new Date().toISOString(),
-              faturadoEm: new Date().toISOString(),
-              compradoEm: null,
+              // Sem avanço de status, preserva faturadoEm/compradoEm: zerar a
+              // data de compra de um pedido já comprado apagaria informação.
+              ...(deveAvancarStatus
+                ? {
+                  status: 'faturado',
+                  faturadoEm: new Date().toISOString(),
+                  compradoEm: null,
+                }
+                : {}),
             }
             : item
         )
