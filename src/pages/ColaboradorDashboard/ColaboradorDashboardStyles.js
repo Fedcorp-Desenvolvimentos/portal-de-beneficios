@@ -257,6 +257,9 @@ export const S = {
       width: 130px;
     }
 
+    /* 5 = Vencimento, 7 = Data Crédito — as duas datas críticas da operação,
+       destacadas em vermelho. As colunas são selecionadas por posição, então
+       inserir ou remover uma coluna na tabela exige revisar estes índices. */
     th:nth-child(5),
     td:nth-child(5) {
       width: 90px;
@@ -276,34 +279,39 @@ export const S = {
     th:nth-child(7),
     td:nth-child(7) {
       width: 90px;
+      color: #dc2626 !important;
     }
 
+    th:nth-child(7) > *,
+    td:nth-child(7) > * {
+      color: #dc2626 !important;
+    }
+
+    /* 8 = Valor */
     th:nth-child(8),
     td:nth-child(8) {
-      width: 90px;
-    }
-
-    th:nth-child(9),
-    td:nth-child(9) {
       width: 100px;
     }
 
-    th:nth-child(10),
-    td:nth-child(10) {
+    /* 9 = Status */
+    th:nth-child(9),
+    td:nth-child(9) {
       width: 150px;
       min-width: 150px;
       max-width: 150px;
     }
 
-    th:nth-child(11),
-    td:nth-child(11) {
+    /* 10 = Responsável */
+    th:nth-child(10),
+    td:nth-child(10) {
       width: 110px;
       min-width: 110px;
       text-align: center;
     }
 
-    th:nth-child(12),
-    td:nth-child(12) {
+    /* 11 = Ações */
+    th:nth-child(11),
+    td:nth-child(11) {
       width: 90px;
       min-width: 90px;
       text-align: center;
@@ -375,20 +383,23 @@ export const S = {
 
       th:nth-child(8),
       td:nth-child(8) {
+        min-width: 0;
+        max-width: none;
+        overflow: visible;
+      }
+
+      td:nth-child(8) button {
+        min-width: 0;
+        width: auto;
+        height: 34px;
+        padding: 0 8px;
       }
 
       th:nth-child(9),
       td:nth-child(9) {
         min-width: 0;
         max-width: none;
-        overflow: visible;
-      }
-
-      td:nth-child(9) button {
-        min-width: 0;
-        width: auto;
-        height: 34px;
-        padding: 0 8px;
+        text-align: center;
       }
 
       th:nth-child(10),
@@ -400,13 +411,6 @@ export const S = {
 
       th:nth-child(11),
       td:nth-child(11) {
-        min-width: 0;
-        max-width: none;
-        text-align: center;
-      }
-
-      th:nth-child(12),
-      td:nth-child(12) {
         min-width: 0;
         max-width: none;
         text-align: center;

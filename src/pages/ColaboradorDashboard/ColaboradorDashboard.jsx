@@ -2266,15 +2266,6 @@ export default function ColaboradorDashboard() {
                     </th>
                     <th
                       aria-sort={
-                        sortConfig.key === 'dataImportacao'
-                          ? sortConfig.direction
-                          : 'none'
-                      }
-                    >
-                      {renderSortableHeader('Importação', 'dataImportacao')}
-                    </th>
-                    <th
-                      aria-sort={
                         sortConfig.key === 'valorTotal'
                           ? sortConfig.direction
                           : 'none'
@@ -2300,7 +2291,7 @@ export default function ColaboradorDashboard() {
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <S.Empty colSpan={12}>
+                      <S.Empty colSpan={11}>
                         Nenhum pedido encontrado.
                       </S.Empty>
                     </tr>
@@ -2360,7 +2351,6 @@ export default function ColaboradorDashboard() {
 
                         <td data-label="Data Crédito" style={{ fontSize: 13 }}>{fmtDate(p.dataRecebimento)}</td>
 
-                        <td data-label="Importação" style={{ fontSize: 13 }}>{fmtDate(p.dataImportacao)}</td>
 
                         <td data-label="Valor" style={{ fontWeight: 600, color: '#16a34a' }}>
                           {fmtMoney(p.valorTotal)}
@@ -2417,7 +2407,7 @@ export default function ColaboradorDashboard() {
 
                       {expandedPedidoId === p.id && (
                         <tr className="cf-expand-row">
-                          <td colSpan={12}>
+                          <td colSpan={11}>
                             <div className="cf-expand-content">
                               {expandedLoading ? (
                                 <div className="cf-expand-loading">Carregando boletos...</div>
