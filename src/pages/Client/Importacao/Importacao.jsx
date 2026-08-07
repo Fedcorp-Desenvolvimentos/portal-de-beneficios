@@ -95,6 +95,40 @@ function getValorRow(row) {
   return 0
 }
 
+/**
+ * Valor da taxa de administração EM REAIS para a linha.
+ *
+ * O backend já entrega o valor calculado em `taxa_calculada` (e no legado `taxa`).
+ * Nunca derive isso de `taxa_valor` dividindo por 100: `taxa_valor` é o valor
+ * configurado, que pode ser percentual (PERC) ou reais por dia (FIXO).
+ */
+function getTaxaCalculadaRow(row) {
+  const calculada = row?.taxa_calculada ?? row?.taxa
+  const valor = typeof calculada === 'string' ? parseFloat(calculada) : calculada
+  return Number.isFinite(valor) ? valor : 0
+}
+
+/** Rótulo da taxa configurada: "3,5%" para PERC, "R$ 5,00" para FIXO. */
+function formatarTaxaConfigurada(row) {
+  const bruto = row?.taxa_valor ?? row?.taxa_percentual
+  const valor = typeof bruto === 'string' ? parseFloat(bruto) : bruto
+
+  if (!Number.isFinite(valor) || valor <= 0) return '—'
+
+  if (row?.taxa_tipo === 'FIXO') {
+    return `R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+  }
+
+  return `${valor.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`
+}
+
+const TAXA_ORIGEM_LABEL = {
+  produto: 'Taxa cadastrada para o produto do colaborador',
+  tipo: 'Taxa cadastrada para o tipo de produto',
+  vinculo: 'Taxa cadastrada para o condomínio',
+  administradora: 'Taxa padrão da administradora',
+}
+
 function getCondominio(row) {
   return row?.condominio || row?.nome_condominio || row?.condominio_nome || row?.NomeCondominio || ''
 }
@@ -2345,8 +2379,7 @@ export default function Importacao() {
         const valor = getValorRow(row)
         valorTotalBeneficios += valor
 
-        const taxa = Number(row?.taxa || 0)
-        valorTotalTaxa += valor * (taxa / 100)
+        valorTotalTaxa += getTaxaCalculadaRow(row)
 
         if (row.beneficios && Array.isArray(row.beneficios)) {
           totalMovimentacoes += row.beneficios.length
@@ -2607,10 +2640,8 @@ export default function Importacao() {
     let totalTaxa = 0
 
     linhasValidadas.forEach((row) => {
-      const valor = getValorRow(row)
-      totalBeneficios += valor
-      const taxa = Number(row?.taxa || 0)
-      totalTaxa += valor * (taxa / 100)
+      totalBeneficios += getValorRow(row)
+      totalTaxa += getTaxaCalculadaRow(row)
     })
 
     return {
@@ -2779,10 +2810,8 @@ export default function Importacao() {
                   <tr>
                     <th>Condomínio</th>
                     <th>Colaborador</th>
-                    <th>Produtos</th>
                     <th className="col-valor">Valor</th>
-                    <th className="col-taxa">Taxa (%)</th>
-                    <th className="col-status">Status</th>
+                    <th className="col-taxa">Taxa</th>
                     <th className="col-acoes">Ações</th>
                   </tr>
                 </thead>
@@ -2790,7 +2819,7 @@ export default function Importacao() {
                 <tbody>
                   {linhasExibidas.length === 0 ? (
                     <tr>
-                      <td colSpan={7} style={{ textAlign: 'center', padding: '24px' }}>
+                      <td colSpan={5} style={{ textAlign: 'center', padding: '24px' }}>
                         {buscaNomePreview ? 'Nenhum colaborador encontrado com esse nome.' :
                           filterOnlyErrors ? 'Nenhuma linha com erro encontrada.' :
                             filterOnlyBlocked ? 'Nenhuma linha bloqueada encontrada.' :
@@ -2804,24 +2833,22 @@ export default function Importacao() {
                       const temErroBackend = hasBackendError(r)
                       const erroBackendMsg = getBackendErrorMessage(r)
 
+                      // A coluna Status foi removida; o motivo do bloqueio/erro passa
+                      // a viver no tooltip da linha, para não se perder.
+                      const motivoLinha = r.bloqueado
+                        ? ['Bloqueado', ...(r.errosValidacao || [])].join(' • ')
+                        : temErroBackend
+                          ? `Erro no processamento: ${erroBackendMsg}`
+                          : undefined
+
                       return (
                         <tr
                           key={`${getRowKey(r)}-${idx}`}
+                          title={motivoLinha}
                           className={`${r.bloqueado ? 'row-bloqueado' : ''} ${temErroBackend ? 'row-backend-error' : ''}`}
                         >
                           <td>{getCondominio(r)}</td>
                           <td>{nomeColaborador}</td>
-
-                          <td className="col-produtos">
-                            {r.beneficios?.length > 0
-                              ? r.beneficios.map((b, i) => (
-                                  <span key={i} className="tag tag-produto">
-                                    {getNomeProduto(b)}
-                                  </span>
-                                ))
-                              : <span className="tag tag-default">—</span>
-                            }
-                          </td>
 
                           <td className="col-valor">
                             R${' '}
@@ -2830,29 +2857,18 @@ export default function Importacao() {
                             })}
                           </td>
 
-                          <td className="col-taxa">
-                            {r.taxa != null && r.taxa > 0 ? `${r.taxa}%` : '—'}
-                          </td>
-
-                          <td className="col-status">
-                            {r.bloqueado ? (
-                              <div className="status-stack">
-                                <span className="tag tag-danger">Bloqueado</span>
-                                {r.errosValidacao?.length > 0 ? (
-                                  <small className="status-detail">
-                                    {r.errosValidacao.join(' • ')}
-                                  </small>
-                                ) : null}
-                              </div>
-                            ) : temErroBackend ? (
-                              <div className="status-stack">
-                                <span className="tag tag-warning">Erro no processamento</span>
-                                <small className="status-detail">
-                                  {erroBackendMsg}
-                                </small>
-                              </div>
-                            ) : (
-                              <span className="tag tag-ok">OK</span>
+                          <td
+                            className="col-taxa"
+                            title={TAXA_ORIGEM_LABEL[r.taxa_origem] || 'Nenhuma taxa configurada'}
+                          >
+                            {formatarTaxaConfigurada(r)}
+                            {getTaxaCalculadaRow(r) > 0 && (
+                              <small className="taxa-valor-calculado">
+                                R${' '}
+                                {getTaxaCalculadaRow(r).toLocaleString('pt-BR', {
+                                  minimumFractionDigits: 2,
+                                })}
+                              </small>
                             )}
                           </td>
 

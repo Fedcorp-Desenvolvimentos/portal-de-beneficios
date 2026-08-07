@@ -141,6 +141,20 @@ const getAdministradoraNome = (condominio) => {
   )
 }
 
+/** "10%" para taxa percentual, "R$ 5,00" para taxa fixa. */
+const formatarValorTaxa = (taxa) => {
+  const valor = Number(taxa?.taxa_valor)
+  if (!Number.isFinite(valor)) return '—'
+
+  return taxa?.taxa_tipo === 'FIXO'
+    ? `R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+    : `${valor.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`
+}
+
+/** A que a taxa se aplica: produto específico, tipo de produto ou tudo. */
+const getAlvoTaxa = (taxa) =>
+  taxa?.produto_nome || taxa?.tipo_display || 'Todos os produtos'
+
 function ModalFuncionarios({
   open,
   condominio,
@@ -847,6 +861,7 @@ export default function ConfiguracaoCondominios() {
   const [condominios, setCondominios] = useState([])
   const [totalCondominios, setTotalCondominios] = useState(0)
   const [todosFuncionarios, setTodosFuncionarios] = useState([])
+  const [taxasPorCondominio, setTaxasPorCondominio] = useState({})
   const [loadingCondominios, setLoadingCondominios] = useState(true)
   const [loadingAction, setLoadingAction] = useState(false)
   const [erroCondominios, setErroCondominios] = useState('')
@@ -924,11 +939,40 @@ export default function ConfiguracaoCondominios() {
   useEffect(() => {
     carregarCondominios(busca, paginaAtual)
     carregarFuncionarios()
+    carregarTaxasPorCondominio()
   }, [])
 
   useEffect(() => {
     carregarCondominios(busca, paginaAtual)
   }, [busca, paginaAtual, user])
+
+  /**
+   * Carrega todas as taxas ativas de uma vez e indexa por CNPJ do condomínio,
+   * para a coluna "Taxa" da listagem. O endpoint de taxas-config não é paginado,
+   * então uma requisição basta — e o escopo por administradora já é aplicado
+   * no backend conforme o perfil do usuário.
+   */
+  const carregarTaxasPorCondominio = async () => {
+    try {
+      const response = await entebenService.getTaxasConfig({ ativo: true })
+      const lista = Array.isArray(response?.results)
+        ? response.results
+        : toArray(response)
+
+      const porCnpj = {}
+      lista.forEach((taxa) => {
+        const cnpj = taxa?.condominio_cnpj
+        if (!cnpj) return
+        if (!porCnpj[cnpj]) porCnpj[cnpj] = []
+        porCnpj[cnpj].push(taxa)
+      })
+
+      setTaxasPorCondominio(porCnpj)
+    } catch (err) {
+      console.error('Erro ao carregar taxas por condomínio:', err)
+      setTaxasPorCondominio({})
+    }
+  }
 
   const carregarCondominios = async (cnpj, page) => {
     try {
@@ -1352,6 +1396,7 @@ export default function ConfiguracaoCondominios() {
       }
 
       await carregarTaxas(taxasModal.condominio?.cnpj)
+      await carregarTaxasPorCondominio()
       setTaxaForm({
         id: null,
         produto: '',
@@ -1376,6 +1421,7 @@ export default function ConfiguracaoCondominios() {
     try {
       await entebenService.deleteTaxaConfig(taxa.id)
       await carregarTaxas(taxasModal.condominio?.cnpj)
+      await carregarTaxasPorCondominio()
       showToast('Taxa excluída com sucesso')
     } catch (err) {
       console.error('Erro ao excluir taxa:', err)
@@ -1463,6 +1509,7 @@ export default function ConfiguracaoCondominios() {
                   {podeVerAdministradora && <th>Administradora</th>}
 
                   <th>CNPJ</th>
+                  <th>Taxa</th>
                   <th>Funcionários</th>
                   <th className="text-right">Ações</th>
                 </tr>
@@ -1471,6 +1518,7 @@ export default function ConfiguracaoCondominios() {
               <tbody>
                 {condominios.map((cond) => {
                   const funcionariosCond = getFuncionariosPorCNPJ(cond.cnpj)
+                  const taxasCond = taxasPorCondominio[cond.cnpj] || []
 
                   return (
                     <tr key={cond.cnpj}>
@@ -1489,6 +1537,27 @@ export default function ConfiguracaoCondominios() {
                       )}
 
                       <td className="muted">{formatarCNPJ(cond.cnpj)}</td>
+
+                      {/* Somente leitura — a edição continua no modal de taxas */}
+                      <td className="cfg-taxa-cell">
+                        {taxasCond.length === 0 ? (
+                          <span className="muted">—</span>
+                        ) : (
+                          taxasCond.map((taxa) => (
+                            <span
+                              key={taxa.id}
+                              className="cfg-taxa-badge"
+                              title={`${getAlvoTaxa(taxa)} — ${
+                                taxa.taxa_tipo === 'FIXO'
+                                  ? 'valor fixo por dia'
+                                  : 'percentual sobre o benefício'
+                              }`}
+                            >
+                              {formatarValorTaxa(taxa)}
+                            </span>
+                          ))
+                        )}
+                      </td>
 
                       <td>
                         <button

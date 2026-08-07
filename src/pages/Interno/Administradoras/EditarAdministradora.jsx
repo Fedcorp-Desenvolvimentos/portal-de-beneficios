@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { buscarAdministradoraPorId, editarAdministradora } from '../../../services/administradoraService.js'
 import { taxaConfigService } from '../../../services/taxaConfigService.js'
 import { PRODUTOS_TAXA } from '../../../constants/produtos'
+import { MODO_TAXA_API_PARA_FORM, MODO_TAXA_FORM_PARA_API } from '../../../constants/taxas'
 import { useAuth } from '../../../context/AuthContext.jsx'
 import TaxaConfigSection from '../../../components/TaxaConfigSection/TaxaConfigSection.jsx'
 import './Administradoras.css'
@@ -53,7 +54,11 @@ export default function EditarAdministradora() {
         cartao_admin: data.cartao_admin ? 'administradora' : 'condominio',
         d_mais: data.d_mais != null ? String(data.d_mais) : '',
         taxa_ativa: temTaxaPadrao || taxaConfigSalva.length > 0,
-        taxa_tipo: taxaConfigSalva.length > 0 ? 'produto' : 'padrao',
+        // O modo vem gravado na administradora. O fallback só cobre registros
+        // anteriores à migration 0019 que não tenham sido backfillados.
+        taxa_tipo:
+          MODO_TAXA_API_PARA_FORM[data.taxa_modo] ||
+          (taxaConfigSalva.length > 0 ? 'produto' : 'padrao'),
         taxa_padrao: data.taxa_padrao_valor != null ? String(data.taxa_padrao_valor) : '',
         taxa_config: PRODUTOS_TAXA.map((p) => {
           const salvo = taxaConfigSalva.find((t) => t.produto_codigo === p.codigo)
@@ -106,6 +111,9 @@ export default function EditarAdministradora() {
         ativo: form.ativo,
         cartao_admin: cartaoAdminBoolean,
         d_mais: form.d_mais !== '' ? Number(form.d_mais) : null,
+        taxa_modo: form.taxa_ativa
+          ? MODO_TAXA_FORM_PARA_API[form.taxa_tipo] || 'PADRAO'
+          : 'PADRAO',
         taxa_padrao_tipo:
           form.taxa_ativa && form.taxa_tipo === 'padrao' && taxaPadraoNum !== null ? 'PERC' : 'PERC',
         taxa_padrao_valor:

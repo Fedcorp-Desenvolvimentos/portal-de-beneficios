@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { criarAdministradora, consultarPessoaPorCNPJ } from '../../../services/administradoraService.js'
 import { taxaConfigService } from '../../../services/taxaConfigService.js'
 import { PRODUTOS_TAXA } from '../../../constants/produtos'
+import { MODO_TAXA_FORM_PARA_API } from '../../../constants/taxas'
 import { useAuth } from '../../../context/AuthContext.jsx'
 import TaxaConfigSection from '../../../components/TaxaConfigSection/TaxaConfigSection.jsx'
 import './Administradoras.css'
@@ -146,6 +147,9 @@ export default function CadastroAdministradora() {
         ativo: form.ativo,
         cartao_admin: cartaoAdminBoolean,
         d_mais: form.d_mais !== '' ? Number(form.d_mais) : null,
+        taxa_modo: form.taxa_ativa
+          ? MODO_TAXA_FORM_PARA_API[form.taxa_tipo] || 'PADRAO'
+          : 'PADRAO',
         taxa_padrao_tipo:
           form.taxa_ativa && form.taxa_tipo === 'padrao' && taxaPadraoNum !== null ? 'PERC' : 'PERC',
         taxa_padrao_valor:
