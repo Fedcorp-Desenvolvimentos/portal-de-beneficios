@@ -31,6 +31,10 @@ const SkeletonTable = () => (
   </S.SkeletonTable>
 );
 
+// Mínimo de caracteres para disparar a busca. Com 1 caractere a consulta
+// retornava quase a base inteira e batia na API a cada tecla.
+const MIN_CARACTERES_BUSCA = 3;
+
 export default function Usuarios() {
   const { enqueueSnackbar } = useSnackbar();
   const [usuarios, setUsuarios] = useState([]);
@@ -83,11 +87,20 @@ export default function Usuarios() {
     );
   };
 
+  // Termo efetivamente enviado à API. Abaixo do mínimo ele vale string vazia,
+  // então digitar "a" e depois "ab" não muda este valor e nenhuma requisição
+  // nova é disparada — só a partir do 3º caractere a busca acontece.
+  const termoBusca =
+    searchNome.trim().length >= MIN_CARACTERES_BUSCA ? searchNome.trim() : '';
+
+  const buscaIncompleta =
+    searchNome.trim().length > 0 && searchNome.trim().length < MIN_CARACTERES_BUSCA;
+
   const carregarUsuarios = useCallback(async () => {
     try {
       const params = {};
       if (filtroAdm) params.administradora = filtroAdm;
-      if (searchNome.trim()) params.search = searchNome.trim();
+      if (termoBusca) params.search = termoBusca;
       const data = await userService.listarUsuarios(params);
       setUsuarios(Array.isArray(data) ? data : data?.results || []);
     } catch (error) {
@@ -95,7 +108,7 @@ export default function Usuarios() {
       enqueueSnackbar('Erro ao carregar usuários', { variant: 'error' });
       setUsuarios([]);
     }
-  }, [filtroAdm, searchNome, enqueueSnackbar]);
+  }, [filtroAdm, termoBusca, enqueueSnackbar]);
 
   const carregarAdministradoras = async () => {
     try {
@@ -119,7 +132,7 @@ export default function Usuarios() {
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [filtroAdm, searchNome]);
+  }, [filtroAdm, termoBusca]);
 
   const handleDelete = (id, username) => {
     setUserToDelete({ id, username });
@@ -269,7 +282,7 @@ export default function Usuarios() {
           <S.FiltersRow>
             <S.SearchInput
               type="text"
-              placeholder="Buscar por nome do usuário..."
+              placeholder={`Buscar por nome, usuário ou e-mail (mín. ${MIN_CARACTERES_BUSCA} caracteres)...`}
               value={searchNome}
               onChange={(e) => setSearchNome(e.target.value)}
               disabled={loading}
@@ -282,6 +295,12 @@ export default function Usuarios() {
               disabled={loading}
             />
           </S.FiltersRow>
+
+          {buscaIncompleta && (
+            <p style={{ margin: '0 0 12px', fontSize: 13, color: '#6b7280' }}>
+              Digite pelo menos {MIN_CARACTERES_BUSCA} caracteres para buscar.
+            </p>
+          )}
 
           {loading ? (
             <SkeletonTable />

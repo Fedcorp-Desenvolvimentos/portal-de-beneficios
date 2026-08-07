@@ -13,7 +13,6 @@ import { BiImport } from 'react-icons/bi';
 
 import PendenciasDoDiaModal from '../../components/PendenciasDoDiaModal';
 import { entebenService } from '../../services/entebenService';
-import api from '../../services/api';
 import { useLoading } from '../../hooks/useLoading';
 import PageLayout from '../../Layouts/PageLayout/PageLayout';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -505,99 +504,32 @@ export default function Dashboard() {
     setCondoQuery('');
   };
 
-  const handleDownloadExcel = async () => {
-    try {
-      if (!importacaoId) {
-        enqueueSnackbar('Nenhuma importação encontrada para exportar.', {
-          variant: 'warning',
-        });
-        return;
-      }
+  // Planilha da última importação, direto do S3.
+  //
+  // Antes este botão gerava um Excel de faturamento via
+  // /api/upload/export/faturamento/, que é um relatório montado pelo backend —
+  // não a planilha que a administradora enviou. Agora entrega o arquivo real,
+  // com a mesma prioridade usada no dashboard do colaborador: a versão editada
+  // (gerada quando o usuário corrige dados na confirmação) e, na falta dela, a
+  // original.
+  const planilhaUltimaImportacao =
+    ultimaMovimentacao?.arquivo_s3_editado || ultimaMovimentacao?.arquivo_s3 || null;
 
-      startLoading('Baixando Excel...');
-
-      const response = await api.get('/api/upload/export/faturamento/', {
-        params: {
-          importacao_id: importacaoId,
-        },
-        responseType: 'blob',
-      });
-
-      const contentType = response.headers['content-type'] || '';
-
-      if (contentType.includes('application/json')) {
-        const text = await response.data.text();
-        const json = JSON.parse(text);
-
-        throw new Error(
-          json?.detail ||
-          json?.erro ||
-          json?.error ||
-          json?.message ||
-          'Erro ao gerar Excel'
-        );
-      }
-
-      const blob = new Blob([response.data], {
-        type:
-          contentType ||
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      });
-
-      const contentDisposition = response.headers['content-disposition'];
-
-      let filename = `faturamento-importacao-${importacaoId}.xlsx`;
-
-      if (contentDisposition) {
-        const filenameMatch =
-          contentDisposition.match(/filename\*=UTF-8''([^;]+)/) ||
-          contentDisposition.match(/filename="?([^"]+)"?/);
-
-        if (filenameMatch?.[1]) {
-          filename = decodeURIComponent(filenameMatch[1]);
-        }
-      }
-
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-
-      link.href = url;
-      link.download = filename;
-
-      document.body.appendChild(link);
-      link.click();
-
-      link.remove();
-      window.URL.revokeObjectURL(url);
-
-      enqueueSnackbar('Excel baixado com sucesso', { variant: 'success' });
-    } catch (error) {
-      console.error('Erro ao baixar Excel:', error);
-
-      const status = error?.response?.status;
-
-      if (status === 400) {
-        enqueueSnackbar(
-          error?.message ||
-          'Backend recusou a exportação. Verifique a importação selecionada.',
-          { variant: 'error' }
-        );
-        return;
-      }
-
-      if (status === 401) {
-        enqueueSnackbar('Sessão expirada. Faça login novamente.', {
-          variant: 'warning',
-        });
-        return;
-      }
-
-      enqueueSnackbar(error?.message || 'Erro ao baixar Excel', {
-        variant: 'error',
-      });
-    } finally {
-      stopLoading();
+  const handleDownloadExcel = () => {
+    if (!importacaoId) {
+      enqueueSnackbar('Nenhuma importação encontrada.', { variant: 'warning' });
+      return;
     }
+
+    if (!planilhaUltimaImportacao) {
+      enqueueSnackbar(
+        'A planilha desta importação não está disponível no armazenamento.',
+        { variant: 'warning' }
+      );
+      return;
+    }
+
+    window.open(planilhaUltimaImportacao, '_blank', 'noopener,noreferrer');
   };
 
   const getSaudacao = () => {
