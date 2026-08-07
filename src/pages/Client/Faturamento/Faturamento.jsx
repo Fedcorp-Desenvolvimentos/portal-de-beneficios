@@ -101,7 +101,8 @@ const getStatusVariant = (status) => {
     normalized === 'processado' ||
     normalized === 'concluido' ||
     normalized === 'concluído' ||
-    normalized === 'faturado'
+    normalized === 'faturado' ||
+    normalized === 'boleto_vr_enviado'
   ) {
     return 'success';
   }
@@ -120,6 +121,9 @@ const isStatusConcluido = (status) => {
     'concluido',
     'concluído',
     'faturado',
+    // Posterior a faturado: o boleto já foi enviado por e-mail ao cliente.
+    // Precisa liberar o download dos documentos igual a 'faturado'.
+    'boleto_vr_enviado',
     'pago_parcialmente',
   ].includes(normalized);
 };
@@ -612,7 +616,7 @@ export default function Faturamento() {
                               {group.faturamento_progresso != null && ` - ${group.faturamento_progresso}%`}
                             </S.Tag>
 
-                            {['faturado', 'comprado', 'pago_parcialmente'].includes(normalizeStatus(group.status)) && group.numeroFatura && (
+                            {['faturado', 'boleto_vr_enviado', 'comprado', 'pago_parcialmente'].includes(normalizeStatus(group.status)) && group.numeroFatura && (
                               <S.Tag $variant="info">
                                 Fatura: {group.numeroFatura}
                               </S.Tag>
