@@ -856,6 +856,29 @@
   height: 14px;
 }
 
+/* Coluna Taxa da listagem — somente leitura */
+/* Sem display:flex aqui — a célula precisa continuar sendo table-cell,
+   senão perde o alinhamento vertical das demais colunas da linha. */
+.cfg-taxa-cell {
+  max-width: 220px;
+  white-space: nowrap;
+}
+
+.cfg-taxa-badge {
+  display: inline-flex;
+  align-items: center;
+  margin: 2px 4px 2px 0;
+  padding: 3px 9px;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  background: #f0fdf4;
+  color: #15803d;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
 .cfg-funcionarios-stats {
   display: flex;
   align-items: center;
