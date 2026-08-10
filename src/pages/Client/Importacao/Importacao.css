@@ -373,6 +373,29 @@
     border-bottom: none;
 }
 
+.importacao-observacao {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.4;
+    resize: vertical;
+    min-height: 72px;
+}
+
+.importacao-observacao:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.importacao-observacao:disabled {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
 .tag-default {
     display: inline-block;
     background: #f3f4f6;

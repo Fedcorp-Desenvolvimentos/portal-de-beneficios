@@ -133,6 +133,10 @@ function getCondominio(row) {
   return row?.condominio || row?.nome_condominio || row?.condominio_nome || row?.NomeCondominio || ''
 }
 
+// Limite da observação enviada no confirm. O campo no banco é TextField (sem
+// limite), mas travar aqui evita colar uma planilha inteira dentro do campo.
+const OBSERVACAO_MAX_CARACTERES = 500
+
 function getCpf(row) {
   return String(row?.cpf || row?.cpf_func || row?.cpf_funcionario || row?.CPF || '').trim()
 }
@@ -1333,6 +1337,7 @@ export default function Importacao() {
     competenciaAno: String(new Date().getFullYear()),
     vencimento: '',
     recebimentoBeneficio: '',
+    observacao: '',
   })
 
   const [campoDataReferenciaVT, setCampoDataReferenciaVT] = useState(null)
@@ -2216,6 +2221,7 @@ export default function Importacao() {
       competenciaAno: String(new Date().getFullYear()),
       vencimento: '',
       recebimentoBeneficio: '',
+      observacao: '',
     })
 
     setCampoDataReferenciaVT(null)
@@ -2566,6 +2572,7 @@ export default function Importacao() {
           tipo_processamento: dataToBackendSincronizado.tipo_processamento,
           origem: dataToBackendSincronizado.origem,
           modelo_importacao: "VR-BENEFICIOS",
+          observacao: (formEnvio.observacao || '').trim(),
         }
 
         const r2 = (v) => Math.round(v * 100) / 100
@@ -3094,6 +3101,26 @@ export default function Importacao() {
                     Limpar datas
                   </button>
                 )}
+              </label>
+            </div>
+
+            <div className="form-row full-width">
+              <label>
+                <span>Observação (opcional)</span>
+                <textarea
+                  className="importacao-observacao"
+                  value={formEnvio.observacao}
+                  onChange={(e) =>
+                    setFormEnvio((prev) => ({ ...prev, observacao: e.target.value }))
+                  }
+                  placeholder="Alguma informação que o time de faturamento precise saber sobre este envio."
+                  rows={3}
+                  maxLength={OBSERVACAO_MAX_CARACTERES}
+                  disabled={enviandoLote}
+                />
+                <small>
+                  {formEnvio.observacao.length}/{OBSERVACAO_MAX_CARACTERES} caracteres
+                </small>
               </label>
             </div>
 
