@@ -660,6 +660,7 @@ const extrairResumoPedido = (pedidoApi) => {
     pagoParcialmenteEm: pedidoApi.data_pago_parcialmente || null,
     dataRecebimento: pedidoApi.data_recebimento || null,
     numeroFatura: pedidoApi.numero_fatura || '',
+    observacao: pedidoApi.observacao || '',
     responsavelId: pedidoApi.responsavel || null,
     responsavelNome: pedidoApi.responsavel_nome || '',
     condominios,
@@ -2322,6 +2323,20 @@ export default function ColaboradorDashboard() {
                               Motivo: {p.motivoCancelamento}
                             </S.IdSub>
                           )}
+
+                          {/* Observação escrita pela administradora no envio.
+                              Truncada na célula (coluna estreita) — o texto
+                              completo fica no tooltip. */}
+                          {p.observacao && (
+                            <S.IdSub
+                              title={p.observacao}
+                              style={{ color: '#6b7280', fontStyle: 'italic' }}
+                            >
+                              Obs: {p.observacao.length > 60
+                                ? `${p.observacao.slice(0, 60)}…`
+                                : p.observacao}
+                            </S.IdSub>
+                          )}
                         </td>
 
                         <td data-label="Fatura">
@@ -2592,6 +2607,21 @@ export default function ColaboradorDashboard() {
                       <span className="info-label">Usuário Responsável</span>
                       <span className="info-value">{importDataInfo.importacao?.nome_usuario || '-'}</span>
                     </div>
+
+                    {/* Observação escrita pela administradora no envio da
+                        importação. Vem do pedido já carregado na listagem —
+                        o endpoint select-data não devolve esse campo. */}
+                    {(importDataInfo.importacao?.observacao || importDataPedido?.observacao) && (
+                      <div className="info-item full-width">
+                        <span className="info-label">Observação</span>
+                        <span
+                          className="info-value"
+                          style={{ whiteSpace: 'pre-wrap', lineHeight: 1.45 }}
+                        >
+                          {importDataInfo.importacao?.observacao || importDataPedido?.observacao}
+                        </span>
+                      </div>
+                    )}
                   </S.InfoGrid>
                 </>
               ) : (
