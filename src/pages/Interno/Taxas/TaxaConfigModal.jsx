@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSnackbar } from 'notistack';
 import styled from 'styled-components';
 import { taxaConfigService } from '../../../services/taxaConfigService';
+import MultiSearchableSelect from '../../../components/MultiSearchableSelect/MultiSearchableSelect.jsx';
 
 const Overlay = styled.div`
   position: fixed;
@@ -220,7 +221,7 @@ export default function TaxaConfigModal({
   const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    vinculo: '',
+    vinculos: [],
     produto: '',
     taxa_tipo: 'PERC',
     taxa_valor: '',
@@ -234,7 +235,7 @@ export default function TaxaConfigModal({
     if (isOpen) {
       if (taxa) {
         setFormData({
-          vinculo: taxa.vinculo || '',
+          vinculos: taxa.vinculo ? [taxa.vinculo] : [],
           produto: taxa.produto || '',
           taxa_tipo: taxa.taxa_tipo || 'PERC',
           taxa_valor: taxa.taxa_valor || '',
@@ -242,7 +243,7 @@ export default function TaxaConfigModal({
         });
       } else {
         setFormData({
-          vinculo: '',
+          vinculos: [],
           produto: '',
           taxa_tipo: 'PERC',
           taxa_valor: '',
@@ -289,33 +290,76 @@ export default function TaxaConfigModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.vinculos.length) {
+      enqueueSnackbar('Selecione pelo menos um vínculo', { variant: 'warning' });
+      return;
+    }
+
     setLoading(true);
 
-    try {
-      const payload = {
-        vinculo: Number(formData.vinculo),
-        produto: formData.produto ? Number(formData.produto) : null,
-        taxa_tipo: formData.taxa_tipo,
-        taxa_valor: parseFloat(formData.taxa_valor) || 0,
-        ativo: formData.ativo,
-      };
+    const basePayload = {
+      produto: formData.produto ? Number(formData.produto) : null,
+      taxa_tipo: formData.taxa_tipo,
+      taxa_valor: parseFloat(formData.taxa_valor) || 0,
+      ativo: formData.ativo,
+    };
 
-      if (!payload.vinculo) {
-        enqueueSnackbar('Selecione um vínculo', { variant: 'warning' });
-        setLoading(false);
+    try {
+      if (taxa?.id) {
+        await taxaConfigService.atualizar(taxa.id, {
+          ...basePayload,
+          vinculo: Number(formData.vinculos[0]),
+        });
+        enqueueSnackbar('Taxa atualizada com sucesso!', { variant: 'success' });
+        onSave();
+        onClose();
         return;
       }
 
-      if (taxa?.id) {
-        await taxaConfigService.atualizar(taxa.id, payload);
-        enqueueSnackbar('Taxa atualizada com sucesso!', { variant: 'success' });
-      } else {
-        await taxaConfigService.criar(payload);
-        enqueueSnackbar('Taxa criada com sucesso!', { variant: 'success' });
+      // Criação em lote: uma requisição por vínculo, com upsert para não
+      // violar a unicidade vinculo+produto do backend.
+      let criadas = 0;
+      let atualizadas = 0;
+      const falhas = [];
+
+      for (const vinculoId of formData.vinculos) {
+        const payload = { ...basePayload, vinculo: Number(vinculoId) };
+        try {
+          const existentes = await taxaConfigService.listar({ vinculo: vinculoId });
+          const lista = Array.isArray(existentes) ? existentes : existentes?.results || [];
+          const existente = lista.find(
+            (t) =>
+              String(t.produto_codigo ?? t.produto ?? '') === String(formData.produto || '') &&
+              !t.tipo
+          );
+          if (existente) {
+            await taxaConfigService.atualizar(existente.id, payload);
+            atualizadas += 1;
+          } else {
+            await taxaConfigService.criar(payload);
+            criadas += 1;
+          }
+        } catch (error) {
+          const vinculoInfo = (vinculos || []).find((v) => String(v.id) === String(vinculoId));
+          const nome = vinculoInfo?.condominio_nome || `Vínculo ${vinculoId}`;
+          const msg = error?.response?.data?.detail || 'erro ao salvar';
+          falhas.push(`${nome}: ${msg}`);
+        }
       }
 
-      onSave();
-      onClose();
+      const resumo = [];
+      if (criadas) resumo.push(`${criadas} taxa(s) criada(s)`);
+      if (atualizadas) resumo.push(`${atualizadas} atualizada(s)`);
+      if (resumo.length) {
+        enqueueSnackbar(resumo.join(', '), { variant: falhas.length ? 'warning' : 'success' });
+      }
+      falhas.forEach((f) => enqueueSnackbar(f, { variant: 'error' }));
+
+      if (criadas || atualizadas) {
+        onSave();
+        onClose();
+      }
     } catch (error) {
       const msg = error?.response?.data?.detail || 'Erro ao salvar taxa';
       enqueueSnackbar(msg, { variant: 'error' });
@@ -336,20 +380,24 @@ export default function TaxaConfigModal({
 
         <Form onSubmit={handleSubmit}>
           <FormGroup>
-            <label>Vínculo (Admin - Condomínio) *</label>
-            <select
-              name="vinculo"
-              value={formData.vinculo}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Selecione...</option>
-              {(vinculos || []).map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.administradora_nome || v.condominio_nome || `Vínculo ${v.id}`}
-                </option>
-              ))}
-            </select>
+            <label>{taxa?.id ? 'Vínculo (Admin - Condomínio) *' : 'Vínculos (Admin - Condomínio) *'}</label>
+            <MultiSearchableSelect
+              options={(vinculos || []).map((v) => ({
+                value: v.id,
+                label: v.condominio_nome || v.administradora_nome || `Vínculo ${v.id}`,
+                sublabel: [v.administradora_nome, v.condominio_cnpj].filter(Boolean).join(' — '),
+              }))}
+              values={formData.vinculos}
+              onChange={(novos) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  // Em edição a taxa pertence a um único vínculo: mantém só o último escolhido.
+                  vinculos: taxa?.id ? novos.slice(-1) : novos,
+                }))
+              }
+              placeholder="Buscar por condomínio, CNPJ ou administradora..."
+              disabled={loading}
+            />
           </FormGroup>
 
           <FormGroup ref={produtoWrapperRef}>

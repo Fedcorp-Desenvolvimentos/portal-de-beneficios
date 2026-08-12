@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { taxaConfigService } from '../../services/taxaConfigService.js'
 import { PRODUTOS_TAXA, PERCENTUAIS_TAXA } from '../../constants/produtos'
+import MultiSearchableSelect from '../MultiSearchableSelect/MultiSearchableSelect.jsx'
 import './TaxaConfigSection.css'
 
 const initialTaxaCondForm = {
-  vinculo: '',
+  vinculos: [],
   produto: '',
   tipo: '',
   taxa_tipo: 'PERC',
@@ -116,7 +117,7 @@ export default function TaxaConfigSection({
     if (taxa) {
       setTaxaCondSelecionada(taxa)
       setTaxaCondForm({
-        vinculo: taxa.vinculo || '',
+        vinculos: taxa.vinculo ? [taxa.vinculo] : [],
         produto: taxa.produto_codigo || '',
         tipo: taxa.tipo || '',
         taxa_tipo: taxa.taxa_tipo || 'PERC',
@@ -137,8 +138,8 @@ export default function TaxaConfigSection({
   }
 
   const handleSalvarTaxaCond = async () => {
-    if (!taxaCondForm.vinculo) {
-      alert('Selecione um condomínio')
+    if (!taxaCondForm.vinculos.length) {
+      alert('Selecione pelo menos um condomínio')
       return
     }
 
@@ -152,26 +153,71 @@ export default function TaxaConfigSection({
       return
     }
 
+    const basePayload = {
+      produto: taxaCondForm.produto ? taxaCondForm.produto : null,
+      tipo: taxaCondForm.tipo ? taxaCondForm.tipo : null,
+      taxa_tipo: taxaCondForm.taxa_tipo,
+      taxa_valor: parseFloat(taxaCondForm.taxa_valor) || 0,
+      ativo: taxaCondForm.ativo,
+    }
+
     try {
       setSalvandoTaxaCond(true)
 
-      const payload = {
-        vinculo: Number(taxaCondForm.vinculo),
-        produto: taxaCondForm.produto ? taxaCondForm.produto : null,
-        tipo: taxaCondForm.tipo ? taxaCondForm.tipo : null,
-        taxa_tipo: taxaCondForm.taxa_tipo,
-        taxa_valor: parseFloat(taxaCondForm.taxa_valor) || 0,
-        ativo: taxaCondForm.ativo,
-      }
-
       if (taxaCondSelecionada?.id) {
-        await taxaConfigService.atualizar(taxaCondSelecionada.id, payload)
-      } else {
-        await taxaConfigService.criar(payload)
+        await taxaConfigService.atualizar(taxaCondSelecionada.id, {
+          ...basePayload,
+          vinculo: Number(taxaCondForm.vinculos[0]),
+        })
+        fecharModalCond()
+        await carregarTaxasCondominio()
+        return
       }
 
-      fecharModalCond()
-      await carregarTaxasCondominio()
+      // Criação em lote: uma requisição por condomínio, com upsert para não
+      // violar a unicidade vinculo+produto/tipo do backend.
+      const buscarExistente = (vinculoId) =>
+        taxasCondominio.find(
+          (t) =>
+            String(t.vinculo) === String(vinculoId) &&
+            (t.produto_codigo || '') === (taxaCondForm.produto || '') &&
+            (t.tipo || '') === (taxaCondForm.tipo || '')
+        )
+
+      let criadas = 0
+      let atualizadas = 0
+      const falhas = []
+
+      for (const vinculoId of taxaCondForm.vinculos) {
+        const payload = { ...basePayload, vinculo: Number(vinculoId) }
+        try {
+          const existente = buscarExistente(vinculoId)
+          if (existente) {
+            await taxaConfigService.atualizar(existente.id, payload)
+            atualizadas += 1
+          } else {
+            await taxaConfigService.criar(payload)
+            criadas += 1
+          }
+        } catch (error) {
+          const vinculoInfo = vinculos.find((v) => String(v.id) === String(vinculoId))
+          const nome = getVinculoDisplay(vinculoInfo) || `Vínculo ${vinculoId}`
+          const msg = error?.response?.data?.detail || 'erro ao salvar'
+          falhas.push(`${nome}: ${msg}`)
+        }
+      }
+
+      const resumo = []
+      if (criadas) resumo.push(`${criadas} taxa(s) criada(s)`)
+      if (atualizadas) resumo.push(`${atualizadas} atualizada(s)`)
+      if (falhas.length) {
+        alert(`${resumo.join(', ') || 'Nenhuma taxa salva'}. Falhas:\n${falhas.join('\n')}`)
+      }
+
+      if (criadas || atualizadas) {
+        fecharModalCond()
+        await carregarTaxasCondominio()
+      }
     } catch (error) {
       const msg = error?.response?.data?.detail || 'Erro ao salvar taxa'
       alert(msg)
@@ -420,19 +466,23 @@ export default function TaxaConfigSection({
 
             <div className="taxa-modal-body">
               <div className="taxa-modal-field">
-                <label>Condomínio *</label>
-                <select
-                  value={taxaCondForm.vinculo}
-                  onChange={(e) => setTaxaCondForm((prev) => ({ ...prev, vinculo: e.target.value }))}
+                <label>{taxaCondSelecionada ? 'Condomínio *' : 'Condomínios *'}</label>
+                <MultiSearchableSelect
+                  options={vinculos.map((v) => ({
+                    value: v.id,
+                    label: getVinculoDisplay(v),
+                    sublabel: v.condominio_cnpj || '',
+                  }))}
+                  values={taxaCondForm.vinculos}
+                  onChange={(novos) => setTaxaCondForm((prev) => ({ ...prev, vinculos: novos }))}
+                  placeholder="Buscar por nome ou CNPJ..."
                   disabled={salvandoTaxaCond || !!taxaCondSelecionada}
-                >
-                  <option value="">Selecione o condomínio...</option>
-                  {vinculos.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {getVinculoDisplay(v)}
-                    </option>
-                  ))}
-                </select>
+                />
+                {!taxaCondSelecionada && (
+                  <small className="helper-text">
+                    A mesma taxa será aplicada a todos os condomínios selecionados.
+                  </small>
+                )}
               </div>
 
               <div className="taxa-modal-field" ref={produtoWrapperRef} style={{ position: 'relative' }}>
