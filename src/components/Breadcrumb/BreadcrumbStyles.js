@@ -46,7 +46,9 @@ export const LeftSection = styled.div`
 `;
 
 export const MenuButton = styled.button`
-  display: none;
+  /* Visível também no desktop: recolhe/expande a sidebar (demanda perfil
+     supervisor, seção 3.2). No mobile continua abrindo/fechando o menu. */
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 40px;
@@ -58,14 +60,11 @@ export const MenuButton = styled.button`
   cursor: pointer;
   transition: all 0.2s ease;
   margin-left: 8px;
-  
+  flex-shrink: 0;
+
   &:hover {
     background: #f8fafc;
     border-color: #cbd5e1;
-  }
-  
-  @media (max-width: 768px) {
-    display: flex;
   }
 `;
 

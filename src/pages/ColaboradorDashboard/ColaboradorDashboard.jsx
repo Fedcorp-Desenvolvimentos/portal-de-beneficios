@@ -786,7 +786,7 @@ export default function ColaboradorDashboard() {
   const { user } = useAuth()
   const userRole = user?.tipo || user?.tipo_usuario || user?.role || user?.perfil
 
-  const admRoles = ['adm', 'cli', 'dep', 'fin']
+  const admRoles = ['adm', 'cli', 'dep', 'sup', 'fin']
 
   if (admRoles.includes(userRole)) {
     return <Navigate to="/home" replace />

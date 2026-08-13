@@ -36,7 +36,11 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
     const handleResize = () => {
       const mobile = window.innerWidth <= 768;
       setIsMobile(mobile);
-      if (!mobile) setSidebarOpen(true);
+      // No desktop respeita a preferência persistida de sidebar recolhida
+      // (antes forçava aberto e descartava a escolha do usuário).
+      if (!mobile) {
+        setSidebarOpen(localStorage.getItem('sidebar_recolhida') !== '1');
+      }
     };
 
     window.addEventListener("resize", handleResize);
@@ -77,12 +81,13 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
     return allowedRoles.includes(nivelAcesso);
   };
 
+  // Manter em sincronia com os allowedRoles do AppRouter.jsx (matriz duplicada).
   const navItems = [
     {
       path: "/home",
       label: "Início",
       icon: <FaHome />,
-      allowed: ["adm", "dep", "dev", "fat"],
+      allowed: ["adm", "dep", "sup", "dev", "fat"],
     },
     {
       path: "/dashboard",
@@ -94,19 +99,19 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       path: "/importacao",
       label: "Upload",
       icon: <FaFileUpload />,
-      allowed: ["adm", "dep", "dev", "fat"],
+      allowed: ["adm", "dep", "sup", "dev", "fat"],
     },
     {
       path: "/faturamento",
       label: "Faturamento",
       icon: <FaFileInvoiceDollar />,
-      allowed: ["fat", "dev", "adm", "dep"],
+      allowed: ["fat", "dev", "adm", "dep", "sup"],
     },
     {
       path: "/gerenciamento",
       label: "Condomínios",
       icon: <FaBuilding />,
-      allowed: ["fat", "adm", "dev"],
+      allowed: ["fat", "adm", "sup", "dev"],
     },
     {
       path: "/interno/importacao-base",
@@ -124,7 +129,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       path: "/colaboradores/acompanhamento",
       label: "Acompanhamento",
       icon: <FaChartLine />,
-      allowed: ["adm", "dep", "dev", "fat"],
+      allowed: ["adm", "dep", "sup", "dev", "fat"],
     },
     {
       path: "/interno/administradoras",
@@ -136,19 +141,19 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       path: "/interno/consultar-boletos",
       label: "Consultar Boletos",
       icon: <FaReceipt />,
-      allowed: ["dev", "fat", "adm"],
+      allowed: ["dev", "fat", "adm", "sup"],
     },
-    // {
-    //   path: "/pedidos-cartao",
-    //   label: "Pedidos de Cartão",
-    //   icon: <FaCreditCard />,
-    //   allowed: ["adm"],
-    // },
+    {
+      path: "/pedidos-cartao",
+      label: "Pedidos de Cartão",
+      icon: <FaCreditCard />,
+      allowed: ["adm", "sup"],
+    },
     {
       path: "/interno/minha-administradora",
       label: "Minha Administradora",
       icon: <FaBuilding />,
-      allowed: ["adm", "dep", "dev", "fat"],
+      allowed: ["adm", "dep", "sup", "dev", "fat"],
     },
   ];
 

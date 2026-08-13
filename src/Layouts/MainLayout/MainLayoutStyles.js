@@ -33,18 +33,10 @@ export const Content = styled.div`
     padding-left: calc(62px + 1.5rem);
   `}
   
-  @media (max-width: 1200px) {
-    ${props => props.$withSidebar && props.$isDesktop && css`
-      padding-left: calc(200px + 1.5rem);
-    `}
-  }
-  
-  @media (max-width: 992px) {
-    ${props => props.$withSidebar && props.$isDesktop && css`
-      padding-left: calc(180px + 1.5rem);
-    `}
-  }
-  
+  /* A sidebar tem largura fixa de 240px (aberta) / 62px (recolhida) em
+     qualquer largura de desktop — o padding precisa acompanhar, senão o
+     menu cobre o conteúdo entre 768px e 1200px. */
+
   @media (max-width: 768px) {
     padding: 0 1rem 1rem;
     padding-left: 1rem !important;

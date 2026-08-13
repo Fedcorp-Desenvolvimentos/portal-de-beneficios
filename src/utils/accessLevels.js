@@ -3,6 +3,8 @@ export const ACCESS_LEVELS = {
   FINANCEIRO: "fin",
   FATURAMENTO: "fat",
   ADM: "adm",
+  DEPARTAMENTO_PESSOAL: "dep",
+  SUPERVISOR: "sup",
   CLIENTE: "cli",
 };
 
@@ -11,6 +13,8 @@ export const ACCESS_LEVEL_LABELS = {
   [ACCESS_LEVELS.FINANCEIRO]: "Financeiro Fedcorp",
   [ACCESS_LEVELS.FATURAMENTO]: "Faturista Fedcorp",
   [ACCESS_LEVELS.ADM]: "Usuário da Administradora",
+  [ACCESS_LEVELS.DEPARTAMENTO_PESSOAL]: "Departamento Pessoal",
+  [ACCESS_LEVELS.SUPERVISOR]: "Supervisor da Administradora",
   [ACCESS_LEVELS.CLIENTE]: "Cliente(Condomínio)",
 };
 
@@ -41,6 +45,8 @@ export const getAccessLevelColor = (level) => {
     [ACCESS_LEVELS.FINANCEIRO]: "#16a34a", // verde
     [ACCESS_LEVELS.FATURAMENTO]: "#d97706", // laranja
     [ACCESS_LEVELS.ADM]: "#dc2626", // vermelho
+    [ACCESS_LEVELS.DEPARTAMENTO_PESSOAL]: "#7c3aed", // roxo
+    [ACCESS_LEVELS.SUPERVISOR]: "#0d9488", // teal
     [ACCESS_LEVELS.CLIENTE]: "#64748b", // cinza
   };
 

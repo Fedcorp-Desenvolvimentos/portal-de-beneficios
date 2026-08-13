@@ -111,7 +111,7 @@ const AppRouter = () => {
             <Route
               path="/home"
               element={
-                <PrivateRouter allowedRoles={['adm', 'dep', 'dev', 'fat']}>
+                <PrivateRouter allowedRoles={['adm', 'dep', 'sup', 'dev', 'fat']}>
                   <Dashboard />
                 </PrivateRouter>
               }
@@ -124,7 +124,7 @@ const AppRouter = () => {
             <Route
               path="/importacao"
               element={
-                <PrivateRouter allowedRoles={['adm', 'dep', 'dev', 'fat']}>
+                <PrivateRouter allowedRoles={['adm', 'dep', 'sup', 'dev', 'fat']}>
                   <Importacao />
                 </PrivateRouter>
               }
@@ -133,7 +133,7 @@ const AppRouter = () => {
             <Route
               path="/faturamento"
               element={
-                <PrivateRouter allowedRoles={['fat', 'dev', 'adm', 'dep']}>
+                <PrivateRouter allowedRoles={['fat', 'dev', 'adm', 'dep', 'sup']}>
                   <Faturamento />
                 </PrivateRouter>
               }
@@ -142,7 +142,7 @@ const AppRouter = () => {
             <Route
               path="/faturamento/individual"
               element={
-                <PrivateRouter allowedRoles={['fat', 'dev', 'adm', 'dep']}>
+                <PrivateRouter allowedRoles={['fat', 'dev', 'adm', 'dep', 'sup']}>
                   <FaturamentoIndividual />
                 </PrivateRouter>
               }
@@ -151,7 +151,7 @@ const AppRouter = () => {
             <Route
               path="/faturamento/repetir"
               element={
-                <PrivateRouter allowedRoles={['fat', 'dev', 'adm', 'dep']}>
+                <PrivateRouter allowedRoles={['fat', 'dev', 'adm', 'dep', 'sup']}>
                   <FaturamentoFormulario modo="repetir" />
                 </PrivateRouter>
               }
@@ -160,19 +160,19 @@ const AppRouter = () => {
             <Route
               path="/faturamento/novo"
               element={
-                <PrivateRouter allowedRoles={['fat', 'dev', 'adm', 'dep']}>
+                <PrivateRouter allowedRoles={['fat', 'dev', 'adm', 'dep', 'sup']}>
                   <FaturamentoFormulario modo="novo" />
                 </PrivateRouter>
               }
             />
 
             <Route path="/pendentes" element={
-              <PrivateRouter allowedRoles={['adm', 'dep', 'dev', 'fat']}>
+              <PrivateRouter allowedRoles={['adm', 'dep', 'sup', 'dev', 'fat']}>
                 <Pendentes />
               </PrivateRouter>
             } />
             <Route path="/historico" element={
-              <PrivateRouter allowedRoles={['adm', 'dep', 'dev', 'fat']}>
+              <PrivateRouter allowedRoles={['adm', 'dep', 'sup', 'dev', 'fat']}>
                 <Historico />
               </PrivateRouter>
             } />
@@ -180,7 +180,7 @@ const AppRouter = () => {
             <Route
               path="/gerenciamento"
               element={
-                <PrivateRouter allowedRoles={['fat', 'adm', 'dev']}>
+                <PrivateRouter allowedRoles={['fat', 'adm', 'sup', 'dev']}>
                   <GerenciamentoCondominios />
                 </PrivateRouter>
               }
@@ -323,7 +323,7 @@ const AppRouter = () => {
             <Route
               path="/interno/minha-administradora"
               element={
-                <PrivateRouter allowedRoles={['adm', 'dep', 'dev', 'fat']}>
+                <PrivateRouter allowedRoles={['adm', 'dep', 'sup', 'dev', 'fat']}>
                   <MinhaAdministradora />
                 </PrivateRouter>
               }
@@ -353,7 +353,7 @@ const AppRouter = () => {
             <Route
               path="/interno/consultar-boletos"
               element={
-                <PrivateRouter allowedRoles={['dev', 'fat', 'adm']}>
+                <PrivateRouter allowedRoles={['dev', 'fat', 'adm', 'sup']}>
                   <ConsultarBoletos />
                 </PrivateRouter>
               }
@@ -364,7 +364,7 @@ const AppRouter = () => {
             <Route
               path="/colaboradores/acompanhamento"
               element={
-                <PrivateRouter allowedRoles={['adm', 'dep', 'dev', 'fat']}>
+                <PrivateRouter allowedRoles={['adm', 'dep', 'sup', 'dev', 'fat']}>
                   <AcompanhamentoFaturados />
                 </PrivateRouter>
               }
@@ -374,7 +374,7 @@ const AppRouter = () => {
             <Route
               path="/pedidos-cartao"
               element={
-                <PrivateRouter allowedRoles={['adm']}>
+                <PrivateRouter allowedRoles={['adm', 'sup']}>
                   <PedidoCartao />
                 </PrivateRouter>
               }
