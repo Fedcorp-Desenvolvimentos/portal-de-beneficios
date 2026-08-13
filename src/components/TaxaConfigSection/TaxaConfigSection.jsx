@@ -46,6 +46,7 @@ export default function TaxaConfigSection({
   const [taxaCondSelecionada, setTaxaCondSelecionada] = useState(null)
   const [taxaCondForm, setTaxaCondForm] = useState(initialTaxaCondForm)
   const [salvandoTaxaCond, setSalvandoTaxaCond] = useState(false)
+  const [filtroTaxas, setFiltroTaxas] = useState('')
   const [produtoSearch, setProdutoSearch] = useState('')
   const [produtoDropdownOpen, setProdutoDropdownOpen] = useState(false)
   const produtoWrapperRef = useRef(null)
@@ -249,6 +250,15 @@ export default function TaxaConfigSection({
     return vinculo?.condominio_nome || vinculo?.condominio_cnpj || `Vínculo ${vinculo?.id}`
   }
 
+  const termoFiltroTaxas = filtroTaxas.trim().toLowerCase()
+  const taxasFiltradas = termoFiltroTaxas
+    ? taxasCondominio.filter((t) =>
+        [t.condominio_nome, t.condominio_cnpj, t.produto_nome, getVinculoDisplay(t)]
+          .filter(Boolean)
+          .some((campo) => String(campo).toLowerCase().includes(termoFiltroTaxas))
+      )
+    : taxasCondominio
+
   return (
     <div className="taxa-section">
       <label className="section-label">Taxa de Administração</label>
@@ -379,10 +389,22 @@ export default function TaxaConfigSection({
                 </button>
               </div>
 
+              {!loadingTaxas && taxasCondominio.length > 0 && (
+                <input
+                  type="text"
+                  className="taxa-filtro-input"
+                  value={filtroTaxas}
+                  onChange={(e) => setFiltroTaxas(e.target.value)}
+                  placeholder="Buscar condomínio por nome ou CNPJ..."
+                />
+              )}
+
               {loadingTaxas ? (
                 <p className="taxa-empty">Carregando taxas...</p>
               ) : taxasCondominio.length === 0 ? (
                 <p className="taxa-empty">Nenhuma taxa por condomínio configurada.</p>
+              ) : taxasFiltradas.length === 0 ? (
+                <p className="taxa-empty">Nenhuma taxa encontrada para "{filtroTaxas}".</p>
               ) : (
                 <div className="taxa-condominio-table-wrapper">
                   <table className="taxa-condominio-table">
@@ -397,7 +419,7 @@ export default function TaxaConfigSection({
                       </tr>
                     </thead>
                     <tbody>
-                      {taxasCondominio.map((t) => (
+                      {taxasFiltradas.map((t) => (
                         <tr key={t.id}>
                           <td>{getVinculoDisplay(t)}</td>
                           <td>{t.produto_nome || (t.tipo ? TIPO_PRODUTO_CHOICES.find((tp) => tp.value === t.tipo)?.label || t.tipo : 'Todos')}</td>
@@ -468,11 +490,25 @@ export default function TaxaConfigSection({
               <div className="taxa-modal-field">
                 <label>{taxaCondSelecionada ? 'Condomínio *' : 'Condomínios *'}</label>
                 <MultiSearchableSelect
-                  options={vinculos.map((v) => ({
-                    value: v.id,
-                    label: getVinculoDisplay(v),
-                    sublabel: v.condominio_cnpj || '',
-                  }))}
+                  options={vinculos
+                    .filter((v) => {
+                      // Em edição mostra tudo (campo travado); em criação esconde
+                      // quem já tem taxa para o mesmo produto/tipo do formulário,
+                      // exceto os já selecionados (para o chip não sumir).
+                      if (taxaCondSelecionada) return true
+                      if (taxaCondForm.vinculos.some((id) => String(id) === String(v.id))) return true
+                      return !taxasCondominio.some(
+                        (t) =>
+                          String(t.vinculo) === String(v.id) &&
+                          (t.produto_codigo || '') === (taxaCondForm.produto || '') &&
+                          (t.tipo || '') === (taxaCondForm.tipo || '')
+                      )
+                    })
+                    .map((v) => ({
+                      value: v.id,
+                      label: getVinculoDisplay(v),
+                      sublabel: v.condominio_cnpj || '',
+                    }))}
                   values={taxaCondForm.vinculos}
                   onChange={(novos) => setTaxaCondForm((prev) => ({ ...prev, vinculos: novos }))}
                   placeholder="Buscar por nome ou CNPJ..."

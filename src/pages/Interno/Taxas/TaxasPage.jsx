@@ -68,6 +68,19 @@ const Select = styled.select`
   &:focus { outline: none; border-color: #2563eb; }
 `;
 
+const SearchInput = styled.input`
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  background: #fff;
+  color: #0f172a;
+  min-width: 240px;
+
+  &:focus { outline: none; border-color: #2563eb; }
+`;
+
 const TableWrapper = styled.div`overflow-x: auto;`;
 
 const Table = styled.table`
@@ -221,6 +234,7 @@ export default function TaxasPage() {
   const [loading, setLoading] = useState(true);
   const [filtroAdm, setFiltroAdm] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
+  const [filtroBusca, setFiltroBusca] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [taxaSelecionada, setTaxaSelecionada] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -276,6 +290,15 @@ export default function TaxasPage() {
     return `R$ ${Number(valor).toFixed(2)}`;
   };
 
+  const termoBusca = filtroBusca.trim().toLowerCase();
+  const taxasFiltradas = termoBusca
+    ? taxas.filter((t) =>
+        [t.vinculo_display, t.condominio_nome, t.condominio_cnpj, t.produto_nome]
+          .filter(Boolean)
+          .some((campo) => String(campo).toLowerCase().includes(termoBusca))
+      )
+    : taxas;
+
   return (
     <PageLayout title="Configuração de Taxas" subtitle="Gerencie as taxas de administração por vínculo e produto">
       <Container>
@@ -288,6 +311,12 @@ export default function TaxasPage() {
           </CardHeader>
 
           <Filters>
+            <SearchInput
+              type="text"
+              value={filtroBusca}
+              onChange={(e) => setFiltroBusca(e.target.value)}
+              placeholder="Buscar condomínio por nome ou CNPJ..."
+            />
             <Select value={filtroAdm} onChange={(e) => setFiltroAdm(e.target.value)}>
               <option value="">Todas as administradoras</option>
               {administradoras.map((adm) => (
@@ -306,7 +335,7 @@ export default function TaxasPage() {
 
           {loading ? (
             <Empty>Carregando...</Empty>
-          ) : taxas.length === 0 ? (
+          ) : taxasFiltradas.length === 0 ? (
             <Empty>Nenhuma configuração de taxa encontrada.</Empty>
           ) : (
             <TableWrapper>
@@ -322,7 +351,7 @@ export default function TaxasPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {taxas.map((t) => (
+                  {taxasFiltradas.map((t) => (
                     <tr key={t.id}>
                       <td>{t.vinculo_display || `Vínculo ${t.vinculo}`}</td>
                       <td>{t.produto_nome || 'Todos'}</td>
@@ -372,6 +401,7 @@ export default function TaxasPage() {
             taxa={taxaSelecionada}
             vinculos={vinculos}
             produtos={produtos}
+            taxasExistentes={taxas}
           />
         )}
 

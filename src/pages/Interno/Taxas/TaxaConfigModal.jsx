@@ -217,6 +217,7 @@ export default function TaxaConfigModal({
   taxa,
   vinculos,
   produtos,
+  taxasExistentes = [],
 }) {
   const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(false);
@@ -382,11 +383,24 @@ export default function TaxaConfigModal({
           <FormGroup>
             <label>{taxa?.id ? 'Vínculo (Admin - Condomínio) *' : 'Vínculos (Admin - Condomínio) *'}</label>
             <MultiSearchableSelect
-              options={(vinculos || []).map((v) => ({
-                value: v.id,
-                label: v.condominio_nome || v.administradora_nome || `Vínculo ${v.id}`,
-                sublabel: [v.administradora_nome, v.condominio_cnpj].filter(Boolean).join(' — '),
-              }))}
+              options={(vinculos || [])
+                .filter((v) => {
+                  // Em edição mostra tudo; em criação esconde quem já tem taxa
+                  // para o mesmo produto do formulário, exceto os já selecionados.
+                  if (taxa?.id) return true;
+                  if (formData.vinculos.some((id) => String(id) === String(v.id))) return true;
+                  return !(taxasExistentes || []).some(
+                    (t) =>
+                      String(t.vinculo) === String(v.id) &&
+                      String(t.produto_codigo ?? t.produto ?? '') === String(formData.produto || '') &&
+                      !t.tipo
+                  );
+                })
+                .map((v) => ({
+                  value: v.id,
+                  label: v.condominio_nome || v.administradora_nome || `Vínculo ${v.id}`,
+                  sublabel: [v.administradora_nome, v.condominio_cnpj].filter(Boolean).join(' — '),
+                }))}
               values={formData.vinculos}
               onChange={(novos) =>
                 setFormData((prev) => ({
