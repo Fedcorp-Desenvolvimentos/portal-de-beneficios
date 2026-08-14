@@ -60,6 +60,7 @@ export default function Usuarios() {
       fat: 'Faturista Fedcorp',
       adm: 'Usuário da Administradora / Imobiliária',
       dep: 'Departamento Pessoal',
+      sup: 'Supervisor da Administradora',
       cli: 'Cliente',
     };
     return tipos[tipo] || tipo || '—';

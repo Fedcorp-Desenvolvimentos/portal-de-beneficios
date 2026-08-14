@@ -444,12 +444,16 @@ export default function MinhaAdministradora() {
 
   const tipoUsuarioLogado = getTipoUsuario(user);
 
-  const usuarioPodeGerenciarUsuarios = ['fat', 'dev'].includes(tipoUsuarioLogado);
+  // Supervisor gerencia os usuários adm/dep da própria administradora
+  // (a criação de outros supervisores continua exclusiva de dev/fat).
+  const usuarioPodeGerenciarUsuarios = ['fat', 'dev', 'sup'].includes(tipoUsuarioLogado);
 
   const podeCadastrarUsuario = usuarioPodeGerenciarUsuarios;
   const podeAlterarTipoUsuario = usuarioPodeGerenciarUsuarios;
 
-  const podeGerenciarRegraValor = ['dev', 'adm', 'dep', 'fat'].includes(tipoUsuarioLogado);
+  // Regra de valor/taxa é exclusiva da Fedcorp (correção embarcada na
+  // demanda do perfil supervisor — antes adm/dep viam a UI).
+  const podeGerenciarRegraValor = ['dev', 'fat'].includes(tipoUsuarioLogado);
 
   const tipoUsuarioSelecionado = getTipoUsuarioItem(usuarioSelecionado);
 
@@ -708,7 +712,11 @@ export default function MinhaAdministradora() {
 
   const resolverTipoPermitidoParaSalvar = (dados) => {
     if (podeAlterarTipoUsuario) {
-      return dados.tipo || 'adm';
+      const tipo = dados.tipo || 'adm';
+      if (tipoUsuarioLogado === 'sup' && !isTipoGerenciavelNaAdministradora(tipo)) {
+        throw new Error('Supervisor só pode cadastrar usuários adm e dep');
+      }
+      return tipo;
     }
 
     if (usuarioSelecionado) {
@@ -727,7 +735,7 @@ export default function MinhaAdministradora() {
   const handleSalvarUsuario = async (dados) => {
     try {
       if (!usuarioSelecionado && !podeCadastrarUsuario) {
-        enqueueSnackbar('Apenas usuário faturista ou desenvolvedor pode cadastrar novos usuários', {
+        enqueueSnackbar('Você não tem permissão para cadastrar novos usuários', {
           variant: 'warning',
         });
         return;

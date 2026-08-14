@@ -786,7 +786,7 @@ export default function ColaboradorDashboard() {
   const { user } = useAuth()
   const userRole = user?.tipo || user?.tipo_usuario || user?.role || user?.perfil
 
-  const admRoles = ['adm', 'cli', 'dep', 'fin']
+  const admRoles = ['adm', 'cli', 'dep', 'sup', 'fin']
 
   if (admRoles.includes(userRole)) {
     return <Navigate to="/home" replace />
@@ -1537,24 +1537,45 @@ export default function ColaboradorDashboard() {
         `compra-${boletoPedido.id}`
       )
 
+      // Persiste o status no backend antes de refletir na tela: antes o
+      // "comprado" era só estado local e voltava para "faturado" no reload.
+      let statusPersistido = true
+      if (todosSelecionados) {
+        try {
+          await faturamentoService.alterarStatusPedido(boletoPedido.id, 'comprado')
+        } catch (statusError) {
+          console.error('Erro ao marcar pedido como comprado:', statusError)
+          statusPersistido = false
+        }
+      }
+
+      const marcarComprado = todosSelecionados && statusPersistido
+
       setPedidos((prev) =>
         prev.map((item) =>
           item.id === boletoPedido.id
             ? {
               ...item,
-              status: todosSelecionados ? 'comprado' : 'faturado',
-              compradoEm: todosSelecionados ? new Date().toISOString() : item.compradoEm,
+              status: marcarComprado ? 'comprado' : 'faturado',
+              compradoEm: marcarComprado ? new Date().toISOString() : item.compradoEm,
             }
             : item
         )
       )
 
-      showToast(
-        todosSelecionados
-          ? `Arquivo de compra do pedido ${boletoPedido.id} gerado com todos os boletos selecionados.`
-          : `Arquivo de compra do pedido ${boletoPedido.id} gerado com ${selecionados.length} boleto(s). O pedido continuará como faturado.`,
-        { variant: 'success' }
-      )
+      if (todosSelecionados && !statusPersistido) {
+        showToast(
+          `TXT do pedido ${boletoPedido.id} gerado, mas não foi possível marcar como comprado. Altere o status manualmente.`,
+          { variant: 'warning' }
+        )
+      } else {
+        showToast(
+          todosSelecionados
+            ? `Arquivo de compra do pedido ${boletoPedido.id} gerado com todos os boletos selecionados.`
+            : `Arquivo de compra do pedido ${boletoPedido.id} gerado com ${selecionados.length} boleto(s). O pedido continuará como faturado.`,
+          { variant: 'success' }
+        )
+      }
 
       closeBoletoModal()
     } catch (error) {

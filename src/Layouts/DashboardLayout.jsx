@@ -4,22 +4,37 @@ import Sidebar from '../components/Sidebar/Sidebar';
 import Breadcrumb from '../components/Breadcrumb/Breadcrumb';
 import * as S from './DashboardLayoutStyles';
 
+// Mesma preferência persistida usada no MainLayout.
+const SIDEBAR_STORAGE_KEY = 'sidebar_recolhida';
+
+const sidebarInicial = () => {
+  if (window.innerWidth <= 768) return false;
+  return localStorage.getItem(SIDEBAR_STORAGE_KEY) !== '1';
+};
+
 const DashboardLayout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
+  const [sidebarOpen, setSidebarOpen] = useState(sidebarInicial);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
 
   useEffect(() => {
     function handleResize() {
       const desktop = window.innerWidth > 768;
       setIsDesktop(desktop);
-      setSidebarOpen(desktop);
+      setSidebarOpen(desktop ? localStorage.getItem(SIDEBAR_STORAGE_KEY) !== '1' : false);
     }
-    
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const toggleSidebar = () => setSidebarOpen(prev => !prev);
+  const toggleSidebar = () =>
+    setSidebarOpen(prev => {
+      const next = !prev;
+      if (window.innerWidth > 768) {
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, next ? '0' : '1');
+      }
+      return next;
+    });
 
   return (
     <S.Layout>

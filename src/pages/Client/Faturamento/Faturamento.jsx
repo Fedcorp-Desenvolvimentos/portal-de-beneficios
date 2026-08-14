@@ -426,7 +426,7 @@ export default function Faturamento() {
         const normalizedStatus = normalizeStatus(group.status);
 
         if (normalizedStatus === 'comprado') return false;
-        if (user?.tipo === 'adm' && normalizedStatus === 'aprovado') return false;
+        if (['adm', 'sup'].includes(user?.tipo) && normalizedStatus === 'aprovado') return false;
 
         const textoBusca = [
           group.importacaoLabel,

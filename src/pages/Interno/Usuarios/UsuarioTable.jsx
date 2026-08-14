@@ -145,6 +145,16 @@ const TipoBadge = styled.span`
           background: #dcfce7;
           color: #16a34a;
         `;
+      case 'dep':
+        return `
+          background: #ede9fe;
+          color: #7c3aed;
+        `;
+      case 'sup':
+        return `
+          background: #ccfbf1;
+          color: #0d9488;
+        `;
       case 'cli':
         return `
           background: #e0f2fe;
@@ -177,6 +187,8 @@ export default function UsuarioTable({ usuarios, onEditar, onExcluir, admNome })
       fin: 'Financeiro Fedcorp',
       fat: 'Faturista Fedcorp',
       adm: 'Usuário Administradora',
+      dep: 'Departamento Pessoal',
+      sup: 'Supervisor da Administradora',
       cli: 'Cliente (Condomínio)',
     };
 
