@@ -1060,7 +1060,7 @@ function getRowValidation(row, regraValor = null, isVT = false) {
   if (!cpf) {
     erros.push('CPF não informado')
   } else if (!isValidCPF(cpf)) {
-    erros.push('CPF inválido')
+    erros.push('CPF inválido — dígito verificador não confere, corrija na planilha')
   }
 
   if (Number(valor) <= 0) {
@@ -1228,8 +1228,19 @@ function getWednesdayBeforeWeekend(dateStr) {
 function calcularVencimentoParaRecebimento(recebimento, dMais) {
   if (!recebimento) return ''
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  // O vencimento nunca pode cair hoje nem no passado: o mínimo é o próximo
+  // dia útil. A versão anterior comparava com "< hoje", então o próprio
+  // cálculo podia devolver a data de hoje como vencimento válido.
+  const vencimentoMinimo = obterDataVencimento(1)
+  const minimoDate = parseDateInput(vencimentoMinimo)
+
+  const aplicarMinimo = (valor) => {
+    const date = parseDateInput(valor)
+    if (date && minimoDate && date.getTime() < minimoDate.getTime()) {
+      return vencimentoMinimo
+    }
+    return valor
+  }
 
   const wednesdayBefore = getWednesdayBeforeWeekend(recebimento)
 
@@ -1242,22 +1253,10 @@ function calcularVencimentoParaRecebimento(recebimento, dMais) {
       ? vencimentoPelaRegra
       : wednesdayBefore
 
-    const vencDate = parseDateInput(vencBase)
-    if (vencDate && vencDate.getTime() < today.getTime()) {
-      return subtractBusinessDays(recebimento, 1)
-    }
-
-    return vencBase
+    return aplicarMinimo(vencBase)
   }
 
-  const vencimentoCalculado = subtractBusinessDays(recebimento, dMais)
-  const vencimentoDate = parseDateInput(vencimentoCalculado)
-
-  if (vencimentoDate && vencimentoDate.getTime() < today.getTime()) {
-    return subtractBusinessDays(recebimento, 1)
-  }
-
-  return vencimentoCalculado
+  return aplicarMinimo(subtractBusinessDays(recebimento, dMais))
 }
 
 function isAfterDateInput(dateA, dateB) {
@@ -1925,10 +1924,9 @@ export default function Importacao() {
 
     if (datas.vencimento) {
       const vencDate = parseDateInput(datas.vencimento)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      if (vencDate && vencDate.getTime() < today.getTime()) {
-        toast.warning('A data de vencimento não pode estar no passado.')
+      const minimoDate = parseDateInput(obterDataVencimento(1))
+      if (vencDate && minimoDate && vencDate.getTime() < minimoDate.getTime()) {
+        toast.warning('A data de vencimento deve ser a partir do próximo dia útil — não pode cair hoje nem no passado.')
         return false
       }
     }
@@ -2075,6 +2073,22 @@ export default function Importacao() {
     () => linhasValidadas.filter((r) => r.bloqueado).length,
     [linhasValidadas]
   )
+
+  // Resumo por motivo (ex.: "16 CPF inválido · 2 Valor inválido") — antes o
+  // cartão rotulava qualquer bloqueio como "por regra" e confundia o usuário.
+  const resumoBloqueios = useMemo(() => {
+    const contagem = new Map()
+    linhasValidadas.forEach((r) => {
+      if (!r.bloqueado) return
+      ;(r.errosValidacao || []).forEach((erro) => {
+        const rotulo = String(erro).split('—')[0].trim()
+        contagem.set(rotulo, (contagem.get(rotulo) || 0) + 1)
+      })
+    })
+    return Array.from(contagem.entries())
+      .map(([motivo, qtd]) => `${qtd} ${motivo}`)
+      .join(' · ')
+  }, [linhasValidadas])
 
   const totalErrosBackend = useMemo(() => {
     const errosNormalizados = extrairErrosImportacao(data)
@@ -2540,6 +2554,17 @@ export default function Importacao() {
             (r) => !lote.excluidosPorColab?.has(getNomeColaborador(r))
           ),
         }
+
+        // Auditoria: quem foi removido na conferência vai identificado no
+        // payload e fica registrado no histórico da importação (backend).
+        const excluidosConferencia = lote.rows
+          .filter((r) => lote.excluidosPorColab?.has(getNomeColaborador(r)))
+          .map((r) => ({
+            nome: getNomeColaborador(r),
+            cpf: getCpf(r),
+            condominio: getCondominio(r),
+            valor: getValorRow(r),
+          }))
         const dataToBackendSincronizado = prepararDadosParaEnvio(loteAtivo, data.data_to_backend)
 
         const vencimentoFormatado = datasEnvio.vencimento || reviewData.vencimento || ''
@@ -2573,6 +2598,7 @@ export default function Importacao() {
           origem: dataToBackendSincronizado.origem,
           modelo_importacao: "VR-BENEFICIOS",
           observacao: (formEnvio.observacao || '').trim(),
+          excluidos_conferencia: excluidosConferencia,
         }
 
         const r2 = (v) => Math.round(v * 100) / 100
@@ -2766,8 +2792,11 @@ export default function Importacao() {
                   onClick={toggleFilterBlocked}
                   style={{ cursor: 'pointer' }}
                 >
-                  <span className="kpi-label">Linhas bloqueadas por regra</span>
+                  <span className="kpi-label">Linhas bloqueadas</span>
                   <span className="kpi-value error">{totalBloqueios}</span>
+                  {resumoBloqueios && (
+                    <small className="kpi-motivos">{resumoBloqueios}</small>
+                  )}
                 </div>
               )}
 
@@ -2855,7 +2884,17 @@ export default function Importacao() {
                           className={`${r.bloqueado ? 'row-bloqueado' : ''} ${temErroBackend ? 'row-backend-error' : ''}`}
                         >
                           <td>{getCondominio(r)}</td>
-                          <td>{nomeColaborador}</td>
+                          <td>
+                            {nomeColaborador}
+                            {/* Motivo do bloqueio visível na linha — antes vivia
+                                só no tooltip e o usuário lia "16 bloqueados" sem
+                                saber o porquê (ex.: CPF inválido). */}
+                            {r.bloqueado && (r.errosValidacao || []).length > 0 && (
+                              <span className="motivo-bloqueio">
+                                {r.errosValidacao.join(' • ')}
+                              </span>
+                            )}
+                          </td>
 
                           <td className="col-valor">
                             R${' '}
@@ -3080,7 +3119,14 @@ export default function Importacao() {
                   onChange={handleVencimentoChange}
                   required={campoDataReferenciaVT !== 'recebimento'}
                   disabled={enviandoLote || vencimentoCalculadoAutomaticamente}
-                  minDate={vencimentoMinimo || minDateVencimento}
+                  minDate={
+                    // Nunca deixa o calendário oferecer hoje: usa o MAIOR entre
+                    // o mínimo da regra D+ e o próximo dia útil (strings
+                    // YYYY-MM-DD comparam corretamente como texto).
+                    vencimentoMinimo && vencimentoMinimo > minDateVencimento
+                      ? vencimentoMinimo
+                      : minDateVencimento
+                  }
                   filterDate={(date) => date.getDay() !== 0 && date.getDay() !== 6}
                 />
 
