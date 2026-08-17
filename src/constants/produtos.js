@@ -1,10 +1,26 @@
+// Catálogo oficial da VR (PRODUTOS - VR.xlsx, ago/2026) — cada produto tem
+// código próprio. Cultura (30) e Multi - Premiação (59) ficam fora: são
+// rejeitados na importação.
 export const PRODUTOS_TAXA = [
-  { codigo: '207', nome: 'Multibenefícios' },
+  { codigo: '31', nome: 'Refeição' },
+  { codigo: '243', nome: 'Auxílio Refeição' },
+  { codigo: '242', nome: 'Refeição Adicional' },
   { codigo: '27', nome: 'Alimentação' },
-  { codigo: '28', nome: 'Vale Combustível' },
+  { codigo: '204', nome: 'Auxílio Alimentação' },
   { codigo: '201', nome: 'Cesta' },
   { codigo: '202', nome: 'Boas Festas' },
-  { codigo: '204', nome: 'Auxílio Alimentação' },
+  { codigo: '217', nome: 'Multi - Boas Festas' },
+  { codigo: '28', nome: 'Auto' },
+  { codigo: '261', nome: 'Auto Manutenção' },
+  { codigo: '207', nome: 'Multibenefícios' },
+  { codigo: '209', nome: 'Auxílio VR+VA' },
+  { codigo: '213', nome: 'Multi - Auxílio VR+VA' },
+  { codigo: '244', nome: 'Multi - Refeição' },
+  { codigo: '245', nome: 'Multi - Auxílio Refeição' },
+  { codigo: '212', nome: 'Multi - Alimentação' },
+  { codigo: '211', nome: 'Multi - Auxílio Alimentação' },
+  { codigo: '58', nome: 'Multi - Home Office' },
+  { codigo: '262', nome: 'Multi - Mobilidade' },
 ]
 
 export const PERCENTUAIS_TAXA = [
