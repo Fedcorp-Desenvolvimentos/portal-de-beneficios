@@ -147,7 +147,9 @@ function Sidebar({ sidebarOpen, setSidebarOpen, toggleSidebar }) {
       path: "/pedidos-cartao",
       label: "Pedidos de Cartão",
       icon: <FaCreditCard />,
-      allowed: ["adm", "sup"],
+      // Exclusivo do supervisor: o adm não deve ver esta página (o item de
+      // menu ficou anos comentado justamente por isso).
+      allowed: ["sup"],
     },
     {
       path: "/interno/minha-administradora",

@@ -2007,7 +2007,10 @@ export default function ColaboradorDashboard() {
     const podeGerarTxt = p.status === 'faturado'
     const jaComprado = ['comprado', 'pago_parcialmente'].includes(p.status)
     const souResponsavel = p.responsavelId === user?.id
-    const bloqueadoPorOutro = p.responsavelId && p.responsavelId !== user?.id
+    // Dev passa por cima da trava de responsável (suporte/destravamento);
+    // o backend aplica a mesma exceção.
+    const isDev = userRole === 'dev'
+    const bloqueadoPorOutro = Boolean(p.responsavelId && p.responsavelId !== user?.id && !isDev)
     const podeEditar = !bloqueadoPorOutro && p.status !== 'cancelado'
 
     return (
@@ -2035,6 +2038,30 @@ export default function ColaboradorDashboard() {
             <FiRefreshCw size={14} />
             <span>Liberar pedido</span>
           </S.ActionItem>
+        ) : isDev ? (
+          <>
+            <S.ActionStatus>Responsável: {p.responsavelNome}</S.ActionStatus>
+            <S.ActionItem
+              type="button"
+              onClick={() => {
+                handleMarcarResponsavel(p)
+                closeActionsMenu()
+              }}
+            >
+              <FiCheckCircle size={14} />
+              <span>Assumir pedido (dev)</span>
+            </S.ActionItem>
+            <S.ActionItem
+              type="button"
+              onClick={() => {
+                handleDesmarcarResponsavel(p)
+                closeActionsMenu()
+              }}
+            >
+              <FiRefreshCw size={14} />
+              <span>Liberar pedido (dev)</span>
+            </S.ActionItem>
+          </>
         ) : (
           <S.ActionStatus>Bloqueado por {p.responsavelNome}</S.ActionStatus>
         )}
