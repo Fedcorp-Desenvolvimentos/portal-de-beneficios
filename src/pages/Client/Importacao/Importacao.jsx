@@ -1611,6 +1611,15 @@ export default function Importacao() {
 
       setData(response)
 
+      // Aviso destacado de CPF duplicado (somas legítimas e conflitos).
+      const avisosSoma = response?.avisos || response?.data_to_backend?.avisos || []
+      const temConflitoCpf = (response?.linhas_com_erro || []).some(
+        (l) => l?.tipo_erro === 'CPF_DUPLICADO_DIVERGENTE'
+      )
+      if (temConflitoCpf || avisosSoma.length > 0) {
+        toast.warning('A planilha contém CPF duplicado — veja o aviso acima da tabela.')
+      }
+
       const novoLote = {
         id,
         arquivo: file.name,
@@ -2073,6 +2082,25 @@ export default function Importacao() {
     () => linhasValidadas.filter((r) => r.bloqueado).length,
     [linhasValidadas]
   )
+
+  // Dados do aviso destacado de CPF duplicado: conflitos (linhas bloqueadas
+  // pelo backend) agrupados por CPF, e somas legítimas (avisos do reader).
+  const avisosCpfDuplicado = useMemo(() => {
+    const porCpf = new Map()
+    ;(data?.linhas_com_erro || []).forEach((l) => {
+      if (l?.tipo_erro !== 'CPF_DUPLICADO_DIVERGENTE') return
+      const cpf = String(l?.dados?.cpf || '?').trim()
+      if (!porCpf.has(cpf)) porCpf.set(cpf, [])
+      porCpf.get(cpf).push({ linha: l?.linha, nome: l?.dados?.nome || '?' })
+    })
+    return {
+      conflitos: Array.from(porCpf.entries()).map(([cpf, ocorrencias]) => ({
+        cpf,
+        ocorrencias,
+      })),
+      somados: data?.avisos || data?.data_to_backend?.avisos || [],
+    }
+  }, [data])
 
   // Resumo por motivo (ex.: "16 CPF inválido · 2 Valor inválido") — antes o
   // cartão rotulava qualquer bloqueio como "por regra" e confundia o usuário.
@@ -2768,6 +2796,41 @@ export default function Importacao() {
                     {filterOnlyErrors ? 'Mostrar todas' : 'Filtrar apenas erros'}
                   </span>
                 </div>
+              </div>
+            )}
+
+            {/* Aviso destacado de CPF duplicado — conflitos (bloqueados) e
+                somas legítimas (informativo). Pedido após o caso em que duas
+                pessoas diferentes com o mesmo CPF foram somadas em silêncio. */}
+            {avisosCpfDuplicado.conflitos.length > 0 && (
+              <div className="aviso-duplicados">
+                <strong>⚠ CPF duplicado com dados divergentes — linhas bloqueadas</strong>
+                {avisosCpfDuplicado.conflitos.map((c) => (
+                  <div key={c.cpf} className="aviso-item">
+                    CPF <b>{c.cpf}</b> aparece em{' '}
+                    {c.ocorrencias
+                      .map((o) => `linha ${o.linha} ('${o.nome}')`)
+                      .join(' × ')}{' '}
+                    com dados diferentes. As linhas foram bloqueadas — corrija o CPF
+                    na planilha e reimporte.
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {avisosCpfDuplicado.somados.length > 0 && (
+              <div className="aviso-somados">
+                <strong>CPF repetido na planilha — valores somados</strong>
+                {avisosCpfDuplicado.somados.map((a) => (
+                  <div key={`${a.cpf}-${a.nome}`} className="aviso-item">
+                    {a.nome} (CPF {a.cpf}): linhas {(a.linhas || []).join(' e ')}{' '}
+                    somadas no mesmo benefício — total R${' '}
+                    {Number(a.valor_total || 0).toLocaleString('pt-BR', {
+                      minimumFractionDigits: 2,
+                    })}
+                    . Se não for a mesma pessoa, corrija o CPF e reimporte.
+                  </div>
+                ))}
               </div>
             )}
 
