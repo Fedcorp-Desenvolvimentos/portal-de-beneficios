@@ -374,7 +374,7 @@ const AppRouter = () => {
             <Route
               path="/pedidos-cartao"
               element={
-                <PrivateRouter allowedRoles={['adm', 'sup']}>
+                <PrivateRouter allowedRoles={['sup']}>
                   <PedidoCartao />
                 </PrivateRouter>
               }
