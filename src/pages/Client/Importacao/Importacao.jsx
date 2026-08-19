@@ -1286,6 +1286,7 @@ export default function Importacao() {
     tipo: null,
     rows: [],
     excluidosPorColab: new Set(),
+    valoresEditados: new Set(),
   })
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -1528,6 +1529,7 @@ export default function Importacao() {
           tipo: 'vale_transporte',
           rows: parsed,
           excluidosPorColab: new Set(),
+          valoresEditados: new Set(),
         })
 
         setData(vtData)
@@ -1597,6 +1599,7 @@ export default function Importacao() {
           tipo: null,
           rows: [],
           excluidosPorColab: new Set(),
+          valoresEditados: new Set(),
         })
 
         const errosInternos = extrairErrosImportacao(response)
@@ -1626,6 +1629,7 @@ export default function Importacao() {
         tipo,
         rows: parsed,
         excluidosPorColab: new Set(),
+        valoresEditados: new Set(),
       }
 
       setLote(novoLote)
@@ -1732,6 +1736,7 @@ export default function Importacao() {
         tipo: prev?.tipo || 'importacao',
         rows: prev?.rows || [],
         excluidosPorColab: prev?.excluidosPorColab || new Set(),
+        valoresEditados: prev?.valoresEditados || new Set(),
       }))
 
       setErrosModalOpen(true)
@@ -2254,6 +2259,7 @@ export default function Importacao() {
       tipo: null,
       rows: [],
       excluidosPorColab: new Set(),
+      valoresEditados: new Set(),
     })
 
     setFormEnvio({
@@ -2384,6 +2390,7 @@ export default function Importacao() {
     setLote((prev) => ({
       ...prev,
       rows: clone,
+      valoresEditados: new Set(prev.valoresEditados).add(detailsRowKey),
     }))
 
     setDetailsBenefits(beneficiosAtualizados)
@@ -2515,6 +2522,22 @@ export default function Importacao() {
     try {
       setEnviandoLote(true)
 
+      // Sinaliza ao backend se o confirmado difere da planilha original:
+      // exclusão/edição manual na conferência, corte automático do limite
+      // de R$ 2.500 (aplicado em prepararDadosParaEnvio) ou conversão
+      // Benedetti. Só nesses casos a planilha "editada" deve ser gerada.
+      const rowsAtivasEnvio = lote.rows.filter(
+        (r) => !lote.excluidosPorColab?.has(getNomeColaborador(r))
+      )
+      const temAjusteLimite = rowsAtivasEnvio.some(
+        (r) => parseFloat(r?.valor_total) > 2500
+      )
+      const houveEdicao =
+        (lote.excluidosPorColab?.size > 0) ||
+        (lote.valoresEditados?.size > 0) ||
+        temAjusteLimite ||
+        Boolean(benedettiConvertido)
+
       let responseEnvio;
 
       if (isValeTransporte) {
@@ -2537,7 +2560,8 @@ export default function Importacao() {
             return {
               ...item,
               valor_beneficio_total: valorEditado,
-              valor_editado_manualmente: true
+              valor_editado_manualmente:
+                lote.valoresEditados?.has(getRowKey(rowCorrespondente)) || false
             }
           }
           return item
@@ -2556,6 +2580,7 @@ export default function Importacao() {
           recebimento_beneficio: datasEnvio.recebimentoBeneficio || '',
           dados_validados: dadosValidadosAtualizados,
           modelo_importacao: "VR-AUTO",
+          houve_edicao: houveEdicao,
           summary: {
             total_funcionarios: lote.rows.length,
             total_movimentacoes: dadosValidadosAtualizados.length,
@@ -2627,6 +2652,7 @@ export default function Importacao() {
           modelo_importacao: "VR-BENEFICIOS",
           observacao: (formEnvio.observacao || '').trim(),
           excluidos_conferencia: excluidosConferencia,
+          houve_edicao: houveEdicao,
         }
 
         const r2 = (v) => Math.round(v * 100) / 100
