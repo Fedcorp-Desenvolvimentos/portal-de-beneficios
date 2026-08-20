@@ -1228,10 +1228,10 @@ function getWednesdayBeforeWeekend(dateStr) {
 function calcularVencimentoParaRecebimento(recebimento, dMais) {
   if (!recebimento) return ''
 
-  // O vencimento nunca pode cair hoje nem no passado: o mínimo é o próximo
-  // dia útil. A versão anterior comparava com "< hoje", então o próprio
-  // cálculo podia devolver a data de hoje como vencimento válido.
-  const vencimentoMinimo = obterDataVencimento(1)
+  // O vencimento nunca pode cair hoje, no dia útil seguinte nem no passado:
+  // o mínimo é o 2º dia útil a partir de hoje (prazo de processamento do
+  // pagamento).
+  const vencimentoMinimo = obterDataVencimento(2)
   const minimoDate = parseDateInput(vencimentoMinimo)
 
   const aplicarMinimo = (valor) => {
@@ -1916,8 +1916,8 @@ export default function Importacao() {
       : addDaysToDateInput(formEnvio.vencimento, dMais + 4)
     : ''
 
-  const minDateRecebimento = obterDataVencimento(2)
-  const minDateVencimento = obterDataVencimento(1)
+  const minDateRecebimento = obterDataVencimento(3)
+  const minDateVencimento = obterDataVencimento(2)
 
   const validarDatasEnvio = () => {
     const datas = sincronizarDatasEnvio()
@@ -1938,9 +1938,9 @@ export default function Importacao() {
 
     if (datas.vencimento) {
       const vencDate = parseDateInput(datas.vencimento)
-      const minimoDate = parseDateInput(obterDataVencimento(1))
+      const minimoDate = parseDateInput(obterDataVencimento(2))
       if (vencDate && minimoDate && vencDate.getTime() < minimoDate.getTime()) {
-        toast.warning('A data de vencimento deve ser a partir do próximo dia útil — não pode cair hoje nem no passado.')
+        toast.warning('A data de vencimento deve ser a partir do 2º dia útil — não pode cair hoje nem no dia útil seguinte.')
         return false
       }
     }

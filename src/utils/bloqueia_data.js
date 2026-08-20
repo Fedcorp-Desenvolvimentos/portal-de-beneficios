@@ -2,11 +2,16 @@
 
 export const obterDataVencimento = (dias = 1) => {
   const data = new Date();
-  data.setDate(data.getDate() + dias);
 
-  // Pula fim de semana para próximo dia útil (segunda-feira)
-  while (data.getDay() === 0 || data.getDay() === 6) {
+  // Conta em DIAS ÚTEIS: cada incremento pula sábado e domingo, então
+  // obterDataVencimento(2) numa sexta devolve terça (e não domingo→segunda,
+  // como na versão anterior que somava dias corridos e só depois pulava o
+  // fim de semana).
+  for (let i = 0; i < dias; i++) {
     data.setDate(data.getDate() + 1);
+    while (data.getDay() === 0 || data.getDay() === 6) {
+      data.setDate(data.getDate() + 1);
+    }
   }
 
   const year = data.getFullYear();
