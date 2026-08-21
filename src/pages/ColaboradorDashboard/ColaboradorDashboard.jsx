@@ -1654,15 +1654,22 @@ export default function ColaboradorDashboard() {
     }
 
     const isRefazendoPedido = selectedPedido?.refazendo
-    const isAdicionando = uploadMode === 'adicionar' && selectedPedido?.status === 'faturado'
+    // O modo selecionado no radio manda na mensagem: aviso de substituição só
+    // quando o usuário escolheu substituir — incluir novos documentos nunca
+    // deve assustar com "poderão ser substituídos".
+    const isAdicionando = uploadMode === 'adicionar'
 
     setConfirmFinalize({
       open: true,
-      title: isRefazendoPedido ? 'Confirmar reenvio de documentos' : isAdicionando ? 'Confirmar inclusão de novos documentos' : 'Confirmar importação',
-      message: isRefazendoPedido
-        ? 'Ao reenviar a documentação, os documentos anteriores deste pedido poderão ser substituídos e o pedido voltará para faturado. Deseja continuar?'
-        : isAdicionando
-          ? 'Os novos documentos serão adicionados aos existentes. Documentos já processados não serão substituídos. Deseja continuar?'
+      title: isAdicionando
+        ? 'Confirmar inclusão de novos documentos'
+        : isRefazendoPedido
+          ? 'Confirmar reenvio de documentos'
+          : 'Confirmar importação',
+      message: isAdicionando
+        ? 'Os novos documentos serão adicionados aos que já foram importados neste pedido — nenhum documento anterior será substituído. Deseja continuar?'
+        : isRefazendoPedido
+          ? 'Ao reenviar a documentação, os documentos anteriores deste pedido poderão ser substituídos e o pedido voltará para faturado. Deseja continuar?'
           : 'Ao importar a documentação, o pedido ficará disponível para o funcionário. Deseja continuar?',
       onConfirm: async () => {
         setConfirmFinalize({
@@ -1701,6 +1708,35 @@ export default function ColaboradorDashboard() {
       return
     }
 
+    // Arquivo que não cai em nenhuma categoria era descartado em silêncio e o
+    // backend devolvia 400 por categoria faltante — melhor avisar antes.
+    const classificados = new Set([...arquivosBoleto, ...arquivosNotaDebito, ...arquivosNotaFiscal])
+    const naoClassificados = docs.filter((file) => !classificados.has(file))
+    if (naoClassificados.length) {
+      showToast(
+        `Não foi possível identificar o tipo de: ${naoClassificados.map((f) => f.name).join(', ')}. ` +
+        'Renomeie o arquivo incluindo BOLETO/RECIBO, DEBITO ou NF e tente novamente.',
+        { variant: 'warning' }
+      )
+      return
+    }
+
+    // O backend exige competência em YYYY-MM-DD; mesUtilizacao (MM/YYYY) era
+    // usado como último fallback e garantia um 400.
+    const competenciaEnvio = String(
+      selectedPedido.raw?.competencia ||
+      selectedPedido.raw?.vigencia_inicio ||
+      selectedPedido.dataVencimento ||
+      ''
+    ).slice(0, 10)
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(competenciaEnvio)) {
+      showToast('Não foi possível determinar a competência deste pedido. Atualize a página e tente novamente.', {
+        variant: 'error',
+      })
+      return
+    }
+
     try {
       setUploading(true)
       setUploadProgress(1)
@@ -1708,10 +1744,7 @@ export default function ColaboradorDashboard() {
       await faturamentoService.importarDocumentos(
         {
           importacaoId: selectedPedido.id,
-          competencia:
-            selectedPedido.competencia ||
-            selectedPedido.dataVencimento ||
-            selectedPedido.mesUtilizacao,
+          competencia: competenciaEnvio,
           arquivosBoleto,
           arquivosNotaDebito,
           arquivosNotaFiscal,
@@ -1781,7 +1814,14 @@ export default function ColaboradorDashboard() {
       await carregarPedidos()
     } catch (error) {
       console.error('Erro ao importar:', error)
-      showToast(error?.message || 'Não foi possível concluir a importação.', {
+      const dataErro = error?.response?.data
+      const mensagemBackend = [
+        dataErro?.detail,
+        ...(Array.isArray(dataErro?.erros) ? dataErro.erros : []),
+      ]
+        .filter(Boolean)
+        .join(' ')
+      showToast(mensagemBackend || error?.message || 'Não foi possível concluir a importação.', {
         variant: 'error',
       })
     } finally {
