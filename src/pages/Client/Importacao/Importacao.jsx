@@ -1808,9 +1808,17 @@ export default function Importacao() {
         }
       }
       if (recebimento) {
+        const vencimentoCalc = calcularVencimentoParaRecebimento(recebimento, dias)
+        // Se o mínimo de vencimento empurrou a data para frente, o crédito
+        // escolhido ficaria a menos de D+ dias úteis do vencimento — o
+        // crédito acompanha para nunca violar o D+.
+        const recebimentoMinimo = vencimentoCalc ? addBusinessDays(vencimentoCalc, dias) : ''
         return {
-          recebimentoBeneficio: recebimento,
-          vencimento: calcularVencimentoParaRecebimento(recebimento, dias),
+          recebimentoBeneficio:
+            recebimentoMinimo && isAfterDateInput(recebimentoMinimo, recebimento)
+              ? recebimentoMinimo
+              : recebimento,
+          vencimento: vencimentoCalc,
         }
       }
       if (vencimento) {
@@ -1867,9 +1875,24 @@ export default function Importacao() {
     const dias = regraValor?.d_mais ?? 1
     const vencimentoCalculado = value ? calcularVencimentoParaRecebimento(value, dias) : ''
 
+    // O vencimento calculado pode ter sido empurrado para o mínimo (2º dia
+    // útil). Nesse caso o crédito escolhido violaria o D+ — ajusta o crédito
+    // para vencimento + D+ e avisa o usuário.
+    let recebimentoFinal = value
+    if (value && vencimentoCalculado) {
+      const recebimentoMinimo = addBusinessDays(vencimentoCalculado, dias)
+      if (isAfterDateInput(recebimentoMinimo, value)) {
+        recebimentoFinal = recebimentoMinimo
+        const [ano, mes, dia] = recebimentoMinimo.split('-')
+        toast.info(
+          `A data de crédito foi ajustada para ${dia}/${mes}/${ano} para respeitar o prazo de D+${dias} dia(s) útil(eis) após o vencimento mínimo.`
+        )
+      }
+    }
+
     setFormEnvio((prev) => ({
       ...prev,
-      recebimentoBeneficio: value,
+      recebimentoBeneficio: recebimentoFinal,
       vencimento: vencimentoCalculado,
     }))
   }
@@ -1916,7 +1939,11 @@ export default function Importacao() {
       : addDaysToDateInput(formEnvio.vencimento, dMais + 4)
     : ''
 
-  const minDateRecebimento = obterDataVencimento(3)
+  // O crédito nunca pode ficar a menos de D+ dias úteis do vencimento mínimo
+  // (2º dia útil) — o datepicker já não oferece datas impossíveis.
+  const minDateRecebimento = isValeTransporte
+    ? obterDataVencimento(3)
+    : obterDataVencimento(2 + dMais)
   const minDateVencimento = obterDataVencimento(2)
 
   const validarDatasEnvio = () => {
