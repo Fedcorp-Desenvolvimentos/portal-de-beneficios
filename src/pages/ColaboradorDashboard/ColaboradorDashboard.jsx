@@ -1701,25 +1701,11 @@ export default function ColaboradorDashboard() {
       return name.includes('fiscal') || name.includes('nota_fiscal') || name.includes('nf')
     })
 
-    if (!arquivosBoleto.length && !arquivosNotaDebito.length && !arquivosNotaFiscal.length) {
-      showToast('Envie boleto/recibo, nota de débito ou nota fiscal.', {
-        variant: 'warning',
-      })
-      return
-    }
-
-    // Arquivo que não cai em nenhuma categoria era descartado em silêncio e o
-    // backend devolvia 400 por categoria faltante — melhor avisar antes.
+    // A classificação pelo nome é só um atalho: arquivos com nome fora do
+    // padrão seguem num campo genérico e o backend identifica o tipo pelo
+    // CONTEÚDO do PDF (classificar_pdf_por_conteudo).
     const classificados = new Set([...arquivosBoleto, ...arquivosNotaDebito, ...arquivosNotaFiscal])
-    const naoClassificados = docs.filter((file) => !classificados.has(file))
-    if (naoClassificados.length) {
-      showToast(
-        `Não foi possível identificar o tipo de: ${naoClassificados.map((f) => f.name).join(', ')}. ` +
-        'Renomeie o arquivo incluindo BOLETO/RECIBO, DEBITO ou NF e tente novamente.',
-        { variant: 'warning' }
-      )
-      return
-    }
+    const arquivosOutros = docs.filter((file) => !classificados.has(file))
 
     // O backend exige competência em YYYY-MM-DD; mesUtilizacao (MM/YYYY) era
     // usado como último fallback e garantia um 400.
@@ -1748,6 +1734,7 @@ export default function ColaboradorDashboard() {
           arquivosBoleto,
           arquivosNotaDebito,
           arquivosNotaFiscal,
+          arquivosOutros,
           mode: uploadMode,
         },
         (percent) => setUploadProgress(percent)

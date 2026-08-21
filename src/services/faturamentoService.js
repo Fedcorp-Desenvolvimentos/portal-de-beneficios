@@ -154,6 +154,7 @@ export const faturamentoService = {
     arquivosBoleto = [],
     arquivosNotaDebito = [],
     arquivosNotaFiscal = [],
+    arquivosOutros = [],
     mode = 'substituir',
   }) {
     const formData = new FormData()
@@ -177,6 +178,9 @@ export const faturamentoService = {
     boletos.forEach((arquivo) => formData.append('arquivo_boleto', arquivo))
     notasDebito.forEach((arquivo) => formData.append('arquivo_nota_debito', arquivo))
     notasFiscais.forEach((arquivo) => formData.append('arquivo_nota_fiscal', arquivo))
+    // Arquivos sem tipo identificável pelo nome: o backend classifica pelo
+    // conteúdo do PDF ('arquivo_documento' não casa com nenhum padrão de nome).
+    arquivosOutros.forEach((arquivo) => formData.append('arquivo_documento', arquivo))
 
     const response = await api.post('/api/upload/faturamento/upload/', formData, {
       headers: {
