@@ -995,7 +995,7 @@ export default function ColaboradorDashboard() {
         )
       }
 
-      if (key === 'dataVencimento' || key === 'dataRecebimento') {
+      if (key === 'dataVencimento' || key === 'dataRecebimento' || key === 'dataImportacao') {
         return compareNullableValues(
           parseSortableDate(a[key]),
           parseSortableDate(b[key]),
@@ -2288,6 +2288,15 @@ export default function ColaboradorDashboard() {
                     </th>
                     <th
                       aria-sort={
+                        sortConfig.key === 'dataImportacao'
+                          ? sortConfig.direction
+                          : 'none'
+                      }
+                    >
+                      {renderSortableHeader('Importação', 'dataImportacao')}
+                    </th>
+                    <th
+                      aria-sort={
                         sortConfig.key === 'dataVencimento'
                           ? sortConfig.direction
                           : 'none'
@@ -2340,7 +2349,7 @@ export default function ColaboradorDashboard() {
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <S.Empty colSpan={11}>
+                      <S.Empty colSpan={12}>
                         Nenhum pedido encontrado.
                       </S.Empty>
                     </tr>
@@ -2402,6 +2411,10 @@ export default function ColaboradorDashboard() {
                         <S.AdminCell data-label="Administradora">
                           <S.AdminName>{p.nomeAdministradora}</S.AdminName>
                         </S.AdminCell>
+
+                        <td data-label="Importação" style={{ fontSize: 13 }}>
+                          {fmtDate(p.dataImportacao)}
+                        </td>
 
                         <td data-label="Vencimento">
                           <S.Inline>
@@ -2470,7 +2483,7 @@ export default function ColaboradorDashboard() {
 
                       {expandedPedidoId === p.id && (
                         <tr className="cf-expand-row">
-                          <td colSpan={11}>
+                          <td colSpan={12}>
                             <div className="cf-expand-content">
                               {expandedLoading ? (
                                 <div className="cf-expand-loading">Carregando boletos...</div>
