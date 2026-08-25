@@ -1177,7 +1177,20 @@ export default function ConfiguracaoCondominios() {
       setModoAtivo('lista')
     } catch (err) {
       console.error('Erro ao salvar:', err)
-      showToast('Erro ao salvar condomínio', 'danger')
+      // Mostra o motivo real (erros do serializer vêm como {campo: [msgs]}).
+      const dados = err?.response?.data
+      let motivo = ''
+      if (dados && typeof dados === 'object') {
+        motivo = Object.entries(dados)
+          .map(([campo, msgs]) => {
+            const texto = Array.isArray(msgs) ? msgs.join(' ') : String(msgs)
+            return ['detail', 'erro', 'error'].includes(campo) ? texto : `${campo}: ${texto}`
+          })
+          .join(' | ')
+      } else if (typeof dados === 'string') {
+        motivo = dados
+      }
+      showToast(motivo ? `Erro ao salvar condomínio — ${motivo}` : 'Erro ao salvar condomínio', 'danger')
     } finally {
       setLoadingAction(false)
     }
