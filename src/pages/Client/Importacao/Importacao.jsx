@@ -2393,10 +2393,28 @@ export default function Importacao() {
     const rowAtual = clone[originalIndex]
     const beneficiosAtualizados = [...(rowAtual.beneficios || [])]
 
+    // "Salvar" sem mudar o valor não é edição: não pode marcar o lote como
+    // editado (geraria planilha editada à toa — caso do pedido 473).
+    const valorAnterior = Number(beneficiosAtualizados[beneficioIndex]?.valor || 0)
+    if (Math.abs(valorAnterior - novoValor) < 0.005) {
+      setEditingBenefitIndex(null)
+      setEditBenefitValue('')
+      toast.info('O valor informado é igual ao atual — nada foi alterado.')
+      return
+    }
+
+    // Guarda o valor que veio do parse na primeira edição, para reconhecer
+    // quando o usuário edita e depois volta ao original (não é edição).
+    const valorOriginal = Number(
+      beneficiosAtualizados[beneficioIndex]?.valorOriginal ?? valorAnterior
+    )
     beneficiosAtualizados[beneficioIndex] = {
       ...beneficiosAtualizados[beneficioIndex],
       valor: novoValor,
+      valorOriginal,
     }
+    const chaveEdicao = `${detailsRowKey}::${beneficioIndex}`
+    const voltouAoOriginal = Math.abs(valorOriginal - novoValor) < 0.005
 
     const novoTotal = beneficiosAtualizados.reduce((total, item) => {
       return total + Number(item?.valor || 0)
@@ -2414,11 +2432,12 @@ export default function Importacao() {
       [valorKey]: novoTotal,
     }
 
-    setLote((prev) => ({
-      ...prev,
-      rows: clone,
-      valoresEditados: new Set(prev.valoresEditados).add(detailsRowKey),
-    }))
+    setLote((prev) => {
+      const editados = new Set(prev.valoresEditados)
+      if (voltouAoOriginal) editados.delete(chaveEdicao)
+      else editados.add(chaveEdicao)
+      return { ...prev, rows: clone, valoresEditados: editados }
+    })
 
     setDetailsBenefits(beneficiosAtualizados)
     setEditingBenefitIndex(null)
@@ -2587,8 +2606,9 @@ export default function Importacao() {
             return {
               ...item,
               valor_beneficio_total: valorEditado,
-              valor_editado_manualmente:
-                lote.valoresEditados?.has(getRowKey(rowCorrespondente)) || false
+              valor_editado_manualmente: Array.from(lote.valoresEditados || []).some(
+                (chave) => chave.startsWith(`${getRowKey(rowCorrespondente)}::`)
+              )
             }
           }
           return item

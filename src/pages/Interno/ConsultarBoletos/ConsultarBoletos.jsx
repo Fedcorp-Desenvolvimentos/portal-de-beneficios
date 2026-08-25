@@ -39,7 +39,13 @@ const STATUS_BADGE = {
 
 export default function ConsultarBoletos() {
   const { user } = useAuth()
-  const administradoraId = user?.administradora_ativa?.id || user?.administradora_id
+  // dev/fat têm escopo global: não enviam administradora_id (o backend
+  // devolve todas). Os demais perfis recebem o escopo da própria
+  // administradora forçado pelo backend — enviar o id aqui é só coerência.
+  const escopoGlobal = ['dev', 'fat'].includes(user?.tipo)
+  const administradoraId = escopoGlobal
+    ? null
+    : user?.administradora_ativa?.id || user?.administradora_ativa_id || user?.administradora_id
 
   const [boletos, setBoletos] = useState([])
   const [loading, setLoading] = useState(true)
