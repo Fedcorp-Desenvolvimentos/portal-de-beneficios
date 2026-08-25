@@ -39,16 +39,19 @@ export const entebenService = {
   }
 },
 
-  // createCondominio: async (data) => {
-  //   try {
-  //     // console.log("Criando condomínio com dados:", data)
-  //     const response = await api.post('/api/entidades/condominios/', data)
-  //     return response.data
-  //   } catch (error) {
-  //     console.error('Erro ao criar condomínio:', error)
-  //     throw error
-  //   }
-  // },
+  // Estava comentado — a tela de Gerenciamento chamava esta função e caía em
+  // "undefined is not a function", exibindo "Erro ao salvar condomínio" para
+  // qualquer cadastro. O backend vincula o condomínio à administradora do
+  // payload/usuário; CNPJ já existente é aceito de forma transparente (200).
+  createCondominio: async (data) => {
+    try {
+      const response = await api.post('/api/entidades/condominios/', data)
+      return response.data
+    } catch (error) {
+      console.error('Erro ao criar condomínio:', error)
+      throw error
+    }
+  },
 
   updateCondominio: async (cnpj, data) => {
     try {
