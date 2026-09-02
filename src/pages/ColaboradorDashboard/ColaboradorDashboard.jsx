@@ -1817,6 +1817,41 @@ export default function ColaboradorDashboard() {
     }
   }
 
+  function excluirDocumentoImportado(doc) {
+    setConfirmFinalize({
+      open: true,
+      title: 'Excluir documento importado',
+      message:
+        `O documento "${doc.nome_arquivo}" será removido do pedido ${docsPedido?.id} e do armazenamento. ` +
+        'Os documentos por condomínio já gerados a partir dele não são recalculados — se necessário, reenvie os documentos corretos. Deseja continuar?',
+      onConfirm: async () => {
+        setConfirmFinalize({ open: false, title: '', message: '', onConfirm: null })
+        try {
+          const resp = await faturamentoService.excluirArquivoFaturamento(doc.id)
+          showToast(resp?.detail || 'Documento excluído.', { variant: 'success' })
+          // Atualiza o modal na hora, sem esperar o reload da listagem.
+          setDocsPedido((prev) =>
+            prev
+              ? {
+                ...prev,
+                raw: {
+                  ...prev.raw,
+                  documentos: (prev.raw?.documentos || []).filter((d) => d.id !== doc.id),
+                },
+              }
+              : prev
+          )
+          await carregarPedidos()
+        } catch (error) {
+          console.error('Erro ao excluir documento:', error)
+          showToast(error?.response?.data?.detail || 'Não foi possível excluir o documento.', {
+            variant: 'error',
+          })
+        }
+      },
+    })
+  }
+
   function abrirDocsImportados(pedido) {
     if (!pedido?.id) {
       showToast('Pedido inválido para consulta de documentos.', {
@@ -2851,6 +2886,47 @@ export default function ColaboradorDashboard() {
                           </div>
                         );
                       })}
+
+                      {['dev', 'fat'].includes(user?.tipo) && docsRaw.some((d) => d.id) && (
+                        <div style={{ marginTop: 12 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#4a5568' }}>
+                            Arquivos importados
+                          </span>
+                          {docsRaw.filter((d) => d.id).map((doc) => (
+                            <div
+                              key={doc.id}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '8px 14px',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: 8,
+                                marginTop: 6,
+                                gap: 12,
+                              }}
+                            >
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                                <span style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {doc.nome_arquivo}
+                                </span>
+                                <span style={{ fontSize: 12, color: '#718096' }}>
+                                  {doc.tipo_display || doc.tipo}
+                                  {doc.numero_fatura ? ` · Fatura ${doc.numero_fatura}` : ''}
+                                </span>
+                              </div>
+                              <S.Btn
+                                onClick={() => excluirDocumentoImportado(doc)}
+                                disabled={!!docDownloading}
+                                title="Excluir documento"
+                              >
+                                <FiTrash2 size={14} />
+                                Excluir
+                              </S.Btn>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
                       {gruposDocs.length > 0 && (
                         <div style={{ marginTop: 8 }}>

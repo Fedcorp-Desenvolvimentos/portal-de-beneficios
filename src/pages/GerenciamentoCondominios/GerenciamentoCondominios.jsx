@@ -1168,8 +1168,11 @@ export default function ConfiguracaoCondominios() {
         await entebenService.updateCondominio(editandoCnpj, payload)
         showToast('Condomínio atualizado com sucesso!')
       } else {
-        await entebenService.createCondominio(payload)
-        showToast('Condomínio cadastrado com sucesso!')
+        const criado = await entebenService.createCondominio(payload)
+        // `detail` só vem quando o condomínio já estava vinculado à própria
+        // administradora — evita o falso "cadastrado com sucesso" quando o
+        // registro já existia (a migração de outra adm continua silenciosa).
+        showToast(criado?.detail || 'Condomínio cadastrado com sucesso!')
       }
 
       await carregarDados()
