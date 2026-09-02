@@ -195,6 +195,11 @@ export const faturamentoService = {
     return faturamentoService.importarDocumentos(payload)
   },
 
+  async excluirArquivoFaturamento(arquivoId) {
+    const response = await api.delete(`/api/upload/faturamento/arquivo/${arquivoId}/`)
+    return response.data
+  },
+
   async listarPedidosFuncionario(page = 1, limit = 500) {
     const response = await api.get('/api/beneficios/importacoes/', {
       params: { page, limit },
