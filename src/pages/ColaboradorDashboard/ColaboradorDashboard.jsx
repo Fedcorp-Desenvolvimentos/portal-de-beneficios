@@ -2341,21 +2341,21 @@ export default function ColaboradorDashboard() {
                     <th>Fatura</th>
                     <th
                       aria-sort={
-                        sortConfig.key === 'nomeAdministradora'
-                          ? sortConfig.direction
-                          : 'none'
-                      }
-                    >
-                      {renderSortableHeader('Administradora', 'nomeAdministradora')}
-                    </th>
-                    <th
-                      aria-sort={
                         sortConfig.key === 'dataImportacao'
                           ? sortConfig.direction
                           : 'none'
                       }
                     >
                       {renderSortableHeader('Importação', 'dataImportacao')}
+                    </th>
+                    <th
+                      aria-sort={
+                        sortConfig.key === 'nomeAdministradora'
+                          ? sortConfig.direction
+                          : 'none'
+                      }
+                    >
+                      {renderSortableHeader('Administradora', 'nomeAdministradora')}
                     </th>
                     <th
                       aria-sort={
@@ -2470,13 +2470,13 @@ export default function ColaboradorDashboard() {
                           )}
                         </td>
 
-                        <S.AdminCell data-label="Administradora">
-                          <S.AdminName>{p.nomeAdministradora}</S.AdminName>
-                        </S.AdminCell>
-
                         <td data-label="Importação" style={{ fontSize: 13 }}>
                           {fmtDate(p.dataImportacao)}
                         </td>
+
+                        <S.AdminCell data-label="Administradora">
+                          <S.AdminName>{p.nomeAdministradora}</S.AdminName>
+                        </S.AdminCell>
 
                         <td data-label="Vencimento">
                           <S.Inline>

@@ -252,24 +252,25 @@ export const S = {
       text-align: center;
     }
 
-    th:nth-child(4),
-    td:nth-child(4) {
-      width: 130px;
-    }
-
-    /* 5 = Importação, 6 = Vencimento, 8 = Data Crédito — as datas críticas
+    /* 4 = Importação, 6 = Vencimento, 8 = Data Crédito — as datas críticas
        da operação, destacadas em vermelho. As colunas são selecionadas por
        posição, então inserir ou remover uma coluna na tabela exige revisar
        estes índices. */
-    th:nth-child(5),
-    td:nth-child(5) {
+    th:nth-child(4),
+    td:nth-child(4) {
       width: 90px;
       color: #dc2626 !important;
     }
 
-    th:nth-child(5) > *,
-    td:nth-child(5) > * {
+    th:nth-child(4) > *,
+    td:nth-child(4) > * {
       color: #dc2626 !important;
+    }
+
+    /* 5 = Administradora */
+    th:nth-child(5),
+    td:nth-child(5) {
+      width: 130px;
     }
 
     th:nth-child(6),
