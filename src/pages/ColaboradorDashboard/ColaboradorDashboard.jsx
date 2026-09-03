@@ -2886,7 +2886,7 @@ export default function ColaboradorDashboard() {
                     <S.ConfirmMsg>
                       {gruposDocs.length > 0
                         ? `${gruposDocs.length} grupo(s) de documento(s) disponível(s) para download.`
-                        : 'Nenhum documento importado ainda.'}
+                        : 'Nenhum documento importado ainda. Para anexar, feche esta janela e use Ações → Gerenciar documentos.'}
                     </S.ConfirmMsg>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
