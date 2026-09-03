@@ -1727,7 +1727,7 @@ export default function ColaboradorDashboard() {
       setUploading(true)
       setUploadProgress(1)
 
-      await faturamentoService.importarDocumentos(
+      const respEnvio = await faturamentoService.importarDocumentos(
         {
           importacaoId: selectedPedido.id,
           competencia: competenciaEnvio,
@@ -1739,6 +1739,46 @@ export default function ColaboradorDashboard() {
         },
         (percent) => setUploadProgress(percent)
       )
+
+      // O 202 só significa "task enfileirada". A tela dizia sucesso na hora e
+      // a falha do processamento ficava invisível (pedidos 302 e 526 — PA-011).
+      // Acompanha o status real até concluir/falhar (máx. ~90s).
+      const faturamentoId = respEnvio?.faturamento_id || selectedPedido.id
+      let statusFinal = null
+      for (let tentativa = 0; tentativa < 30; tentativa++) {
+        await new Promise((resolve) => setTimeout(resolve, 3000))
+        try {
+          const st = await faturamentoService.statusFaturamento(faturamentoId)
+          if (st?.status === 'COMPLETED' || st?.status === 'FAILED') {
+            statusFinal = st
+            break
+          }
+          if (typeof st?.progresso === 'number' && st.progresso > 0) {
+            setUploadProgress(Math.min(99, st.progresso))
+          }
+        } catch {
+          // erro transitório de rede: continua tentando
+        }
+      }
+
+      if (statusFinal?.status === 'FAILED') {
+        showToast(
+          statusFinal?.erro_mensagem
+            ? `O processamento dos documentos falhou: ${statusFinal.erro_mensagem}`
+            : 'O processamento dos documentos falhou. Verifique os arquivos e tente novamente.',
+          { variant: 'error' }
+        )
+        setConfirmFinalize({ open: false, title: '', message: '', onConfirm: null })
+        closeImport()
+        await carregarPedidos()
+        return
+      }
+
+      if (!statusFinal) {
+        showToast('Documentos enviados — o processamento continua em segundo plano; atualize a página em instantes.', {
+          variant: 'info',
+        })
+      }
 
       setUploadProgress(100)
 
