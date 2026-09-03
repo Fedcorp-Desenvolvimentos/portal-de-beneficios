@@ -195,6 +195,11 @@ export const faturamentoService = {
     return faturamentoService.importarDocumentos(payload)
   },
 
+  async statusFaturamento(faturamentoId) {
+    const response = await api.get(`/api/upload/faturamento/${faturamentoId}/status/`)
+    return response.data
+  },
+
   async excluirArquivoFaturamento(arquivoId) {
     const response = await api.delete(`/api/upload/faturamento/arquivo/${arquivoId}/`)
     return response.data
